@@ -6002,6 +6002,28 @@ RCloud.UI.find_replace = (function() {
     }
     var result = {
         init: function() {
+
+            RCloud.UI.shortcut_manager.add([{
+                category: 'Notebook Management',
+                id: 'notebook_find',
+                description: 'Find text',
+                keys: [
+                    ['command', 'f'],
+                    ['ctrl', 'f']
+                ],
+                action: function() { toggle_find_replace(false); }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_replace',
+                description: 'Replace text',
+                keys: [
+                    ['command', 'option', 'f'],
+                    ['ctrl', 'h']
+                ],
+                action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
+            }]);
+
+/*
             document.addEventListener("keydown", function(e) {
                 var action;
                 if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F / cmd-opt-F
@@ -6021,6 +6043,8 @@ RCloud.UI.find_replace = (function() {
                     toggle_find_replace(action === 'replace');
                 }
             });
+*/
+
         }
     };
     return result;
@@ -6813,6 +6837,9 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
     RCloud.UI.find_replace.init();
@@ -6827,9 +6854,6 @@ RCloud.UI.init = function() {
 
     // adds to advanced menu
     RCloud.UI.import_export.init();
-
-    // keyboard shortcuts:
-    RCloud.UI.shortcut_manager.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -6925,7 +6949,9 @@ RCloud.UI.init = function() {
         id: 'remove_cells',
         description: 'Removes selected cells',
         keys: [
-            ['del']
+            ['del'],
+            ['backspace'],
+            ['command', 'backspace']
         ],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
@@ -6957,6 +6983,14 @@ RCloud.UI.init = function() {
             ['?']
         ],
         action: function() { RCloud.UI.shortcut_dialog.show(); }
+    },{
+        category: 'General',
+        id: 'close_modal',
+        description: 'Close dialog',
+        keys: [
+            ['esc']
+        ],
+        action: function() { $('.modal').modal('hide'); }
     }]);
 
 };
