@@ -353,7 +353,9 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
-        mcparallel(update.solr(res, star.count), detached=TRUE)
+        # Curl SSL Bug. Don't fork Curl. Refer http://stackoverflow.com/questions/15466809/libcurl-ssl-error-after-fork
+        #mcparallel(update.solr(res, star.count), detached=TRUE)
+        update.solr(res,star.count)
     }
     aug.res
 }
