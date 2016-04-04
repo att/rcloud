@@ -1,15 +1,68 @@
+#.search_compose_query and .search_construct_url for back compatibility with Solr 4.5.x which messes with strict encoding of say '+'
+.search_compose_query <- function(elements){
+  if (length(elements) == 0) 
+  return("")
+  elements <- httr:::compact(elements)
+  names <- names(elements)
+  encode <- function(x){
+    # Don't enforce strict encoding
+    x <- as.character(x)
+    q <- URLencode(x)
+    return(x)}
+     values=vapply(elements,encode,character(1))
+    paste0(names,"=",values, collapse="&")
+  }  
+
+.search_construct_url <- function (url) 
+{
+    stopifnot(httr:::is.url(url))
+    scheme <- url$scheme
+    hostname <- url$hostname
+    if (!is.null(url$port)) {
+        port <- paste0(":", url$port)
+    }
+    else {
+        port <- NULL
+    }
+    path <- paste(url$path, collapse = "/")
+    if (!is.null(url$params)) {
+        params <- paste0(";", url$params)
+    }
+    else {
+        params <- NULL
+    }
+    if (is.list(url$query)) {
+        query <- .search_compose_query(url$query)
+    }
+    else {
+        query <- url$query
+    }
+    if (!is.null(query)) {
+        stopifnot(is.character(query), length(query) == 1)
+        query <- paste0("?", query)
+    }
+    if (is.null(url$username) && !is.null(url$password)) {
+        stop("Cannot set password without username")
+    }
+    paste0(scheme, "://", url$username, if (!is.null(url$password)) 
+        ":", url$password, if (!is.null(url$username)) 
+        "@", hostname, port, "/", path, params, query, if (!is.null(url$fragment)) 
+        "#", url$fragment)
+} 
 # Some intelligent parsing account for basics like /solr/notebook and /solr/notebook/ is essentially the same thing
 # Using httr::parse_url
 
 .solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")) {
   solr.post.url <- httr::parse_url(solr.url)
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
-  if(is.null(solr.auth.user)){
-    httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json())
-    } else {
-  httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json() , authenticate(solr.auth.user,solr.auth.pwd))
-  }
-}
+  opts = list(
+             postfields = paste("[",data,"]",sep=''),
+             httpheader = c('Content-Type' = 'application/json', Accept = 'application/json'))
+  if(!is.null(solr.auth.user)){
+    opts<- c(opts,userpwd=paste0(solr.auth.user,":",solr.auth.pwd),httpauth=1L)
+  } 
+   tryCatch({postForm(.search_construct_url(solr.post.url),.opts=opts,verbose=TRUE)}, error=function(e){rcloud.session.log(e)})
+} 
 
 .solr.get <- function(query,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")){
   solr.get.url <- httr::parse_url(solr.url)
@@ -17,14 +70,17 @@
   solr.get.url$query <- query
   # https://cwiki.apache.org/confluence/display/solr/Response+Writers
   solr.get.url$query$wt<-"json"
-  if(is.null(solr.auth.user)){
-  solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json())
-  }else{
-  solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),authenticate(solr.auth.user,solr.auth.pwd))
-}
-  solr.res <- fromJSON(content(solr.res, "parsed"))
+    opts<- list()
+  if(!is.null(solr.auth.user)){
+     opts<- c(opts,userpwd=paste0(solr.auth.user,":",solr.auth.pwd),httpauth=1L)
+  }
+  tryCatch({
+  solr.res <- RCurl::getURL(.search_construct_url(solr.get.url), .opts=opts)
+  solr.res <- fromJSON(solr.res)
+  },error=function(err){rcloud.session.log(err)})
   return(solr.res)
-}
+
+} 
 
 update.solr <- function(notebook, starcount){
   solr.post.url <- getConf("solr.url")
@@ -65,9 +121,12 @@ update.solr <- function(notebook, starcount){
 rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
-  ## FIXME: shouldn't we URL-encode the query?!?
+  ## FIXME: The Query comes URL encoded. From the search box? Replace all spaces with +
+
+  ## Replace all 'space' terms with '+'
+  query <- gsub(" ","+",query)
   solr.query <- list(q=query,start=start,rows=pagesize,indent="true",hl="true",hl.preserveMulti="true",hl.fragsize=0,hl.maxAnalyzedChars=-1
-    ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste(sortby,orderby))
+    ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste0(sort=sortby,"+",orderby))
   query <- function(solr.url,source='',solr.auth.user=NULL,solr.auth.pwd=NULL) {
       solr.res <- .solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
       if (!is.null(solr.res$error)) stop(paste0(solr.res$error$code,": ",solr.res$error$msg))
