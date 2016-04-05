@@ -11,6 +11,7 @@ function ensure_image_has_hash(img)
 
 var MIN_LINES = 2;
 var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 10;
+var scrollable_area = $('#rcloud-cellarea');
 
 function create_cell_html_view(language, cell_model) {
     var ace_widget_;
@@ -52,9 +53,8 @@ function create_cell_html_view(language, cell_model) {
         if(left_controls_)
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
-    function set_widget_height() {
-        outer_ace_div.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
-                                   EXTRA_HEIGHT_SOURCE) + "px");
+    function set_widget_height(widget_height) {
+        outer_ace_div.css('height', widget_height);
     }
 
     cell_status_ = $("<div class='cell-status nonselectable'></div>");
@@ -156,6 +156,7 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
 
     function click_to_edit(div, whether) {
+
         if(whether) {
             set_background_class(code_div_.find('pre'));
             if(am_read_only_===false)
@@ -581,10 +582,14 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
+
+                var offset = scrollable_area.scrollTop();
+
                 if(cell_controls_)
                     edit_button_border(true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
+                var editor_height = code_div_.height();
                 code_div_.hide();
                 create_edit_widget();
                 /*
@@ -617,7 +622,7 @@ function create_cell_html_view(language, cell_model) {
                 // do the two-change dance to make ace happy
                 outer_ace_div.show();
                 ace_widget_.resize(true);
-                set_widget_height();
+                set_widget_height(editor_height);
                 ace_widget_.resize(true);
                 if(cell_controls_)
                     cell_controls_.set_flag('edit', true);
@@ -625,10 +630,12 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
+
+                    scrollable_area.scrollTop(offset);
+
                     var scrollTopOffset = ace_widget_.getSession().getScrollTop();
                     var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY - scrollTopOffset);
                     var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
-
 
                     var Range = ace.require('ace/range').Range;
                     var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
