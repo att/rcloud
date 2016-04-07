@@ -304,7 +304,25 @@ var editor = function () {
         };
     }
 
-    function populate_all_notebooks(user_notebooks) {
+    function populate_all_notebooks(all_the_users) {
+        return {
+            label: 'All Notebooks',
+            id: '/alls',
+            //children: user_nodes.sort(compare_nodes)
+            children: _.map(all_the_users, function(u) {
+                var mine = u === username_;
+                var id = node_id('alls', u);
+                return {
+                    label: mine ? "My Notebooks" : someone_elses(u),
+                    id: id,
+                    sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
+                    children: undefined // as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+                }
+            })
+        };
+    }
+
+    /*function populate_all_notebooks(user_notebooks) {
         function create_book_entry_map(books) {
             return _.chain(books)
                 .filter(function(book) {
@@ -347,7 +365,7 @@ var editor = function () {
             id: '/alls',
             children: user_nodes.sort(compare_nodes)
         };
-    }
+    }*/
 
     function duplicate_tree_data(tree, f) {
         var t2 = f(tree);
@@ -459,7 +477,10 @@ var editor = function () {
                     })
                     .then(function() {
                         
-                        var alls_root = populate_all_notebooks(user_notebook_set);
+                        //var alls_root = populate_all_notebooks(user_notebook_set);
+                        var alls_root = populate_all_notebooks(all_the_users);
+
+                        //var alls_root = [];
                         //var alls_root;
                         return [
                             populate_featured(alls_root),
