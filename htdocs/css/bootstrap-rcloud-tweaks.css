@@ -480,3 +480,12 @@ ul.recent-notebooks-list li a {
 #scratchpad-binary object {
     position: absolute;
 }
+
+#fatal-dialog .modal-content {
+    background-color: #f2dede;
+}
+
+#message-dialog .modal-content {
+    background-color: #deeff2;
+}
+

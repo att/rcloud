@@ -361,19 +361,24 @@ var editor = function () {
         return t2;
     }
 
-    function transpose_notebook(destroot) {
+    function transpose_notebook(destroot, splice_user) {
+        var srcroot = '/alls/';
+        if(splice_user)
+            srcroot += splice_user + '/';
         return function(datum) {
             if(datum.delay_children)
                 load_children(datum);
             var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order");
-            d2.id = datum.id.replace("/alls/", '/'+destroot+'/');
+            d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
             d2.root = destroot;
             return d2;
         };
     }
 
-    function create_notebook_root(src_trees, root, title) {
-        var reroot = transpose_notebook(root);
+    function create_notebook_root(src_trees, root, title, splice_user) {
+        var reroot = transpose_notebook(root, splice_user);
+        if(splice_user)
+            src_trees = src_trees[0].children;
         var subtrees = src_trees.map(function(subtree) {
             return duplicate_tree_data(subtree, reroot);
         });
@@ -402,7 +407,7 @@ var editor = function () {
         featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
         if(!featured_subtrees.length)
             return null;
-        return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks');
+        return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks', featured_subtrees.length===1 ? featured_[0] : null);
     }
 
     function load_tree(root_data) {
@@ -508,6 +513,11 @@ var editor = function () {
         }
     }
 
+    // special case for #1867: skip user level of tree for featured users
+    function skip_user_level(root) {
+        return root === 'featured' && featured_.length === 1;
+    }
+
     function update_tree(root, user, gistname, path, last_chance, create) {
         if(!root)
             throw new Error("need root");
@@ -515,8 +525,10 @@ var editor = function () {
             throw new Error("need user");
         if(!gistname)
             throw new Error("need gistname");
+
+        var skip_user = skip_user_level(root);
         // make sure parents exist
-        var parid = node_id(root, user),
+        var parid = skip_user ? node_id(root) : node_id(root, user),
             parent = $tree_.tree('getNodeById', parid),
             pdat = null,
             node = null;
@@ -526,12 +538,14 @@ var editor = function () {
             if(!parent) {
                 throw new Error("root '" + root + "' of notebook tree not found!");
             }
-            pdat = {
-                label: mine ? "My Notebooks" : someone_elses(user),
-                id: node_id(root, user),
-                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
-            };
-            parent = insert_alpha(pdat, parent);
+            if(!skip_user) {
+                pdat = {
+                    label: mine ? "My Notebooks" : someone_elses(user),
+                    id: node_id(root, user),
+                    sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER
+                };
+                parent = insert_alpha(pdat, parent);
+            }
         }
         if(parent.delay_children)
             load_children(parent);
@@ -545,7 +559,7 @@ var editor = function () {
             path = path.children[0];
         }
         var data = path;
-        var id = node_id(root, user, gistname);
+        var id = skip_user ? node_id(root, gistname) : node_id(root, user, gistname);
         node = $tree_.tree('getNodeById', id);
         if(!node && !create)
             return null;
@@ -780,7 +794,7 @@ var editor = function () {
 
         // always show the same number of history nodes as before
         var whither = 'hide', where = null;
-        var inter_path = as_folder_hierarchy([data], node_id(root, user))[0];
+        var inter_path = as_folder_hierarchy([data], skip_user_level(root) ? node_id(root) : node_id(root, user))[0];
         var node = update_tree(root, user, gistname, inter_path,
                                function(node) {
                                    if(node.children.length) {
@@ -811,8 +825,10 @@ var editor = function () {
         function open_and_select(node) {
             if(current_.version) {
                 $tree_.tree('openNode', node);
-                var n2 = $tree_.tree('getNodeById',
-                                     node_id(node.root, user, gistname, current_.version));
+                var id = skip_user_level(node.root) ?
+                        node_id(node.root, gistname, current_.version) :
+                        node_id(node.root, user, gistname, current_.version);
+                var n2 = $tree_.tree('getNodeById', id);
                 if(!n2)
                     throw new Error('tree node was not created for current history');
                 node = n2;

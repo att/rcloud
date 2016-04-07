@@ -6,8 +6,8 @@
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
   if(is.null(solr.auth.user)){
     httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json())
-    } else {
-  httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json() , authenticate(solr.auth.user,solr.auth.pwd))
+  } else {
+    httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json() , authenticate(solr.auth.user,solr.auth.pwd))
   }
 }
 
@@ -18,10 +18,10 @@
   # https://cwiki.apache.org/confluence/display/solr/Response+Writers
   solr.get.url$query$wt<-"json"
   if(is.null(solr.auth.user)){
-  solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json())
+    solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json())
   }else{
-  solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),authenticate(solr.auth.user,solr.auth.pwd))
-}
+    solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),authenticate(solr.auth.user,solr.auth.pwd))
+  }
   solr.res <- fromJSON(content(solr.res, "parsed"))
   return(solr.res)
 }
@@ -65,7 +65,11 @@ update.solr <- function(notebook, starcount){
 rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
-  ## FIXME: shouldn't we URL-encode the query?!?
+  
+  ## FIXME: The Query comes URL encoded. From the search box? Replace all spaces with +
+  ## Check if search terms are already URL encoded?
+  if(nchar(query) > nchar(URLdecode(query))) query <- URLdecode(query)
+  
   solr.query <- list(q=query,start=start,rows=pagesize,indent="true",hl="true",hl.preserveMulti="true",hl.fragsize=0,hl.maxAnalyzedChars=-1
     ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste(sortby,orderby))
   query <- function(solr.url,source='',solr.auth.user=NULL,solr.auth.pwd=NULL) {

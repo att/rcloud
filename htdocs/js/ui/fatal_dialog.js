@@ -31,7 +31,7 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
         });
         fatal_dialog_ = $('<div id="fatal-dialog" class="modal fade" />')
             .append($('<div class="modal-dialog" />')
-                    .append($('<div class="modal-content" style="background-color: #f2dede" />')
+                    .append($('<div class="modal-content" />')
                             .append($('<div class="modal-body" />')
                                     .append(body))));
         $("body").append(fatal_dialog_);

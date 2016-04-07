@@ -29,4 +29,4 @@ rcloud.upload.close.file <- function()
   .rcloud.upload.state$file <- NULL
 }
 
-rcloud.upload.path <- function() rcloud.home()
+rcloud.upload.path <- function(...) file.path(rcloud.home(), ...)
