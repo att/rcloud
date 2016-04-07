@@ -65,7 +65,11 @@ update.solr <- function(notebook, starcount){
 rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
-  ## FIXME: shouldn't we URL-encode the query?!?
+  
+  ## FIXME: The Query comes URL encoded. From the search box? Replace all spaces with +
+  ## Check if search terms are already URL encoded?
+  if(nchar(query) > nchar(URLdecode(query))) query <- URLdecode(query)
+  
   solr.query <- list(q=query,start=start,rows=pagesize,indent="true",hl="true",hl.preserveMulti="true",hl.fragsize=0,hl.maxAnalyzedChars=-1
                     ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste(sortby,orderby))
   query <- function(solr.url,source='',solr.auth.user=NULL,solr.auth.pwd=NULL) {
