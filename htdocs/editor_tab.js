@@ -430,14 +430,18 @@ var editor = function () {
     function load_everything() {
         return Promise.all([
             rcloud.config.get_all_notebook_info(),
+            rcloud.get_users(),
             rcloud.stars.get_my_starred_notebooks(),
             rcloud.get_gist_sources()
         ])
-            .spread(function(users_and_notebooks, my_stars_array, gist_sources) {
-                editor.allTheUsers = users_and_notebooks.users;
+            .spread(function(users_and_notebooks, all_the_users, my_stars_array, gist_sources) {
+
+                //editor.allTheUsers = users_and_notebooks.users;
+
                 var user_notebook_set = users_and_notebooks.notebooks;
                 var notebook_entries = users_and_notebooks.infos;
                 var counts = users_and_notebooks.stars;
+
                 my_stars_array = r_vector(my_stars_array);
                 gist_sources_ = gist_sources;
                 var root_data = [];
@@ -446,17 +450,22 @@ var editor = function () {
                                     rcloud.get_multiple_notebook_infos(my_stars_array),
                                     rcloud.config.get_alluser_option('featured_users')])
                     .spread(function(current, my_stars, my_infos, featured) {
+
                         _.extend(counts, my_stars);
                         _.extend(notebook_entries, my_infos);
+
                         current_ = current;
                         num_stars_ = counts;
+
                         notebook_info_ = notebook_entries;
                         featured_ = featured || [];
                         if(_.isString(featured_))
                             featured_ = [featured_];
                     })
                     .then(function() {
+                        
                         var alls_root = populate_all_notebooks(user_notebook_set);
+                        //var alls_root;
                         return [
                             populate_featured(alls_root),
                             populate_interests(my_stars_array),
