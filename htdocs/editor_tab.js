@@ -391,11 +391,13 @@ var editor = function () {
 
     function duplicate_tree_data(tree, f) {
         var t2 = f(tree);
-        if(tree.children) {
+        if(tree.children && !tree.lazy_load) {
             var ch2 = [];
             for(var i=0; i<tree.children.length; ++i)
                 ch2.push(duplicate_tree_data(tree.children[i], f));
             t2.children = ch2;
+        } else if(tree.lazy_load) {
+            t2.children = [{ label : 'loading...' }];
         }
         return t2;
     }
@@ -433,10 +435,6 @@ var editor = function () {
     }
 
     function populate_friends(alls_root) {
-
-        console.warn('populate_friends needs to be changed');
-        return;
-
         var friend_subtrees = alls_root.children.filter(function(subtree) {
             return my_friends_[alls_name(subtree)]>0;
         });
