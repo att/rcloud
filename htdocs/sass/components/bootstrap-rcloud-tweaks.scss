@@ -294,9 +294,13 @@ td {
     padding: 5px 15px;
 }
 
+.popover {
+    max-width: 350px;
+}
+
 .popover-title {
     padding: 4px 10px;
-    word-break: break-word;
+    word-break: break-all;
 }
 
 .popover-content {
@@ -478,7 +482,7 @@ ul.recent-notebooks-list li a .username {
     display: inline-block;
     max-width: 80px;
     text-overflow: ellipsis;
-    overflow: hidden;   
+    overflow: hidden;
 }
 
 ul.recent-notebooks-list li a .description {
@@ -526,4 +530,60 @@ ul.recent-notebooks-list li a {
 body .modal-dialog.full {
     width: 100%;
     max-height: 100%;
+}
+
+#message-dialog .modal-content {
+    background-color: #deeff2;
+}
+
+#fatal-dialog .modal-content {
+    background-color: #f2dede;
+}
+
+#shortcut-dialog .modal-dialog {
+    width: 60%;
+    max-width: 800px;
+}
+
+#shortcut-dialog .modal-body {
+    padding-bottom: 40px;
+}
+
+#shortcut-dialog .category {
+    width: 360px;
+    float: left;
+}
+
+.category kbd {
+    display: inline-block;
+    padding: 3px 5px;
+    font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    line-height: 10px;
+    color: #555;
+    vertical-align: middle;
+    background-color: #fcfcfc;
+    border: solid 1px #ccc;
+    border-bottom-color: #bbb;
+    border-radius: 3px;
+    box-shadow: inset 0 -1px 0 #bbb;
+}
+
+.category table {
+    width: 100%;
+}
+
+.category td {
+    padding: 3px 0;
+}
+
+.category td:first-child {
+
+}
+
+.shortcut {
+    font-family: monospace;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: #666;
+    color: white;
 }
