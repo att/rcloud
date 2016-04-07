@@ -51,6 +51,9 @@ var editor = function () {
             if(key!=='r_attributes' && key!=='r_type')
                 f(key);
     }
+    function r_list(list) {
+
+    }
     function r_vector(value) {
         return _.isArray(value) ? value : [value];
     }
@@ -253,6 +256,23 @@ var editor = function () {
         return notebook_nodes;
     }
 
+    function get_notebooks_by_user(username) {
+
+        var promise = Promise.resolve();
+
+        promise = promise.then(function() {
+            return rcloud.config.all_user_notebooks(username);
+        }).then(function(notebook_ids) {
+            return rcloud.get_multiple_notebook_infos(notebook_ids);
+        }).then(function(notebooks) {
+            delete notebooks.r_attributes;
+            delete notebooks.r_type;
+            return Promise.resolve(notebooks);
+        });
+
+        return promise;
+    }
+
     function populate_interests(my_stars_array) {
         function create_user_book_entry_map(books) {
             var users = {};
@@ -316,7 +336,9 @@ var editor = function () {
                     label: mine ? "My Notebooks" : someone_elses(u),
                     id: id,
                     sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
-                    children: undefined // as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+                    children: [{ label : 'loading...' }],
+                    lazy_load: true, // as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
+                    user: u
                 }
             })
         };
@@ -411,6 +433,10 @@ var editor = function () {
     }
 
     function populate_friends(alls_root) {
+
+        console.warn('populate_friends needs to be changed');
+        return;
+
         var friend_subtrees = alls_root.children.filter(function(subtree) {
             return my_friends_[alls_name(subtree)]>0;
         });
@@ -429,18 +455,22 @@ var editor = function () {
 
     function load_tree(root_data) {
         // delay construction of dom elements for Alls
+        /*
         var alls = _.find(root_data, function(root) { return root.id === "/alls"; }).children;
         for(var i = 0; i < alls.length; ++i)
             if(alls[i].children && alls[i].children.length) {
                 alls[i].delay_children = alls[i].children;
                 alls[i].children = [{label: 'loading...'}];
             }
+
+            */
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
     }
 
     function load_children(n) {
+        console.warn('redundant code?');
         $tree_.tree('loadData', n.delay_children, n);
         delete n.delay_children;
     }
@@ -1059,6 +1089,49 @@ var editor = function () {
     }
     function tree_open(event) {
         var n = event.node;
+
+        function create_book_entry_map(books) {
+            return _.chain(books)
+                .filter(function(book) {
+                    var entry = notebook_info_[book];
+                    if(!entry) {
+                        invalid_notebooks_[book] = null;
+                        return false;
+                    }
+                    if(!entry.username || entry.username === "undefined" ||
+                       !entry.description || !entry.last_commit) {
+                        invalid_notebooks_[book] = entry;
+                        return false;
+                    }
+                    return true;
+                })
+                .map(function(book) {
+                    var entry = notebook_info_[book];
+                    return [book, entry];
+                })
+                .object().value();
+        }
+
+        // go off and get data for the given user:
+        if(n.lazy_load) {
+
+            get_notebooks_by_user(n.user).then(function(notebooks) {
+
+
+
+console.log('resolved with, ', notebooks);
+
+                var notebook_nodes = convert_notebook_set('alls', n.user, notebooks
+                                     /*create_book_entry_map(notebooks)*/);
+
+                //console.log('loaded ', notebooks, ' for user ', n.user);
+
+                $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id('alls', n.user)).sort(compare_nodes), n);
+
+                delete n.lazy_load;
+            });
+        }
+
         if(n.delay_children)
             load_children(n);
         // notebook folder name only editable when open
