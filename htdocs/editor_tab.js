@@ -327,7 +327,7 @@ var editor = function () {
             return users;
         }
 
-        var interests = create_user_book_entry_map(my_stars_array);
+        var interests = create_user_book_entry_map(Object.keys(my_stars_array));
         var user_nodes = [];
         for (var username in interests) {
             var user_notebooks = interests[username];
@@ -430,6 +430,7 @@ var editor = function () {
             t2.children = ch2;
         } else if(tree.lazy_load) {
             t2.children = [{ label : 'loading...' }];
+            t2.lazy_load = true;
         }
         return t2;
     }
@@ -1112,26 +1113,16 @@ var editor = function () {
 
         // go off and get data for the given user:
         if(n.lazy_load) {
-
             get_notebooks_by_user(n.user).then(function(notebooks) {
-
-
-
-console.log('resolved with, ', notebooks);
-
-                var notebook_nodes = convert_notebook_set('alls', n.user, notebooks
-                                     /*create_book_entry_map(notebooks)*/);
-
-                //console.log('loaded ', notebooks, ' for user ', n.user);
-
+                var notebook_nodes = convert_notebook_set('alls', n.user, notebooks);
                 $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id('alls', n.user)).sort(compare_nodes), n);
-
                 delete n.lazy_load;
             });
         }
 
         if(n.delay_children)
             load_children(n);
+
         // notebook folder name only editable when open
         if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
             RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
