@@ -256,6 +256,50 @@ var editor = function () {
         return notebook_nodes;
     }
 
+    function get_starred_info() {
+
+        var my_stars_array,
+            my_stars,
+            counts,
+            infos,
+            promise = Promise.resolve(),
+            clean_r = function(obj) { delete obj.r_attributes; delete obj.r_type; return obj; }
+
+        promise = promise.then(function() {
+            return rcloud.stars.get_my_starred_notebooks();
+        }).then(function(res) {
+            my_stars_array = res;
+            return rcloud.stars.get_multiple_notebook_star_counts(res);
+        }).then(function(res2) {
+            counts = clean_r(res2);
+            //delete counts.r_attributes;
+            //delete counts.r_type;
+            return rcloud.get_multiple_notebook_infos(Object.keys(counts));
+                _//.filter(Object.keys(my_stars), function(id) { return ['r_type', 'r_attributes'].indexOf(id) === -1; })
+            //);
+        }).then(function(res3) {
+            infos = clean_r(res3);
+            //delete infos.r_attributes;
+            //delete infos.r_type;
+
+            // counts = users_and_notebooks.stars
+            // my_stars = rcloud.stars.get_multiple_notebook_star_counts(my_stars_array)
+            // _.extend(counts, my_stars)
+
+            //console.log('xyzabc: ', my_stars_array);
+
+            var starred_info = {
+                notebooks: infos,
+                num_stars: counts
+            };
+
+            return Promise.resolve(starred_info);
+
+        });
+
+        return promise;
+    }
+
     function get_notebooks_by_user(username) {
 
         var promise = Promise.resolve();
@@ -340,7 +384,7 @@ var editor = function () {
                     lazy_load: true, // as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
                     user: u
                 }
-            })
+            }).sort(compare_nodes)
         };
     }
 
@@ -475,49 +519,34 @@ var editor = function () {
 
     function load_everything() {
         return Promise.all([
-            rcloud.config.get_all_notebook_info(),
             rcloud.get_users(),
-            rcloud.stars.get_my_starred_notebooks(),
+            get_starred_info(),
             rcloud.get_gist_sources()
         ])
-            .spread(function(users_and_notebooks, all_the_users, my_stars_array, gist_sources) {
+            .spread(function(all_the_users, starred_info, gist_sources) {
 
-                //editor.allTheUsers = users_and_notebooks.users;
-
-                var user_notebook_set = users_and_notebooks.notebooks;
-                var notebook_entries = users_and_notebooks.infos;
-                var counts = users_and_notebooks.stars;
-
-                my_stars_array = r_vector(my_stars_array);
                 gist_sources_ = gist_sources;
                 var root_data = [];
-                return Promise.all([rcloud.config.get_current_notebook(),
-                                    rcloud.stars.get_multiple_notebook_star_counts(my_stars_array),
-                                    rcloud.get_multiple_notebook_infos(my_stars_array),
-                                    rcloud.config.get_alluser_option('featured_users')])
-                    .spread(function(current, my_stars, my_infos, featured) {
 
-                        _.extend(counts, my_stars);
-                        _.extend(notebook_entries, my_infos);
+                return Promise.all([rcloud.config.get_current_notebook(),
+                                    rcloud.config.get_alluser_option('featured_users')])
+                    .spread(function(current, featured) {
 
                         current_ = current;
-                        num_stars_ = counts;
+                        num_stars_ = starred_info.num_stars;
+                        notebook_info_ = starred_info.notebooks;
 
-                        notebook_info_ = notebook_entries;
                         featured_ = featured || [];
                         if(_.isString(featured_))
                             featured_ = [featured_];
                     })
                     .then(function() {
-                        
-                        //var alls_root = populate_all_notebooks(user_notebook_set);
+
                         var alls_root = populate_all_notebooks(all_the_users);
 
-                        //var alls_root = [];
-                        //var alls_root;
                         return [
                             populate_featured(alls_root),
-                            populate_interests(my_stars_array),
+                            populate_interests(starred_info.notebooks),
                             populate_friends(alls_root),
                             alls_root
                         ].filter(function(t) { return !!t; });
