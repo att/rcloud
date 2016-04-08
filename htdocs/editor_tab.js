@@ -272,21 +272,9 @@ var editor = function () {
             return rcloud.stars.get_multiple_notebook_star_counts(res);
         }).then(function(res2) {
             counts = clean_r(res2);
-            //delete counts.r_attributes;
-            //delete counts.r_type;
             return rcloud.get_multiple_notebook_infos(Object.keys(counts));
-                _//.filter(Object.keys(my_stars), function(id) { return ['r_type', 'r_attributes'].indexOf(id) === -1; })
-            //);
         }).then(function(res3) {
             infos = clean_r(res3);
-            //delete infos.r_attributes;
-            //delete infos.r_type;
-
-            // counts = users_and_notebooks.stars
-            // my_stars = rcloud.stars.get_multiple_notebook_star_counts(my_stars_array)
-            // _.extend(counts, my_stars)
-
-            //console.log('xyzabc: ', my_stars_array);
 
             var starred_info = {
                 notebooks: infos,
