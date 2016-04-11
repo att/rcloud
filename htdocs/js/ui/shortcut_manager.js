@@ -78,14 +78,13 @@ RCloud.UI.shortcut_manager = (function() {
                 if(can_add) {
 
                     // update any 'command' entries to the '⌘' key:
-                    /*
-                    _.each(shortcut_to_add.keys, function(keys){
-                        for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
-                            if(keys[keyLoop] === 'command') {
-                                keys[keyLoop] = '&#8984;';
-                            }
-                        }
-                    });*/
+                    //_.each(shortcut_to_add.keys, function(keys){
+                    //    for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
+                    //        if(keys[keyLoop] === 'command') {
+                    //            keys[keyLoop] = '&#8984;';
+                    //        }
+                    //    }
+                    //});
 
                     if(_.isUndefined(shortcut.action)){
                         shortcut_to_add.create = function() {};
@@ -113,6 +112,7 @@ RCloud.UI.shortcut_manager = (function() {
                     // add to the existing shortcuts so that it can be compared:
                     existing_shortcuts.push(shortcut_to_add);
                 }
+               
             }
         });
 
@@ -126,7 +126,11 @@ RCloud.UI.shortcut_manager = (function() {
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
                 // if the element has the class "mousetrap" then no need to stop
-                if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+                //if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+                //    return false;
+                //}
+
+                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ')) {
                     return false;
                 }
 
