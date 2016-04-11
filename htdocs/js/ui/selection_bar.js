@@ -44,6 +44,10 @@ RCloud.UI.selection_bar = (function() {
                 .find('#selection-bar-delete').click(function() {
                     shell.notebook.controller.remove_selected_cells();
                 })
+                .end()
+                .find('#selection-bar-crop').click(function() {
+                    shell.notebook.controller.crop_cells();
+                })
                 .end();
 
             $selection_bar.find('div[type="button"].cell-selection').click(function(e) {
