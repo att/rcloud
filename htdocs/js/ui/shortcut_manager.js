@@ -92,7 +92,7 @@ RCloud.UI.shortcut_manager = (function() {
                     else {
                         shortcut_to_add.create = function() { 
                             _.each(shortcut_to_add.key_bindings, function(binding) {
-                                window.Mousetrap(document.querySelector('html')).bind(binding, function(e) { 
+                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
 
                                     if(!is_active(shortcut_to_add)) {
                                         return;
