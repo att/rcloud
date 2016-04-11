@@ -15,7 +15,7 @@ RCloud.UI.find_replace = (function() {
             find_last_ = $('<button id="find-last" class="btn">Previous</button>');
             var replace_break = $('<br/>');
             replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
-            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
+            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext mousetrap"></input>');
             replace_next_ = $('<button id="replace" class="btn">Replace</button>');
             replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
             replace_stuff_ = replace_break.add(replace_desc_).add(replace_input_).add(replace_next_).add(replace_all_);
