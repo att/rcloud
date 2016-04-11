@@ -10,7 +10,7 @@ RCloud.UI.find_replace = (function() {
             find_dialog_ = $('<div id="find-dialog"></div>');
             var find_form = $('<form id="find-form"></form>');
             find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
-            find_input_ = $('<input type=text id="find-input" class="form-control-ext"></input>');
+            find_input_ = $('<input type=text id="find-input" class="form-control-ext mousetrap"></input>');
             find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
             find_last_ = $('<button id="find-last" class="btn">Previous</button>');
             var replace_break = $('<br/>');
@@ -284,6 +284,7 @@ RCloud.UI.find_replace = (function() {
                 ],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
+
 
 /*
             document.addEventListener("keydown", function(e) {
