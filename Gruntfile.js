@@ -47,6 +47,7 @@ module.exports = function (grunt) {
             "htdocs/js/ui/find_replace.js",
             "htdocs/js/ui/shortcut_manager.js",
             "htdocs/js/ui/shortcut_dialog.js",
+            "htdocs/js/ui/ace_shortcuts.js",
             "htdocs/js/ui/help_frame.js",
             "htdocs/js/ui/image_manager.js",
             "htdocs/js/ui/import_export.js",

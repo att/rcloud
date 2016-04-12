@@ -48,6 +48,7 @@ RCloud.UI.init = function() {
 
     // keyboard shortcuts:
     RCloud.UI.shortcut_manager.init();
+    RCloud.UI.ace_shortcuts.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
