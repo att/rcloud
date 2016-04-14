@@ -1866,6 +1866,7 @@ function ensure_image_has_hash(img)
 
 var MIN_LINES = 2;
 var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 10;
+var scrollable_area = $('#rcloud-cellarea');
 
 function create_cell_html_view(language, cell_model) {
     var ace_widget_;
@@ -1907,9 +1908,8 @@ function create_cell_html_view(language, cell_model) {
         if(left_controls_)
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
-    function set_widget_height() {
-        outer_ace_div.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
-                                   EXTRA_HEIGHT_SOURCE) + "px");
+    function set_widget_height(widget_height) {
+        outer_ace_div.css('height', widget_height);
     }
 
     cell_status_ = $("<div class='cell-status nonselectable'></div>");
@@ -2011,6 +2011,7 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
 
     function click_to_edit(div, whether) {
+
         if(whether) {
             set_background_class(code_div_.find('pre'));
             if(am_read_only_===false)
@@ -2436,10 +2437,14 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
+
+                var offset = scrollable_area.scrollTop();
+
                 if(cell_controls_)
                     edit_button_border(true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
+                var editor_height = code_div_.height();
                 code_div_.hide();
                 create_edit_widget();
                 /*
@@ -2472,7 +2477,7 @@ function create_cell_html_view(language, cell_model) {
                 // do the two-change dance to make ace happy
                 outer_ace_div.show();
                 ace_widget_.resize(true);
-                set_widget_height();
+                set_widget_height(editor_height);
                 ace_widget_.resize(true);
                 if(cell_controls_)
                     cell_controls_.set_flag('edit', true);
@@ -2480,10 +2485,12 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
+
+                    scrollable_area.scrollTop(offset);
+
                     var scrollTopOffset = ace_widget_.getSession().getScrollTop();
                     var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY - scrollTopOffset);
                     var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
-
 
                     var Range = ace.require('ace/range').Range;
                     var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
@@ -5722,7 +5729,7 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
         });
         fatal_dialog_ = $('<div id="fatal-dialog" class="modal fade" />')
             .append($('<div class="modal-dialog" />')
-                    .append($('<div class="modal-content" style="background-color: #f2dede" />')
+                    .append($('<div class="modal-content" />')
                             .append($('<div class="modal-body" />')
                                     .append(body))));
         $("body").append(fatal_dialog_);
@@ -6002,6 +6009,28 @@ RCloud.UI.find_replace = (function() {
     }
     var result = {
         init: function() {
+
+            RCloud.UI.shortcut_manager.add([{
+                category: 'Notebook Management',
+                id: 'notebook_find',
+                description: 'Find text',
+                keys: [
+                    ['command', 'f'],
+                    ['ctrl', 'f']
+                ],
+                action: function() { toggle_find_replace(false); }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_replace',
+                description: 'Replace text',
+                keys: [
+                    ['command', 'option', 'f'],
+                    ['ctrl', 'h']
+                ],
+                action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
+            }]);
+
+/*
             document.addEventListener("keydown", function(e) {
                 var action;
                 if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F / cmd-opt-F
@@ -6021,6 +6050,8 @@ RCloud.UI.find_replace = (function() {
                     toggle_find_replace(action === 'replace');
                 }
             });
+*/
+
         }
     };
     return result;
@@ -6028,8 +6059,11 @@ RCloud.UI.find_replace = (function() {
 
 RCloud.UI.shortcut_manager = (function() {
 
-    var extension_, 
-        shortcuts_changed = false;
+    var extension_;
+
+    function is_active(shortcut) {
+        return _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
+    }
 
     function convert_extension(shortcuts) {
         var shortcuts_to_add, obj = {};
@@ -6055,8 +6089,10 @@ RCloud.UI.shortcut_manager = (function() {
                     return _.contains(keys, 'command');
                 });
             } else {
-                // this is a mac; if this shortcut has a command AND a ctrl, remove the ctrl
-                if(_.contains(shortcut.keys, 'command') && _.contains(shortcut.keys, 'ctrl')) {
+                // and if it is a mac, filter out 'ctrl' based commands if there
+                // is also a 'command' variant:
+                var all_keys = _.flatten(shortcut.keys);
+                if(_.contains(all_keys, 'command') && _.contains(all_keys, 'ctrl')) {
                     shortcut.keys = _.reject(shortcut.keys, function(keys) {
                         return _.contains(keys, 'ctrl');
                     });
@@ -6116,8 +6152,14 @@ RCloud.UI.shortcut_manager = (function() {
                         shortcut_to_add.create = function() { 
                             _.each(shortcut_to_add.key_bindings, function(binding) {
                                 window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
-                                    e.preventDefault(); 
-                                    shortcut.action();
+
+                                    if(!is_active(shortcut_to_add)) {
+                                        return;
+                                    } else {
+                                        e.preventDefault(); 
+                                        shortcut.action();
+                                    }
+
                                 });
                             });
                         }
@@ -6164,7 +6206,6 @@ RCloud.UI.shortcut_manager = (function() {
         add: function(s) {
             if(extension_) {
                 extension_.add(convert_extension(s));
-                shortcuts_changed = true;
             }
 
             return this;
@@ -6174,18 +6215,14 @@ RCloud.UI.shortcut_manager = (function() {
                 extension_.create('all');
             }
         },
-        shortcuts_changed: function() {
-            return shortcuts_changed;
-        },
         get_registered_shortcuts_by_category: function(sort_items) {
-            shortcuts_changed = false;
-
-            console.log();
 
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
   
-            return _.sortBy(_.map(_.chain(extension_.sections.all.entries).groupBy('category').value(), function(item, key) {
+            var available_shortcuts = _.filter(extension_.sections.all.entries, function(s) { return is_active(s); });
+
+            return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item }
             }), function(group) {
                 return rank[group.category];
@@ -6219,43 +6256,41 @@ RCloud.UI.shortcut_dialog = (function() {
                 $("body").append(shortcut_dialog_);
             } 
 
-            if(!content_ || RCloud.UI.shortcut_manager.shortcuts_changed()) {
-                shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
-                    'General',
-                    'Notebook Management',
-                    'Cell Management']);
+            shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
+                'General',
+                'Notebook Management',
+                'Cell Management']);
 
-                content_ = '';
+            content_ = '';
 
-                _.each(shortcuts_by_category_, function(group) {
+            _.each(shortcuts_by_category_, function(group) {
 
-                    content_ += '<div class="category">';
-                    content_ += '<h3>' + group.category + '</h3>';
-                    content_ += '<table>';
+                content_ += '<div class="category">';
+                content_ += '<h3>' + group.category + '</h3>';
+                content_ += '<table>';
 
-                    _.each(group.shortcuts, function(shortcut) {
+                _.each(group.shortcuts, function(shortcut) {
 
-                        var keys_markup = []; 
-                        _.each(shortcut.keys, function(keys) {
-                            keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
-                        });
-
-                        content_ += '<tr>';
-                        content_ += '<td>';
-                        content_ += keys_markup.join(' / ');
-                        content_ += '</td>';
-                        content_ += '<td>';
-                        content_ += shortcut.description;
-                        content_ += '</td>';
-                        content_ += '</tr>';
+                    var keys_markup = []; 
+                    _.each(shortcut.keys, function(keys) {
+                        keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 
-                    content_ += '</table>';
-                    content_ += '</div>';
+                    content_ += '<tr>';
+                    content_ += '<td>';
+                    content_ += keys_markup.join(' / ');
+                    content_ += '</td>';
+                    content_ += '<td>';
+                    content_ += shortcut.description;
+                    content_ += '</td>';
+                    content_ += '</tr>';
                 });
 
-                $('#shortcut-dialog .modal-body').html(content_);
-            }
+                content_ += '</table>';
+                content_ += '</div>';
+            });
+
+            $('#shortcut-dialog .modal-body').html(content_);
             
             shortcut_dialog_.modal({ 
                 keyboard: false 
@@ -6813,6 +6848,9 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
     RCloud.UI.find_replace.init();
@@ -6827,9 +6865,6 @@ RCloud.UI.init = function() {
 
     // adds to advanced menu
     RCloud.UI.import_export.init();
-
-    // keyboard shortcuts:
-    RCloud.UI.shortcut_manager.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -6881,6 +6916,7 @@ RCloud.UI.init = function() {
             ['command', 's'],
             ['ctrl', 's']
         ],
+        modes: ['writeable'],
         action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
     }, {
         category: 'Notebook Management',
@@ -6890,6 +6926,7 @@ RCloud.UI.init = function() {
             ['command', 'a'],
             ['ctrl', 'a']
         ],
+        modes: ['writeable'],
         action: function() {
             var selection = window.getSelection();
             selection.removeAllRanges();
@@ -6906,6 +6943,7 @@ RCloud.UI.init = function() {
             ['command', 'z'],
             ['ctrl', 'z']
         ],
+        modes: ['writeable'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
@@ -6913,9 +6951,9 @@ RCloud.UI.init = function() {
         description: 'Steps forwards through the notebook\'s history',
         keys: [
             ['ctrl', 'y'],
-            //['ctrl', 'shift', 'z'],
             ['command', 'shift', 'z']
         ],
+        modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
     }]);
 
@@ -6925,8 +6963,11 @@ RCloud.UI.init = function() {
         id: 'remove_cells',
         description: 'Removes selected cells',
         keys: [
-            ['del']
+            ['del'],
+            ['backspace'],
+            ['command', 'backspace']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
         category: 'Cell Management',
@@ -6936,6 +6977,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'shift', 'i'],
             ['command', 'shift', 'i']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.invert_selected_cells(); }
     }, {
         category: 'Cell Management',
@@ -6945,6 +6987,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'k'],
             ['command', 'k']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }]);
 
@@ -6956,7 +6999,16 @@ RCloud.UI.init = function() {
         keys: [
             ['?']
         ],
+        modes: ['writeable', 'readonly'],
         action: function() { RCloud.UI.shortcut_dialog.show(); }
+    },{
+        category: 'General',
+        id: 'close_modal',
+        description: 'Close dialog',
+        keys: [
+            ['esc']
+        ],
+        action: function() { $('.modal').modal('hide'); }
     }]);
 
 };
@@ -7232,6 +7284,43 @@ RCloud.UI.menus = (function() {
 })();
 
 
+
+(function() {
+
+var message_dialog_;
+var message_;
+
+RCloud.UI.message_dialog = function(title, message, k) {
+    $('#loading-animation').hide();
+    if (_.isUndefined(message_dialog_)) {
+        var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>OK</span>"),
+            body = $('<div />')
+                .append($('<h1 />').append(title));
+        message_ = $('<p style="white-space: pre-wrap">' + message + '</p>');
+        body.append(message_, default_button);
+        body.append('<div style="clear: both;"></div>');
+        default_button.click(function(e) {
+            e.preventDefault();
+            message_dialog_.modal("hide");
+        });
+        message_dialog_ = $('<div id="message-dialog" class="modal fade" />')
+            .append($('<div class="modal-dialog" />')
+                    .append($('<div class="modal-content" />')
+                            .append($('<div class="modal-body" />')
+                                    .append(body))));
+        $("body").append(message_dialog_);
+        message_dialog_.on("shown.bs.modal", function() {
+            default_button.focus();
+        });
+    }
+    else message_.text(message);
+    message_dialog_.off("hidden.bs.modal").on("hidden.bs.modal", function() {
+        k();
+    });
+    message_dialog_.modal({keyboard: true});
+};
+
+})();
 
 RCloud.UI.middle_column = (function() {
     var result = RCloud.UI.column("#middle-column");

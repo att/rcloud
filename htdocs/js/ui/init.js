@@ -45,6 +45,9 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
     RCloud.UI.find_replace.init();
@@ -59,9 +62,6 @@ RCloud.UI.init = function() {
 
     // adds to advanced menu
     RCloud.UI.import_export.init();
-
-    // keyboard shortcuts:
-    RCloud.UI.shortcut_manager.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -113,6 +113,7 @@ RCloud.UI.init = function() {
             ['command', 's'],
             ['ctrl', 's']
         ],
+        modes: ['writeable'],
         action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
     }, {
         category: 'Notebook Management',
@@ -122,6 +123,7 @@ RCloud.UI.init = function() {
             ['command', 'a'],
             ['ctrl', 'a']
         ],
+        modes: ['writeable'],
         action: function() {
             var selection = window.getSelection();
             selection.removeAllRanges();
@@ -138,6 +140,7 @@ RCloud.UI.init = function() {
             ['command', 'z'],
             ['ctrl', 'z']
         ],
+        modes: ['writeable'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
@@ -145,9 +148,9 @@ RCloud.UI.init = function() {
         description: 'Steps forwards through the notebook\'s history',
         keys: [
             ['ctrl', 'y'],
-            //['ctrl', 'shift', 'z'],
             ['command', 'shift', 'z']
         ],
+        modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
     }]);
 
@@ -157,8 +160,11 @@ RCloud.UI.init = function() {
         id: 'remove_cells',
         description: 'Removes selected cells',
         keys: [
-            ['del']
+            ['del'],
+            ['backspace'],
+            ['command', 'backspace']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
         category: 'Cell Management',
@@ -168,6 +174,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'shift', 'i'],
             ['command', 'shift', 'i']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.invert_selected_cells(); }
     }, {
         category: 'Cell Management',
@@ -177,6 +184,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'k'],
             ['command', 'k']
         ],
+        modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }]);
 
@@ -188,7 +196,16 @@ RCloud.UI.init = function() {
         keys: [
             ['?']
         ],
+        modes: ['writeable', 'readonly'],
         action: function() { RCloud.UI.shortcut_dialog.show(); }
+    },{
+        category: 'General',
+        id: 'close_modal',
+        description: 'Close dialog',
+        keys: [
+            ['esc']
+        ],
+        action: function() { $('.modal').modal('hide'); }
     }]);
 
 };

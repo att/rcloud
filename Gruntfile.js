@@ -54,6 +54,7 @@ module.exports = function (grunt) {
             "htdocs/js/ui/left_panel.js",
             "htdocs/js/ui/load_options.js",
             "htdocs/js/ui/menus.js",
+            "htdocs/js/ui/message_dialog.js",
             "htdocs/js/ui/middle_column.js",
             "htdocs/js/ui/navbar.js",
             "htdocs/js/ui/notebook_commands.js",
@@ -102,7 +103,22 @@ module.exports = function (grunt) {
 
     grunt.initConfig({
         conf: config,
-
+        sass: {
+            all: {
+                options: {
+                    style: 'compressed',
+                    sourceMap: true
+                },
+                files: [{
+                    expand: true,
+                    cwd: './htdocs/sass',
+                    src: '*.scss',
+                    dest: './htdocs/css',
+                    ext: '.css'
+                }],
+                trace: true
+            }
+        },
         concat: {
             options: {
                 process: true,
@@ -154,6 +170,6 @@ module.exports = function (grunt) {
     });
 
     // task aliases
-    grunt.registerTask('build', ['concat', 'uglify', 'compress']);
+    grunt.registerTask('build', ['sass', 'concat', 'uglify', 'compress']);
     grunt.registerTask('default', ['build']);
 };

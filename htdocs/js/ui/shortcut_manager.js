@@ -1,7 +1,10 @@
 RCloud.UI.shortcut_manager = (function() {
 
-    var extension_, 
-        shortcuts_changed = false;
+    var extension_;
+
+    function is_active(shortcut) {
+        return _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
+    }
 
     function convert_extension(shortcuts) {
         var shortcuts_to_add, obj = {};
@@ -27,8 +30,10 @@ RCloud.UI.shortcut_manager = (function() {
                     return _.contains(keys, 'command');
                 });
             } else {
-                // this is a mac; if this shortcut has a command AND a ctrl, remove the ctrl
-                if(_.contains(shortcut.keys, 'command') && _.contains(shortcut.keys, 'ctrl')) {
+                // and if it is a mac, filter out 'ctrl' based commands if there
+                // is also a 'command' variant:
+                var all_keys = _.flatten(shortcut.keys);
+                if(_.contains(all_keys, 'command') && _.contains(all_keys, 'ctrl')) {
                     shortcut.keys = _.reject(shortcut.keys, function(keys) {
                         return _.contains(keys, 'ctrl');
                     });
@@ -88,8 +93,14 @@ RCloud.UI.shortcut_manager = (function() {
                         shortcut_to_add.create = function() { 
                             _.each(shortcut_to_add.key_bindings, function(binding) {
                                 window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
-                                    e.preventDefault(); 
-                                    shortcut.action();
+
+                                    if(!is_active(shortcut_to_add)) {
+                                        return;
+                                    } else {
+                                        e.preventDefault(); 
+                                        shortcut.action();
+                                    }
+
                                 });
                             });
                         }
@@ -136,7 +147,6 @@ RCloud.UI.shortcut_manager = (function() {
         add: function(s) {
             if(extension_) {
                 extension_.add(convert_extension(s));
-                shortcuts_changed = true;
             }
 
             return this;
@@ -146,18 +156,14 @@ RCloud.UI.shortcut_manager = (function() {
                 extension_.create('all');
             }
         },
-        shortcuts_changed: function() {
-            return shortcuts_changed;
-        },
         get_registered_shortcuts_by_category: function(sort_items) {
-            shortcuts_changed = false;
-
-            console.log();
 
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
   
-            return _.sortBy(_.map(_.chain(extension_.sections.all.entries).groupBy('category').value(), function(item, key) {
+            var available_shortcuts = _.filter(extension_.sections.all.entries, function(s) { return is_active(s); });
+
+            return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item }
             }), function(group) {
                 return rank[group.category];

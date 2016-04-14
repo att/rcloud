@@ -44,7 +44,7 @@ run <- function(url, query, body, headers)
     et <- "Error fetching content:"
     version <- NULL
     ## is this first part a notebook hash?
-    if (grepl("^[0-9a-f]{20}$", pex[1L])) {
+    if (grepl("^[0-9a-f]{20}$", pex[1L]) || grepl("^[0-9a-f]{32}$", pex[1L])) {
       nb.name <- notebook <- pex[1L]
       skip <- 1L
       if (length(pex) > 1L && grepl("^[0-9a-f]{40}$", pex[2L])) {
