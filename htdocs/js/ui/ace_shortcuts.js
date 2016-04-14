@@ -3,6 +3,8 @@ RCloud.UI.ace_shortcuts = (function() {
     var result = {
         init: function() {
 
+            var ace_shortcuts = [];
+
             // code prompt:
             RCloud.UI.shortcut_manager.add([{
                 category: 'Code prompt',
@@ -32,7 +34,7 @@ RCloud.UI.ace_shortcuts = (function() {
             }]);
 
             // edit cells:
-            RCloud.UI.shortcut_manager.add([/*{
+            RCloud.UI.shortcut_manager.add([{                           // !
                 category: 'Cell editor',
                 id: 'cell_editor_execute',
                 description: 'Execute code',
@@ -40,7 +42,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     ['enter'],
                     ['alt', 'return']
                 ]
-            },*/ {
+            }, {
                 category: 'Cell editor',
                 id: 'cell_editor_autocomplete',
                 description: 'Suggest autocompletion',
@@ -67,14 +69,14 @@ RCloud.UI.ace_shortcuts = (function() {
                     ['ctrl', 'return']
                 ],
                 modes: ['writeable']
-            },/* {
+            }, {                                                        // !
                 category: 'Cell editor',
                 id: 'cell_editor_cursor_start_of_line',
                 description: 'Cursor at beginning of line',
                 keys: [
                     ['ctrl', 'a']       // THIS IS MAC ONLY
                 ]
-            }*/, {
+            }, {
                 category: 'Cell editor',
                 id: 'cell_editor_cursor_end_of_line',
                 description: 'Cursor at end of line',
