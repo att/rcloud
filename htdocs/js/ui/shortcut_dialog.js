@@ -38,7 +38,8 @@ RCloud.UI.shortcut_dialog = (function() {
                 _.each(group.shortcuts, function(shortcut) {
 
                     var keys_markup = []; 
-                    _.each(shortcut.keys, function(keys) {
+
+                    _.each(shortcut.bind_keys, function(keys) {
                         keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 

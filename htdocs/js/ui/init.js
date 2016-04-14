@@ -111,20 +111,28 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'notebook_cell',
         description: 'Saves the current notebook',
-        keys: [
-            ['command', 's'],
-            ['ctrl', 's']
-        ],
+        keys: { 
+            mac: [
+                ['command', 's'] 
+            ],
+            win: [
+                ['ctrl', 's']
+            ]
+        },
         modes: ['writeable'],
         action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
     }, {
         category: 'Notebook Management',
         id: 'select_all',
         description: 'Select all',
-        keys: [
-            ['command', 'a'],
-            ['ctrl', 'a']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'a'] 
+            ],
+            win: [
+                ['ctrl', 'a']
+            ]
+        },
         modes: ['writeable'],
         action: function() {
             var selection = window.getSelection();
@@ -138,20 +146,28 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'history_undo',
         description: 'Steps back through the notebook\'s history',
-        keys: [
-            ['command', 'z'],
-            ['ctrl', 'z']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'z'] 
+            ],
+            win: [
+                ['ctrl', 'z']
+            ]
+        },
         modes: ['writeable'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
         id: 'history_redo',
         description: 'Steps forwards through the notebook\'s history',
-        keys: [
-            ['ctrl', 'y'],
-            ['command', 'shift', 'z']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'shift', 'z'] 
+            ],
+            win: [
+                ['ctrl', 'y']
+            ]
+        },        
         modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
     }, {
@@ -182,31 +198,45 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'remove_cells',
         description: 'Removes selected cells',
-        keys: [
-            ['del'],
-            ['backspace'],
-            ['command', 'backspace']
-        ],
+        keys: { 
+            mac: [
+                ['del'],
+                ['backspace'],
+                ['command', 'backspace']
+            ],
+            win: [
+                ['del'],
+                ['backspace']
+            ]
+        },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
         category: 'Cell Management',
         id: 'invert_cells',
         description: 'Invert selected cells',
-        keys: [
-            ['ctrl', 'shift', 'i'],
-            ['command', 'shift', 'i']
-        ],
+        keys: { 
+            mac: [
+                ['ctrl', 'shift', 'i']
+            ],
+            win: [
+                ['command', 'shift', 'i']
+            ]
+        },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.invert_selected_cells(); }
     }, {
         category: 'Cell Management',
         id: 'crop_cells',
         description: 'Crop cells',
-        keys: [
-            ['ctrl', 'k'],
-            ['command', 'k']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'k']
+            ],
+            win: [
+                ['ctrl', 'k']
+            ]
+        },        
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }/*, {
@@ -284,9 +314,11 @@ RCloud.UI.init = function() {
         category: 'General',
         id: 'show_help',
         description: 'Show shortcuts help',
-        keys: [
-            ['?']
-        ],
+        keys: { 
+            win_mac: [
+                ['?']
+            ]
+        },  
         modes: ['writeable', 'readonly'],
         action: function(e) {
             RCloud.UI.shortcut_dialog.show();

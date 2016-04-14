@@ -7,76 +7,95 @@ RCloud.UI.ace_shortcuts = (function() {
                 category: 'Code prompt',
                 id: 'code_prompt_execute',
                 description: 'Create cell and execute code',
-                keys: [
-                    ['enter'],
-                    ['alt', 'return']
-                ],
+                keys: { 
+                    win_mac: [
+                        ['enter'], ['alt', 'return']
+                    ]
+                },
                 modes: ['writeable']
             }, {
                 category: 'Code prompt',
                 id: 'code_prompt_history_back',
                 description: 'Go back in code history',
-                keys: [
-                    ['keyup'],
-                ],
+                keys: { 
+                    win_mac: [
+                        ['keyup']
+                    ]
+                },
                 modes: ['writeable']
             }, {
                 category: 'Code prompt',
                 id: 'code_prompt_history_forwards',
-                description: 'Go forward in code history',
-                keys: [
-                    ['keydown'],
-                ],
+                description: 'Go forwards in code history',
+                keys: { 
+                    win_mac: [
+                        ['keydown']
+                    ]
+                },
                 modes: ['writeable']
             }, {                           // !
                 category: 'Cell editor',
                 id: 'cell_editor_execute',
                 description: 'Execute code',
-                keys: [
-                    ['enter'],
-                    ['alt', 'return']
-                ]
+                keys: { 
+                    win_mac: [
+                        ['alt', 'return']
+                    ]
+                }
             }, {
                 category: 'Cell editor',
                 id: 'cell_editor_autocomplete',
                 description: 'Suggest autocompletion',
-                keys: [
-                    ['ctrl', '.'],
-                    ['tab']
-                ],
+                keys: { 
+                    win_mac: [
+                        ['ctrl', '.'], ['tab']
+                    ]
+                },
                 modes: ['writeable']
             }, {
                 category: 'Cell editor',
                 id: 'cell_editor_disable_gotoline',
                 description: 'Disable goto line',
-                keys: [
-                    ['command', 'l'],
-                    ['ctrl', 'l']
-                ],
+                keys: { 
+                    mac: [
+                        ['command', 'l'] 
+                    ],
+                    win: [
+                        ['ctrl', 'l']
+                    ]
+                },
                 modes: ['writeable']
             }, {
                 category: 'Cell editor',
                 id: 'cell_editor_execute_selection_or_line',
                 description: 'Execute selection or line',
-                keys: [
-                    ['command', 'return'],
-                    ['ctrl', 'return']
-                ],
+                keys: { 
+                    mac: [
+                        ['command', 'return'] 
+                    ],
+                    win: [
+                        ['ctrl', 'return']
+                    ]
+                },
                 modes: ['writeable']
             }, {                                                        // !
                 category: 'Cell editor',
                 id: 'cell_editor_cursor_start_of_line',
                 description: 'Cursor at beginning of line',
-                keys: [
-                    ['ctrl', 'a']       // THIS IS MAC ONLY
-                ]
+                keys: { 
+                    mac: [
+                        ['ctrl', 'a'] 
+                    ]
+                },
             }, {
                 category: 'Cell editor',
                 id: 'cell_editor_cursor_end_of_line',
                 description: 'Cursor at end of line',
-                keys: [
-                    ['ctrl', 'e']       // THIS IS MAC ONLY
-                ],
+                keys: { 
+                    mac: [
+                        ['ctrl', 'e'] 
+                    ]
+                },
                 modes: ['writeable']
             }];
 
