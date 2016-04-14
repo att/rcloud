@@ -80,7 +80,6 @@ RCloud.UI.ace_shortcuts = (function() {
                 modes: ['writeable']
             }];
 
-            //ignore_clash
             _.each(ace_shortcuts, function(s) { s.ignore_clash = true; });
 
             RCloud.UI.shortcut_manager.add(ace_shortcuts);
