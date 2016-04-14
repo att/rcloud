@@ -21,7 +21,8 @@ RCloud.UI.shortcut_manager = (function() {
             var can_add = true;
 
             var shortcut_to_add = _.defaults(shortcut, {
-                category: 'General'
+                category: 'General',
+                modes: ['writeable', 'readonly']
             });
 
             // if this is not a mac, filter out the 'command' options:
