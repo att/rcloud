@@ -269,45 +269,30 @@ RCloud.UI.find_replace = (function() {
                 category: 'Notebook Management',
                 id: 'notebook_find',
                 description: 'Find text',
-                keys: [
-                    ['command', 'f'],
-                    ['ctrl', 'f']
-                ],
+                keys: { 
+                    mac: [
+                        ['command', 'f'] 
+                    ],
+                    win: [
+                        ['ctrl', 'f']
+                    ]
+                },
                 action: function() { toggle_find_replace(false); }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
                 description: 'Replace text',
-                keys: [
-                    ['command', 'option', 'f'],
-                    ['ctrl', 'h']
-                ],
+                keys: { 
+                    mac: [
+                        ['command', 'option', 'f'] 
+                    ],
+                    win: [
+                        ['ctrl', 'h']
+                    ]
+                },
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
-
-/*
-            document.addEventListener("keydown", function(e) {
-                var action;
-                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F / cmd-opt-F
-                    if(e.shiftKey)
-                        return; // don't capture Full Screen
-                    action = e.altKey ? 'replace' : 'find';
-                }
-                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey) // ctrl-F
-                    action = 'find';
-                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey) // ctrl-H
-                    action = 'replace';
-                if(action) {
-                    // do not allow replace in view mode or read-only
-                    if(shell.notebook.model.read_only())
-                        action = 'find';
-                    e.preventDefault();
-                    toggle_find_replace(action === 'replace');
-                }
-            });
-*/
-
         }
     };
     return result;

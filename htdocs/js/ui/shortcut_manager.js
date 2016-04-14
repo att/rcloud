@@ -26,33 +26,26 @@ RCloud.UI.shortcut_manager = (function() {
                 ignore_clash: false
             });
 
-            // if this is not a mac, filter out the 'command' options:
-            if(!ui_utils.is_a_mac()) {
-                shortcut.keys = _.reject(shortcut.keys, function(keys) {
-                    return _.contains(keys, 'command');
-                });
+            // clean-up:
+            var is_mac = ui_utils.is_a_mac();
+
+            if(shortcut.keys.hasOwnProperty('win_mac')) {
+                shortcut.bind_keys = shortcut.keys.win_mac;
             } else {
-                // and if it is a mac, filter out 'ctrl' based commands if there
-                // is also a 'command' variant:
-                var all_keys = _.flatten(shortcut.keys);
-                if(_.contains(all_keys, 'command') && _.contains(all_keys, 'ctrl')) {
-                    shortcut.keys = _.reject(shortcut.keys, function(keys) {
-                        return _.contains(keys, 'ctrl');
-                    });
-                }
+                shortcut.bind_keys = shortcut.keys[is_mac ? 'mac': 'win'];
             }
 
             // if this is a shortcut that needs to be added:
-            if(!_.isUndefined(shortcut.keys) && shortcut.keys.length) {
+            if(shortcut.bind_keys && shortcut.bind_keys.length) {
 
-                shortcut_to_add.key_bindings = [];
+                shortcut_to_add.key_desc = [];
 
                 // construct the key bindings:
-                for (var i = 0; i < shortcut.keys.length; i++) {
+                for (var i = 0; i < shortcut.bind_keys.length; i++) {
                     
                     // ensure consistent order across definitions:
-                    var keys = _
-                        .chain(shortcut.keys[i])
+                    var bind_keys = _
+                        .chain(shortcut.bind_keys[i])
                         .map(function(element) { return element.toLowerCase(); })
                         .sortBy(function(element){  
                           var rank = {
@@ -64,7 +57,7 @@ RCloud.UI.shortcut_manager = (function() {
                       }).value();
 
                     // so that they can be compared:
-                    shortcut_to_add.key_bindings.push(keys.join('+'));
+                    shortcut_to_add.key_desc.push(bind_keys.join('+'));
                 }
 
                 // with existing shortcuts:
@@ -74,7 +67,7 @@ RCloud.UI.shortcut_manager = (function() {
                         if(existing_shortcuts[loop].ignore_clash)
                             continue;
 
-                        if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
+                        if(_.intersection(existing_shortcuts[loop].key_desc, shortcut_to_add.key_desc).length > 0) {
                             console.warn('Keyboard shortcut "' + shortcut_to_add.description + 
                                 '" cannot be registered because its keycode clashes with an existing shortcut id "' + 
                                 existing_shortcuts[loop].id  + '" in the "' + existing_shortcuts[loop].category + '" category.');
@@ -101,7 +94,7 @@ RCloud.UI.shortcut_manager = (function() {
                     }
                     else {
                         shortcut_to_add.create = function() { 
-                            _.each(shortcut_to_add.key_bindings, function(binding) {
+                            _.each(shortcut_to_add.key_desc, function(binding) {
                                 window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
 
                                     if(!is_active(shortcut_to_add)) {
