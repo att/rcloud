@@ -22,7 +22,8 @@ RCloud.UI.shortcut_manager = (function() {
 
             var shortcut_to_add = _.defaults(shortcut, {
                 category: 'General',
-                modes: ['writeable', 'readonly']
+                modes: ['writeable', 'readonly'],
+                ignore_clash: false
             });
 
             // if this is not a mac, filter out the 'command' options:
@@ -67,13 +68,15 @@ RCloud.UI.shortcut_manager = (function() {
                 }
 
                 // with existing shortcuts:
-                for(var loop = 0; loop < existing_shortcuts.length; loop++) {
-                    if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
-                        console.warn('Keyboard shortcut "' + shortcut_to_add.description + 
-                            '" cannot be registered because its keycode clashes with an existing shortcut id "' + 
-                            existing_shortcuts[loop].id  + '" in the "' + existing_shortcuts[loop].category + '" category.');
-                        can_add = false;
-                        break;
+                if(!shortcut_to_add.ignore_clash) {
+                    for(var loop = 0; loop < existing_shortcuts.length; loop++) {
+                        if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
+                            console.warn('Keyboard shortcut "' + shortcut_to_add.description + 
+                                '" cannot be registered because its keycode clashes with an existing shortcut id "' + 
+                                existing_shortcuts[loop].id  + '" in the "' + existing_shortcuts[loop].category + '" category.');
+                            can_add = false;
+                            break;
+                        }
                     }
                 }
 
