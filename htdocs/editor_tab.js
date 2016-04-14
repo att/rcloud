@@ -51,9 +51,7 @@ var editor = function () {
             if(key!=='r_attributes' && key!=='r_type')
                 f(key);
     }
-    function r_list(list) {
 
-    }
     function r_vector(value) {
         return _.isArray(value) ? value : [value];
     }
@@ -376,51 +374,6 @@ var editor = function () {
         };
     }
 
-    /*function populate_all_notebooks(user_notebooks) {
-        function create_book_entry_map(books) {
-            return _.chain(books)
-                .filter(function(book) {
-                    var entry = notebook_info_[book];
-                    if(!entry) {
-                        invalid_notebooks_[book] = null;
-                        return false;
-                    }
-                    if(!entry.username || entry.username === "undefined" ||
-                       !entry.description || !entry.last_commit) {
-                        invalid_notebooks_[book] = entry;
-                        return false;
-                    }
-                    return true;
-                })
-                .map(function(book) {
-                    var entry = notebook_info_[book];
-                    return [book, entry];
-                })
-                .object().value();
-        }
-
-        var user_nodes = [], my_config = null;
-        each_r_list(user_notebooks, function(username) {
-            var notebook_nodes =
-                    convert_notebook_set('alls', username,
-                                         create_book_entry_map(r_vector(user_notebooks[username])));
-            var mine = username===username_;
-            var id = node_id('alls', username);
-            var node = {
-                label: mine ? "My Notebooks" : someone_elses(username),
-                id: id,
-                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
-                children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-            };
-            user_nodes.push(node);
-        });
-        return {
-            label: 'All Notebooks',
-            id: '/alls',
-            children: user_nodes.sort(compare_nodes)
-        };
-    }*/
-
     function duplicate_tree_data(tree, f) {
         var t2 = f(tree);
         if(tree.children && !tree.lazy_load) {
@@ -485,16 +438,6 @@ var editor = function () {
     }
 
     function load_tree(root_data) {
-        // delay construction of dom elements for Alls
-        /*
-        var alls = _.find(root_data, function(root) { return root.id === "/alls"; }).children;
-        for(var i = 0; i < alls.length; ++i)
-            if(alls[i].children && alls[i].children.length) {
-                alls[i].delay_children = alls[i].children;
-                alls[i].children = [{label: 'loading...'}];
-            }
-
-            */
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
