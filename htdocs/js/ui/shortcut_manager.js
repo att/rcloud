@@ -70,6 +70,10 @@ RCloud.UI.shortcut_manager = (function() {
                 // with existing shortcuts:
                 if(!shortcut_to_add.ignore_clash) {
                     for(var loop = 0; loop < existing_shortcuts.length; loop++) {
+
+                        if(existing_shortcuts[loop].ignore_clash)
+                            continue;
+
                         if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
                             console.warn('Keyboard shortcut "' + shortcut_to_add.description + 
                                 '" cannot be registered because its keycode clashes with an existing shortcut id "' + 
