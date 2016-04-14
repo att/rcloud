@@ -23,9 +23,11 @@ RCloud.UI.shortcut_dialog = (function() {
             } 
 
             shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
+                'Cell Editor',
+                'Cell Management',
                 'General',
                 'Notebook Management',
-                'Cell Management']);
+                'Code prompt']);
 
             content_ = '';
 
