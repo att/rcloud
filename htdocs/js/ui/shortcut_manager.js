@@ -69,7 +69,9 @@ RCloud.UI.shortcut_manager = (function() {
                 // with existing shortcuts:
                 for(var loop = 0; loop < existing_shortcuts.length; loop++) {
                     if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
-                        console.warn('Keyboard shortcut "' + shortcut_to_add.description + '" cannot be registered because its keycode clashes with an existing shortcut.');
+                        console.warn('Keyboard shortcut "' + shortcut_to_add.description + 
+                            '" cannot be registered because its keycode clashes with an existing shortcut id "' + 
+                            existing_shortcuts[loop].id  + '" in the "' + existing_shortcuts[loop].category + '" category.');
                         can_add = false;
                         break;
                     }
