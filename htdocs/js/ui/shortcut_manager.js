@@ -80,14 +80,13 @@ RCloud.UI.shortcut_manager = (function() {
                 if(can_add) {
 
                     // update any 'command' entries to the '⌘' key:
-                    /*
-                    _.each(shortcut_to_add.keys, function(keys){
-                        for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
-                            if(keys[keyLoop] === 'command') {
-                                keys[keyLoop] = '&#8984;';
-                            }
-                        }
-                    });*/
+                    // _.each(shortcut_to_add.bind_keys, function(keys){
+                    //     for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
+                    //         if(keys[keyLoop] === 'command') {
+                    //             keys[keyLoop] = '&#8984;';
+                    //         }
+                    //     }
+                    // });
 
                     if(_.isUndefined(shortcut.action)){
                         shortcut_to_add.create = function() {};

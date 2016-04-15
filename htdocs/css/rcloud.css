@@ -9582,7 +9582,7 @@ body .modal-dialog.full {
 
 #shortcut-dialog .modal-dialog {
   width: 60%;
-  max-width: 1200px; }
+  max-width: 800px; }
 
 #shortcut-dialog .modal-body {
   padding-bottom: 40px; }
