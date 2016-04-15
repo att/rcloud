@@ -273,7 +273,7 @@ rect.frame {
   padding-left: 14px; }
 
 #selection-bar > button {
-  margin: 0;
+  margin: 0 0.2em;
   color: #454545;
   padding: 0; }
 

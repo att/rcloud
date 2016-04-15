@@ -5755,12 +5755,12 @@ RCloud.UI.find_replace = (function() {
             find_dialog_ = $('<div id="find-dialog"></div>');
             var find_form = $('<form id="find-form"></form>');
             find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
-            find_input_ = $('<input type=text id="find-input" class="form-control-ext"></input>');
+            find_input_ = $('<input type=text id="find-input" class="form-control-ext mousetrap"></input>');
             find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
             find_last_ = $('<button id="find-last" class="btn">Previous</button>');
             var replace_break = $('<br/>');
             replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
-            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
+            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext mousetrap"></input>');
             replace_next_ = $('<button id="replace" class="btn">Replace</button>');
             replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
             replace_stuff_ = replace_break.add(replace_desc_).add(replace_input_).add(replace_next_).add(replace_all_);
@@ -6030,6 +6030,7 @@ RCloud.UI.find_replace = (function() {
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
 
+
 /*
             document.addEventListener("keydown", function(e) {
                 var action;
@@ -6080,7 +6081,8 @@ RCloud.UI.shortcut_manager = (function() {
             var can_add = true;
 
             var shortcut_to_add = _.defaults(shortcut, {
-                category: 'General'
+                category: 'General',
+                modes: ['writeable', 'readonly']
             });
 
             // if this is not a mac, filter out the 'command' options:
@@ -6136,14 +6138,13 @@ RCloud.UI.shortcut_manager = (function() {
                 if(can_add) {
 
                     // update any 'command' entries to the '⌘' key:
-                    /*
-                    _.each(shortcut_to_add.keys, function(keys){
-                        for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
-                            if(keys[keyLoop] === 'command') {
-                                keys[keyLoop] = '&#8984;';
-                            }
-                        }
-                    });*/
+                    //_.each(shortcut_to_add.keys, function(keys){
+                    //    for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
+                    //        if(keys[keyLoop] === 'command') {
+                    //            keys[keyLoop] = '&#8984;';
+                    //        }
+                    //    }
+                    //});
 
                     if(_.isUndefined(shortcut.action)){
                         shortcut_to_add.create = function() {};
@@ -6156,10 +6157,9 @@ RCloud.UI.shortcut_manager = (function() {
                                     if(!is_active(shortcut_to_add)) {
                                         return;
                                     } else {
-                                        e.preventDefault(); 
+                                        e.preventDefault();
                                         shortcut.action();
                                     }
-
                                 });
                             });
                         }
@@ -6172,6 +6172,7 @@ RCloud.UI.shortcut_manager = (function() {
                     // add to the existing shortcuts so that it can be compared:
                     existing_shortcuts.push(shortcut_to_add);
                 }
+               
             }
         });
 
@@ -6185,7 +6186,11 @@ RCloud.UI.shortcut_manager = (function() {
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
                 // if the element has the class "mousetrap" then no need to stop
-                if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+                //if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+                //    return false;
+                //}
+
+                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ')) {
                     return false;
                 }
 
@@ -7001,7 +7006,7 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable', 'readonly'],
         action: function() { RCloud.UI.shortcut_dialog.show(); }
-    },{
+    }, {
         category: 'General',
         id: 'close_modal',
         description: 'Close dialog',
@@ -7910,6 +7915,10 @@ RCloud.UI.selection_bar = (function() {
                 .end()
                 .find('#selection-bar-delete').click(function() {
                     shell.notebook.controller.remove_selected_cells();
+                })
+                .end()
+                .find('#selection-bar-crop').click(function() {
+                    shell.notebook.controller.crop_cells();
                 })
                 .end();
 
