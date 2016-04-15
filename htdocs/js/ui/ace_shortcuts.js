@@ -11,28 +11,25 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['enter'], ['alt', 'return']
                     ]
-                },
-                modes: ['writeable']
+                }
             }, {
                 category: 'Code prompt',
                 id: 'code_prompt_history_back',
                 description: 'Go back in code history',
                 keys: { 
                     win_mac: [
-                        ['keyup']
+                        ['up']
                     ]
-                },
-                modes: ['writeable']
+                }
             }, {
                 category: 'Code prompt',
                 id: 'code_prompt_history_forwards',
                 description: 'Go forwards in code history',
                 keys: { 
                     win_mac: [
-                        ['keydown']
+                        ['down']
                     ]
-                },
-                modes: ['writeable']
+                }
             }, {                           // !
                 category: 'Code Editor',
                 id: 'code_editor_execute',
@@ -50,8 +47,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['ctrl', '.'], ['tab']
                     ]
-                },
-                modes: ['writeable']
+                }
             }, {
                 category: 'Code Editor',
                 id: 'code_editor_disable_gotoline',
@@ -63,8 +59,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'l']
                     ]
-                },
-                modes: ['writeable']
+                }
             }, {
                 category: 'Code Editor',
                 id: 'code_editor_execute_selection_or_line',
@@ -76,8 +71,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'return']
                     ]
-                },
-                modes: ['writeable']
+                }
             }, {                                                        // !
                 category: 'Code Editor',
                 id: 'code_editor_cursor_start_of_line',
@@ -95,8 +89,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     mac: [
                         ['ctrl', 'e'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
 
             // line operations:
@@ -111,8 +104,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'd']
                     ]
-                },
-                modes: ['writeable']
+                }
             },          
             {
                 category: 'Code Editor',
@@ -120,13 +112,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Copy lines down',
                 keys: { 
                     mac: [
-                        ['cmd', 'option', 'keydown'] 
+                        ['cmd', 'option', 'down'] 
                     ],
                     win: [
-                        ['alt', 'shift', 'keydown']
+                        ['alt', 'shift', 'down']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -134,13 +125,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Copy lines up',
                 keys: { 
                     mac: [
-                        ['cmd', 'option', 'keyup'] 
+                        ['cmd', 'option', 'up'] 
                     ],
                     win: [
-                        ['alt', 'shift', 'keyup']
+                        ['alt', 'shift', 'up']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -148,13 +138,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Move lines down',
                 keys: { 
                     mac: [
-                        ['option', 'keydown'] 
+                        ['option', 'down'] 
                     ],
                     win: [
-                        ['alt', 'keydown']
+                        ['alt', 'down']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -162,13 +151,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Moves lines up',
                 keys: { 
                     mac: [
-                        ['option', 'keyup'] 
+                        ['option', 'up'] 
                     ],
                     win: [
-                        ['alt', 'keyup']
+                        ['alt', 'up']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -181,8 +169,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['alt', 'delete']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -195,8 +182,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['alt', 'backspace']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -210,8 +196,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'backspace']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -224,8 +209,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'delete']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -235,12 +219,10 @@ RCloud.UI.ace_shortcuts = (function() {
                     mac: [
                         ['ctrl', 'o'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
 
             // selection
-
             {
                 category: 'Code Editor',
                 id: 'ace_select_all',
@@ -252,8 +234,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'a']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -261,10 +242,9 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select left',
                 keys: { 
                     win_mac: [
-                        ['shift', 'keyleft'] 
+                        ['shift', 'left'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -272,10 +252,9 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select right',
                 keys: { 
                     win_mac: [
-                        ['shift', 'keyright'] 
+                        ['shift', 'right'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -283,13 +262,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select word left',
                 keys: { 
                     mac: [
-                        ['option', 'shift', 'keyleft'] 
+                        ['option', 'shift', 'left'] 
                     ],
                     win: [
-                        ['ctrl', 'shift', 'keyleft']
+                        ['ctrl', 'shift', 'left']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -297,13 +275,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select word right',
                 keys: { 
                     mac: [
-                        ['option', 'shift', 'keyright'] 
+                        ['option', 'shift', 'right'] 
                     ],
                     win: [
-                        ['ctrl', 'shift', 'keyright']
+                        ['ctrl', 'shift', 'right']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -313,8 +290,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['shift', 'home'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -324,8 +300,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['shift', 'end'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -333,13 +308,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select to line end',
                 keys: { 
                     mac: [
-                        ['option', 'shift', 'keyright'] 
+                        ['option', 'shift', 'right'] 
                     ],
                     win: [
-                        ['alt', 'shift', 'keyright']
+                        ['alt', 'shift', 'right']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -347,13 +321,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select to line start',
                 keys: { 
                     mac: [
-                        ['option', 'shift', 'keyleft'] 
+                        ['option', 'shift', 'left'] 
                     ],
                     win: [
-                        ['alt', 'shift', 'keyleft']
+                        ['alt', 'shift', 'left']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -361,10 +334,9 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select up',
                 keys: { 
                     win_mac: [
-                        ['shift', 'keyup'] 
+                        ['shift', 'up'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -372,10 +344,9 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select down',
                 keys: { 
                     win_mac: [
-                        ['shift', 'keydown'] 
+                        ['shift', 'down'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -385,8 +356,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['shift', 'pageup'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -396,8 +366,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['shift', 'pagedown'] 
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -405,13 +374,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select to start',
                 keys: { 
                     mac: [
-                        ['command', 'shift', 'keyup'] 
+                        ['command', 'shift', 'up'] 
                     ],
                     win: [
                         ['ctrl', 'shift', 'home']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -419,13 +387,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Select to end',
                 keys: { 
                     mac: [
-                        ['command', 'shift', 'keydown'] 
+                        ['command', 'shift', 'down'] 
                     ],
                     win: [
                         ['ctrl', 'shift', 'end']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -438,8 +405,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'shift', 'd']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -449,8 +415,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'shift', 'p']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
 
             // multicursor -- ?! :(
@@ -462,14 +427,13 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Go to left',
                 keys: { 
                     mac: [
-                        ['keyleft'],
+                        ['left'],
                         ['ctrl', 'b']
                     ],
                     win: [
-                        ['keyleft']
+                        ['left']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -477,14 +441,13 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Go to right',
                 keys: { 
                     mac: [
-                        ['keyright'],
+                        ['right'],
                         ['ctrl', 'f']
                     ],
                     win: [
-                        ['keyright']
+                        ['right']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -497,8 +460,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'left']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -511,8 +473,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'right']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -520,14 +481,13 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Go line up',
                 keys: { 
                     mac: [
-                        ['keyup'],
+                        ['up'],
                         ['ctrl', 'p']
                     ],
                     win: [
-                        ['keyup']
+                        ['up']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -535,14 +495,13 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Go line down',
                 keys: { 
                     mac: [
-                        ['keydown'],
+                        ['down'],
                         ['ctrl', 'n']
                     ],
                     win: [
-                        ['keydown']
+                        ['down']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -550,16 +509,15 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Go to line start',
                 keys: { 
                     mac: [
-                        ['command', 'keyleft'],
+                        ['command', 'left'],
                         ['home'],
                         ['ctrl', 'a']
                     ],
                     win: [
-                        ['alt', 'keyleft'],
+                        ['alt', 'left'],
                         ['home']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -567,16 +525,15 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Go to line end',
                 keys: { 
                     mac: [
-                        ['command', 'keyright'],
+                        ['command', 'right'],
                         ['end'],
                         ['ctrl', 'e']
                     ],
                     win: [
-                        ['alt', 'keyright'],
+                        ['alt', 'right'],
                         ['end']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -589,8 +546,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['pageup']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -604,8 +560,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['pagedown']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -614,13 +569,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 keys: { 
                     mac: [
                         ['command', 'home'],
-                        ['command', 'keyup']
+                        ['command', 'up']
                     ],
                     win: [
                         ['ctrl', 'home']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -629,13 +583,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 keys: { 
                     mac: [
                         ['command', 'end'],
-                        ['command', 'keydown']
+                        ['command', 'down']
                     ],
                     win: [
                         ['ctrl', 'end']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -648,8 +601,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'l']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -657,13 +609,12 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Scroll line down',
                 keys: { 
                     mac: [
-                        ['command', 'keydown']
+                        ['command', 'down']
                     ],
                     win: [
-                        ['ctrl', 'keydown']
+                        ['ctrl', 'down']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -671,10 +622,9 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Scroll line up',
                 keys: { 
                     win: [
-                        ['ctrl', 'keyup']
+                        ['ctrl', 'up']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -684,8 +634,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'p']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -695,8 +644,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     mac: [
                         ['option', 'pagedown']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -706,8 +654,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     mac: [
                         ['option', 'pageup']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
 
             // find/replace
@@ -723,8 +670,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['tab']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -734,8 +680,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['shift', 'tab']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -748,8 +693,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', 'z']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -764,8 +708,7 @@ RCloud.UI.ace_shortcuts = (function() {
                         ['ctrl', 'y'],
                         ['ctrl', 'shift', 'z']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -778,8 +721,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win: [
                         ['ctrl', '/']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -789,8 +731,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['ctrl', 'shift', 'u']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -800,8 +741,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['ctrl', 'u']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -811,8 +751,7 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['insert']
                     ]
-                },
-                modes: ['writeable']
+                }
             },
             {
                 category: 'Code Editor',
@@ -822,13 +761,10 @@ RCloud.UI.ace_shortcuts = (function() {
                     win_mac: [
                         ['delete']
                     ]
-                },
-                modes: ['writeable']
-            }
+                }
+            }];
 
-            ];
-
-            _.each(ace_shortcuts, function(s) { s.ignore_clash = true; });
+            _.each(ace_shortcuts, function(s) { s.ignore_clash = true; s.modes = ['writeable']; });
 
             RCloud.UI.shortcut_manager.add(ace_shortcuts);
 
