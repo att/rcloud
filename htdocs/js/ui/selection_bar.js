@@ -67,9 +67,14 @@ RCloud.UI.selection_bar = (function() {
                 'disabled' : cell_count === 0
             });
 
-            _.each([$delete_button, $crop_button, $dropdown_toggle, $cell_selection], function(el) { 
+            // checkbox/dropdown enabled status based on cell count:
+            _.each([$dropdown_toggle, $cell_selection], function(el) { 
                 el[cell_count ? 'removeClass' : 'addClass']('disabled');  
             });
+
+            // delete/crop buttons' enabled status based on selection count:
+            $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
+            $crop_button[selected_count && selected_count !== cell_count ? 'removeClass' : 'addClass']('disabled');
 
             $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();     
 
