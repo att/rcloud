@@ -5916,15 +5916,18 @@ RCloud.UI.find_replace = (function() {
     function active_transition(transition) {
         if(active_match_ !== undefined) {
             var match = matches_[active_match_];
-            switch(transition) {
-            case 'replace': match.kind = 'replaced';
-                break;
-            case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
-                break;
-            case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
-                break;
+
+            if(match) {
+                switch(transition) {
+                    case 'replace': match.kind = 'replaced';
+                        break;
+                    case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
+                        break;
+                    case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
+                        break;
+                }
+                update_match_cell(match);
             }
-            update_match_cell(match);
         }
     }
     function highlight_cell(cell) {
@@ -6185,12 +6188,7 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
-                // if the element has the class "mousetrap" then no need to stop
-                //if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
-                //    return false;
-                //}
-
-                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ')) {
+                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ') > -1) {
                     return false;
                 }
 
@@ -7005,7 +7003,11 @@ RCloud.UI.init = function() {
             ['?']
         ],
         modes: ['writeable', 'readonly'],
-        action: function() { RCloud.UI.shortcut_dialog.show(); }
+        action: function() { 
+            if(!$('.modal').is(':visible')) {
+                RCloud.UI.shortcut_dialog.show(); 
+            }
+        }
     }, {
         category: 'General',
         id: 'close_modal',
@@ -7891,6 +7893,7 @@ RCloud.UI.selection_bar = (function() {
             $selection_checkbox = $selection_bar.find('.cell-selection input[type="checkbox"]');
             $dropdown_toggle = $selection_bar.find('.dropdown-toggle');
             $delete_button = $selection_bar.find('#selection-bar-delete');
+            $crop_button = $selection_bar.find('#selection-bar-crop');
             $cell_selection = $selection_bar.find('.cell-selection');
 
             $selection_bar
@@ -7938,9 +7941,14 @@ RCloud.UI.selection_bar = (function() {
                 'disabled' : cell_count === 0
             });
 
-            _.each([$delete_button, $dropdown_toggle, $cell_selection], function(el) { 
+            // checkbox/dropdown enabled status based on cell count:
+            _.each([$dropdown_toggle, $cell_selection], function(el) { 
                 el[cell_count ? 'removeClass' : 'addClass']('disabled');  
             });
+
+            // delete/crop buttons' enabled status based on selection count:
+            $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
+            $crop_button[selected_count && selected_count !== cell_count ? 'removeClass' : 'addClass']('disabled');
 
             $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();     
 
