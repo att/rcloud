@@ -125,12 +125,7 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
-                // if the element has the class "mousetrap" then no need to stop
-                //if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
-                //    return false;
-                //}
-
-                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ')) {
+                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ') > -1) {
                     return false;
                 }
 
