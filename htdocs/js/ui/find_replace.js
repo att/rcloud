@@ -171,15 +171,18 @@ RCloud.UI.find_replace = (function() {
     function active_transition(transition) {
         if(active_match_ !== undefined) {
             var match = matches_[active_match_];
-            switch(transition) {
-            case 'replace': match.kind = 'replaced';
-                break;
-            case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
-                break;
-            case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
-                break;
+
+            if(match) {
+                switch(transition) {
+                    case 'replace': match.kind = 'replaced';
+                        break;
+                    case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
+                        break;
+                    case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
+                        break;
+                }
+                update_match_cell(match);
             }
-            update_match_cell(match);
         }
     }
     function highlight_cell(cell) {
