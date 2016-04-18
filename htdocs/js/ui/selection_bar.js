@@ -19,6 +19,7 @@ RCloud.UI.selection_bar = (function() {
             $selection_checkbox = $selection_bar.find('.cell-selection input[type="checkbox"]');
             $dropdown_toggle = $selection_bar.find('.dropdown-toggle');
             $delete_button = $selection_bar.find('#selection-bar-delete');
+            $crop_button = $selection_bar.find('#selection-bar-crop');
             $cell_selection = $selection_bar.find('.cell-selection');
 
             $selection_bar
@@ -66,7 +67,7 @@ RCloud.UI.selection_bar = (function() {
                 'disabled' : cell_count === 0
             });
 
-            _.each([$delete_button, $dropdown_toggle, $cell_selection], function(el) { 
+            _.each([$delete_button, $crop_button, $dropdown_toggle, $cell_selection], function(el) { 
                 el[cell_count ? 'removeClass' : 'addClass']('disabled');  
             });
 
