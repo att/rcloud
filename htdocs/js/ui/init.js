@@ -197,7 +197,11 @@ RCloud.UI.init = function() {
             ['?']
         ],
         modes: ['writeable', 'readonly'],
-        action: function() { RCloud.UI.shortcut_dialog.show(); }
+        action: function() { 
+            if(!$('.modal').is(':visible')) {
+                RCloud.UI.shortcut_dialog.show(); 
+            }
+        }
     }, {
         category: 'General',
         id: 'close_modal',
