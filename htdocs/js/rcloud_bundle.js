@@ -6188,8 +6188,13 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
-                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ') > -1) {
-                    return false;
+
+                var search_values = ['mousetrap', 'ace_text-input'];
+
+                for(var loop = 0; loop < search_values.length; loop++) {
+                    if((' ' + element.className + ' ').indexOf(' ' + search_values[loop] + ' ') > -1) {
+                        return false;
+                    }
                 }
 
                 return (element.tagName == 'INPUT' && element.type !== 'checkbox') || 
