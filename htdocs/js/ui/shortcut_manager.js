@@ -126,7 +126,7 @@ RCloud.UI.shortcut_manager = (function() {
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
 
-                var search_values = ['mousetrap', 'ace-text-input'];
+                var search_values = ['mousetrap', 'ace_text-input'];
 
                 for(var loop = 0; loop < search_values.length; loop++) {
                     if((' ' + element.className + ' ').indexOf(' ' + search_values[loop] + ' ') > -1) {
