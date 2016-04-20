@@ -125,7 +125,16 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
-                if([' mousetrap ', ' ace_text-input '].indexOf(' ' + element.className + ' ') > -1) {
+
+                var search_values = ['mousetrap', 'ace-text-input'];
+
+                for(var loop = 0; loop < search_values.length; loop++) {
+                    if((' ' + element.className + ' ').indexOf(' ' + search_values[loop] + ' ') > -1) {
+                        return false;
+                    }
+                }
+
+                if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
                     return false;
                 }
 
