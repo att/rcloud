@@ -250,6 +250,9 @@ Notebook.create_controller = function(model)
         cell_count: function() {
             return model.cell_count();
         },
+        selected_count: function() {
+            return model.selected_count();
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             return update_notebook(refresh_buffers().concat(cch.changes))
@@ -285,10 +288,17 @@ Notebook.create_controller = function(model)
             model.clear_all_selected_cells();
         },
         crop_cells: function() {
+
+            if(!this.can_crop_cells())
+                return;
+
             var changes = refresh_buffers().concat(model.crop_cells());
             RCloud.UI.command_prompt.focus();
             return update_notebook(changes)
                 .then(default_callback());
+        },
+        can_crop_cells: function() {
+            return model.can_crop_cells();
         },
         select_all_cells: function() {
             model.select_all_cells();

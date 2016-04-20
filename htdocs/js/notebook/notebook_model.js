@@ -48,6 +48,9 @@ Notebook.create_model = function()
         cell_count: function() {
             return this.cells.length;
         },
+        selected_count: function() {
+            return _.filter(this.cells, function(cell) { return cell.is_selected(); }).length;
+        },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
             cell_model.renew_content();
@@ -224,6 +227,9 @@ Notebook.create_model = function()
             RCloud.UI.selection_bar.update(this.cells);
 
             return changes;
+        },
+        can_crop_cells: function() {
+            return this.selected_count() && this.selected_count() !== this.cell_count();
         },
         select_all_cells: function() {
             _.each(this.cells, function(cell) {

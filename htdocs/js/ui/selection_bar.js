@@ -60,7 +60,7 @@ RCloud.UI.selection_bar = (function() {
         update: function(cells) {
 
             var cell_count = cells.length,
-                selected_count = _.filter(cells, function(cell) { return cell.is_selected(); }).length;
+                selected_count = shell.notebook.controller.selected_count();
 
             $selection_checkbox.prop({
                 'checked' : selected_count === cell_count && cell_count != 0,
@@ -72,12 +72,11 @@ RCloud.UI.selection_bar = (function() {
                 el[cell_count ? 'removeClass' : 'addClass']('disabled');  
             });
 
+            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();   
+
             // delete/crop buttons' enabled status based on selection count:
             $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
-            $crop_button[selected_count && selected_count !== cell_count ? 'removeClass' : 'addClass']('disabled');
-
-            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();     
-
+            $crop_button[shell.notebook.controller.can_crop_cells() ? 'removeClass' : 'addClass']('disabled');
         },
         hide: function() {
             $('#selection-bar').hide();
