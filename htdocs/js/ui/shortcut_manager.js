@@ -134,10 +134,6 @@ RCloud.UI.shortcut_manager = (function() {
                     }
                 }
 
-                if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
-                    return false;
-                }
-
                 return (element.tagName == 'INPUT' && element.type !== 'checkbox') || 
                        element.tagName == 'SELECT' || 
                        element.tagName == 'TEXTAREA' || 
