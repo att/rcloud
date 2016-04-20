@@ -452,7 +452,6 @@ td {
 }
 
 .dropdown.recent-notebooks-dropdown {
-    position: absolute;
     right: 29px;
     top: 0;
 }
@@ -461,6 +460,10 @@ td {
     color: #f1f1e5;
     text-decoration: none;
     padding: 5px;
+
+    .caret {
+        border-top-color: #f1f1e5;
+    }
 }
 
 ul.recent-notebooks-list {
