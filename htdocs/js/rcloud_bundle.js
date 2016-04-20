@@ -3071,6 +3071,9 @@ Notebook.create_model = function()
         cell_count: function() {
             return this.cells.length;
         },
+        selected_count: function() {
+            return _.filter(this.cells, function(cell) { return cell.is_selected(); }).length;
+        },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
             cell_model.renew_content();
@@ -3247,6 +3250,9 @@ Notebook.create_model = function()
             RCloud.UI.selection_bar.update(this.cells);
 
             return changes;
+        },
+        can_crop_cells: function() {
+            return this.selected_count() && this.selected_count() !== this.cell_count();
         },
         select_all_cells: function() {
             _.each(this.cells, function(cell) {
@@ -3661,6 +3667,9 @@ Notebook.create_controller = function(model)
         cell_count: function() {
             return model.cell_count();
         },
+        selected_count: function() {
+            return model.selected_count();
+        },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
             return update_notebook(refresh_buffers().concat(cch.changes))
@@ -3696,10 +3705,17 @@ Notebook.create_controller = function(model)
             model.clear_all_selected_cells();
         },
         crop_cells: function() {
+
+            if(!this.can_crop_cells())
+                return;
+
             var changes = refresh_buffers().concat(model.crop_cells());
             RCloud.UI.command_prompt.focus();
             return update_notebook(changes)
                 .then(default_callback());
+        },
+        can_crop_cells: function() {
+            return model.can_crop_cells();
         },
         select_all_cells: function() {
             model.select_all_cells();
@@ -7939,7 +7955,7 @@ RCloud.UI.selection_bar = (function() {
         update: function(cells) {
 
             var cell_count = cells.length,
-                selected_count = _.filter(cells, function(cell) { return cell.is_selected(); }).length;
+                selected_count = shell.notebook.controller.selected_count();
 
             $selection_checkbox.prop({
                 'checked' : selected_count === cell_count && cell_count != 0,
@@ -7951,12 +7967,11 @@ RCloud.UI.selection_bar = (function() {
                 el[cell_count ? 'removeClass' : 'addClass']('disabled');  
             });
 
+            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();   
+
             // delete/crop buttons' enabled status based on selection count:
             $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
-            $crop_button[selected_count && selected_count !== cell_count ? 'removeClass' : 'addClass']('disabled');
-
-            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();     
-
+            $crop_button[shell.notebook.controller.can_crop_cells() ? 'removeClass' : 'addClass']('disabled');
         },
         hide: function() {
             $('#selection-bar').hide();
