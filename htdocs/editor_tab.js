@@ -1513,7 +1513,7 @@ var editor = function () {
                 e.preventDefault();
                 var gist = $(e.currentTarget).data('gist');
                 $('.dropdown-toggle.recent-btn').dropdown("toggle");
-                result.open_notebook(gist);
+                result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
             };
             for(var i = 0; i < sorted.length; i ++) {
                 var li = $('<li></li>');
