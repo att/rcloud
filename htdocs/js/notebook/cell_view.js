@@ -54,8 +54,6 @@ function create_cell_html_view(language, cell_model) {
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height(widget_height) {
-        //outer_ace_div.css('height', widget_height);
-
          outer_ace_div.css('height', widget_height ? widget_height : (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +  
                                     EXTRA_HEIGHT_SOURCE) + "px");
     }
