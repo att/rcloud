@@ -59,20 +59,20 @@ Rserve.Robj = {
             if (_.isUndefined(this.attributes)) {
                 return values;
             } else {
-                // FIXME: there is no reason why names should be the first or only
-                //        attribute, so the code should really look
-                //        for "names" and not cry if it doesn't exist
+		// FIXME: there is no reason why names should be the first or only
+		//        attribute, so the code should really look
+		//        for "names" and not cry if it doesn't exist
                 if (this.attributes.value[0].name == "names") {
                     var keys   = this.attributes.value[0].value.value;
                     var result = {};
                     _.each(keys, function(key, i) {
-                        result[key] = values[i];
+			result[key] = values[i];
                     });
                     return result;
-                }
-                // FIXME: how can we pass other important attributes
-                //        like "class" ?
-                return values;
+		}
+		// FIXME: how can we pass other important attributes
+		//        like "class" ?
+		return values;
             }
         }
     }),
@@ -88,11 +88,11 @@ Rserve.Robj = {
             if (_.isUndefined(this.attributes)) {
                 return values;
             } else {
-                // FIXME: lang doens't have "names" attribute since
-                //        names are sent as tags (langs are pairlists)
-                //        so this seems superfluous (it is dangerous
-                //        if lang ever had attributes since there is
-                //        no reason to fail in that case)
+		// FIXME: lang doens't have "names" attribute since
+		//        names are sent as tags (langs are pairlists)
+		//        so this seems superfluous (it is dangerous
+		//        if lang ever had attributes since there is
+		//        no reason to fail in that case)
                 if(this.attributes.value[0].name!="names")
                     throw "expected names here";
                 var keys   = this.attributes.value[0].value.value;
@@ -201,26 +201,6 @@ Rserve.Robj = {
 })();
 // Simple constants and functions are defined here,
 // in correspondence with Rserve's Rsrv.h
-
-function custom_nan(int32_words) {
-    // DataView.getFloat64() canonicalizes any NaNs with custom bit patterns, so
-    // instead use what is essentially a C union in JavaScript. Unfortunately,
-    // that means we have to deal with endianness.
-    var buf = new ArrayBuffer(8);
-    var intRep = new Int32Array(buf);
-    var floatRep = new Float64Array(buf);
-
-    // Server may be little endian.
-    intRep[0] = int32_words[1];
-    intRep[1] = int32_words[0];
-    if (isNaN(floatRep[0]))
-        return floatRep[0];
-
-    // Server may be big endian.
-    intRep[0] = int32_words[0];
-    intRep[1] = int32_words[1];
-    return floatRep[0];
-}
 
 Rserve.Rsrv = {
     PAR_TYPE: function(x) { return x & 255; },
@@ -333,23 +313,10 @@ Rserve.Rsrv = {
     BOOL_FALSE : 0,
     BOOL_NA    : 2,
 
-    // See Arith.h in R.
-    INTEGER_NA : (2147483647 + 1) | 0,
-    STRING_NA  : 0xff,
-    DOUBLE_NA  : custom_nan([ 0x7ff00000, 0x000007a2 ]),
-
     GET_XT: function(x) { return x & 63; },
     GET_DT: function(x) { return x & 63; },
     HAS_ATTR: function(x) { return (x & Rserve.Rsrv.XT_HAS_ATTR) > 0; },
     IS_LARGE: function(x) { return (x & Rserve.Rsrv.XT_LARGE) > 0; },
-    IS_DOUBLE_NA: function(x) {
-        var view = new DataView(new ArrayBuffer(16));
-        view.setFloat64(0, x);
-        view.setFloat64(8, Rserve.Rsrv.DOUBLE_NA);
-        // Any operations (not involving NaN) still produce NA, but they convert
-        // the signaling NaN to quiet NaN by toggling the highest mantissa bit.
-        return (view.getInt32(0) & ~0x00080000) === view.getInt32(8) && view.getInt32(4) === view.getInt32(12);
-    },
 
     // # FIXME A WHOLE LOT OF MACROS HERE WHICH ARE PROBABLY IMPORTANT
     // ##############################################################################
@@ -439,16 +406,12 @@ function read(m)
         read_int_vector: function(length) {
             var old_offset = this.offset;
             this.offset += length;
-            return _.map(this.msg.make(Int32Array, old_offset, length), function(v) {
-                return v !== Rserve.Rsrv.INTEGER_NA ? v : null;
-            });
+            return this.msg.make(Int32Array, old_offset, length);
         },
         read_double_vector: function(length) {
             var old_offset = this.offset;
             this.offset += length;
-            return _.map(this.msg.make(Float64Array, old_offset, length), function(v) {
-                return !Rserve.Rsrv.IS_DOUBLE_NA(v) ? v : null;
-            });
+            return this.msg.make(Float64Array, old_offset, length);
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -467,10 +430,7 @@ function read(m)
             var current_str = "";
             for (var i=0; i<a.length; ++i)
                 if (a[i] === 0) {
-                    if (current_str.length !== 1 || current_str.charCodeAt(0) !== Rserve.Rsrv.STRING_NA)
-                        current_str = decodeURIComponent(escape(current_str));
-                    else
-                        current_str = null;
+                    current_str = decodeURIComponent(escape(current_str));
                     result.push(current_str);
                     current_str = "";
                 } else {
@@ -482,7 +442,7 @@ function read(m)
             var l2 = this.read_int();
             var s = this.read_stream(length-4);
             var a = _.map(s.make(Uint8Array).subarray(0, l2), function(v) {
-                return v !== Rserve.Rsrv.BOOL_NA ? v ? true : false : null;
+                return v ? true : false;
             });
             return [Rserve.Robj.bool_array(a, attributes), length];
         },
@@ -903,9 +863,6 @@ Rserve.create = function(opts) {
     socket.binaryType = 'arraybuffer';
     var handle_error = opts.on_error || function(error) { throw new Rserve.RserveError(error, -1); };
     var received_handshake = false;
-    socket.onerror = function(event) {
-        handle_error(event.message);
-    };
 
     var result;
     var command_counter = 0;
@@ -1187,8 +1144,8 @@ Rserve.create = function(opts) {
         closeFile: function(k) {
             _cmd(Rserve.Rsrv.CMD_closeFile, new ArrayBuffer(0), k, "");
         },
-        set: function(key, value, k, forced_type) {
-            _cmd(Rserve.Rsrv.CMD_setSEXP, [_encode_string(key), _encode_value(value, forced_type)], k, "");
+        set: function(key, value, k) {
+            _cmd(Rserve.Rsrv.CMD_setSEXP, [_encode_string(key), _encode_value(value)], k, "");
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -1316,14 +1273,12 @@ Rserve.type_id = function(value)
     if (!_.isUndefined(value.byteLength) && !_.isUndefined(value.slice))
         return Rserve.Rsrv.XT_RAW;
 
-    // before coercion, NA is R is a logical, so if entire array is null, then
-    // translate it into a logical vector accordingly
-    if (_.isArray(value) && _.all(value, function(el) { return _.isNull(el) || _.isBoolean(el); }))
-        return Rserve.Rsrv.XT_ARRAY_BOOL;
-
     // lists of strings (important for tags)
-    if (_.isArray(value) && _.all(value, function(el) { return _.isNull(el) || _.isString(el); }))
+    if (_.isArray(value) && _.all(value, function(el) { return typeof el === 'string'; }))
         return Rserve.Rsrv.XT_ARRAY_STR;
+
+    if (_.isArray(value) && _.all(value, function(el) { return typeof el === 'boolean'; }))
+        return Rserve.Rsrv.XT_ARRAY_BOOL;
 
     // arbitrary lists
     if (_.isArray(value))
@@ -1360,31 +1315,23 @@ Rserve.determine_size = function(value, forced_type)
     case Rserve.Rsrv.XT_NULL:
         return final_size(0);
     case Rserve.Rsrv.XT_ARRAY_BOOL:
-        if (_.isNull(value) || _.isBoolean(value))
+        if (_.isBoolean(value))
             return final_size(8);
         else
             return final_size((value.length + 7) & ~3);
     case Rserve.Rsrv.XT_ARRAY_STR:
         if (_.isArray(value))
             return final_size(_.reduce(value, function(memo, str) {
-                // FIXME: this is a bit silly, since we'll be re-encoding this twice: once for the size and second time for the content
-                var utf8;
-                if (_.isNull(str))
-                    utf8 = String.fromCharCode(Rserve.Rsrv.STRING_NA);
-                else
-                    utf8 = unescape(encodeURIComponent(str));
+		// FIXME: this is a bit silly, since we'll be re-encoding this twice: once for the size and second time for the content
+		var utf8 = unescape(encodeURIComponent(str));
                 return memo + utf8.length + 1;
             }, 0));
         else {
-            var utf8;
-            if (_.isNull(value))
-                utf8 = String.fromCharCode(Rserve.Rsrv.STRING_NA);
-            else
-                utf8 = unescape(encodeURIComponent(value));
+	    var utf8 = unescape(encodeURIComponent(value));
             return final_size(utf8.length + 1);
-        }
+	}
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
-        if (_.isNull(value) || _.isNumber(value))
+        if (_.isNumber(value))
             return final_size(8);
         else
             return final_size(8 * value.length);
@@ -1440,52 +1387,37 @@ Rserve.write_into_view = function(value, array_buffer_view, forced_type, convert
     case Rserve.Rsrv.XT_NULL:
         break;
     case Rserve.Rsrv.XT_ARRAY_BOOL:
-        if (_.isNull(value)) {
+        if (_.isBoolean(value)) {
             write_view.setInt32(payload_start, 1);
-            write_view.setInt8(payload_start + 4, Rserve.Rsrv.BOOL_NA);
-        } else if (_.isBoolean(value)) {
-            write_view.setInt32(payload_start, 1);
-            write_view.setInt8(payload_start + 4, value ? Rserve.Rsrv.BOOL_TRUE : Rserve.Rsrv.BOOL_FALSE);
+            write_view.setInt8(payload_start + 4, value ? 1 : 0);
         } else {
             write_view.setInt32(payload_start, value.length);
             for (i=0; i<value.length; ++i)
-                write_view.setInt8(payload_start + 4 + i, !_.isNull(value[i]) ? value[i] ? Rserve.Rsrv.BOOL_TRUE : Rserve.Rsrv.BOOL_FALSE : Rserve.Rsrv.BOOL_NA);
+                write_view.setInt8(payload_start + 4 + i, value[i] ? 1 : 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_STR:
-        if (_.isNull(value)) {
-            write_view.setUint8(payload_start, Rserv.Rsrv.STRING_NA);
-            write_view.setUint8(payload_start + 1, 0);
-        } else if (_.isArray(value)) {
+        if (_.isArray(value)) {
             var offset = payload_start;
             _.each(value, function(el) {
-                if (_.isNull(el)) {
-                    write_view.setUint8(offset++, Rserv.Rsrv.STRING_NA);
-                } else {
-                    var utf8 = unescape(encodeURIComponent(el));
-                    for (var i=0; i<utf8.length; ++i, ++offset)
-                        write_view.setUint8(offset, utf8.charCodeAt(i));
-                }
+		var utf8 = unescape(encodeURIComponent(el));
+                for (var i=0; i<utf8.length; ++i, ++offset)
+                    write_view.setUint8(offset, utf8.charCodeAt(i));
                 write_view.setUint8(offset++, 0);
             });
         } else {
-            var utf8 = unescape(encodeURIComponent(value));
+	    var utf8 = unescape(encodeURIComponent(value));
             for (i=0; i<utf8.length; ++i)
                 write_view.setUint8(payload_start + i, utf8.charCodeAt(i));
             write_view.setUint8(payload_start + utf8.length, 0);
         }
         break;
     case Rserve.Rsrv.XT_ARRAY_DOUBLE:
-        if (_.isNull(value)) {
-            write_view.setFloat64(payload_start, Rserv.Rsrv.DOUBLE_NA);
-        } else if (_.isNumber(value))
+        if (_.isNumber(value))
             write_view.setFloat64(payload_start, value);
         else {
             for (i=0; i<value.length; ++i)
-                if (_.isNull(value[i]))
-                    write_view.setFloat64(payload_start + 8 * i, Rserv.Rsrv.DOUBLE_NA);
-                else
-                    write_view.setFloat64(payload_start + 8 * i, value[i]);
+                write_view.setFloat64(payload_start + 8 * i, value[i]);
         }
         break;
     case Rserve.Rsrv.XT_RAW:
