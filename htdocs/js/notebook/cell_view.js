@@ -226,6 +226,16 @@ function create_cell_html_view(language, cell_model) {
         });
         var document = session.getDocument();
 
+        widget.gotoPageUp = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(-1, false);
+        }
+
+        widget.gotoPageDown = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(1, false);
+        }
+
         widget.setAutoScrollEditorIntoView = function(enable) {
             if (!enable)
                 return;
@@ -255,6 +265,8 @@ function create_cell_html_view(language, cell_model) {
                     var config = renderer.layerConfig;
                     var top = pos.top - config.offset;
 
+                    // shouldScoll  = true  = ^
+                    // shouldScroll = false = v
                     if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
                         shouldScroll = true;
                     } else if (pos.top < config.height &&
@@ -269,10 +281,6 @@ function create_cell_html_view(language, cell_model) {
                         var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
                         scroll_top += pos.top;
 
-                        //console.log('scroll_top: ', scroll_top);
-
-                        // shouldScoll  = true  = ^
-                        // shouldScroll = false = v
                         if(shouldScroll) {
                             $('#rcloud-cellarea').scrollTop(scroll_top);
                         } else {
