@@ -54,8 +54,8 @@ function create_cell_html_view(language, cell_model) {
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height(widget_height) {
-         outer_ace_div.css('height', widget_height ? widget_height : (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +  
-                                    EXTRA_HEIGHT_SOURCE) + "px");
+        outer_ace_div.css('height', widget_height ? 
+            widget_height : (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +  EXTRA_HEIGHT_SOURCE) + "px");
     }
 
     cell_status_ = $("<div class='cell-status nonselectable'></div>");
@@ -225,9 +225,78 @@ function create_cell_html_view(language, cell_model) {
             session.getUndoManager().reset();
         });
         var document = session.getDocument();
+
+        widget.setAutoScrollEditorIntoView = function(enable) {
+            if (!enable)
+                return;
+            var rect;
+            var self = widget;
+            var shouldScroll = false;
+            if (!widget.$scrollAnchor) {
+                widget.$scrollAnchor = window.document.createElement("div");
+                widget.$scrollAnchor.setAttribute('id', 'shane');
+            }
+            var scrollAnchor = widget.$scrollAnchor;
+            scrollAnchor.style.cssText = "position:absolute;";
+
+            $('#rcloud-cellarea').prepend(scrollAnchor);
+
+            var onChangeSelection = widget.on("changeSelection", function() {
+                shouldScroll = true;
+            });
+            var onBeforeRender = widget.renderer.on("beforeRender", function() {
+                if (shouldScroll)
+                    rect = self.renderer.container.getBoundingClientRect();
+            });
+            var onAfterRender = widget.renderer.on("afterRender", function() {
+                if (shouldScroll && rect && self.isFocused()) {
+                    var renderer = self.renderer;
+                    var pos = renderer.$cursorLayer.$pixelPos;
+                    var config = renderer.layerConfig;
+                    var top = pos.top - config.offset;
+
+                    if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                        shouldScroll = true;
+                    } else if (pos.top < config.height &&
+                        pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                        shouldScroll = false;
+                    } else {
+                        shouldScroll = null;
+                    }
+
+                    if (shouldScroll != null) {
+                        var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                        var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                        scroll_top += pos.top;
+
+                        //console.log('scroll_top: ', scroll_top);
+
+                        // shouldScoll  = true  = ^
+                        // shouldScroll = false = v
+                        if(shouldScroll) {
+                            $('#rcloud-cellarea').scrollTop(scroll_top);
+                        } else {
+                            $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                        }
+                    }
+                    shouldScroll = rect = null;
+                }
+            });
+            widget.setAutoScrollEditorIntoView = function(enable) {
+                if (enable)
+                    return;
+                delete widget.setAutoScrollEditorIntoView;
+                widget.removeEventListener("changeSelection", onChangeSelection);
+                widget.renderer.removeEventListener("afterRender", onAfterRender);
+                widget.renderer.removeEventListener("beforeRender", onBeforeRender);
+            };
+        };
+
         widget.setOptions({
-            enableBasicAutocompletion: true
+            enableBasicAutocompletion: true,
+            autoScrollEditorIntoView: true
         });
+
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
         return {
