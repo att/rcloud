@@ -1,12 +1,36 @@
 RCloud.UI.find_replace = (function() {
     var find_dialog_ = null, regex_,
-        find_desc_, find_input_, replace_desc_, replace_input_, replace_stuff_,
-        find_next_, find_last_, replace_next_, replace_all_,
+        find_form_,
+        /*find_desc_,*/ find_input_, /*replace_desc_,*/ replace_input_, replace_stuff_,
+        find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         matches_ = [], active_match_;
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
+
+            var template = _.template(
+                $("#find-in-notebook-snippet").html()
+            );
+
+            var markup = $(template({
+                //notebooks: recent_notebooks
+            }));
+
+            $('#middle-column').prepend(markup);
+
+            find_dialog_ = $(markup.get(0));
+            find_form_ = markup.find('#find-form');
+            find_input_ = markup.find('#find-input');
+            find_next_ = markup.find('#find-next');
+            find_last_ = markup.find('#find-last');
+            replace_input_ = markup.find('#replace-input');
+            replace_next_ = markup.find('#replace');
+            replace_all_ = markup.find('#replace-all');
+            replace_stuff_ = markup.find('.replace');
+            close_ = markup.find('#find-close');
+
+            /*
             find_dialog_ = $('<div id="find-dialog"></div>');
             var find_form = $('<form id="find-form"></form>');
             find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
@@ -24,7 +48,7 @@ RCloud.UI.find_replace = (function() {
                              replace_desc_.append(replace_input_), replace_next_, replace_all_);
             find_dialog_.append(find_form);
             $('#middle-column').prepend(find_dialog_);
-
+            */
             find_input_.on('input', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -105,7 +129,7 @@ RCloud.UI.find_replace = (function() {
             find_input_.keydown(click_find_next);
             replace_input_.keydown(click_find_next);
 
-            find_form.keydown(function(e) {
+            find_form_.keydown(function(e) {
                 switch(e.keyCode) {
                 case $.ui.keyCode.TAB:
                     e.preventDefault();
@@ -125,13 +149,13 @@ RCloud.UI.find_replace = (function() {
                 return undefined;
             });
 
-            find_form.find('input').focus(function() {
+            find_form_.find('input').focus(function() {
                 window.setTimeout(function() {
                     this.select();
                 }.bind(this), 0);
             });
 
-            close.click(function() {
+            close_.click(function() {
                 hide_dialog();
             });
         }
