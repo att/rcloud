@@ -244,7 +244,6 @@ function create_cell_html_view(language, cell_model) {
             var shouldScroll = false;
             if (!widget.$scrollAnchor) {
                 widget.$scrollAnchor = window.document.createElement("div");
-                widget.$scrollAnchor.setAttribute('id', 'shane');
             }
             var scrollAnchor = widget.$scrollAnchor;
             scrollAnchor.style.cssText = "position:absolute;";
