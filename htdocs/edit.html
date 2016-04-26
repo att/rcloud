@@ -63,6 +63,30 @@
   </span>
 </script>
 
+<script type="text/template" id="find-in-notebook-snippet">
+
+  <div id="find-dialog">
+    <form id="find-form">
+      <i class="icon-search"></i>
+      <div class="find">
+        <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+        <button id="find-last" class="btn">Previous</button>
+        <button id="find-next" class="btn btn-primary">Next</button>
+      </div>
+      <div class="replace" style="display:none">
+        <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
+        <button id="replace" class="btn">Replace</button>
+        <button id="replace-all" class="btn">Replace All</button>
+      </div>
+    </form>
+    <span id="find-close"><i class="icon-remove"></i></span>
+  </div>
+
+
+  
+
+</script>
+
 <script type="text/html" id="search-snippet">
   <div class="panel-body" style="padding-bottom: 0;padding-top:3px">
     <div id="search-wrapper" class="widget-vsize"> <!-- only for sizing -->
