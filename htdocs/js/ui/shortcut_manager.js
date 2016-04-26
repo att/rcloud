@@ -92,15 +92,21 @@ RCloud.UI.shortcut_manager = (function() {
                     else {
                         shortcut_to_add.create = function() { 
                             _.each(shortcut_to_add.key_bindings, function(binding) {
-                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
 
+                                var func_to_bind = function(e) {
                                     if(!is_active(shortcut_to_add)) {
                                         return;
                                     } else {
                                         e.preventDefault();
                                         shortcut.action();
                                     }
-                                });
+                                };
+
+                                if(shortcut_to_add.global) {
+                                    window.Mousetrap.bindGlobal(binding, func_to_bind);
+                                } else {
+                                    window.Mousetrap(document.querySelector('body')).bind(binding, func_to_bind);    
+                                }
                             });
                         }
                     }
@@ -124,7 +130,6 @@ RCloud.UI.shortcut_manager = (function() {
 
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
-
 
                 var search_values = ['mousetrap', 'ace_text-input'];
 

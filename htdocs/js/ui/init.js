@@ -209,6 +209,7 @@ RCloud.UI.init = function() {
         keys: [
             ['esc']
         ],
+        global: true,
         action: function() { $('.modal').modal('hide'); }
     }]);
 
