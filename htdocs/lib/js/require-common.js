@@ -40,7 +40,8 @@ var common_deps = [
     "bootstrap", "peg-0.6.2.min",
     "rserve", "tree.jquery", "FileSaver",
     "css_browser_selector",
-    "mousetrap.min"
+    "mousetrap.min",
+    "mousetrap-global-bind.min"
 ];
 
 function start_require(deps) {

@@ -197,7 +197,7 @@ RCloud.UI.init = function() {
             ['?']
         ],
         modes: ['writeable', 'readonly'],
-        action: function() { 
+        action: function(e) {
             if(!$('.modal').is(':visible')) {
                 RCloud.UI.shortcut_dialog.show(); 
             }
@@ -209,6 +209,7 @@ RCloud.UI.init = function() {
         keys: [
             ['esc']
         ],
+        global: true,
         action: function() { $('.modal').modal('hide'); }
     }]);
 
