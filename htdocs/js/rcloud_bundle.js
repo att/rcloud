@@ -5762,30 +5762,31 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
 
 RCloud.UI.find_replace = (function() {
     var find_dialog_ = null, regex_,
-        find_desc_, find_input_, replace_desc_, replace_input_, replace_stuff_,
-        find_next_, find_last_, replace_next_, replace_all_,
+        find_form_,
+        /*find_desc_,*/ find_input_, /*replace_desc_,*/ replace_input_, replace_stuff_,
+        find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         matches_ = [], active_match_;
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
-            find_dialog_ = $('<div id="find-dialog"></div>');
-            var find_form = $('<form id="find-form"></form>');
-            find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
-            find_input_ = $('<input type=text id="find-input" class="form-control-ext mousetrap"></input>');
-            find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
-            find_last_ = $('<button id="find-last" class="btn">Previous</button>');
-            var replace_break = $('<br/>');
-            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
-            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext mousetrap"></input>');
-            replace_next_ = $('<button id="replace" class="btn">Replace</button>');
-            replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
-            replace_stuff_ = replace_break.add(replace_desc_).add(replace_input_).add(replace_next_).add(replace_all_);
-            var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
-            find_form.append(find_desc_.append(find_input_), find_next_, find_last_, close, replace_break,
-                             replace_desc_.append(replace_input_), replace_next_, replace_all_);
-            find_dialog_.append(find_form);
-            $('#middle-column').prepend(find_dialog_);
+
+            var markup = $(_.template(
+                $("#find-in-notebook-snippet").html()
+            )({}));
+
+            $('#middle-column').prepend(markup);
+
+            find_dialog_ = $(markup.get(0));
+            find_form_ = markup.find('#find-form');
+            find_input_ = markup.find('#find-input');
+            find_next_ = markup.find('#find-next');
+            find_last_ = markup.find('#find-last');
+            replace_input_ = markup.find('#replace-input');
+            replace_next_ = markup.find('#replace');
+            replace_all_ = markup.find('#replace-all');
+            replace_stuff_ = markup.find('.replace');
+            close_ = markup.find('#find-close');
 
             find_input_.on('input', function(e) {
                 e.preventDefault();
@@ -5803,6 +5804,7 @@ RCloud.UI.find_replace = (function() {
                     active_match_ = 0;
                 active_transition('activate');
             }
+
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -5867,7 +5869,7 @@ RCloud.UI.find_replace = (function() {
             find_input_.keydown(click_find_next);
             replace_input_.keydown(click_find_next);
 
-            find_form.keydown(function(e) {
+            find_form_.keydown(function(e) {
                 switch(e.keyCode) {
                 case $.ui.keyCode.TAB:
                     e.preventDefault();
@@ -5887,13 +5889,13 @@ RCloud.UI.find_replace = (function() {
                 return undefined;
             });
 
-            find_form.find('input').focus(function() {
+            find_form_.find('input').focus(function() {
                 window.setTimeout(function() {
                     this.select();
                 }.bind(this), 0);
             });
 
-            close.click(function() {
+            close_.click(function() {
                 hide_dialog();
             });
         }
@@ -6029,7 +6031,6 @@ RCloud.UI.find_replace = (function() {
     }
     var result = {
         init: function() {
-
             RCloud.UI.shortcut_manager.add([{
                 category: 'Notebook Management',
                 id: 'notebook_find',
@@ -6049,30 +6050,6 @@ RCloud.UI.find_replace = (function() {
                 ],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
-
-
-/*
-            document.addEventListener("keydown", function(e) {
-                var action;
-                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F / cmd-opt-F
-                    if(e.shiftKey)
-                        return; // don't capture Full Screen
-                    action = e.altKey ? 'replace' : 'find';
-                }
-                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey) // ctrl-F
-                    action = 'find';
-                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey) // ctrl-H
-                    action = 'replace';
-                if(action) {
-                    // do not allow replace in view mode or read-only
-                    if(shell.notebook.model.read_only())
-                        action = 'find';
-                    e.preventDefault();
-                    toggle_find_replace(action === 'replace');
-                }
-            });
-*/
-
         }
     };
     return result;
@@ -6729,8 +6706,17 @@ RCloud.UI.import_export = (function() {
                             }
                             var body = $('<div class="container"/>');
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
-                            file_select.click(function() { ui_utils.disable_bs_button(import_button); })
-                                .change(function() { do_upload(file_select[0].files[0]); });
+
+                            file_select
+                                .click(function() { 
+                                    ui_utils.disable_bs_button(import_button); 
+                                    [notebook_desc, notebook_status].forEach(function(el) { el.hide(); });
+                                    file_select.val(null);
+                                })
+                                .change(function() { 
+                                    do_upload(file_select[0].files[0]); 
+                                });
+
                             notebook_status = $('<span />');
                             notebook_status.append(notebook_status);
                             var notebook_desc = $('<span>Notebook description: </span>');

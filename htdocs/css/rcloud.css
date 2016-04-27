@@ -9397,31 +9397,35 @@ td {
 .popover-content .info-item a {
   word-wrap: break-word; }
 
-#find-dialog .btn {
-  margin-left: 7px;
-  padding: 3px 12px; }
-
-#find-dialog label span {
-  margin-left: 7px;
-  margin-right: 5px; }
-
-#find-dialog form {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em; }
-
-#find-close {
-  float: right;
-  cursor: pointer;
-  position: relative;
-  top: 7;
-  right: 5; }
-
-#replace-label span, #find-label span {
-  display: inline-block;
-  width: 50px; }
-
-#find-dialog input {
-  width: 160px; }
+#find-dialog {
+  position: relative; }
+  #find-dialog #find-form {
+    margin-bottom: 0;
+    padding-bottom: 5px;
+    padding-left: 6px; }
+  #find-dialog .icon-search {
+    font-size: 16px;
+    vertical-align: middle; }
+  #find-dialog input {
+    width: 160px; }
+  #find-dialog #find-close {
+    position: absolute;
+    cursor: pointer;
+    top: 10px;
+    right: 8px;
+    color: #777;
+    transition: color .2s linear;
+    font-size: 18px; }
+    #find-dialog #find-close:hover {
+      text-decoration: none;
+      color: #000; }
+  #find-dialog .find, #find-dialog .replace {
+    display: inline-block;
+    padding: 6px 6px 0 6px; }
+  #find-dialog .replace {
+    margin-left: 18px; }
+    #find-dialog .replace .btn {
+      padding: 3px 10px; }
 
 .find-highlight {
   background-color: yellow; }
