@@ -30,25 +30,6 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            /*
-            find_dialog_ = $('<div id="find-dialog"></div>');
-            var find_form = $('<form id="find-form"></form>');
-            find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
-            find_input_ = $('<input type=text id="find-input" class="form-control-ext mousetrap"></input>');
-            find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
-            find_last_ = $('<button id="find-last" class="btn">Previous</button>');
-            var replace_break = $('<br/>');
-            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
-            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext mousetrap"></input>');
-            replace_next_ = $('<button id="replace" class="btn">Replace</button>');
-            replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
-            replace_stuff_ = replace_break.add(replace_desc_).add(replace_input_).add(replace_next_).add(replace_all_);
-            var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
-            find_form.append(find_desc_.append(find_input_), find_next_, find_last_, close, replace_break,
-                             replace_desc_.append(replace_input_), replace_next_, replace_all_);
-            find_dialog_.append(find_form);
-            $('#middle-column').prepend(find_dialog_);
-            */
             find_input_.on('input', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -311,30 +292,6 @@ RCloud.UI.find_replace = (function() {
                 ],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
-
-
-/*
-            document.addEventListener("keydown", function(e) {
-                var action;
-                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F / cmd-opt-F
-                    if(e.shiftKey)
-                        return; // don't capture Full Screen
-                    action = e.altKey ? 'replace' : 'find';
-                }
-                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey) // ctrl-F
-                    action = 'find';
-                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey) // ctrl-H
-                    action = 'replace';
-                if(action) {
-                    // do not allow replace in view mode or read-only
-                    if(shell.notebook.model.read_only())
-                        action = 'find';
-                    e.preventDefault();
-                    toggle_find_replace(action === 'replace');
-                }
-            });
-*/
-
         }
     };
     return result;
