@@ -315,7 +315,6 @@ td {
     word-wrap: break-word;
 }
 
-
 #find-dialog {
     
     position: relative;
@@ -363,40 +362,7 @@ td {
             padding: 3px 10px;
         }
     }
-
 }
-
-
-/*
-#find-dialog .btn {
-    margin-left: 7px;
-    padding: 3px 12px;
-}
-
-#find-dialog label span {
-    margin-left: 7px;
-    margin-right: 5px;
-}
-
-#find-dialog form {
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-}
-
-#replace-label span, #find-label span {
-    display: inline-block;
-    width: 50px;
-}
-
-#find-dialog input {
-    width: 160px
-}
-
-*/
-
-
-
-
 
 .find-highlight {
     background-color: yellow;
@@ -416,8 +382,6 @@ td {
 .ace_start.find-highlight {
     position: absolute;
 }
-
-
 
 .inner-tab {
       padding: 30px;
