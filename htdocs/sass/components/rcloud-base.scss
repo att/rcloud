@@ -319,10 +319,11 @@ td {
 #find-dialog {
     
     position: relative;
-    padding: 6px;
 
     #find-form {
         margin-bottom: 0;
+        padding-bottom: 6px;
+        padding-left: 6px;
     }
 
     .icon-search {
@@ -351,9 +352,13 @@ td {
 
     .find, .replace {
         display: inline-block;
+        padding: 6px 6px 0 6px;
     }
 
     .replace {
+
+        margin-left: 18px;
+
         .btn {
             padding: 3px 10px;
         }
