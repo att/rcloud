@@ -269,7 +269,6 @@ RCloud.UI.find_replace = (function() {
     }
     var result = {
         init: function() {
-
             RCloud.UI.shortcut_manager.add([{
                 category: 'Notebook Management',
                 id: 'notebook_find',
