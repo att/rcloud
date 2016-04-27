@@ -9,13 +9,9 @@ RCloud.UI.find_replace = (function() {
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
 
-            var template = _.template(
+            var markup = $(_.template(
                 $("#find-in-notebook-snippet").html()
-            );
-
-            var markup = $(template({
-                //notebooks: recent_notebooks
-            }));
+            )({}));
 
             $('#middle-column').prepend(markup);
 
@@ -46,6 +42,7 @@ RCloud.UI.find_replace = (function() {
                     active_match_ = 0;
                 active_transition('activate');
             }
+
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
