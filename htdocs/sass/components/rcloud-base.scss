@@ -315,6 +315,48 @@ td {
     word-wrap: break-word;
 }
 
+
+#find-dialog {
+    
+    position: relative;
+    padding: 6px;
+
+    #find-form {
+        margin-bottom: 0;
+    }
+
+    .icon-search {
+        font-size: 16px;
+        vertical-align: middle;
+    }
+
+    input {
+        width: 160px;
+    }
+
+    #find-close {
+        position: absolute;
+        cursor: pointer;
+        top: 10px;
+        right: 8px;
+        color: #777;
+        transition: color .2s linear;
+        font-size: 18px;
+
+        &:hover {
+            text-decoration: none;
+            color: #000;
+        }
+    }
+
+    .find, .replace {
+        display: inline-block;
+    }
+
+}
+
+
+/*
 #find-dialog .btn {
     margin-left: 7px;
     padding: 3px 12px;
@@ -330,14 +372,6 @@ td {
     margin-bottom: 0.5em;
 }
 
-#find-close {
-    float: right;
-    cursor: pointer;
-    position: relative;
-    top: 7;
-    right: 5;
-}
-
 #replace-label span, #find-label span {
     display: inline-block;
     width: 50px;
@@ -346,6 +380,12 @@ td {
 #find-dialog input {
     width: 160px
 }
+
+*/
+
+
+
+
 
 .find-highlight {
     background-color: yellow;
