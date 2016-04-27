@@ -978,12 +978,6 @@ var editor = function () {
             title = element.find('.jqtree-title');
         title.css('color', node.color);
 
-        title.on('keydown', function(e) {
-            if(e.keyCode === 27) {
-                window.getSelection().removeAllRanges();
-            }
-        });
-
         if(node.gistname) {
             if(node.source)
                 title.addClass('foreign-notebook');

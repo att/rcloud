@@ -549,6 +549,7 @@ ui_utils.editable = function(elem$, command) {
                     }
                 } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
+                    window.getSelection().removeAllRanges();
                 }
                 return true;
             },
