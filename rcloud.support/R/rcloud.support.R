@@ -674,16 +674,23 @@ rcloud.set.notebook.info <- function(id, info) {
   rcs.set(rcs.key(base, "username"), info$username)
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
+  rcloud.set.thumb(id)
+}
 
-  # This may be in the wrong place - check that this updates in time
+rcloud.set.thumb <- function(id) {
+  base <- usr.key(user=".notebook", notebook=id)
+
   # Image may not exist hence encapsulated in the try
   try({
+    # TODO: resize the image before it gets saved
+
+    # TODO: Add hashing so that we don't get the image 
+    # everytime the notebook is saved
+
     rcs.set(rcs.key(base, "thumb"), 
           rcloud.get.asset(name = "thumb.png"))
   }, silent = TRUE)
-
 }
-
 rcloud.get.thumb <- function(id) {
   rcs.get(rcs.key(base, "thumb"))
 }
