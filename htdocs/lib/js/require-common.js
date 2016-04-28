@@ -23,6 +23,7 @@ requirejs_config_obj = {
         "shell_tab": ["rcloud_bundle", "editor_tab"],
         "editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
+        "mousetrap-global-bind.min": ["mousetrap.min"],
         "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here
                          ]
