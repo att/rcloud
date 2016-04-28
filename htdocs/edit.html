@@ -317,7 +317,7 @@
             <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
               <span>Select group:</span></br>
               <select ng-model="selectedAdminGroup"
-                      ng-options="group.name for group in allAdminGroups"
+                      ng-options="group.name for group in allAdminGroups | orderBy:'name'"
                       ng-change="anotherAdminGroupSelected()" >
               </select>
             </div>
