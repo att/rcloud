@@ -277,6 +277,7 @@ RCloud.UI.find_replace = (function() {
                     ['command', 'f'],
                     ['ctrl', 'f']
                 ],
+                modes: ['writeable', 'readonly'],
                 action: function() { toggle_find_replace(false); }
             }, {
                 category: 'Notebook Management',
@@ -286,6 +287,7 @@ RCloud.UI.find_replace = (function() {
                     ['command', 'option', 'f'],
                     ['ctrl', 'h']
                 ],
+                modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
         }
