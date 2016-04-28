@@ -48,12 +48,12 @@ RCloud.UI.shortcut_manager = (function() {
 
                 // construct the key bindings:
                 for (var i = 0; i < shortcut.keys.length; i++) {
-                    
+
                     // ensure consistent order across definitions:
                     var keys = _
                         .chain(shortcut.keys[i])
                         .map(function(element) { return element.toLowerCase(); })
-                        .sortBy(function(element){  
+                        .sortBy(function(element){
                           var rank = {
                               "command": 1,
                               "ctrl": 2,
@@ -90,7 +90,7 @@ RCloud.UI.shortcut_manager = (function() {
                         shortcut_to_add.create = function() {};
                     }
                     else {
-                        shortcut_to_add.create = function() { 
+                        shortcut_to_add.create = function() {
                             _.each(shortcut_to_add.key_bindings, function(binding) {
 
                                 var func_to_bind = function(e) {
@@ -105,10 +105,10 @@ RCloud.UI.shortcut_manager = (function() {
                                 if(shortcut_to_add.global) {
                                     window.Mousetrap.bindGlobal(binding, func_to_bind);
                                 } else {
-                                    window.Mousetrap(document.querySelector('body')).bind(binding, func_to_bind);    
+                                    window.Mousetrap(document.querySelector('body')).bind(binding, func_to_bind);
                                 }
                             });
-                        }
+                        };
                     }
                 }
 
@@ -118,7 +118,7 @@ RCloud.UI.shortcut_manager = (function() {
                     // add to the existing shortcuts so that it can be compared:
                     existing_shortcuts.push(shortcut_to_add);
                 }
-               
+
             }
         });
 
@@ -143,9 +143,9 @@ RCloud.UI.shortcut_manager = (function() {
                 }
 
                 // prevent on form fields and content editables:
-                return (element.tagName == 'INPUT' && element.type !== 'checkbox') || 
-                       element.tagName == 'SELECT' || 
-                       element.tagName == 'TEXTAREA' || 
+                return (element.tagName == 'INPUT' && element.type !== 'checkbox') ||
+                       element.tagName == 'SELECT' ||
+                       element.tagName == 'TEXTAREA' ||
                        (element.contentEditable && element.contentEditable == 'true');
             };
 
@@ -172,12 +172,12 @@ RCloud.UI.shortcut_manager = (function() {
         get_registered_shortcuts_by_category: function(sort_items) {
 
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
-            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
-  
+            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
+
             var available_shortcuts = _.filter(extension_.sections.all.entries, function(s) { return is_active(s); });
 
             return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
-                return { category: key, shortcuts: item }
+                return { category: key, shortcuts: item };
             }), function(group) {
                 return rank[group.category];
             });
