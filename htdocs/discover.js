@@ -26,7 +26,6 @@ function main() {
         shell.init();
         RCloud.UI.advanced_menu.init();
         RCloud.UI.menus.load();
-        RCloud.UI.shortcut_manager.load();
         notebook = getURLParameter("notebook");
         version = getURLParameter("version");
         var quiet = getURLParameter("quiet");
