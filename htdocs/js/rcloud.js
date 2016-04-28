@@ -422,7 +422,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_property"],
             ["set_notebook_property"],
             ["remove_notebook_property"],
-            ["notebook_by_name"]
+            ["notebook_by_name"], 
+            ["get_thumb"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 

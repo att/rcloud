@@ -30,7 +30,7 @@ RCloud.UI.discovery_page = (function() {
                           last_commit: new Date(current.last_commit).toDateString(),
                           username: current.username,
                           num_stars: editor.num_stars(current[0]),
-                          image_url: 'notebook.R/' + notebook[0] + '/thumb.png'
+                          image_src: rcloud.get_thumb(notebook[0])
                         }
                       })
                       .value();
