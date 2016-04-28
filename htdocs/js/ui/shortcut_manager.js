@@ -131,16 +131,15 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
-                // this only executes if the shortcut is *not* defined as global:
+                // this only executes if the shortcut is *not* defined as global
                 var search_values = ['mousetrap', 'ace_text-input'],
-                    is_text = !e.metaKey && !e.ctrlKey && !e.altKey;
+                    has_modifier = e.metaKey || e.ctrlKey || e.altKey;
 
                 // allow the event to be handled:
-                for(var loop = 0; loop < search_values.length; loop++) {
-                    if((' ' + element.className + ' ').indexOf(' ' + search_values[loop] + ' ') > -1 && !is_text) {
-                        return false;
-                    }
-                }
+                if(has_modifier && search_values.some(function(v) {
+                    return (' ' + element.className + ' ').indexOf(' ' + v + ' ') > -1;
+                }))
+                   return false;
 
                 // prevent on form fields and content editables:
                 return (element.tagName == 'INPUT' && element.type !== 'checkbox') ||
