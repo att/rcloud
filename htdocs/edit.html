@@ -302,7 +302,7 @@
             <span>Assign to Group</span>&nbsp;&nbsp;&nbsp;
             <select ng-model="selectedUserGroup"
                     ng-disabled="sharedStatus !== 'group'"
-                    ng-options="group.name for group in allUserGroups"
+                    ng-options="group.name for group in allUserGroups | orderBy:'name'"
                     ng-change="anotherUserGroupSelected()">
             </select>
           </div>
