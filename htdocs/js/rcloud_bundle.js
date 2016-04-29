@@ -6117,6 +6117,7 @@ RCloud.UI.find_replace = (function() {
                     ['command', 'f'],
                     ['ctrl', 'f']
                 ],
+                modes: ['writeable', 'readonly'],
                 action: function() { toggle_find_replace(false); }
             }, {
                 category: 'Notebook Management',
@@ -6126,6 +6127,7 @@ RCloud.UI.find_replace = (function() {
                     ['command', 'option', 'f'],
                     ['ctrl', 'h']
                 ],
+                modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
         }
@@ -6183,12 +6185,12 @@ RCloud.UI.shortcut_manager = (function() {
 
                 // construct the key bindings:
                 for (var i = 0; i < shortcut.keys.length; i++) {
-                    
+
                     // ensure consistent order across definitions:
                     var keys = _
                         .chain(shortcut.keys[i])
                         .map(function(element) { return element.toLowerCase(); })
-                        .sortBy(function(element){  
+                        .sortBy(function(element){
                           var rank = {
                               "command": 1,
                               "ctrl": 2,
@@ -6225,19 +6227,25 @@ RCloud.UI.shortcut_manager = (function() {
                         shortcut_to_add.create = function() {};
                     }
                     else {
-                        shortcut_to_add.create = function() { 
+                        shortcut_to_add.create = function() {
                             _.each(shortcut_to_add.key_bindings, function(binding) {
-                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
 
+                                var func_to_bind = function(e) {
                                     if(!is_active(shortcut_to_add)) {
                                         return;
                                     } else {
                                         e.preventDefault();
-                                        shortcut.action();
+                                        shortcut.action(e);
                                     }
-                                });
+                                };
+
+                                if(shortcut_to_add.global) {
+                                    window.Mousetrap.bindGlobal(binding, func_to_bind);
+                                } else {
+                                    window.Mousetrap(document.querySelector('body')).bind(binding, func_to_bind);
+                                }
                             });
-                        }
+                        };
                     }
                 }
 
@@ -6247,7 +6255,7 @@ RCloud.UI.shortcut_manager = (function() {
                     // add to the existing shortcuts so that it can be compared:
                     existing_shortcuts.push(shortcut_to_add);
                 }
-               
+
             }
         });
 
@@ -6260,18 +6268,20 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
+                // this only executes if the shortcut is *not* defined as global
+                var search_values = ['mousetrap', 'ace_text-input'],
+                    has_modifier = e.metaKey || e.ctrlKey || e.altKey;
 
-                var search_values = ['mousetrap', 'ace_text-input'];
+                // allow the event to be handled:
+                if(has_modifier && search_values.some(function(v) {
+                    return (' ' + element.className + ' ').indexOf(' ' + v + ' ') > -1;
+                }))
+                   return false;
 
-                for(var loop = 0; loop < search_values.length; loop++) {
-                    if((' ' + element.className + ' ').indexOf(' ' + search_values[loop] + ' ') > -1) {
-                        return false;
-                    }
-                }
-
-                return (element.tagName == 'INPUT' && element.type !== 'checkbox') || 
-                       element.tagName == 'SELECT' || 
-                       element.tagName == 'TEXTAREA' || 
+                // prevent on form fields and content editables:
+                return (element.tagName == 'INPUT' && element.type !== 'checkbox') ||
+                       element.tagName == 'SELECT' ||
+                       element.tagName == 'TEXTAREA' ||
                        (element.contentEditable && element.contentEditable == 'true');
             };
 
@@ -6298,12 +6308,12 @@ RCloud.UI.shortcut_manager = (function() {
         get_registered_shortcuts_by_category: function(sort_items) {
 
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
-            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
-  
+            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
+
             var available_shortcuts = _.filter(extension_.sections.all.entries, function(s) { return is_active(s); });
 
             return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
-                return { category: key, shortcuts: item }
+                return { category: key, shortcuts: item };
             }), function(group) {
                 return rank[group.category];
             });
@@ -6312,6 +6322,7 @@ RCloud.UI.shortcut_manager = (function() {
 
     return result;
 })();
+
 RCloud.UI.shortcut_dialog = (function() {
 
     var content_, shortcuts_by_category_ = [], shortcut_dialog_;
@@ -7089,7 +7100,7 @@ RCloud.UI.init = function() {
             ['?']
         ],
         modes: ['writeable', 'readonly'],
-        action: function() { 
+        action: function(e) {
             if(!$('.modal').is(':visible')) {
                 RCloud.UI.shortcut_dialog.show(); 
             }
@@ -7101,6 +7112,7 @@ RCloud.UI.init = function() {
         keys: [
             ['esc']
         ],
+        global: true,
         action: function() { $('.modal').modal('hide'); }
     }]);
 
