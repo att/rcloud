@@ -677,24 +677,6 @@ rcloud.set.notebook.info <- function(id, info) {
   rcloud.set.thumb(id)
 }
 
-rcloud.set.thumb <- function(id) {
-  base <- usr.key(user=".notebook", notebook=id)
-
-  # Image may not exist hence encapsulated in the try
-  try({
-    # TODO: resize the image before it gets saved
-
-    # TODO: Add hashing so that we don't get the image 
-    # everytime the notebook is saved
-
-    rcs.set(rcs.key(base, "thumb"), 
-          rcloud.get.asset(name = "thumb.png"))
-  }, silent = TRUE)
-}
-rcloud.get.thumb <- function(id) {
-  rcs.get(rcs.key(base, "thumb"))
-}
-
 # get/set another property of notebook
 # unlike info cache fields above, other properties can only
 # be set by owner
