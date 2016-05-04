@@ -31,7 +31,7 @@ Please see [1.5 Current GUI Documentation](/rcloud/doc/1.5/guidoc/doc.html) for 
 
 <a name="functional" />
 
-## Functional Enhancements
+## 1. Functional Enhancements
 
 <a name="flush" />
 
@@ -43,7 +43,7 @@ Please see [1.5 Current GUI Documentation](/rcloud/doc/1.5/guidoc/doc.html) for 
 
 <a name="gui" />
 
-## GUI Enhancements
+## 2. GUI Enhancements
 
 <a name="locator" />
 
@@ -83,7 +83,7 @@ Shell cells are supported. Each cell represents a separate Unix shell, so enviro
 
 <a name="tech" />
 
-## Technical Enhancements and Notes
+## 3. Technical Enhancements and Notes
 
 <a name="root" />
 
@@ -111,7 +111,7 @@ Bad notebook source triggers a proper error message.
 
 <a name="bugfixes" />
 
-## Bug Fixes
+## 4. Bug Fixes
 
 * Invalid gist back-end tokens trigger a reauthentication.
 * Large assets are supported.

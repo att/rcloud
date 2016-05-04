@@ -116,7 +116,7 @@ Finally, every installation's networking architecture will be different. Please 
 
 <a name="guinavigation"></a>
 
-### Navigating the GUI
+### GUI Navigation
 
 <a name="openingandclosingpanels"></a>
 
@@ -259,11 +259,12 @@ Throughout this documentation, prompt cells are sometimes referred to as R cells
 
 #### Adding Code
 
-Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. In order to differentiate your R code from text, surround your code with the following:
+Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. In order to differentiate your R code from text, surround your code with the following (back ticks, brackets and "r"):
 
 <pre>
 ```{r}
 ## R code goes here
+print("Hello World!")
 ```
 </pre>
 
@@ -394,7 +395,7 @@ To join cells of the same flavor, click the join icon at the right of the cell. 
 
 <a name="markdownvsrmarkdowncells"></a>
 
-### Markdown vs RMarkdown Cells
+### Markdown versus RMarkdown Cells
 
 Behind the scenes, RCloud uses several different R packages to render output. Markdown cells use the [markdown](http://cran.r-project.org/web/packages/markdown/index.html) and [knitr](http://yihui.name/knitr/) packages directly for output. RMarkdown cells, on the other hand, use [rmarkdown](http://rmarkdown.rstudio.com/) (a.k.a. R Markdown v2).
 
@@ -849,7 +850,7 @@ Note that you must reload your notebook to apply the CSS.
 
 <a name="jsmode"></a>
 
-### JavaScript Mode
+### JavaScript
 
 Assets can also contain JavaScript. When editing JavaScript (files must have the .js extension), RCloud automatically uses a JavaScript editing mode, which has built-in syntax checking.
 

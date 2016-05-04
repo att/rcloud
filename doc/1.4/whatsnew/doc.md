@@ -34,7 +34,7 @@ Created: 2015-07-03. RCloud documentation is currently maintained by <a target="
 
 <a name="functional" />
 
-## Functional Enhancements
+## 1. Functional Enhancements
 
 <a name="protectednotebooks" />
 
@@ -108,7 +108,7 @@ New RCloud notebook names default to "Notebook" in the root of your user ID note
 
 <a name="gui" />
 
-## GUI Enhancements
+## 2. GUI Enhancements
 
 <a name="toggleresults" />
 
@@ -166,7 +166,7 @@ RCloud highlights and checks HTML syntax.
 
 <a name="tech" />
 
-## Technical Enhancements and Notes
+## 3. Technical Enhancements and Notes
 
 <a name="workspacepanel" />
 
@@ -178,7 +178,7 @@ The workspace panel is not updated if it is closed.
 
 <a name="plugins" />
 
-## Plugins
+## 4. Plugins
 
 <a name="workspaceviewer" />
 
@@ -191,7 +191,7 @@ The workspace panel is not updated if it is closed.
 
 <a name="bugfixes" />
 
-## Bug Fixes
+## 5. Bug Fixes
 
 * In OS X, Ctrl-A and Ctrl-E positions the curser at the beginning and end of the current line and not the wrapped line.
 * Improved markdown formatting.

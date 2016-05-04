@@ -101,7 +101,7 @@ Finally, every installation's networking architecture will be different. Please 
 
 <a name="guinavigation"></a>
 
-### Navigating the GUI
+### GUI Navigation
 
 <a name="openingandclosingpanels"></a>
 
@@ -231,13 +231,14 @@ Note that it is currently not possible to insert a prompt cell above an existing
 
 <a name="addingrcode"></a>
 
-#### Adding Code
+#### Adding R Code
 
-Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. In order to differentiate your R code from text, surround your code with the following:
+Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. In order to differentiate your R code from text, surround your R code with the following (back ticks, brackets and "r"):
 
 <pre>
 ```{r}
 ## R code goes here
+print("Hello World!")
 ```
 </pre>
 
@@ -322,7 +323,7 @@ To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To 
 
 <a name="cellrunstateindicator"></a>
 
-#### Cell Run-State Indicator
+### Cell Run-State Indicator
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
@@ -342,7 +343,7 @@ The run-state of each cell is displayed via an icon in between the gutter and ce
 
 <a name="stoppingcellexecution"></a>
 
-## Stopping Cell Execution
+### Stopping Cell Execution
 
 When you run a notebook, you can prevent scheduled cells from running by pressing the stop button, located in the header at the top of the screen:
 
@@ -354,7 +355,7 @@ Note that this will not interrupt currently running cells. (![runningcircle](img
 
 <a name="rearrangingcells"></a>
 
-## Rearranging Cells
+### Rearranging Cells
 
 To rearrange your cells, click and drag the blank status area above the cell or the ![INSERT1](img/dragcell.png) icon to the left of the cell.
 
@@ -362,7 +363,7 @@ To rearrange your cells, click and drag the blank status area above the cell or 
 
 <a name="joiningcells"></a>
 
-## Joining Cells
+### Joining Cells
 
 To join cells of the same flavor, click the join icon at the right of the cell. This will combine the contents of the cell with the cell immediately above it.
 
@@ -370,7 +371,7 @@ To join cells of the same flavor, click the join icon at the right of the cell. 
 
 <a name="markdownvsrmarkdowncells"></a>
 
-## Markdown vs RMarkdown Cells
+### Markdown versus RMarkdown Cells
 
 Behind the scenes, RCloud uses several different R packages to render output. Markdown cells use the [markdown](http://cran.r-project.org/web/packages/markdown/index.html) and [knitr](http://yihui.name/knitr/) packages directly for output. RMarkdown cells, on the other hand, use [rmarkdown](http://rmarkdown.rstudio.com/) (a.k.a. R Markdown v2).
 
@@ -536,7 +537,7 @@ Click OK and the notebook will disappear from the left sidebar and the last-view
 
 <a name="sharingyournotebooks"></a>
 
-#### Sharing Your Notebooks
+### Sharing Your Notebooks
 
 There are several ways you can share your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![HEADER_SHARE](img/header_share.png), a popup menu will appear:
 
@@ -589,7 +590,7 @@ RCloud supports the [RStudio Shiny web application framework](#http://shiny.rstu
 
 <a name="whostarredmynotebook"></a>
 
-#### Who Starred my Notebook?
+### Who Starred my Notebook?
 
 To find out which users starred your notebook, click the notebook information icon:
 
@@ -599,7 +600,7 @@ To find out which users starred your notebook, click the notebook information ic
 
 <a name="savingplots"></a>
 
-##### Saving Plots
+### Saving Plots
 
 Hover the mouse over a plot created in an R cell to make the disk icon appear in the upper right corner (see 1), which contains a list of available image formats.  A widget at the lower-right corner can be used to resize the image (see 2).
 
@@ -611,7 +612,7 @@ Note that you can only save plots created in R cells.
 
 <a name="findreplace"></a>
 
-##### Find and Find Replace
+### Find and Find Replace
 
 To find text within your notebook, type Ctrl-F (Win/Linux) or Cmd-F (Mac) to open a find dialog at the top of your notebook:
 
@@ -648,7 +649,7 @@ The first line of R code loads the contents of the CSV file into an object calle
 
 <a name="uploadtonotebook"></a>
 
-####Upload to Notebook
+#### Upload to Notebook
 
 The **Upload to Notebook** checkbox changes the way File Upload works. Rather than uploading your file to your home directory, RCloud will store the file inside your notebook as an "asset." To view notebook assets, click on the assets bar on the right sidebar. Please see the [Notebook Assets](#notebookassets) section for more information.
 
@@ -656,7 +657,7 @@ The **Upload to Notebook** checkbox changes the way File Upload works. Rather th
 
 <a name="notebookassets"></a>
 
-#7. Notebook Assets
+## 7. Notebook Assets
 
 Notebooks can contain "assets," which are files that can be used within your notebooks or simply for keeping track of unused code (as in the the case of scratch.R, which is a text file where you can keep bits of code while working on your notebook).
 
@@ -666,7 +667,7 @@ Notebooks can contain "assets," which are files that can be used within your not
 
 <a name="dataasanasset"></a>
 
-## Data as an Asset
+### Data as an Asset
 
 For example, from the previous example, lets create an asset called distrib.csv that contains the following data:
 
@@ -686,7 +687,7 @@ Now, this data is accessible in your R code:
 
 <a name="uploadingasset"></a>
 
-## Uploading Assets
+### Uploading Assets
 
 In addition to manually entering asset text, you can also drag and drop files into the Assets panel to upload them:
 
@@ -696,7 +697,7 @@ In addition to manually entering asset text, you can also drag and drop files in
 
 <a name="usingcss"></a>
 
-## Using CSS
+### Cascading Style Sheets; Using CSS
 
 Assets can contain Cascading Style Sheet (CSS) formatting information. This changes the way information is presented when your notebook is executed. For example, here is a bit of CSS that defines a paragraph style:
 
@@ -725,7 +726,7 @@ Note that you must reload your notebook to apply the CSS.
 
 <a name="jsmode"></a>
 
-## JavaScript Mode
+### JavaScript
 
 Assets can also contain JavaScript. When editing JavaScript (files must have the .js extension), RCloud automatically uses a JavaScript editing mode, which has built-in syntax checking.
 
@@ -735,7 +736,7 @@ Assets can also contain JavaScript. When editing JavaScript (files must have the
 
 <a name="assetrename"></a>
 
-## Renaming Assets
+### Renaming Assets
 
 To rename an asset, simply click on the file name on the asset's tab.
 
@@ -808,7 +809,7 @@ Search results are paginated. Click on any page number below the results or use 
 
 <a name="complexsearches"></a>
 
-## Complex Searches
+### Complex Searches
 
 RCloud supports Lucene's feature-rich query parser syntax for more complex searches. Features include wildcard, fuzzy, and proximity searches, boolean operators, grouping, and much more.
 
@@ -828,7 +829,7 @@ Various aspects of your RCloud session can be changed here.
 
 <a name="showcommandprompt"></a>
 
-## Show Command Prompt
+### Show Command Prompt
 
 This setting toggles the appearance of the default prompt cell that appears at the bottom of the currently loaded notebook.
 
@@ -836,13 +837,21 @@ This setting toggles the appearance of the default prompt cell that appears at t
 
 <a name="showterseversiondates"></a>
 
-## Show Terse Version Dates
+### Show Terse Version Dates
 
 This controls how RCloud displays dates when viewing notebook versions. When selected, RCloud will display dates and times only when they're different from the version before it.
 
+<a name="comments"></a>
+
+### Subscribe to Comments
+
+When checked, RCloud will send an email whenever someone leaves a [comment](#comments) about your notebook.
+
+[Top](#TOP)
+
 <a name="extensions"></a>
 
-## Extensions
+### Extensions
 
 Power users can extend RCloud's user interface with global and per-user extensions. Although this functionality is outside the scope of this document, more information is available [here](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
 
@@ -856,13 +865,6 @@ Enter a list of extensions, comma delimited, and press enter. You will then have
 
 <a name="subscribetocomments"></a>
 
-## Subscribe to Comments
-
-When checked, RCloud will send an email whenever someone leaves a [comment](#comments) about your notebook.
-
-[Top](#TOP)
-
-<a name="comments"></a>
 
 ## 11. Comments
 
@@ -878,7 +880,7 @@ To submit a comment, simply input your text in the text area and click the comme
 
 <a name="editingcomments"></a>
 
-## Editing Comments
+### Editing Comments
 
 To edit a comment, click on the comment text to make changes. Then click Ctrl- or Cmd-Enter to update the comment.
 
@@ -888,7 +890,7 @@ To edit a comment, click on the comment text to make changes. Then click Ctrl- o
 
 <a name="deletingcomments"></a>
 
-## Deleting Comments
+### Deleting Comments
 
 To delete a comment, hover your mouse over the comment. Click the X next to the comment to delete it.
 

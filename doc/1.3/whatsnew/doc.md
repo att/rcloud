@@ -49,11 +49,11 @@ layout: default
 
 <a name="functional" />
 
-## Functional Enhancements
+## 1. Functional Enhancements
 
 <a name="efficientloading" />
 
-## Efficient Loading
+### Efficient Loading
 
 After loading a notebook, cells do not activate the editor until they are clicked on. This makes loading notebooks with a large number of cells more efficient and therefore faster.
 
@@ -61,7 +61,7 @@ After loading a notebook, cells do not activate the editor until they are clicke
 
 <a name="rmarkdowncells" />
 
-## Experimental Support for RMarkdown Cells
+### RMarkdown Cells; Experimental Support
 
 Experimental support for RMarkdown cells is included.  Old Markdown cells use the [markdown](http://cran.r-project.org/web/packages/markdown/index.html) and [knitr](http://yihui.name/knitr/) packages directly for output; RMarkdown cells use [rmarkdown](http://rmarkdown.rstudio.com/) (a.k.a. R Markdown v2).
 
@@ -69,7 +69,7 @@ Experimental support for RMarkdown cells is included.  Old Markdown cells use th
 
 <a name="failedsearches" />
 
-## Failed Searches
+### Failed Searches
 
 If you enter a search term that contains a SOLR/Lucene syntax error, for example, "bad:", RCloud will output a message about syntax and include a link to Lucene query parser syntax.
 
@@ -77,7 +77,7 @@ If you enter a search term that contains a SOLR/Lucene syntax error, for example
 
 <a name="shareablelinks" />
 
-## Shareable Links
+### Shareable Links
 
 If you tag a version of your notebook, load it, and then select one of the shareable links, RCloud will populate the URL with the tag instead of the version. This is beneficial because then you can tag a different version of the same notebook and pre-existing URLs won't point to the wrong version of the notebook.
 
@@ -85,7 +85,7 @@ If you tag a version of your notebook, load it, and then select one of the share
 
 <a name="betterworkspacevaluedisplay" />
 
-## Better Workspace Value Display
+### Better Workspace Value Display
 
 Workspace values are displayed simply and more accurately.
 
@@ -93,7 +93,7 @@ Workspace values are displayed simply and more accurately.
 
 <a name="pagereloads" />
 
-## Page Reloads
+### Page Reloads
 
 If a change in settings requires a reload, RCloud will indicate that a reload is necessary.
 
@@ -101,7 +101,7 @@ If a change in settings requires a reload, RCloud will indicate that a reload is
 
 <a name="visitlogo" />
 
-## visit.html Logo
+### visit.html Logo
 
 The logo used in visit.html is customizable.
 
@@ -109,7 +109,7 @@ The logo used in visit.html is customizable.
 
 <a name="linebreaks" />
 
-## Line Breaks
+### Line Breaks
 
 When displaying R stack traces, RCloud uses line breaks.
 
@@ -117,11 +117,11 @@ When displaying R stack traces, RCloud uses line breaks.
 
 <a name="gui" />
 
-## GUI Enhancement
+## 2. GUI Enhancement
 
 <a name="cleanerinterface" />
 
-## New Cleaner Interface
+### Cleaner Interface
 
 The RCloud team has put a lot of work into creating a new cleaner interface, reducing visual clutter. Please, let us know what you think!
 
@@ -129,7 +129,7 @@ The RCloud team has put a lot of work into creating a new cleaner interface, red
 
 <a name="cellrunstateindicator" />
 
-## Cell Run-State Indicator
+### Cell Run-State Indicator
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
@@ -149,7 +149,7 @@ The run-state of each cell is displayed via an icon in between the gutter and ce
 
 <a name="nonpreemptivestop" />
 
-## Non-Preemptive Stop
+### Non-Preemptive Stop
 
 When you run a notebook, you can prevent scheduled cells from running by pressing the stop button, located in the header at the top of the screen:
 
@@ -161,7 +161,7 @@ Note that this will not interrupt currently running cells (![runningcircle](img/
 
 <a name="editablecellcolor" />
 
-## Editable Cell Color
+### Editable Cell Color
 
 Editable cells are lightly colored.
 
@@ -169,7 +169,7 @@ Editable cells are lightly colored.
 
 <a name="autoindentation" />
 
-## Auto Indentation
+### Auto Indentation
 
 R and Python cells have automatic indentation.
 
@@ -177,7 +177,7 @@ R and Python cells have automatic indentation.
 
 <a name="codeandoutput" />
 
-## Code and Output
+### Code and Output
 
 Most cells show both the code and the output. Output is shown when the cell is run.  Click on the code or the edit code icon in cell's status bar to activate the cell's edit mode.
 
@@ -189,7 +189,7 @@ Markdown cells behave slightly differently - since the markdown output already c
 
 <a name="directinputandoutput" />
 
-## Direct Input and Output
+### Direct Input and Output
 
 When you execute a notebook, cells are executed asynchronously, so output for individual cells will appear as it becomes available.
 
@@ -210,7 +210,7 @@ For debugging:
 
 <a name="savingplots" />
 
-## Saving Plots
+### Saving Plots
 
 Hover the mouse over a plot created in an R cell to make the disk icon appear in the upper right corner (see 1), which contains a list of available image formats.  A widget at the lower-right corner can be used to resize the image (see 2).
 
@@ -220,7 +220,7 @@ Hover the mouse over a plot created in an R cell to make the disk icon appear in
 
 <a name="bigplots" />
 
-## Big Plots
+### Big Plots
 
 RCloud displays a horizontal scrollbar when plots that are too wide to display completely in the middle column.
 
@@ -228,7 +228,7 @@ RCloud displays a horizontal scrollbar when plots that are too wide to display c
 
 <a name="searchandreplace" />
 
-## Search and Replace
+### Search and Replace
 
 Users can search/search-place across all cells in a notebook.
 
@@ -244,7 +244,7 @@ Ctrl-H (Win, Linux), Cmd-Option-H (Mac) opens the replace bar.
 
 <a name="notebookinformationicon" />
 
-## Notebook Information Icon
+### Notebook Information Icon
 
 Clicking the notebook information icon shows which users have starred a notebook.
 
@@ -254,7 +254,7 @@ Clicking the notebook information icon shows which users have starred a notebook
 
 <a name="startupanimation" />
 
-## Startup Animation
+### Startup Animation
 
 RCloud displays an animated icon when first loading a notebook.
 
@@ -264,7 +264,7 @@ RCloud displays an animated icon when first loading a notebook.
 
 <a name="years" />
 
-## Years
+### Years
 
 When versions are more than a year old, the year is displayed in the notebook version dates.
 
@@ -272,7 +272,7 @@ When versions are more than a year old, the year is displayed in the notebook ve
 
 <a name="rightclickingsearchresults" />
 
-## Right-Clicking Search Results
+### Right-Clicking Search Results
 
 Users can right click on search results to open results a new tab.
 
@@ -280,7 +280,7 @@ Users can right click on search results to open results a new tab.
 
 <a name="argumentsforuserdefinedfunctions" />
 
-## Arguments for User-Defined Functions
+### Arguments for User-Defined Functions
 
 Function arguments are shown in the Workspace panel.
 
@@ -296,7 +296,7 @@ The arguments are displayed in the Workspace panel:
 
 <a name="tersedates" />
 
-## Terse Dates
+### Terse Dates
 
 There is an option to turn off "terse dates" in the Options panel.
 
@@ -306,7 +306,7 @@ There is an option to turn off "terse dates" in the Options panel.
 
 <a name="extensions" />
 
-## Extensions
+### Extensions
 
 You can enable and disable per-user extensions using the "Enable Extensions" and "Disable Extensions" text boxes. These set the user options `addons` and `skip-addons`, respectively. On starting the session, any extensions listed in `skip-addons` are not loaded.
 
@@ -316,7 +316,7 @@ You can enable and disable per-user extensions using the "Enable Extensions" and
 
 <a name="commentssubscription" />
 
-## Comments Subscription
+### Comments Subscription
 
 If your server is set up to allow subscribing to comments, the Subscribe to Comments option will appear in the settings panel:
 
@@ -325,7 +325,7 @@ If your server is set up to allow subscribing to comments, the Subscribe to Comm
 [Top](#top)
 <a name="cellnumbers" />
 
-## Cell Numbers
+### Cell Numbers
 
 Cell number is shown above each cell in its status area.
 
@@ -339,7 +339,7 @@ You can turn off this feature in the settings panel:
 
 <a name="reorderingcells" />
 
-## Reordering Cells
+### Reordering Cells
 
 Users can grab the status area above cell as well as the gutter area (![dragcell](img/dragcell.png)) in order to reorder cells. This allows users to move cells when not editing them.
 
@@ -347,7 +347,7 @@ Users can grab the status area above cell as well as the gutter area (![dragcell
 
 <a name="clickingineditcells" />
 
-## Clicking in Edit Cells
+### Clicking in Edit Cells
 
 Clicking into an edit cell sets the cursor position to the clicked location.
 
@@ -355,11 +355,11 @@ Clicking into an edit cell sets the cursor position to the clicked location.
 
 <a name="tech" />
 
-## Technical Enhancements and Notes
+## 3. Technical Enhancements and Notes
 
 <a name="extensionstorclouduserinterface" />
 
-## Extensions to RCloud User Interface
+### Extensions to RCloud User Interface
 
 There are many ways to write extensions to the RCloud user interface. For more information, see [the wiki](https://github.com/att/rcloud/wiki/RCloud-UI-Extensions).
 
@@ -367,7 +367,7 @@ There are many ways to write extensions to the RCloud user interface. For more i
 
 <a name="rcloudlanguageaddons" />
 
-## RCloud Language Add-Ons
+### RCloud Language Add-Ons
 
 Administrators can add cell languages. R, RMarkdown, and Python evaluation is performed by language add-ons. For more information see [the wiki](https://github.com/att/rcloud/wiki/RCloud-Language-extensions).
 
@@ -375,7 +375,7 @@ Administrators can add cell languages. R, RMarkdown, and Python evaluation is pe
 
 <a name="sharedr" />
 
-## shared.R
+### shared.R
 
 'shared.R' can be used to serve static content out of of the 'www/' folder of any installed R package. This enables many Shiny packages, which can include javascript, css, and images.
 
@@ -383,7 +383,7 @@ Administrators can add cell languages. R, RMarkdown, and Python evaluation is pe
 
 <a name="redisdatabasenumberandpassword" />
 
-## Redis Database Number and Password
+### Redis Database Number and Password
 
 redis database number and password can be set.
 
@@ -391,7 +391,7 @@ redis database number and password can be set.
 
 <a name="bugfixes" />
 
-## Bug Fixes
+## 4. Bug Fixes
 
 * Unauthenticated login functionality with view.html, shiny.html, notebook.R is working correctly.
 * `fork_of` is not missing.
