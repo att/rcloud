@@ -5,7 +5,11 @@ layout: default
 
 <a name="TOP"></a>
 
-# {{page.title}}
+<div class="frmttng">
+
+<h1> {{page.title}} </h1>
+
+</div>
 
 Created: 2015-10-14. RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 

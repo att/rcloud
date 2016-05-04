@@ -5,7 +5,11 @@ layout: default
 
 <a name="TOP"></a>
 
-# {{page.title}}
+<div class="frmttng">
+
+<h1> {{page.title}} </h1>
+
+</div>
 
 Created: 2015-02-14 Updated: 2015-06-29
 

@@ -3,7 +3,11 @@ title: RCloud&#58; 1.3 What's New!
 layout: default
 ---
 
-# {{page.title}}
+<div class="frmttng">
+
+<h1> {{page.title}} </h1>
+
+</div>
 
 2015-02-14
 
