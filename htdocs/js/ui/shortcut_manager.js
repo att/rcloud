@@ -22,7 +22,8 @@ RCloud.UI.shortcut_manager = (function() {
 
             var shortcut_to_add = _.defaults(shortcut, {
                 category: 'General',
-                modes: ['writeable', 'readonly']
+                modes: ['writeable', 'readonly'],
+                enable_in_dialogs: false
             });
 
             // if this is not a mac, filter out the 'command' options:
@@ -93,19 +94,26 @@ RCloud.UI.shortcut_manager = (function() {
                         shortcut_to_add.create = function() {
                             _.each(shortcut_to_add.key_bindings, function(binding) {
 
-                                var func_to_bind = function(e) {
+                                var func_to_bind = function(e, keycode) {
                                     if(!is_active(shortcut_to_add)) {
                                         return;
                                     } else {
+
                                         e.preventDefault();
-                                        shortcut.action(e);
+
+                                        // invoke if conditions are met:
+                                        if((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
+                                           !$('.modal').is(':visible')) {
+                                            shortcut.action(e);
+                                        }
+
                                     }
                                 };
 
                                 if(shortcut_to_add.global) {
                                     window.Mousetrap.bindGlobal(binding, func_to_bind);
                                 } else {
-                                    window.Mousetrap(document.querySelector('body')).bind(binding, func_to_bind);
+                                   window.Mousetrap().bind(binding, func_to_bind);
                                 }
                             });
                         };
