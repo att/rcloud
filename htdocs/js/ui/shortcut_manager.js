@@ -94,7 +94,7 @@ RCloud.UI.shortcut_manager = (function() {
                         shortcut_to_add.create = function() {
                             _.each(shortcut_to_add.key_bindings, function(binding) {
 
-                                var func_to_bind = function(e, keycode) {
+                                var func_to_bind = function(e) {
                                     if(!is_active(shortcut_to_add)) {
                                         return;
                                     } else {
