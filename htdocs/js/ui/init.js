@@ -23,6 +23,7 @@ RCloud.UI.init = function() {
                 shell.notebook.controller.move_cell(model, next);
             },
             handle: " .cell-status",
+            helper: 'clone',
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true
@@ -198,9 +199,7 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable', 'readonly'],
         action: function(e) {
-            if(!$('.modal').is(':visible')) {
-                RCloud.UI.shortcut_dialog.show(); 
-            }
+            RCloud.UI.shortcut_dialog.show(); 
         }
     }, {
         category: 'General',
@@ -209,6 +208,7 @@ RCloud.UI.init = function() {
         keys: [
             ['esc']
         ],
+        enable_in_dialogs: true,
         global: true,
         action: function() { $('.modal').modal('hide'); }
     }]);
