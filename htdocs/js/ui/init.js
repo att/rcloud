@@ -140,7 +140,6 @@ RCloud.UI.init = function() {
             ['command', 'z'],
             ['ctrl', 'z']
         ],
-        modes: ['writeable'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
@@ -150,7 +149,6 @@ RCloud.UI.init = function() {
             ['ctrl', 'y'],
             ['command', 'shift', 'z']
         ],
-        modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
     }]);
 
