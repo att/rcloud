@@ -1,4 +1,4 @@
-casper.test.begin("Smoke Test case which covers basic features", 38, function suite(test) {
+casper.test.begin("Smoke Test case which covers basic features", 30, function suite(test) {
 
     var x = require('casper').selectXPath;//required if we detect an element using xpath
     var github_username = casper.cli.options.username;//user input github username
@@ -8,7 +8,7 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
     var notebook_id = '50de72ea14b86aa176c4';//Notebook which consists all the cells like "R, Python, Markdown, Shell"
     var Notebook_name = "TEST_NOTEBOOK";// Notebook name of the importing/Load Notebook
     var fileName = '/home/travis/build/att/rcloud/tests/PHONE.csv';// File path directory
-    
+
     //Notebook paths to check for sharable links
     var Notebook_R = 'http://127.0.0.1:8080/notebook.R/564af357b532422620a6';
     var Mini = "http://127.0.0.1:8080/mini.html?notebook=f03ca14c9963e5718527";
@@ -16,16 +16,6 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
     var View = "http://127.0.0.1:8080/view.html?notebook=638ccc3aaeb391cc9888";
     var content = '"Welcome to RCloud"';
     var URL, url, NB_ID, URL1;
-
-    //Code to display Console errors
-    // casper.on('remote.message', function (msg) {
-    //     console.log('remote message caught: ' + msg);
-    // });
-
-    //Code to display errors
-    // casper.on('page.error', function (msg, trace) {
-    //     console.log('Error: ' + msg, 'ERROR');
-    // });
 
     casper.start(rcloud_url, function () {
         casper.page.injectJs('jquery-1.10.2.js');//inject jquery codes
@@ -38,7 +28,8 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
 
     casper.then(function () {
         test.comment('⌚️  Validating page...');
-        console.log('validating that the Main page has got loaded properly by detecting if some of its elements are visible. Here we are checking for Shareable Link and Logout options');
+        console.log('Validating that the Main page has got loaded properly by \n\
+detecting if some of its elements are visible. Here we are checking for Shareable Link and Logout options');
         functions.validation(casper);
     });
 
@@ -84,58 +75,36 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         this.sendKeys('#input-text-search', content);
         this.click("#search-form > div:nth-child(1) > div:nth-child(2) > button:nth-child(1)");
         console.log("Entering item to be searched");
-        this.wait(10000);
+
+        console.log("Verifying whether the search resluts consists the searched keyword or not");
+        this.wait(10000).test.assertExists(x(".//*[@id='search-results-scroller']"), "Search feature working");
+        var z = this.evaluate(function () {
+            $('#accordion-left > div:nth-child(2) > div:nth-child(1) > a:nth-child(1) > span:nth-child(2)').click();
+        });//Closing search div
     });
 
     //Verifying for the posting and deleting Comments
     casper.then(function () {
-        test.comment('⌚️  Posting and Deleting coomments ...');
+        test.comment('⌚️  Posting and Deleting comments ...');
         this.then(function () {
             functions.comments(casper, Notebook_name);
-            console.log('⌚️  Posting coomments ...');
         });
 
         //delete the comment
         casper.then(function () {
-            test.comment('⌚️ Deleting coomment ...');
+            test.comment('⌚️ Deleting comment ...');
             this.wait(4000);
             if (this.visible(".comment-body-text")) {
                 this.mouse.move(".comment-body-text");
                 this.click({type: 'css', path: 'i.icon-remove:nth-child(2)'});
                 console.log("Posted comment(" + content + ") found and now Deleting it");
             } else {
-                console.log("there is no comment to delete");
+                console.log("There is no comment to delete");
             }
         });
         casper.wait(4000);
         casper.then(function () {
-            this.test.assertDoesntExist(x(".//*[@id='comments-container']/div/div[2]/div/div"), 'Confirmed that entered commment is deleted');
-        });
-
-        console.log("Verifying whether the search resluts consists the searched keyword or not");
-        this.test.assertExists(x(".//*[@id='search-results-scroller']"), "Search feature working");
-        var z = this.evaluate(function () {
-            $('#accordion-left > div:nth-child(2) > div:nth-child(1) > a:nth-child(1) > span:nth-child(2)').click();
-        });//Closing search div
-    });
-
-
-    // Enable Workspace and Dataframe div
-    casper.then(function () {
-        test.comment('⌚️  Enabling Workspace and Dataframe div...');
-        this.click('#accordion-left > div:nth-child(3) > div:nth-child(1)');
-        this.wait(2000);
-        this.sendKeys('div.settings-input:nth-child(4) > label:nth-child(1) > input:nth-child(2)', 'rcloud.viewer, rcloud.enviewer, rcloud.notebook.info');
-
-        this.then(function () {
-            this.click('#command-prompt > div:nth-child(3) > div:nth-child(1)');
-        });
-
-        this.then(function () {
-            this.wait(5000);
-            this.thenOpen(URL, function () {
-                console.log('Workspace div and Dataframe div Enabled')
-            });
+            this.test.assertDoesntExist(x(".//*[@id='comments-container']/div/div[2]/div/div"),'Confirmed that entered commment is deleted');
         });
     });
 
@@ -149,7 +118,7 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
 
         //Verifying for Load Notebook ID
         this.then(function () {
-            test.comment('⌚️  opening notebook using Load NOtebook by ID feature...');
+            test.comment('⌚️  Opening notebook using Load Notebook by ID feature...');
             functions.open_advanceddiv(casper);
             console.log("Clicking on advanced dropdown");
             this.wait(2999);
@@ -177,27 +146,24 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         this.thenOpen(url1);
         this.wait(5000);
         console.log('Validation of the notebook loading by checking for elements- Shareable link and Logout option ')
-        functions.validation(casper);
+        // functions.validation(casper);
     });
 
     // Click on RunAll and verify the output
-    casper.then(function () {
+    casper.wait(5000).then(function () {
         test.comment('⌚️  Executing cell contents (R, Shell and Markdown) ...');
         functions.runall(casper);
     });
 
     //verifying output for the each and ever single cell
     casper.then(function () {
-        this.wait(10000);
-        this.then(function () {
+        this.wait(10000).then(function () {
             console.log(" Output of various cells ");
-            //this.wait(5000);
             this.test.assertExists(x(".//*[@id='part1.R']/div[3]/div[2]/pre/code"), "R Cell has been executed and Output div is visible");
             this.test.assertSelectorHasText(x(".//*[@id='part1.R']/div[3]/div[2]/pre/code"), "TRUE", "R cell has been produced expected output");
         });
 
         this.then(function () {
-            this.wait(5000);
             this.test.assertExists(x(".//*[@id='part2.md']/div[3]/div[2]/blockquote/p"), "Markdown Cell has been executed and Output div is visible");
         });
     });
@@ -216,33 +182,28 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         this.wait(2000);
         this.then(function () {
             var data = this.fetchText("#enviewer-body-wrapper");
-            console.log("Workspace has produced following Dataframe : " + data);
+            console.log("Workspace has produced following Dataframe : \n\ " + data);
         });
     });
 
     //Verify for dataframe div
     casper.then(function () {
-        console.log("clicking on dataframe, from the workspace div");
+        console.log("Clicking on dataframe, from the workspace div");
         this.click('#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)');
         this.wait(2000);
         this.then(function () {
             var df = this.fetchText("#viewer-body");
-            console.log("Contents of Dataframe: " + df);
+            console.log("Contents of Dataframe: \n\ " + df);
         });
-        this.wait(5000);
     });
 
     //Now uploading a binary file to the Notebook
     casper.then(function () {
         this.thenOpen(URL);
-        functions.validation(casper);
-
         test.comment('⌚️  Uploading binary file to the Notebook ...');
-        this.wait(8000);
-        console.log(" Uploading file to the Notebook ");
 
         //Verifying whether file upload div is open or not
-        casper.then(function () {
+        casper.wait(8000).then(function () {
             if (this.visible(x(".//*[@id='collapse-file-upload']/div"))) {
                 console.log('File Upload pane div is open');
                 this.wait(5000);
@@ -260,7 +221,7 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
                 __utils__.findOne('input[type="file"]').setAttribute('value', fileName)
             }, {fileName: fileName});
             this.page.uploadFile('input[type="file"]', fileName);
-            console.log('Selecting a file');
+            console.log('Selecting file');
         });
         casper.then(function () {
             casper.evaluate(function () {
@@ -288,56 +249,39 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         });
     });
 
-    casper.wait(8000);
-
     //Checking for Fork feature
-    casper.then(function () {
-        this.wait(3000);
+    casper.wait(12000).then(function () {
         test.comment('⌚️  Verifying for Fork feature ...');
         functions.fork(casper);
     });
 
     casper.then(function () {
         test.comment('⌚️  Testing Shareable links ...');
-    });
+        //Notebook.R
+        casper.then(function () {
+            this.thenOpen("http://127.0.0.1:8080/notebook.R/564af357b532422620a6");
+            this.wait(7000);
+            console.log('Checking Notebook.R')
+            this.waitForSelector('body > form:nth-child(1)', function () {
+                console.log('Content is visible');
+                this.test.assertVisible("body > img:nth-child(2)", "Confirmed that User is able to open Notebook.R Notebook");
+            }, function () {
+                console.log("Notebook.R Page could not be loaded")
+            }, 60000);
+        });
 
-    //Notebook.R
-    casper.then(function () {
-        this.thenOpen("http://127.0.0.1:8080/notebook.R/564af357b532422620a6");
-        this.wait(7000);
-        console.log('Checking Notebook.R')
-        this.waitForSelector('body > form:nth-child(1)', function () {
-            console.log('Content is visible');
-            this.test.assertVisible("body > img:nth-child(2)", "Confirmed that User is able to open Notebook.R Notebook");
-        }, function () {
-            console.log("Notebook.R Page could not be loaded")
-        }, 60000);
-    });
-
-    //Mini.HTML
-    casper.then(function () {
-        this.thenOpen("http://127.0.0.1:8080/mini.html?notebook=f03ca14c9963e5718527");
-        this.wait(8000);
-        console.log('Checking Mini.html');
-        this.waitForSelector('body > h1:nth-child(1)', function () {
-            console.log('Content is visible');
-            this.test.assertVisible("#chartdiv0", "Confirmed that User is able to open Mini Notebook");
-        }, function () {
-            console.log("Mini.html page could not be loaded")
-        }, 60000);
-    });
-
-    //VIEW.HTML
-    casper.viewport(1024, 768).then(function () {
-        this.thenOpen("http://127.0.0.1:8080/view.html?notebook=8ce30fba0e60d70e75fe");
-        console.log('Checking View.html');
-        this.wait(8000);
-        this.waitForSelector('.dropdown-toggle', function () {
-            console.log('Content is visible');
-            this.test.assertVisible(x(".//*[@id='part1.R']/div[2]/div[2]/pre/code"), "Confirmed that User is able to open View.html Notebook");
-        }, function () {
-            console.log("View.html page could not be loaded");
-        }, 60000);
+        //VIEW.HTML
+        casper.viewport(1024, 768).then(function () {
+            this.thenOpen("http://127.0.0.1:8080/view.html?notebook=8ce30fba0e60d70e75fe");
+            console.log('Checking View.html');
+            // this.
+            this.wait(8000).waitForSelector('.dropdown-toggle', function () {
+                console.log('Content is visible');
+                this.test.assertVisible(x(".//*[@id='part1.R']/div[2]/div[2]/pre/code"), "Confirmed that User is able to open View.html Notebook");
+            }, function () {
+                console.log("View.html page could not be loaded");
+            }, 60000);
+        });
     });
 
     casper.then(function () {
@@ -346,7 +290,7 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         this.wait(2000);
         this.then(function () {
             if (this.visible('.modal-body')) {
-                console.log('Session reconnect');
+                console.log('Session reconnect window appears');
                 this.click(".btn-primary");
                 this.then(function () {
                     console.log('Validation to ensure page load');
@@ -406,8 +350,7 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         this.thenOpen(URL1);
     });
 
-    casper.then(function () {
-        functions.validation(casper);
+    casper.wait(10000).then(function () {
         var t = this.fetchText("body > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1)");
         console.log("Help has produced " + t);
         var z = this.evaluate(function () {
@@ -415,15 +358,13 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
         });
     });
 
-    casper.wait(10000)
+    casper.wait(8000)
 
     //Making notebook private
     casper.then(function () {
         test.comment('⌚️  Making Notebook as Private ...');
-        this.wait(6000)
-        this.mouse.move('.jqtree-selected > div:nth-child(1)');
-        this.wait(4000);
-        this.waitUntilVisible(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)", function () {
+        this.wait(6000).mouse.move('.jqtree-selected > div:nth-child(1)');
+        this.wait(4000).waitUntilVisible(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)", function () {
             this.click(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)")
         });
 
@@ -432,11 +373,10 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
             this.click('.group-link > a:nth-child(1)')
         });
 
-        this.then(function () {
+        this.wait(10000).then(function () {
             console.log("Clicking on 'Private' radio button");
             this.click('#yellowRadio');
             this.wait(4000);
-
             this.setFilter("page.prompt", function (msg, currentValue) {
                 console.log(msg);
                 if (msg === "Are you sure you want to make notebook " + notebook_name + " truly private?") {
@@ -492,42 +432,10 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
 
     //Open Notebook.R
     casper.thenOpen(Notebook_R, function () {
-        test.comment('⌚️  Opening Notebook.R as anonymous user ...');
-        this.wait(8000);
-        this.waitForSelector("body > form:nth-child(1) > input:nth-child(5)");
-        this.wait(5000);
-        this.test.assertExists("body > form:nth-child(1) > input:nth-child(5)", "Notebook.R opened");
+        this.echo('Opening Notebook.R as anonymous user ...');
+        this.wait(8000).waitForSelector("body > form:nth-child(1) > input:nth-child(5)");
+        this.wait(8000).test.assertExists("body > form:nth-child(1) > input:nth-child(5)", "Notebook.R opened");
     });
-
-    casper.then(function () {
-        test.comment('⌚️  Opening Mini.HTML as anonymous user ...');
-        this.viewport(1024, 768).thenOpen("http://127.0.0.1:8080/mini.html?notebook=f03ca14c9963e5718527", function () {
-            this.wait(15000);
-            console.log('Checking Mini.html');
-            this.waitForSelector('#chartdiv0', function () {
-                console.log('Content is visible');
-                this.test.assertVisible("#chartdiv0", "Confirmed that User is able to open Mini Notebook");
-            }, function () {
-                console.log("Mini.html page could not be loaded")
-            }, 15000);
-        });
-    });
-
-    // //Open Shiny
-    // casper.then(function () {
-    //     test.comment('⌚️  Opening Shiny.HTML as anonymous user ...');
-    //     this.viewport(1024, 768).thenOpen(Shiny, function () {
-    //         this.wait(10000);
-    //         console.log('Checking Shiny.html');
-    //         this.wait(10000);
-    //         this.waitForSelector('body > div > div:nth-child(1) > div > h1', function () {
-    //             console.log('Content is visible');
-    //             this.test.assertVisible("body > div > div:nth-child(1) > div > h1", "Confirmed that User is able to open Shiny Notebook");
-    //         }, function () {
-    //             console.log("Shiny.html page could not be loaded")
-    //         }, 15000);
-    //     });
-    // });
 
     //Open View
     casper.viewport(1024, 768).thenOpen(View, function () {
@@ -551,13 +459,13 @@ casper.test.begin("Smoke Test case which covers basic features", 38, function su
     casper.wait(10000);
 
     casper.then(function () {
-        if (this.test.assertVisible(x(".//*[@id='part1.R']/div[2]/div[2]/pre/code"), 'Checking whether cells are displayed or not for view.HTML')) {
-            console.log("1st cell of the Notebook is visible");
+        if (this.test.assertVisible(x(".//*[@id='part1.R']/div[2]/div[2]/pre/code"), "Checking for the cell output")) {
+            console.log("Cell output is visible");
         }
         else {
-            console.log("1st cell of the Notebook is not visible");
+            console.log("Cell output is not visible");
         }
-        this.test.assertDoesntExist(".alert", "No errors/ alerts present on the page");
+        this.test.assertDoesntExist(".alert", "No errors/alerts present on the 'View.html'page");
     });
 
     casper.run(function () {
