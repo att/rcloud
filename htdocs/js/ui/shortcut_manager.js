@@ -2,8 +2,27 @@ RCloud.UI.shortcut_manager = (function() {
 
     var extension_;
 
+    function get_by_id(id) {
+        return _.find(extension_.sections.all.entries, function(s) {
+            return s.id === id;
+        });
+    };
+
+    function modify(ids, func) {
+        if(!_.isArray(ids)) {
+            ids = [ids];
+        }
+
+        _.each(ids, function(id) {
+            var shortcut = get_by_id(id);
+            if(shortcut) {
+                func(shortcut);
+            }
+        });
+    };
+
     function is_active(shortcut) {
-        return _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
+        return shortcut.enabled && _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
     }
 
     function convert_extension(shortcuts) {
@@ -23,7 +42,8 @@ RCloud.UI.shortcut_manager = (function() {
             var shortcut_to_add = _.defaults(shortcut, {
                 category: 'General',
                 modes: ['writeable', 'readonly'],
-                enable_in_dialogs: false
+                enable_in_dialogs: false,
+                enabled: true
             });
 
             // if this is not a mac, filter out the 'command' options:
@@ -95,10 +115,8 @@ RCloud.UI.shortcut_manager = (function() {
                             _.each(shortcut_to_add.key_bindings, function(binding) {
 
                                 var func_to_bind = function(e) {
-                                    if(!is_active(shortcut_to_add)) {
-                                        return;
-                                    } else {
 
+                                    if(is_active(get_by_id(shortcut_to_add.id))) {
                                         e.preventDefault();
 
                                         // invoke if conditions are met:
@@ -134,6 +152,7 @@ RCloud.UI.shortcut_manager = (function() {
     }
 
     var result = {
+
         init: function() {
 
             // based on https://craig.is/killing/mice#api.stopCallback
@@ -175,6 +194,16 @@ RCloud.UI.shortcut_manager = (function() {
             if(extension_) {
                 extension_.create('all');
             }
+        },
+        disable: function(ids) {
+            modify(ids, function(s) {
+                s.enabled = false;
+            });
+        },
+        enable: function(ids) {
+            modify(ids, function(s) {
+                s.enabled = true;
+            });
         },
         get_registered_shortcuts_by_category: function(sort_items) {
 
