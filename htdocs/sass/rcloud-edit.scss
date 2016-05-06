@@ -307,6 +307,7 @@ rect.frame {
     font-size: 100%;
     padding: 5px;
     padding-left: 7px; /* align check-all */
+    padding-bottom: 6px;
     color: rgb(221, 221, 221);
     display: none;
     margin-bottom: 1px;
@@ -977,7 +978,7 @@ pre {
 
 #rcloud-cellarea {
     width: 100%;
-    height: calc(100% - 37px);
+    height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
 }
