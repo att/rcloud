@@ -28,6 +28,7 @@ RCloud.UI.configure_readonly = function() {
             .prop('checked', false)
             .attr("disabled", true);
         RCloud.UI.scratchpad.set_readonly(true);
+        RCloud.UI.find_replace.hide_replace();
     }
     else {
         RCloud.UI.command_prompt.readonly(false);
