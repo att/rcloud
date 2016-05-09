@@ -290,6 +290,9 @@ RCloud.UI.find_replace = (function() {
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
+        },
+        hide_replace: function() {
+            replace_stuff_.hide();
         }
     };
     return result;
