@@ -292,7 +292,9 @@ RCloud.UI.find_replace = (function() {
             }]);
         },
         hide_replace: function() {
-            replace_stuff_.hide();
+            if(replace_stuff_) {
+                replace_stuff_.hide();
+            }
         }
     };
     return result;
