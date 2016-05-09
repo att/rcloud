@@ -3,7 +3,7 @@
 Notebook.create_model = function()
 {
     var readonly_ = false,
-        user_ = "";
+        user_ = "",
         last_selected_ = undefined;
 
     function last_id(cells) {
