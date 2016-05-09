@@ -259,6 +259,7 @@ rect.frame {
   padding: 5px;
   padding-left: 7px;
   /* align check-all */
+  padding-bottom: 6px;
   color: #dddddd;
   display: none;
   margin-bottom: 1px; }
@@ -800,7 +801,7 @@ pre {
 
 #rcloud-cellarea {
   width: 100%;
-  height: calc(100% - 37px);
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden; }
 
