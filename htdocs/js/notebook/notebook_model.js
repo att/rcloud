@@ -2,8 +2,9 @@
 /*jshint -W083 */
 Notebook.create_model = function()
 {
-    var readonly_ = false;
-    var user_ = "";
+    var readonly_ = false,
+        user_ = "";
+        last_selected_ = undefined;
 
     function last_id(cells) {
         if(cells.length)
@@ -245,6 +246,7 @@ Notebook.create_model = function()
                             this.insert_cell(cell_model, before, true) :
                             this.append_cell(cell_model, null, true)),
                 post_index = this.cells.indexOf(cell_model);
+                last_selected_ = post_index;
             _.each(this.views, function(view) {
                 view.cell_moved(cell_model, pre_index, post_index);
             });
@@ -278,24 +280,9 @@ Notebook.create_model = function()
                 }); 
             };
 
-            var get_selected_index_range = function() {
-                var foundIndexes = [];
-
-                for(var loop = 0; loop < that.cells.length; loop++) {
-                    if(that.cells[loop].is_selected()) {
-                        foundIndexes.push(loop);
-                    }
-                }
-
-                return foundIndexes.length === 0 ? undefined : {
-                    lower: foundIndexes[0],
-                    upper: foundIndexes[foundIndexes.length - 1]
-                };
-            };
-
             var select_range = function(lower, upper) {
+                clear_all();
                 var items = [];
-
                 for(var loop = lower; loop <= upper; loop++) {
                     that.cells[loop].select_cell();
                 }
@@ -303,25 +290,17 @@ Notebook.create_model = function()
 
             if(modifiers.is_toggle) {
                 cell_model.toggle_cell();
+                last_selected_ = this.cells.indexOf(cell_model);
             } else if(modifiers.is_exclusive) {
                 clear_all();
                 cell_model.toggle_cell();
+                last_selected_ = this.cells.indexOf(cell_model);
             } else /* is_range */ {
-                var selected_index_range = get_selected_index_range();
-                var selected_index = this.cells.indexOf(cell_model);
 
-                if(_.isUndefined(selected_index_range)) {
-                    cell_model.select_cell();
-                } else {
-                    clear_all();
-                    if(selected_index > selected_index_range.upper) {
-                        select_range(selected_index_range.upper, selected_index);
-                    } else if(selected_index < selected_index_range.lower) {
-                        select_range(selected_index, selected_index_range.lower);
-                    } else {
-                        select_range(selected_index_range.lower, selected_index_range.upper);
-                    }
-                }
+                var start = this.cells.indexOf(cell_model),
+                    end = last_selected_;
+
+                select_range(Math.min(start, end), Math.max(start, end));
             }
 
             RCloud.UI.selection_bar.update(this.cells);
