@@ -63,21 +63,18 @@ rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(
         if (f$isdir) stop("cannot upload a directory")
         tryCatch(content <- readBin(file, raw(), f$size), warning=function(e) stop(e$message))
 
-	    if (tolower(basename(file))=="thumb.png"){
-            content <- .resize.image(content)
-            rcloud.update.thumb_hash(content, notebook)
+	        if (tolower(basename(file))=="thumb.png"){
+	        content <- .resize.image(content)
         }
     }
-    if (is.list(notebook))
+    if (is.list(notebook)){
         notebook <- notebook$content$id
+    }
     l <- list(list(content=content))
     names(l) <- name
     invisible(rcloud.update.notebook(notebook, list(files=l)))
 }
 
 rcloud.delete.asset <- function(name, notebook=rcloud.session.notebook()) {    
-    if (name=="thumb.png"){
-        rcloud.upload.thumb_hash("thumb.png", NULL, notebook)
-    }
     rcloud.update.asset(name, NULL, notebook)
 }

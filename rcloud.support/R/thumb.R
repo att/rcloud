@@ -1,48 +1,7 @@
-rcloud.update.thumb_hash <- function(content, notebook){
-  id <- notebook$content$id
-  base <- usr.key(usr=".notebook", notebook=id)
-
-  thumbnail_hash <- digest::digest(content)
-  rcs.set(rcs.key(base, "thumbnail_hash"), thumbnail_hash)
-}
-
-
-rcloud.set.thumb <- function(id) {
-  base <- usr.key(user=".notebook", notebook=id)
-
-  # Image may not exist so encapsulate in try
-  try({ 
-    thumbnail <- rcloud.get.asset(name = "thumb.png")
-
-    # hash so that we don't get the image 
-    # everytime the notebook is saved
-    thumbnail_hash <- digest::digest(thumbnail)
-    thumbnail_changed <- .cloud.compare.thumb.hash(thumbnail_hash)
-
-    if (thumbnail_changed){
-      # update the thumbnail 
-      rcs.set(rcs.key(base, "thumb"), thumbnail)
-      # update the hash      
-      rcs.set(rcs.key(base, "thumbnail_hash"),
-        thumbnail_hash)
-    }
-    
-  }, silent = TRUE)
-}
-
 rcloud.get.thumb <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
   rcs.get(rcs.key(base, "thumb"))
 }
-
-.rcloud.compare.thumb.hash <- function(thumbnail_hash){
-  thumbnail_changed = TRUE
- 
-  old_hash <- rcs.get(rcs.key(base, "thumbnail_hash")) 
-  thumbnail_changed <- thumbnail_hash == old_hash
-  thumbnail_changed
-}
-
 
 .resize.image <- function(img_png, out_dims = c(255, 255)){
   # convert to matrix and then resize the image
