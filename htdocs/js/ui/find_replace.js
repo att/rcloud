@@ -297,10 +297,17 @@ RCloud.UI.find_replace = (function() {
             }
         },
         reset: function() {
+
             if(find_dialog_) {
                 active_match_ = undefined;
                 build_regex(find_input_.val());
                 highlight_all();
+            }
+
+        },
+        update_search: function() {
+            if(find_dialog_ && find_dialog_.is(':visible')) {
+                this.reset();
             }
         }
     };
