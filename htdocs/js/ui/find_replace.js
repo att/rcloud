@@ -295,6 +295,13 @@ RCloud.UI.find_replace = (function() {
             if(replace_stuff_) {
                 replace_stuff_.hide();
             }
+        },
+        reset: function() {
+            if(find_dialog_) {
+                active_match_ = undefined;
+                build_regex(find_input_.val());
+                highlight_all();
+            }
         }
     };
     return result;
