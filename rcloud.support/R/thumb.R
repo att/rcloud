@@ -3,6 +3,15 @@ rcloud.get.thumb <- function(id) {
   rcs.get(rcs.key(base, "thumb"))
 }
 
+rcloud.set.thumb <- function(thumb_png, id){
+  base <- usr.key(user=".notebook", notebook=id)
+
+  resized <- .resize.image(thumb_png)
+  rcs.set(rcs.key(base, "thumb"), resized)
+
+  resized
+}
+
 .resize.image <- function(img_png, out_dims = c(255, 255)){
   # convert to matrix and then resize the image
   image <- png::readPNG(img_png)
