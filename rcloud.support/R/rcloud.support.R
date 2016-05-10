@@ -674,7 +674,6 @@ rcloud.set.notebook.info <- function(id, info) {
   rcs.set(rcs.key(base, "username"), info$username)
   rcs.set(rcs.key(base, "description"), info$description)
   rcs.set(rcs.key(base, "last_commit"), info$last_commit)
-  rcloud.set.thumb(id)
 }
 
 # get/set another property of notebook
