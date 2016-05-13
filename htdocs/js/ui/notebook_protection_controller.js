@@ -230,7 +230,7 @@ define(['angular'], function(angular) {
         ////////////////////////////////////////////
         $scope.createGroup = function() {
             //invoke prompt
-            var pr = prompt("Enter new group name", "");
+            var pr = prompt("Enter new group name", "").trim();
             if (pr != null) {
                 //check for reserved names
                 if(pr === 'private' || pr === 'no group') {
