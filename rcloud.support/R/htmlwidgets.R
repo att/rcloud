@@ -3,7 +3,6 @@
 
 rcloud.htmlwidgets.viewer <- function(url, height) {
 
-  width <- "100%"
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
   rcloud.html.out(paste0("<div id=\"", where, "\"></div>"))
   where <- paste0("#", where)
@@ -21,14 +20,28 @@ rcloud.htmlwidgets.viewer <- function(url, height) {
   htmlwidgets:::pandoc_self_contained_html(url, url)
   widget <- paste(readLines(url), collapse = "\n")
 
-  html <- paste(
+  .htmlwidgets.cache$ocaps$create(where, add.iframe.htmlwidget(widget))
+
+  invisible()
+}
+
+as.character.htmlwidget <- function(x, ...) {
+  tmp <- tempfile(fileext=".html")
+  on.exit(unlink(tmp), add = TRUE)
+  htmlwidgets::saveWidget(x, file = tmp, selfcontained = FALSE)
+  pandoc_self_contained_html(tmp, tmp)
+
+  widget <- paste(readLines(tmp), collapse = "\n")
+  res <- add.iframe.htmlwidget(widget)
+  print(res)
+  res
+}
+
+add.iframe.htmlwidget <- function(widget) {
+  paste(
     sep = "",
-    "<iframe frameBorder=\"0\" width=\"100%\" height=\"50%\" srcdoc=\"",
+    "<iframe frameBorder=\"0\" width=\"100%\" height=\"100%\" srcdoc=\"",
     gsub("\"", "&quot;", widget),
     "\"></iframe>"
   )
-
-  .htmlwidgets.cache$ocaps$create(where, html)
-
-  invisible()
 }
