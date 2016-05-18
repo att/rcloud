@@ -14,6 +14,11 @@ RCloud.UI.help_frame = {
             rcloud.help(topic);
             return false;
         });
+
+        $("#show-shortcuts").click(function(e) {
+            e.preventDefault();
+            RCloud.UI.shortcut_dialog.show();
+        });
     },
     panel_sizer: function(el) {
         if($('#help-body').css('display') === 'none')
