@@ -160,10 +160,7 @@ RCloud.UI.init = function() {
             ['command', 'e']
         ],
         action: function() { 
-            var is_mine = shell.notebook.controller.is_mine();
-            var gistname = shell.gistname();
-            var version = shell.version();
-            editor.revert_notebook(is_mine, gistname, version);
+            editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
         }
     }]);
 
