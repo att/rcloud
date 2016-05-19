@@ -185,6 +185,24 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
+    }, {
+        category: 'Cell Management', 
+        id: 'arrow_next_cell', 
+        description: 'Enter next cell (from end of current)',
+        keys: [
+            ['right']
+        ],
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management', 
+        id: 'arrow_next_cell', 
+        description: 'Enter previous cell (from start of current)',
+        keys: [
+            ['left']
+        ],
+        modes: ['writeable'],
+        action: function() { }
     }]);
 
     // general:
