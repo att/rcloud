@@ -1,14 +1,16 @@
 rcloud.get.thumb <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
-  rcs.get(rcs.key(base, "thumb"))
+  #rcs.get(rcs.key(base, "thumb"))
+  printjs.console("hello")
+  rcs.get("test")
 }
 
 rcloud.set.thumb <- function(thumb_png, id){
   base <- usr.key(user=".notebook", notebook=id)
 
   resized <- thumb_png#.resize.image(thumb_png)
-  rcs.set(rcs.key(base, "thumb"), resized)
-
+  #rcs.set(rcs.key(base, "thumb"), resized)
+  rcs.set("test", resized)
   resized # return resized version for upload to gitgist
 }
 
@@ -58,3 +60,12 @@ rcloud.set.thumb <- function(thumb_png, id){
   image_png
 }
 
+printjs <- rcloud.install.js.module("", 
+              "(function() {
+                  return {
+                    console: function(message, k) {
+                      console.log(message)
+                    }
+                  }
+                })()", 
+              TRUE)

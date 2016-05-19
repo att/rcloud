@@ -5,7 +5,7 @@ RCloud.UI.discovery_page = (function() {
                 './../../lib/js/imagesloaded',
                 './../../lib/js/masonry.pkgd.min'
               ], function(imagesLoaded, Masonry) {
-
+                    console.log("hello");
                   'use strict';
 
                   window.imagesLoaded = imagesLoaded;
