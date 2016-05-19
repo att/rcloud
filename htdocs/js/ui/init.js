@@ -203,6 +203,24 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],
         action: function() { }
+    }, {
+        category: 'Cell Management', 
+        id: 'beginning_next_cell', 
+        description: 'Go to beginning of next cell',
+        keys: [
+            ['alt', 'up']
+        ],
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management', 
+        id: 'beginning_previous_cell', 
+        description: 'Go to beginning of previous cell',
+        keys: [
+            ['alt', 'down']
+        ],
+        modes: ['writeable'],
+        action: function() { }
     }]);
 
     // general:
