@@ -1,5 +1,6 @@
 RCloud.UI.panel_loader = (function() {
     var extension_;
+    var panel_data_ = {};
     var panels_ = {};
 
     function collapse_name(name) {
@@ -82,8 +83,7 @@ RCloud.UI.panel_loader = (function() {
                 }
             });
 
-            // built-in panels
-            this.add({
+            panel_data_ = {
                 Notebooks: {
                     side: 'left',
                     name: 'notebook-tree',
@@ -157,7 +157,7 @@ RCloud.UI.panel_loader = (function() {
                     sort: 4000,
                     panel: RCloud.UI.session_pane
                 }
-            });
+            };
         },
         add: function(P) {
             // if we have not been initialized, that means there is no GUI
@@ -174,6 +174,9 @@ RCloud.UI.panel_loader = (function() {
             return $($('#' + id).html())[0];
         },
         load: function() {
+
+            var that = this;
+
             function do_side(panels, side) {
                 function do_panel(p) {
                     add_panel(p);
@@ -193,14 +196,38 @@ RCloud.UI.panel_loader = (function() {
                 add_filler_panel(side);
             }
 
-            do_side(panels_, 'left');
-            do_side(panels_, 'right');
+            // alternative layout?
+            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) { 
+                
+                if(!layoutBySize) {
 
-            // this is dumb but i don't want the collapser to show until load time
-            $('#left-column').append(this.load_snippet('left-pane-collapser-snippet'));
-            $('#right-column').append(this.load_snippet('right-pane-collapser-snippet'));
+                    var update_panel = function update_panel(panel, side, sort) {
+                        panel_data_[panel].side = side;
+                        panel_data_[panel].sort = sort;
+                    };
 
-            return Promise.cast(undefined); // until we are loading opts here
+                    // adjust:
+                    _.each(['Notebooks', 'File Upload', 'Settings', 'Comments'], function(panel, index) {
+                        update_panel(panel, 'left', (index + 1) * 1000);
+                    });
+
+                    _.each(['Assets', 'Search', 'Help', 'Session'], function(panel, index) {
+                        update_panel(panel, 'right', (index + 1) * 1000);
+                    });
+
+                }
+
+                that.add(panel_data_);
+
+                do_side(panels_, 'left');
+                do_side(panels_, 'right');
+
+                // this is dumb but i don't want the collapser to show until load time
+                $('#left-column').append(that.load_snippet('left-pane-collapser-snippet'));
+                $('#right-column').append(that.load_snippet('right-pane-collapser-snippet'));
+
+                return Promise.cast(undefined); // until we are loading opts here
+            });
         }
     };
 })();
