@@ -169,6 +169,12 @@ RCloud.UI.settings_frame = (function() {
                         shell.notebook.controller.show_cell_numbers(val);
                     }
                 }),
+                'panel-layout-by-size': that.checkbox({
+                    sort: 4000,
+                    default_value: true,
+                    needs_reload: true,
+                    label: "Arrange panels by size"
+                }),
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,
