@@ -196,7 +196,7 @@ RCloud.UI.init = function() {
         action: function() { }
     }, {
         category: 'Cell Management', 
-        id: 'arrow_next_cell', 
+        id: 'arrow_previous_cell', 
         description: 'Enter previous cell (from start of current)',
         keys: [
             ['left']
