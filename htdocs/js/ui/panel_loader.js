@@ -81,6 +81,7 @@ RCloud.UI.panel_loader = (function() {
                     }
                 }
             });
+
             // built-in panels
             this.add({
                 Notebooks: {
@@ -93,14 +94,14 @@ RCloud.UI.panel_loader = (function() {
                     sort: 1000,
                     panel: RCloud.UI.notebooks_frame
                 },
-                Search: {
+                'File Upload': {
                     side: 'left',
-                    name: 'search',
-                    title: 'Search',
-                    icon_class: 'icon-search',
-                    colwidth: 4,
+                    name: 'file-upload',
+                    title: 'File Upload',
+                    icon_class: 'icon-upload-alt',
+                    colwidth: 2,
                     sort: 2000,
-                    panel: RCloud.UI.search
+                    panel: RCloud.UI.upload_frame
                 },
                 Settings: {
                     side: 'left',
@@ -111,15 +112,15 @@ RCloud.UI.panel_loader = (function() {
                     sort: 3000,
                     panel: RCloud.UI.settings_frame
                 },
-                Help: {
+                Comments: {
                     side: 'left',
-                    name: 'help',
-                    title: 'Help',
-                    icon_class: 'icon-question',
-                    colwidth: 5,
+                    name: 'comments',
+                    title: 'Comments',
+                    icon_class: 'icon-comments',
+                    colwidth: 2,
                     sort: 4000,
-                    panel: RCloud.UI.help_frame
-                },
+                    panel: RCloud.UI.comments_frame
+                },                
                 Assets: {
                     side: 'right',
                     name: 'assets',
@@ -129,23 +130,23 @@ RCloud.UI.panel_loader = (function() {
                     sort: 1000,
                     panel: RCloud.UI.scratchpad
                 },
-                'File Upload': {
+                Search: {
                     side: 'right',
-                    name: 'file-upload',
-                    title: 'File Upload',
-                    icon_class: 'icon-upload-alt',
-                    colwidth: 2,
+                    name: 'search',
+                    title: 'Search',
+                    icon_class: 'icon-search',
+                    colwidth: 4,
                     sort: 2000,
-                    panel: RCloud.UI.upload_frame
+                    panel: RCloud.UI.search
                 },
-                Comments: {
+                Help: {
                     side: 'right',
-                    name: 'comments',
-                    title: 'Comments',
-                    icon_class: 'icon-comments',
-                    colwidth: 2,
+                    name: 'help',
+                    title: 'Help',
+                    icon_class: 'icon-question',
+                    colwidth: 5,
                     sort: 3000,
-                    panel: RCloud.UI.comments_frame
+                    panel: RCloud.UI.help_frame
                 },
                 Session: {
                     side: 'right',
