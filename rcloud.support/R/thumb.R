@@ -52,6 +52,7 @@ rcloud.set.thumb <- function(thumb_png, id){
     }
   }
 
-  png::writePNG(out)
+  #png::writePNG(out)
+  image
 }
 
