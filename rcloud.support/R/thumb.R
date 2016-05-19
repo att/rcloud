@@ -6,13 +6,15 @@ rcloud.get.thumb <- function(id) {
 rcloud.set.thumb <- function(thumb_png, id){
   base <- usr.key(user=".notebook", notebook=id)
 
-  resized <- .resize.image(thumb_png)
+  resized <- thumb_png#.resize.image(thumb_png)
   rcs.set(rcs.key(base, "thumb"), resized)
 
-  resized
+  resized # return resized version for upload to gitgist
 }
 
 .resize.image <- function(img_png, out_dims = c(255, 255)){
+  if (is.null(img_png)) return(NULL)
+
   # convert to matrix and then resize the image
   image <- png::readPNG(img_png)
   
@@ -53,6 +55,6 @@ rcloud.set.thumb <- function(thumb_png, id){
   }
 
   #png::writePNG(out)
-  image
+  image_png
 }
 
