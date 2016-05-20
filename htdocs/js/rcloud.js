@@ -124,7 +124,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_by_name"],
             ["languages", "get_list"],
             ["plots", "render"],
-            ["plots", "get_formats"]
+            ["plots", "get_formats"],
+            ["get_thumb"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -422,8 +423,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_property"],
             ["set_notebook_property"],
             ["remove_notebook_property"],
-            ["notebook_by_name"], 
-            ["get_thumb"]
+            ["notebook_by_name"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -620,6 +620,10 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_notebook_by_name = function(user, path) {
             return rcloud_ocaps.notebook_by_nameAsync(user, path);
+        };
+
+        rcloud.get_thumb = function(id) {
+          return rcloud_ocaps.get_thumb(id);
         };
     }
 
