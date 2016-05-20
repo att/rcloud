@@ -22,6 +22,6 @@ Vagrant.configure(2) do |config|
                       run: "always", env: env
 
   config.vm.provider "virtualbox" do |vb|
-    vb.memory = "4096"
+    vb.memory = "1096"
   end
 end
