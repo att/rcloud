@@ -297,18 +297,6 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
-        navigate_beginning_previous: function() {
-
-        },
-        navigate_beginning_next: function() {
-
-        },
-        navigate_next: function() {
-
-        },
-        navigate_previous: function() {
-
-        },
         can_crop_cells: function() {
             return model.can_crop_cells();
         },

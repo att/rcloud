@@ -369,6 +369,26 @@ function create_cell_html_view(language, cell_model) {
                 shell.run_notebook_from(cell_model.id());
             }
         }, {
+            name: 'navigateTopPreviousCell',
+            bindKey: {
+                win: 'Alt-Up',
+                mac: 'Alt-Up',
+                sender: 'editor'
+            },
+            exec: function() {
+                console.log('beginning of previous cell');
+            }
+        }, {
+            name: 'navigateTopNextCell',
+            bindKey: {
+                win: 'Alt-Down',
+                mac: 'Alt-Down',
+                sender: 'editor'
+            },
+            exec: function() {
+                console.log('beginning of next cell');
+            }
+        }, {
             name: 'deactivateCell',
             bindKey: {
                 win: 'Escape',
