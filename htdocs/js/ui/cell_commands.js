@@ -194,7 +194,11 @@ RCloud.UI.cell_commands = (function() {
                     sort: 2000,
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-play", "run", function(control, e) {
-                            cell_view.execute_cell();
+                            if(e.shiftKey) {
+                                shell.run_notebook_from(cell_model.id());
+                            } else {
+                                cell_view.execute_cell();    
+                            }
                         });
                     }
                 },
