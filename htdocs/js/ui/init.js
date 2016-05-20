@@ -204,7 +204,7 @@ RCloud.UI.init = function() {
             ['right']
         ],
         modes: ['writeable'],
-        action: function() { }
+        action: function() { shell.notebook.controller.navigate_next(); }
     }, {
         category: 'Cell Management', 
         id: 'arrow_previous_cell', 
@@ -213,22 +213,40 @@ RCloud.UI.init = function() {
             ['left']
         ],
         modes: ['writeable'],
-        action: function() { }
+        action: function() { shell.notebook.controller.navigate_previous(); }
     }, {
         category: 'Cell Management', 
         id: 'beginning_next_cell', 
         description: 'Go to beginning of next cell',
         keys: [
-            ['alt', 'up']
+            ['alt', 'down']
         ],
         modes: ['writeable'],
-        action: function() { }
+        action: function() { shell.notebook.controller.navigate_beginning_next(); }
     }, {
         category: 'Cell Management', 
         id: 'beginning_previous_cell', 
         description: 'Go to beginning of previous cell',
         keys: [
-            ['alt', 'down']
+            ['alt', 'up']
+        ],
+        modes: ['writeable'],
+        action: function() { shell.notebook.controller.navigate_beginning_previous(); }
+    }, {
+        category: 'Cell Management', 
+        id: 'insert_cell_after', 
+        description: 'Insert cell after current',
+        keys: [
+            ['ctrl', '/']
+        ],
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management', 
+        id: 'insert_cell_before', 
+        description: 'Insert cell before current',
+        keys: [
+            ['ctrl', '\\']
         ],
         modes: ['writeable'],
         action: function() { }
