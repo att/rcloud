@@ -192,8 +192,7 @@ RCloud.UI.init = function() {
         keys: [
             ['right']
         ],
-        modes: ['writeable'],
-        action: function() { shell.notebook.controller.navigate_next(); }
+        modes: ['writeable']
     }, {
         category: 'Cell Management', 
         id: 'arrow_previous_cell', 
@@ -201,8 +200,7 @@ RCloud.UI.init = function() {
         keys: [
             ['left']
         ],
-        modes: ['writeable'],
-        action: function() { shell.notebook.controller.navigate_previous(); }
+        modes: ['writeable']
     }, {
         category: 'Cell Management', 
         id: 'beginning_next_cell', 
@@ -210,8 +208,7 @@ RCloud.UI.init = function() {
         keys: [
             ['alt', 'down']
         ],
-        modes: ['writeable'],
-        action: function() { shell.notebook.controller.navigate_beginning_next(); }
+        modes: ['writeable']
     }, {
         category: 'Cell Management', 
         id: 'beginning_previous_cell', 
@@ -219,8 +216,7 @@ RCloud.UI.init = function() {
         keys: [
             ['alt', 'up']
         ],
-        modes: ['writeable'],
-        action: function() { shell.notebook.controller.navigate_beginning_previous(); }
+        modes: ['writeable']
     }, {
         category: 'Cell Management', 
         id: 'insert_cell_after', 
