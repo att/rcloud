@@ -239,6 +239,14 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],
         action: function() { }
+    }, {
+        category: 'Cell Management', 
+        id: 'cell_run_from_here', 
+        description: 'Run from here (within a cell)',
+        keys: [
+            ['shift', 'alt', 'enter']
+        ],
+        modes: ['writeable']
     }]);
 
     // general:
