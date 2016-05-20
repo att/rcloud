@@ -525,6 +525,18 @@ Notebook.create_controller = function(model)
                 });
             });
         },
+        run_from: function(cell_id) {
+            var that = this,
+                process = false;
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    if(process || cell_model.id() === cell_id) {
+                        process = true;
+                        cell_model.controller.enqueue_execution_snapshot();
+                    }
+                });
+            });
+        },
         show_cell_numbers: function(whether) {
             _.each(model.views, function(view) {
                 view.set_show_cell_numbers(whether);
