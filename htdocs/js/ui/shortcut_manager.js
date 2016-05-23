@@ -198,10 +198,13 @@ RCloud.UI.shortcut_manager = (function() {
         },
         get_registered_shortcuts_by_category: function(sort_items) {
 
+            console.log(extension_.sections.all.entries);
+
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
 
-            var available_shortcuts = _.filter(extension_.sections.all.entries, function(s) { return is_active(s); });
+            var available_shortcuts = _.filter(_.sortBy(extension_.sections.all.entries, function(shortcut) { return shortcut.category + shortcut.description; }), 
+                function(s) { return is_active(s); });
 
             return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item };
