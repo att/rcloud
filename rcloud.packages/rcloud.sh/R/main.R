@@ -7,7 +7,7 @@ rcloud.language.support <- function()
     ev <- function(command, silent, rcloud.session) {
         f <- tempfile("script-", fileext=".sh")
         on.exit(try(unlink(f), silent=TRUE))
-        writeLines(command, f)
+        writeLines(if (length(command)) command else "", f)
         ## FIXME: how can we make the shell configurable?
         res <- .Call(shexec, "/bin/bash", f)
         ## turn non-0 exit into an error so it stops
