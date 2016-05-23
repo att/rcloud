@@ -1,8 +1,7 @@
 rcloud.get.thumb <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
-  #rcs.get(rcs.key(base, "thumb"))
-  printjs.console("hello")
-  rcs.get("test")
+  rcs.get(rcs.key(base, "thumb"))
+  #rcs.get("test")
 }
 
 rcloud.set.thumb <- function(thumb_png, id){
@@ -19,7 +18,7 @@ rcloud.set.thumb <- function(thumb_png, id){
 
   # convert to matrix and then resize the image
   image <- png::readPNG(img_png)
-  
+
   in_rows <- nrow(image)
   in_cols <- ncol(image)
   out_rows <- out_dims[1]
@@ -49,9 +48,9 @@ rcloud.set.thumb <- function(thumb_png, id){
     class(out) <- class(image)
     for (idx in 1:dim(image)[3]) {
         chan <- image[, , idx]
-        out[, , idx] <- chan[in1_ind] * (1 - delta_R) * (1 - 
-            delta_C) + chan[in2_ind] * (delta_R) * (1 - delta_C) + 
-            chan[in3_ind] * (1 - delta_R) * (delta_C) + chan[in4_ind] * 
+        out[, , idx] <- chan[in1_ind] * (1 - delta_R) * (1 -
+            delta_C) + chan[in2_ind] * (delta_R) * (1 - delta_C) +
+            chan[in3_ind] * (1 - delta_R) * (delta_C) + chan[in4_ind] *
             (delta_R) * (delta_C)
     }
   }
@@ -59,13 +58,3 @@ rcloud.set.thumb <- function(thumb_png, id){
   #png::writePNG(out)
   image_png
 }
-
-printjs <- rcloud.install.js.module("", 
-              "(function() {
-                  return {
-                    console: function(message, k) {
-                      console.log(message)
-                    }
-                  }
-                })()", 
-              TRUE)

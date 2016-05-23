@@ -129,6 +129,10 @@ RCloud.create = function(rcloud_ocaps) {
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
+        rcloud.get_thumb = function() {
+          return rcloud_ocaps.get_thumbAsync.apply(null, arguments);
+        };
+
         rcloud.username = function() {
             return $.cookies.get('user');
         };
@@ -620,10 +624,6 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_notebook_by_name = function(user, path) {
             return rcloud_ocaps.notebook_by_nameAsync(user, path);
-        };
-
-        rcloud.get_thumb = function(id) {
-          return rcloud_ocaps.get_thumb(id);
         };
     }
 

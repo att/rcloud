@@ -5,7 +5,6 @@ RCloud.UI.discovery_page = (function() {
                 './../../lib/js/imagesloaded',
                 './../../lib/js/masonry.pkgd.min'
               ], function(imagesLoaded, Masonry) {
-                    console.log("hello");
                   'use strict';
 
                   window.imagesLoaded = imagesLoaded;
@@ -22,6 +21,7 @@ RCloud.UI.discovery_page = (function() {
                       .sortBy(function(kv) { return kv[1] * -1; })
                       .first(20)
                       .map(function(notebook) {
+                        console.log(notebook[0]);
                         var current = editor.get_notebook_info(notebook[0]);
                         return {
                           id: notebook[0],
@@ -52,7 +52,7 @@ RCloud.UI.discovery_page = (function() {
                             itemSelector: '.grid-item'
                           });
 
-                         
+
 
                           $('#progress').fadeOut(200, function() {
                             $('.navbar').fadeIn(200, function() {
@@ -60,11 +60,11 @@ RCloud.UI.discovery_page = (function() {
                               $('body').addClass('loaded');
                             });
                           });
-                          
+
                         })
                         .progress(function(imgLoad, image) {
                           if(!image.isLoaded) {
-                            $(image.img).attr('src', './img/missing.png');  
+                            $(image.img).attr('src', './img/missing.png');
                           }
 
                           var new_value = +$('progress').attr('value') + 1;

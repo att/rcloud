@@ -76,7 +76,6 @@ rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(
 }
 
 rcloud.delete.asset <- function(name, notebook=rcloud.session.notebook()) {
-    printjs.console("hello")  
     if (name=="thumb.png"){
         rcloud.set.thumb(NULL, notebook$content$id)
     }

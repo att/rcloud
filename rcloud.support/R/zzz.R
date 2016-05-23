@@ -7,4 +7,14 @@
              tryCatch(getNativeSymbolInfo("Rserve_oc_register"),
                       ## we cannot make this an error, because R attempts to try-load the package
                       error=function(e) if (is.null(getOption("rcs.silence.loadcheck"))) warning("WARNING: rcloud.support must be loaded by an Rserve instance, not stand-alone R!")))
+
+  printjs <- rcloud.install.js.module("",
+                "(function() {
+                    return {
+                      console: function(message, k) {
+                        console.log(message)
+                      }
+                    }
+                  })()",
+                TRUE)
 }
