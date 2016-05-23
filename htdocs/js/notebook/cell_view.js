@@ -376,7 +376,11 @@ function create_cell_html_view(language, cell_model) {
                 sender: 'editor'
             },
             exec: function() {
-                console.log('beginning of previous cell');
+                var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                if(prior_cell) {
+                    prior_cell.set_focus();
+                }
             }
         }, {
             name: 'navigateTopNextCell',
@@ -386,7 +390,11 @@ function create_cell_html_view(language, cell_model) {
                 sender: 'editor'
             },
             exec: function() {
-                console.log('beginning of next cell');
+                var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                if(subsequent_cell) {
+                    subsequent_cell.set_focus();
+                }
             }
         }, {
             name: 'deactivateCell',
