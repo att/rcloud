@@ -422,7 +422,28 @@ function create_cell_html_view(language, cell_model) {
                         controller.edit_source(true);
                     });
             }
-        }]);
+        }/*, {
+            name: 'traverseCellPrevious', 
+            bindKey: {
+                win: 'Left',
+                mac: 'Left',
+                sender: 'editor',
+            },
+            exec: function() {
+                console.log('traverse previous');
+            }
+        }, {
+            name: 'traverseCellNext', 
+            bindKey: {
+                win: 'Right',
+                mac: 'Right',
+                sender: 'editor',
+            },
+            exec: function() {
+                console.log('traverse next');
+            }
+        }*/]);
+
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
             cell_changed();
