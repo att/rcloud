@@ -119,7 +119,12 @@ var shell = (function() {
         insert_cell_before: function(content, language, index) {
             check_cell_language(language);
             return notebook_controller_.insert_cell(content, language, index);
-        }, join_prior_cell: function(cell_model) {
+        }, 
+        insert_cell_after: function(content, language, index) {
+            check_cell_language(language);
+            return notebook_controller_.insert_cell(content, language, index + 1);
+        },
+        join_prior_cell: function(cell_model) {
             return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {
             return notebook_controller_.split_cell(cell_model, point1, point2);

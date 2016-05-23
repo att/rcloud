@@ -396,6 +396,32 @@ function create_cell_html_view(language, cell_model) {
                     subsequent_cell.set_focus();
                 }
             }
+        }, {
+            name: 'insertCellPrevious', 
+            bindKey: {
+                win: 'Ctrl-[',
+                mac: 'Ctrl-[',
+                sender: 'editor',
+            },
+            exec: function() {
+                shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'insertCellNext', 
+            bindKey: {
+                win: 'Ctrl-]',
+                mac: 'Ctrl-]',
+                sender: 'editor',
+            },
+            exec: function() {
+                shell.insert_cell_after("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
