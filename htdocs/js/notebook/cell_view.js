@@ -397,6 +397,32 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
         }, {
+            name: 'insertCellPrevious', 
+            bindKey: {
+                win: 'Ctrl-[',
+                mac: 'Ctrl-[',
+                sender: 'editor',
+            },
+            exec: function() {
+                shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'insertCellNext', 
+            bindKey: {
+                win: 'Ctrl-]',
+                mac: 'Ctrl-]',
+                sender: 'editor',
+            },
+            exec: function() {
+                shell.insert_cell_after("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
             name: 'deactivateCell',
             bindKey: {
                 win: 'Escape',
