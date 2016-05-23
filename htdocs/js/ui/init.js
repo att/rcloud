@@ -196,7 +196,7 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
-    }, {
+    }/*, {
         category: 'Cell Management', 
         id: 'arrow_next_cell', 
         description: 'Enter next cell (from end of current)',
@@ -212,7 +212,7 @@ RCloud.UI.init = function() {
             ['left']
         ],
         modes: ['writeable']
-    }, {
+    }*/, {
         category: 'Cell Management', 
         id: 'beginning_next_cell', 
         description: 'Go to beginning of next cell',
