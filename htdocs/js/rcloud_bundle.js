@@ -233,9 +233,14 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_by_name"],
             ["languages", "get_list"],
             ["plots", "render"],
-            ["plots", "get_formats"]
+            ["plots", "get_formats"],
+            ["get_thumb"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
+
+        rcloud.get_thumb = function() {
+          return rcloud_ocaps.get_thumbAsync.apply(null, arguments);
+        };
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -9999,7 +10004,6 @@ RCloud.UI.discovery_page = (function() {
                 './../../lib/js/imagesloaded',
                 './../../lib/js/masonry.pkgd.min'
               ], function(imagesLoaded, Masonry) {
-
                   'use strict';
 
                   window.imagesLoaded = imagesLoaded;
@@ -10016,6 +10020,7 @@ RCloud.UI.discovery_page = (function() {
                       .sortBy(function(kv) { return kv[1] * -1; })
                       .first(20)
                       .map(function(notebook) {
+                        console.log(notebook[0]);
                         var current = editor.get_notebook_info(notebook[0]);
                         return {
                           id: notebook[0],
@@ -10024,7 +10029,7 @@ RCloud.UI.discovery_page = (function() {
                           last_commit: new Date(current.last_commit).toDateString(),
                           username: current.username,
                           num_stars: editor.num_stars(current[0]),
-                          image_url: 'notebook.R/' + notebook[0] + '/thumb.png'
+                          image_src: rcloud.get_thumb(notebook[0], function(){})
                         }
                       })
                       .value();
@@ -10046,7 +10051,7 @@ RCloud.UI.discovery_page = (function() {
                             itemSelector: '.grid-item'
                           });
 
-                         
+
 
                           $('#progress').fadeOut(200, function() {
                             $('.navbar').fadeIn(200, function() {
@@ -10054,11 +10059,11 @@ RCloud.UI.discovery_page = (function() {
                               $('body').addClass('loaded');
                             });
                           });
-                          
+
                         })
                         .progress(function(imgLoad, image) {
                           if(!image.isLoaded) {
-                            $(image.img).attr('src', './img/missing.png');  
+                            $(image.img).attr('src', './img/missing.png');
                           }
 
                           var new_value = +$('progress').attr('value') + 1;
@@ -10073,4 +10078,5 @@ RCloud.UI.discovery_page = (function() {
         }
     };
 })();
+
 //# sourceMappingURL=rcloud_bundle.js.map
