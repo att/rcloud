@@ -795,6 +795,7 @@ function create_cell_html_view(language, cell_model) {
         },
         scroll_into_view: function() {
             var renderer = ace_widget_.renderer;
+            var rect = renderer.container.getBoundingClientRect();
             var pos = renderer.$cursorLayer.$pixelPos;
             var config = renderer.layerConfig;
             var top = pos.top - config.offset;
