@@ -259,6 +259,13 @@ Notebook.create_model = function()
             else
                 return null;
         },
+        subsequent_cell: function(cell_model) {
+            var index = this.cells.indexOf(cell_model);
+            if(index < this.cells.length - 1)
+                return this.cells[index + 1];
+            else
+                return null;
+        },
         change_cell_language: function(cell_model, language) {
             // for this one case we have to use filenames instead of ids
             var pre_name = cell_model.filename();
