@@ -34,6 +34,7 @@ Notebook.Cell.create_model = function(content, language)
         set_focus: function() {
             this.notify_views(function(view) {
                 view.edit_source(true);
+                view.scroll_into_view(true);
             });
         },
         deselect_cell: function() {
