@@ -192,8 +192,8 @@ RCloud.UI.init = function() {
         id: 'deactivate_cell',
         description: 'Deactivate Cell',
         keys: [
-            ['escape'],
-            ['escape']
+            ['esc'],
+            ['esc']
         ],
         modes: ['writeable']
     }]);
