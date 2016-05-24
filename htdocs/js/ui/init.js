@@ -185,6 +185,15 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
+    }, {
+        category: 'Cell Management',
+        id: 'deactivate_cell',
+        description: 'Deactivate Cell',
+        keys: [
+            ['escape'],
+            ['escape']
+        ],
+        modes: ['writeable']
     }]);
 
     // general:

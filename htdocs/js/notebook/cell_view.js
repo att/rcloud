@@ -358,6 +358,16 @@ function create_cell_html_view(language, cell_model) {
             exec: function(ace_widget_, args, request) {
                 result.execute_cell();
             }
+        }, {
+            name: 'deactivateCell',
+            bindKey: {
+                win: 'Escape',
+                mac: 'Escape',
+                sender: 'editor'
+            },
+            exec: function() {
+                console.log('cell deactivated');
+            }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
