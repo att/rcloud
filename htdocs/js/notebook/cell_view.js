@@ -856,6 +856,11 @@ function create_cell_html_view(language, cell_model) {
 
             }
             return this;
+        },
+        deactivate_cell: function() {
+            if(ace_widget_) {
+                ace_widget_.blur();
+            }
         }
     });
 
