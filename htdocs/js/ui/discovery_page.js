@@ -23,15 +23,17 @@ RCloud.UI.discovery_page = (function() {
                       .map(function(notebook) {
                         console.log(notebook[0]);
                         var current = editor.get_notebook_info(notebook[0]);
-                        return {
-                          id: notebook[0],
-                          time: notebook[1],
-                          description: current.description,
-                          last_commit: new Date(current.last_commit).toDateString(),
-                          username: current.username,
-                          num_stars: editor.num_stars(current[0]),
-                          image_src: rcloud.get_thumb(notebook[0])
-                        }
+                        return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
+                          return {
+                            id: notebook[0],
+                            time: notebook[1],
+                            description: current.description,
+                            last_commit: new Date(current.last_commit).toDateString(),
+                            username: current.username,
+                            num_stars: editor.num_stars(current[0]),
+                            image_src: thumb_src
+                          }
+                        });
                       })
                       .value();
 
