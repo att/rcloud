@@ -10032,7 +10032,7 @@ RCloud.UI.discovery_page = (function() {
                           }
                         });
                       })
-                      .value();
+                      .then(function(kv){kv.value()});
 
                       $('progress').attr({
                         max: recent_notebooks.length
