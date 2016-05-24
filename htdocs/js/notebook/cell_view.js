@@ -366,7 +366,7 @@ function create_cell_html_view(language, cell_model) {
                 sender: 'editor'
             },
             exec: function() {
-                console.log('cell deactivated');
+                ace_widget_.blur();
             }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
