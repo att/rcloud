@@ -45,9 +45,15 @@ Notebook.Cell.create_model = function(content, language)
 
             this.notify_views(function(view) {
                 view.selected_updated();
+                view.deactivate_cell();
             });
 
             return is_selected_;  
+        },
+        deactivate_cell: function() {
+            this.notify_views(function(view) {
+                view.deactivate_cell();
+            });
         },
         toggle_cell: function() {
             is_selected_ = !is_selected_;

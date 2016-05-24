@@ -303,6 +303,10 @@ Notebook.create_model = function()
                 select_range(Math.min(start, end), Math.max(start, end));
             }
 
+            _.each(this.cells, function(cell) {
+                cell.deactivate_cell();
+            });
+
             RCloud.UI.selection_bar.update(this.cells);
         },
         update_cell: function(cell_model) {
