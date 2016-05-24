@@ -185,6 +185,64 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
+    }/*, {
+        category: 'Cell Management', 
+        id: 'arrow_next_cell', 
+        description: 'Enter next cell (from end of current)',
+        keys: [
+            ['right']
+        ],
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management', 
+        id: 'arrow_previous_cell', 
+        description: 'Enter previous cell (from start of current)',
+        keys: [
+            ['left']
+        ],
+        modes: ['writeable']
+    }*/, {
+        category: 'Cell Management', 
+        id: 'beginning_previous_cell', 
+        description: 'Go to beginning of previous cell',
+        keys: [
+            ['alt', 'up']
+        ],
+        modes: ['writeable']
+    }, {        
+        category: 'Cell Management', 
+        id: 'beginning_next_cell', 
+        description: 'Go to beginning of next cell',
+        keys: [
+            ['alt', 'down']
+        ],
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management', 
+        id: 'insert_cell_before', 
+        description: 'Insert cell before current',
+        keys: [
+            ['ctrl', '[']
+        ],
+        modes: ['writeable'],
+        action: function() { }
+    }, {        
+        category: 'Cell Management', 
+        id: 'insert_cell_after', 
+        description: 'Insert cell after current',
+        keys: [
+            ['ctrl', ']']
+        ],
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management', 
+        id: 'cell_run_from_here', 
+        description: 'Run from here (within a cell)',
+        keys: [
+            ['shift', 'alt', 'enter']
+        ],
+        modes: ['writeable']
     }]);
 
     // general:

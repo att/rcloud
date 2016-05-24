@@ -44,7 +44,7 @@ RCloud.UI.cell_commands = (function() {
                 // when they are set to container = body
                 $(".tooltip").remove();
                 if (!$(e.currentTarget).hasClass("button-disabled")) {
-                    action(control);
+                    action(control, e);
                 }
             });
             return {
@@ -193,8 +193,12 @@ RCloud.UI.cell_commands = (function() {
                     area: 'cell',
                     sort: 2000,
                     create: function(cell_model, cell_view) {
-                        return that.create_button("icon-play", "run", function() {
-                            cell_view.execute_cell();
+                        return that.create_button("icon-play", "run", function(control, e) {
+                            if(e.shiftKey) {
+                                shell.run_notebook_from(cell_model.id());
+                            } else {
+                                cell_view.execute_cell();    
+                            }
                         });
                     }
                 },

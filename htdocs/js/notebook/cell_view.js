@@ -355,10 +355,95 @@ function create_cell_html_view(language, cell_model) {
                 mac: 'Alt-Return',
                 sender: 'editor'
             },
-            exec: function(ace_widget_, args, request) {
+            exec: function() {
                 result.execute_cell();
             }
-        }]);
+        }, {
+            name: 'executeCellsFromHere',
+            bindKey: {
+                win: 'Shift-Alt-Return',
+                mac: 'Shift-Alt-Return',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'navigateTopPreviousCell',
+            bindKey: {
+                win: 'Alt-Up',
+                mac: 'Alt-Up',
+                sender: 'editor'
+            },
+            exec: function() {
+                var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                if(prior_cell) {
+                    prior_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'navigateTopNextCell',
+            bindKey: {
+                win: 'Alt-Down',
+                mac: 'Alt-Down',
+                sender: 'editor'
+            },
+            exec: function() {
+                var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                if(subsequent_cell) {
+                    subsequent_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'insertCellPrevious', 
+            bindKey: {
+                win: 'Ctrl-[',
+                mac: 'Ctrl-[',
+                sender: 'editor',
+            },
+            exec: function() {
+                shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'insertCellNext', 
+            bindKey: {
+                win: 'Ctrl-]',
+                mac: 'Ctrl-]',
+                sender: 'editor',
+            },
+            exec: function() {
+                shell.insert_cell_after("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }/*, {
+            name: 'traverseCellPrevious', 
+            bindKey: {
+                win: 'Left',
+                mac: 'Left',
+                sender: 'editor',
+            },
+            exec: function() {
+                console.log('traverse previous');
+            }
+        }, {
+            name: 'traverseCellNext', 
+            bindKey: {
+                win: 'Right',
+                mac: 'Right',
+                sender: 'editor',
+            },
+            exec: function() {
+                console.log('traverse next');
+            }
+        }*/]);
+
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
             cell_changed();
@@ -734,6 +819,36 @@ function create_cell_html_view(language, cell_model) {
             }
             edit_mode_ = edit_mode;
             this.change_highlights(highlights_); // restore highlights
+        },
+        scroll_into_view: function() {
+            var renderer = ace_widget_.renderer;
+            var rect = renderer.container.getBoundingClientRect();
+            var pos = renderer.$cursorLayer.$pixelPos;
+            var config = renderer.layerConfig;
+            var top = pos.top - config.offset;
+
+            // shouldScoll  = true  = ^
+            // shouldScroll = false = v
+            if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                shouldScroll = true;
+            } else if (pos.top < config.height &&
+                pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                shouldScroll = false;
+            } else {
+                shouldScroll = null;
+            }
+
+            if (shouldScroll != null) {
+                var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                scroll_top += pos.top;
+
+                if(shouldScroll) {
+                    $('#rcloud-cellarea').scrollTop(scroll_top);
+                } else {
+                    $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                }
+            }
         },
         toggle_source: function() {
             this.hide_source($(source_div_).is(":visible"));
