@@ -1,15 +1,13 @@
 rcloud.get.thumb <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
   rcs.get(rcs.key(base, "thumb"))
-  #rcs.get("test")
 }
 
 rcloud.set.thumb <- function(thumb_png, id){
   base <- usr.key(user=".notebook", notebook=id)
 
   resized <- thumb_png#.resize.image(thumb_png)
-  #rcs.set(rcs.key(base, "thumb"), resized)
-  rcs.set("test", resized)
+  rcs.set(rcs.key(base, "thumb"), resized)
   resized # return resized version for upload to gitgist
 }
 

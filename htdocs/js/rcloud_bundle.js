@@ -238,9 +238,7 @@ RCloud.create = function(rcloud_ocaps) {
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
-        rcloud.get_thumb = function() {
-          return rcloud_ocaps.get_thumbAsync.apply(null, arguments);
-        };
+        rcloud.get_thumb = rcloud_ocaps.get_thumbAsync;
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -10022,15 +10020,17 @@ RCloud.UI.discovery_page = (function() {
                       .map(function(notebook) {
                         console.log(notebook[0]);
                         var current = editor.get_notebook_info(notebook[0]);
-                        return {
-                          id: notebook[0],
-                          time: notebook[1],
-                          description: current.description,
-                          last_commit: new Date(current.last_commit).toDateString(),
-                          username: current.username,
-                          num_stars: editor.num_stars(current[0]),
-                          image_src: rcloud.get_thumb(notebook[0], function(){})
-                        }
+                        return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
+                          return {
+                            id: notebook[0],
+                            time: notebook[1],
+                            description: current.description,
+                            last_commit: new Date(current.last_commit).toDateString(),
+                            username: current.username,
+                            num_stars: editor.num_stars(current[0]),
+                            image_src: thumb_src
+                          }
+                        });
                       })
                       .value();
 
