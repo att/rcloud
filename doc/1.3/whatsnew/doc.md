@@ -51,11 +51,11 @@ layout: default
     * [Redis Database Number and Password](#redisdatabasenumberandpassword)
 1. [Bug Fixes/Improvements](#bugfixes)
 
-<a name="functional" />
+<a name="functional" ></a>
 
 ## 1. Functional Enhancements
 
-<a name="efficientloading" />
+<a name="efficientloading" ></a>
 
 ### Efficient Loading
 
@@ -63,7 +63,7 @@ After loading a notebook, cells do not activate the editor until they are clicke
 
 [Top](#top)
 
-<a name="rmarkdowncells" />
+<a name="rmarkdowncells" ></a>
 
 ### RMarkdown Cells; Experimental Support
 
@@ -71,7 +71,7 @@ Experimental support for RMarkdown cells is included.  Old Markdown cells use th
 
 [Top](#top)
 
-<a name="failedsearches" />
+<a name="failedsearches" ></a>
 
 ### Failed Searches
 
@@ -79,7 +79,7 @@ If you enter a search term that contains a SOLR/Lucene syntax error, for example
 
 [Top](#top)
 
-<a name="shareablelinks" />
+<a name="shareablelinks" ></a>
 
 ### Shareable Links
 
@@ -87,7 +87,7 @@ If you tag a version of your notebook, load it, and then select one of the share
 
 [Top](#top)
 
-<a name="betterworkspacevaluedisplay" />
+<a name="betterworkspacevaluedisplay" ></a>
 
 ### Better Workspace Value Display
 
@@ -95,7 +95,7 @@ Workspace values are displayed simply and more accurately.
 
 [Top](#top)
 
-<a name="pagereloads" />
+<a name="pagereloads" ></a>
 
 ### Page Reloads
 
@@ -103,7 +103,7 @@ If a change in settings requires a reload, RCloud will indicate that a reload is
 
 [Top](#top)
 
-<a name="visitlogo" />
+<a name="visitlogo" ></a>
 
 ### visit.html Logo
 
@@ -111,7 +111,7 @@ The logo used in visit.html is customizable.
 
 [Top](#top)
 
-<a name="linebreaks" />
+<a name="linebreaks" ></a>
 
 ### Line Breaks
 
@@ -119,11 +119,11 @@ When displaying R stack traces, RCloud uses line breaks.
 
 [Top](#top)
 
-<a name="gui" />
+<a name="gui" ></a>
 
 ## 2. GUI Enhancement
 
-<a name="cleanerinterface" />
+<a name="cleanerinterface" ></a>
 
 ### Cleaner Interface
 
@@ -131,7 +131,7 @@ The RCloud team has put a lot of work into creating a new cleaner interface, red
 
 [Top](#top)
 
-<a name="cellrunstateindicator" />
+<a name="cellrunstateindicator" ></a>
 
 ### Cell Run-State Indicator
 
@@ -151,7 +151,7 @@ The run-state of each cell is displayed via an icon in between the gutter and ce
 
 [Top](#top)
 
-<a name="nonpreemptivestop" />
+<a name="nonpreemptivestop" ></a>
 
 ### Non-Preemptive Stop
 
@@ -163,7 +163,7 @@ Note that this will not interrupt currently running cells (![runningcircle](img/
 
 [Top](#top)
 
-<a name="editablecellcolor" />
+<a name="editablecellcolor" ></a>
 
 ### Editable Cell Color
 
@@ -171,7 +171,7 @@ Editable cells are lightly colored.
 
 [Top](#top)
 
-<a name="autoindentation" />
+<a name="autoindentation" ></a>
 
 ### Auto Indentation
 
@@ -179,7 +179,7 @@ R and Python cells have automatic indentation.
 
 [Top](#top)
 
-<a name="codeandoutput" />
+<a name="codeandoutput" ></a>
 
 ### Code and Output
 
@@ -191,7 +191,7 @@ Markdown cells behave slightly differently - since the markdown output already c
 
 [Top](#top)
 
-<a name="directinputandoutput" />
+<a name="directinputandoutput" ></a>
 
 ### Direct Input and Output
 
@@ -212,7 +212,7 @@ For debugging:
 ![browse](img/browse.png)
 [Top](#top)
 
-<a name="savingplots" />
+<a name="savingplots" ></a>
 
 ### Saving Plots
 
@@ -222,7 +222,7 @@ Hover the mouse over a plot created in an R cell to make the disk icon appear in
 
 [Top](#top)
 
-<a name="bigplots" />
+<a name="bigplots" ></a>
 
 ### Big Plots
 
@@ -230,7 +230,7 @@ RCloud displays a horizontal scrollbar when plots that are too wide to display c
 
 [Top](#top)
 
-<a name="searchandreplace" />
+<a name="searchandreplace" ></a>
 
 ### Search and Replace
 
@@ -246,7 +246,7 @@ Ctrl-H (Win, Linux), Cmd-Option-H (Mac) opens the replace bar.
 
 [Top](#top)
 
-<a name="notebookinformationicon" />
+<a name="notebookinformationicon" ></a>
 
 ### Notebook Information Icon
 
@@ -256,7 +256,7 @@ Clicking the notebook information icon shows which users have starred a notebook
 
 [Top](#top)
 
-<a name="startupanimation" />
+<a name="startupanimation" ></a>
 
 ### Startup Animation
 
@@ -266,7 +266,7 @@ RCloud displays an animated icon when first loading a notebook.
 
 [Top](#top)
 
-<a name="years" />
+<a name="years" ></a>
 
 ### Years
 
@@ -274,7 +274,7 @@ When versions are more than a year old, the year is displayed in the notebook ve
 
 [Top](#top)
 
-<a name="rightclickingsearchresults" />
+<a name="rightclickingsearchresults" ></a>
 
 ### Right-Clicking Search Results
 
@@ -282,7 +282,7 @@ Users can right click on search results to open results a new tab.
 
 [Top](#top)
 
-<a name="argumentsforuserdefinedfunctions" />
+<a name="argumentsforuserdefinedfunctions" ></a>
 
 ### Arguments for User-Defined Functions
 
@@ -298,7 +298,7 @@ The arguments are displayed in the Workspace panel:
 
 [Top](#top)
 
-<a name="tersedates" />
+<a name="tersedates" ></a>
 
 ### Terse Dates
 
@@ -308,7 +308,7 @@ There is an option to turn off "terse dates" in the Options panel.
 
 [Top](#top)
 
-<a name="extensions" />
+<a name="extensions" ></a>
 
 ### Extensions
 
@@ -318,7 +318,7 @@ You can enable and disable per-user extensions using the "Enable Extensions" and
 
 [Top](#top)
 
-<a name="commentssubscription" />
+<a name="commentssubscription" ></a>
 
 ### Comments Subscription
 
@@ -327,7 +327,7 @@ If your server is set up to allow subscribing to comments, the Subscribe to Comm
 ![commentsubscribe](img/commentsubscribe.png)
 
 [Top](#top)
-<a name="cellnumbers" />
+<a name="cellnumbers" ></a>
 
 ### Cell Numbers
 
@@ -341,7 +341,7 @@ You can turn off this feature in the settings panel:
 
 [Top](#top)
 
-<a name="reorderingcells" />
+<a name="reorderingcells" ></a>
 
 ### Reordering Cells
 
@@ -349,7 +349,7 @@ Users can grab the status area above cell as well as the gutter area (![dragcell
 
 [Top](#top)
 
-<a name="clickingineditcells" />
+<a name="clickingineditcells" ></a>
 
 ### Clicking in Edit Cells
 
@@ -357,11 +357,11 @@ Clicking into an edit cell sets the cursor position to the clicked location.
 
 [Top](#top)
 
-<a name="tech" />
+<a name="tech" ></a>
 
 ## 3. Technical Enhancements and Notes
 
-<a name="extensionstorclouduserinterface" />
+<a name="extensionstorclouduserinterface" ></a>
 
 ### Extensions to RCloud User Interface
 
@@ -369,7 +369,7 @@ There are many ways to write extensions to the RCloud user interface. For more i
 
 [Top](#top)
 
-<a name="rcloudlanguageaddons" />
+<a name="rcloudlanguageaddons" ></a>
 
 ### RCloud Language Add-Ons
 
@@ -377,7 +377,7 @@ Administrators can add cell languages. R, RMarkdown, and Python evaluation is pe
 
 [Top](#top)
 
-<a name="sharedr" />
+<a name="sharedr" ></a>
 
 ### shared.R
 
@@ -385,7 +385,7 @@ Administrators can add cell languages. R, RMarkdown, and Python evaluation is pe
 
 [Top](#top)
 
-<a name="redisdatabasenumberandpassword" />
+<a name="redisdatabasenumberandpassword" ></a>
 
 ### Redis Database Number and Password
 
@@ -393,7 +393,7 @@ redis database number and password can be set.
 
 [Top](#top)
 
-<a name="bugfixes" />
+<a name="bugfixes" ></a>
 
 ## 4. Bug Fixes
 
