@@ -46,8 +46,8 @@ RCloud.UI.session_pane = {
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
         if(!$('#session-info').length) {
-            console.log(['session log; ', msg].join(''));
-             return; // workaround for view mode
+            console.log('session log; ', msg);
+            return; // workaround for view mode
         }
         // one hacky way is to maintain a <pre> that we fill as we go
         // note that R will happily spit out incomplete lines so it's
@@ -71,12 +71,14 @@ RCloud.UI.session_pane = {
             throw new Error("post_error expects a string or a jquery div");
         msg.addClass(errclass);
         dest = dest || this.error_dest_;
-        if(dest) { // if initialized, we can use the UI
+        if(dest && dest.length) { // if initialized, we can use the UI
             dest.append(msg);
             this.show_error_area();
             ui_utils.on_next_tick(function() {
                 ui_utils.scroll_to_after($("#session-info"));
             });
+        } else {
+            RCloud.UI.fatal_dialog(msg.text(), "Error", ui_utils.relogin_uri());
         }
         if(!logged)
             console.log("pre-init post_error: " + msg.text());
