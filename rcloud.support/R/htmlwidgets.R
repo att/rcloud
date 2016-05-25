@@ -4,7 +4,10 @@
 rcloud.htmlwidgets.viewer <- function(url, height) {
 
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
-  rcloud.html.out(paste0("<div id=\"", where, "\"></div>"))
+  rcloud.html.out(paste0(
+    "<div class=\"rcloud-htmlwidget\">",
+    "<div id=\"", where, "\"></div>",
+    "</div>"))
   where <- paste0("#", where)
 
   if (is.null(.htmlwidgets.cache$ocaps)) {
@@ -32,15 +35,21 @@ as.character.htmlwidget <- function(x, ...) {
   pandoc_self_contained_html(tmp, tmp)
 
   widget <- paste(readLines(tmp), collapse = "\n")
-  res <- add.iframe.htmlwidget(widget)
-  print(res)
+  where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
+  res <- paste0(
+    "<div class=\"rcloud-htmlwidget\">",
+    "<div id=\"", where, "\">",
+    add.iframe.htmlwidget(widget),
+    "</div>",
+    "</div>"
+  )
   res
 }
 
 add.iframe.htmlwidget <- function(widget) {
   paste(
     sep = "",
-    "<iframe frameBorder=\"0\" width=\"100%\" height=\"100%\" srcdoc=\"",
+    "<iframe frameBorder=\"0\" width=\"100%\" height=\"250\" srcdoc=\"",
     gsub("\"", "&quot;", widget),
     "\"></iframe>"
   )
