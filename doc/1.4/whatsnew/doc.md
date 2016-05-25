@@ -16,31 +16,31 @@ Created: 2015-07-03. RCloud documentation is currently maintained by <a target="
 ## Table of Contents
 
 1. [Functional Enhancements](#functional)
-  * [Protected Notebooks](#protectednotebooks)
-  * [Remote Instances](#remoteinstances)
-  * [Cell Execution](#cellexecution)
-  * [Binary Assets](#binaryassets)
-  * [Header Bar Customization](#headerbarcustomization)
-  * [Notebook Prefix](#notebookprefix)
+    * [Protected Notebooks](#protectednotebooks)
+    * [Remote Instances](#remoteinstances)
+    * [Cell Execution](#cellexecution)
+    * [Binary Assets](#binaryassets)
+    * [Header Bar Customization](#headerbarcustomization)
+    * [Notebook Prefix](#notebookprefix)
 1. [GUI Enhancements](#gui)
-  * [Toggle Results](#toggleresults)
-  * [Hiding UI Elements](#hideuielements)
-  * [Cell States](#cellstates)
-  * [Multi-Line Command Input](#multilinecommandinput)
-  * [HTML Syntax](#htmlsyntax)
+    * [Toggle Results](#toggleresults)
+    * [Hiding UI Elements](#hideuielements)
+    * [Cell States](#cellstates)
+    * [Multi-Line Command Input](#multilinecommandinput)
+    * [HTML Syntax](#htmlsyntax)
 1. [Technical Enhancements and Notes](#tech)
-  * [Workspace Panel](#workspacepanel)
+    * [Workspace Panel](#workspacepanel)
 1. [Plugins](#plugins)
-  * [Workspace Viewer](#workspaceviewer)
+    * [Workspace Viewer](#workspaceviewer)
 1. [Bug Fixes](#bugfixes)
 
 [Top](#top)
 
-<a name="functional" />
+<a name="functional"></a>
 
 ## 1. Functional Enhancements
 
-<a name="protectednotebooks" />
+<a name="protectednotebooks"></a>
 
 ### Protected Notebooks
 
@@ -66,7 +66,7 @@ Use the second tab of the protection dialog to create/rename groups and/or assig
 
 [Top](#top)
 
-<a name="remoteinstances" />
+<a name="remoteinstances"></a>
 
 ### Remote Instances
 
@@ -76,7 +76,7 @@ In this release, all notebooks are displayed in the same notebook tree. Non-loca
 
 [Top](#top)
 
-<a name="cellexecution" />
+<a name="cellexecution"></a>
 
 ### Cell Execution
 
@@ -86,7 +86,7 @@ Clicking the stop button in the header bar sends an interrupt to the R process a
 
 [Top](#top)
 
-<a name="binaryassets" />
+<a name="binaryassets"></a>
 
 ### Binary Assets
 
@@ -94,7 +94,7 @@ Assets can be binary (i.e. not text based). RCloud auto-detects content format a
 
 [Top](#top)
 
-<a name="headerbarcustomization" />
+<a name="headerbarcustomization"></a>
 
 ### Header Bar Customization
 
@@ -102,7 +102,7 @@ Header bar menus are customizable in order to display, for example, help or othe
 
 [Top](#top)
 
-<a name="notebookprefix" />
+<a name="notebookprefix"></a>
 
 ### Notebook Prefix
 
@@ -110,11 +110,11 @@ New RCloud notebook names default to "Notebook" in the root of your user ID note
 
 [Top](#top)
 
-<a name="gui" />
+<a name="gui"></a>
 
 ## 2. GUI Enhancements
 
-<a name="toggleresults" />
+<a name="toggleresults"></a>
 
 ### Toggle Results
 
@@ -122,7 +122,7 @@ When cell output is long and it's difficult to find the next cell, you can toggl
 
 [Top](#top)
 
-<a name="hideuielements" />
+<a name="hideuielements"></a>
 
 ### Hiding UI Elements
 
@@ -130,7 +130,7 @@ Use `&quiet=1` in view.html notebook URLs to hide all UI elements, including cel
 
 [Top](#top)
 
-<a name="cellstates" />
+<a name="cellstates"></a>
 
 ### Cell States
 
@@ -150,7 +150,7 @@ This indicates that the cell needs to run again for the modified code and displa
 
 [Top](#top)
 
-<a name="multilinecommandinput" />
+<a name="multilinecommandinput"></a>
 
 ### Multi-Line Command Input
 
@@ -160,7 +160,7 @@ Multi-line command input is indicated with a `+` to emulate command-line R.
 
 [Top](#top)
 
-<a name="htmlsyntax" />
+<a name="htmlsyntax"></a>
 
 ### HTML Syntax
 
@@ -168,11 +168,11 @@ RCloud highlights and checks HTML syntax.
 
 [Top](#top)
 
-<a name="tech" />
+<a name="tech"></a>
 
 ## 3. Technical Enhancements and Notes
 
-<a name="workspacepanel" />
+<a name="workspacepanel"></a>
 
 ### Workspace Panel
 
@@ -180,11 +180,11 @@ The workspace panel is not updated if it is closed.
 
 [Top](#top)
 
-<a name="plugins" />
+<a name="plugins"></a>
 
 ## 4. Plugins
 
-<a name="workspaceviewer" />
+<a name="workspaceviewer"></a>
 
 ### Workspace Viewer
 
@@ -193,7 +193,7 @@ The workspace panel is not updated if it is closed.
 
 [Top](#top)
 
-<a name="bugfixes" />
+<a name="bugfixes"></a>
 
 ## 5. Bug Fixes
 

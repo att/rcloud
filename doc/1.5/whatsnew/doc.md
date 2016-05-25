@@ -20,24 +20,24 @@ Please see [1.5 Current GUI Documentation](/rcloud/doc/1.5/guidoc/doc.html) for 
 ## Table of Contents
 
 1. [Functional Enhancements](#functional)
-  * [Flush](#flush)
+    * [Flush](#flush)
 1. [GUI Enhancements](#gui)
-  * [Locator](#locator)
-  * [Recent Notebooks](#recentnotebooks)
-  * [Shell Cells](#shellcells)
+    * [Locator](#locator)
+    * [Recent Notebooks](#recentnotebooks)
+    * [Shell Cells](#shellcells)
 1. [Technical Enhancements and Notes](#tech)
-  * [RCloud Root](#root)
-  * [User Extensions](#userextensions)
-  * [Error Messages](#errormessages)
+    * [RCloud Root](#root)
+    * [User Extensions](#userextensions)
+    * [Error Messages](#errormessages)
 1. [Bug Fixes](#bugfixes)
 
 [Top](#top)
 
-<a name="functional" />
+<a name="functional"></a>
 
 ## 1. Functional Enhancements
 
-<a name="flush" />
+<a name="flush"></a>
 
 ### Flush
 
@@ -45,11 +45,11 @@ Please see [1.5 Current GUI Documentation](/rcloud/doc/1.5/guidoc/doc.html) for 
 
 [Top](#top)
 
-<a name="gui" />
+<a name="gui"></a>
 
 ## 2. GUI Enhancements
 
-<a name="locator" />
+<a name="locator"></a>
 
 ### Locator
 
@@ -65,7 +65,7 @@ This functionality is only available in R cells.
 
 [Top](#top)
 
-<a name="recentnotebooks" />
+<a name="recentnotebooks"></a>
 
 ### Recent Notebooks
 
@@ -75,7 +75,7 @@ Access your recently opened notebooks via the Recent link in the Notebooks title
 
 [Top](#top)
 
-<a name="shellcells" />
+<a name="shellcells"></a>
 
 ### Shell Cells
 
@@ -85,11 +85,11 @@ Shell cells are supported. Each cell represents a separate Unix shell, so enviro
 
 [Top](#top)
 
-<a name="tech" />
+<a name="tech"></a>
 
 ## 3. Technical Enhancements and Notes
 
-<a name="root" />
+<a name="root"></a>
 
 ### RCloud Root
 
@@ -97,7 +97,7 @@ RCloud user home directories are configurable using the `rcloud.user.home` confi
 
 [Top](#top)
 
-<a name="userextensions" />
+<a name="userextensions"></a>
 
 ### User Extensions
 
@@ -105,7 +105,7 @@ The `rcloud.alluser.addons` rcloud.conf key controls all user extensions. This a
 
 [Top](#top)
 
-<a name="errormessages" />
+<a name="errormessages"></a>
 
 ### Error Messages
 
@@ -113,7 +113,7 @@ Bad notebook source triggers a proper error message.
 
 [Top](#top)
 
-<a name="bugfixes" />
+<a name="bugfixes"></a>
 
 ## 4. Bug Fixes
 
