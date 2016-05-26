@@ -358,7 +358,6 @@ var editor = function () {
         return {
             label: 'All Notebooks',
             id: '/alls',
-            //children: user_nodes.sort(compare_nodes)
             children: _.map(all_the_users, function(u) {
                 var mine = u === username_;
                 var id = node_id('alls', u);
