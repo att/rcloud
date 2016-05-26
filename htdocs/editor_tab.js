@@ -1307,7 +1307,7 @@ var editor = function () {
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, source, null, selroot);
+                this.load_notebook(gistname, version, source, selroot, null);
         },
         new_notebook_prefix: function(_) {
             if(arguments.length) {
