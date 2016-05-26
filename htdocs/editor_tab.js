@@ -433,7 +433,14 @@ var editor = function () {
         featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
         if(!featured_subtrees.length)
             return null;
-        return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks', featured_subtrees.length===1 ? featured_[0] : null);
+        else 
+            return {
+                label: 'RCloud Sample Notebooks',
+                id: '/featured',
+                children: [{ label: 'loading...' }],
+                lazy_load: true,
+                user: featured_[0]
+            };
     }
 
     function load_tree(root_data) {
