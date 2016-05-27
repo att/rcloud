@@ -189,8 +189,8 @@ RCloud.UI.init = function() {
         action: function() { shell.notebook.controller.crop_cells(); }
     }, {
         category: 'Cell Management',
-        id: 'deactivate_cell',
-        description: 'Deactivate Cell',
+        id: 'blur_cell',
+        description: 'Blur Cell',
         keys: [
             ['esc'],
             ['esc']

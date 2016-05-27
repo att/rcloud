@@ -304,7 +304,7 @@ Notebook.create_model = function()
             }
 
             _.each(this.cells, function(cell) {
-                cell.deactivate_cell();
+                cell.blur_cell();
             });
 
             RCloud.UI.selection_bar.update(this.cells);
