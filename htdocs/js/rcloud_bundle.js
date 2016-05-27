@@ -2215,6 +2215,16 @@ function create_cell_html_view(language, cell_model) {
             exec: function(ace_widget_, args, request) {
                 result.execute_cell();
             }
+        }, {
+            name: 'deactivateCell',
+            bindKey: {
+                win: 'Escape',
+                mac: 'Escape',
+                sender: 'editor'
+            },
+            exec: function() {
+                ace_widget_.blur();
+            }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
@@ -2700,6 +2710,11 @@ function create_cell_html_view(language, cell_model) {
 
             }
             return this;
+        },
+        blur_cell: function() {
+            if(ace_widget_) {
+                ace_widget_.blur();
+            }
         }
     });
 
@@ -2760,9 +2775,15 @@ Notebook.Cell.create_model = function(content, language)
 
             this.notify_views(function(view) {
                 view.selected_updated();
+                view.blur_cell();
             });
 
             return is_selected_;  
+        },
+        blur_cell: function() {
+            this.notify_views(function(view) {
+                view.blur_cell();
+            });
         },
         toggle_cell: function() {
             is_selected_ = !is_selected_;
@@ -3404,6 +3425,10 @@ Notebook.create_model = function()
 
                 select_range(Math.min(start, end), Math.max(start, end));
             }
+
+            _.each(this.cells, function(cell) {
+                cell.blur_cell();
+            });
 
             RCloud.UI.selection_bar.update(this.cells);
         },
@@ -7066,6 +7091,7 @@ RCloud.UI.init = function() {
             ['command', 'z'],
             ['ctrl', 'z']
         ],
+        modes: ['writeable'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
@@ -7075,6 +7101,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'y'],
             ['command', 'shift', 'z']
         ],
+        modes: ['writeable'],        
         action: function() { editor.step_history_redo(); }
     }]);
 
@@ -7110,6 +7137,15 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
+    }, {
+        category: 'Cell Management',
+        id: 'blur_cell',
+        description: 'Blur Cell',
+        keys: [
+            ['esc'],
+            ['esc']
+        ],
+        modes: ['writeable']
     }]);
 
     // general:
