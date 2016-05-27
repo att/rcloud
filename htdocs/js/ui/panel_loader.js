@@ -197,9 +197,7 @@ RCloud.UI.panel_loader = (function() {
             }
 
             // alternative layout?
-            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) { 
-                
-                if(!layoutBySize) {
+            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {                if(!layoutBySize) {
 
                     var update_panel = function update_panel(panel, side, sort) {
                         panel_data_[panel].side = side;
@@ -207,11 +205,11 @@ RCloud.UI.panel_loader = (function() {
                     };
 
                     // adjust:
-                    _.each(['Notebooks', 'File Upload', 'Settings', 'Comments'], function(panel, index) {
+                    _.each(['Notebooks', 'Search', 'Settings', 'Help'], function(panel, index) {
                         update_panel(panel, 'left', (index + 1) * 1000);
                     });
 
-                    _.each(['Assets', 'Search', 'Help', 'Session'], function(panel, index) {
+                    _.each(['Assets', 'File Upload', 'Comments', 'Session'], function(panel, index) {
                         update_panel(panel, 'right', (index + 1) * 1000);
                     });
 
