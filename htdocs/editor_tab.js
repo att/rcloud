@@ -434,10 +434,23 @@ var editor = function () {
         if(!featured_subtrees.length)
             return null;
         else {
-            // load all of these items:
-            
-        }
 
+            return get_notebooks_by_user(featured_).then(function(notebooks) {
+
+                var notebook_nodes = convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
+                    notebook.id = '/featured/' + notebook.gistname;
+                    return notebook;
+                });
+                
+                return {
+                    label: 'RCloud Sample Notebooks',
+                    id: '/featured',
+                    children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes),
+                    user: featured_[0]
+                }
+            });
+
+            // // load all of these items:
             // return {
             //     label: 'RCloud Sample Notebooks',
             //     id: '/featured',
@@ -445,6 +458,7 @@ var editor = function () {
             //     lazy_load: true,
             //     user: featured_[0]
             // };
+        }
     }
 
     function load_tree(root_data) {
