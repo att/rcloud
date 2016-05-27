@@ -34,6 +34,7 @@ var editor = function () {
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
+        featured_notebooks_ = [],
         invalid_notebooks_ = {},
         current_ = null; // current notebook and version
 
@@ -426,6 +427,33 @@ var editor = function () {
         return create_notebook_root(friend_subtrees, 'friends', 'People I Starred');
     }
 
+    function get_featured() {
+
+        return rcloud.config.get_alluser_option('featured_users').then(function(featured) {
+            featured_ = featured || [];
+
+            if(_.isString(featured_))
+                featured_ = [featured_];
+
+            return get_notebooks_by_user(featured_[0]).then(function(notebooks) {
+
+                var notebook_nodes = convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
+                    notebook.id = '/featured/' + notebook.gistname;
+                    return notebook;
+                });
+                
+                return {
+                    label: 'RCloud Sample Notebooks',
+                    id: '/featured',
+                    children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes)
+                }
+            });
+
+        });
+    }
+
+
+/*
     function populate_featured(alls_root) {
         var featured_subtrees = alls_root.children.filter(function(subtree) {
             return featured_.indexOf(alls_name(subtree))>=0;
@@ -446,7 +474,7 @@ var editor = function () {
                     label: 'RCloud Sample Notebooks',
                     id: '/featured',
                     children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes),
-                    user: featured_[0]
+                    //user: featured_[0]
                 }
             });
 
@@ -460,6 +488,7 @@ var editor = function () {
             // };
         }
     }
+*/
 
     function load_tree(root_data) {
         result.create_book_tree_widget(root_data);
@@ -485,27 +514,35 @@ var editor = function () {
                 var root_data = [];
 
                 return Promise.all([rcloud.config.get_current_notebook(),
-                                    rcloud.config.get_alluser_option('featured_users')])
-                    .spread(function(current, featured) {
+                                    //rcloud.config.get_alluser_option('featured_users')
+                                    get_featured()
+
+                                    ])
+                    .spread(function(current, featured_notebooks) {
 
                         current_ = current;
                         num_stars_ = starred_info.num_stars;
                         notebook_info_ = starred_info.notebooks;
+                        featured_notebooks_ = featured_notebooks;
 
-                        featured_ = featured || [];
-                        if(_.isString(featured_))
-                            featured_ = [featured_];
                     })
                     .then(function() {
 
                         var alls_root = populate_all_notebooks(all_the_users);
 
                         return [
-                            populate_featured(alls_root),
+                            /*{
+                                label: 'RCloud Sample Notebooks',
+                                id: '/featured',
+                                children: []
+                                //children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes)
+                            },*/
+                            featured_notebooks_,
                             populate_interests(starred_info.notebooks),
                             populate_friends(alls_root),
                             alls_root
                         ].filter(function(t) { return !!t; });
+
                     });
             })
             .then(load_tree)
