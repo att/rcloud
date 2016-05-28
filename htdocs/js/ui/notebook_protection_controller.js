@@ -277,7 +277,7 @@ define(['angular'], function(angular) {
             if(!$scope.selectedAdminGroup || !$scope.allAdminGroups.length)
                 return;
             //prompt
-            var pr = prompt("Rename group "+$scope.selectedAdminGroup.name , $scope.selectedAdminGroup.name);
+            var pr = prompt("Rename group "+$scope.selectedAdminGroup.name , $scope.selectedAdminGroup.name).trim();
             if(pr != null) {
                 var r = confirm('Are you sure you want to rename group "'+$scope.selectedAdminGroup.name+' to "'+pr+'"?');
                 if(r === true) {
