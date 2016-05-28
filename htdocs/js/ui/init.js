@@ -153,6 +153,19 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],        
         action: function() { editor.step_history_redo(); }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_revert',
+        description: 'Reverts a notebook',
+        keys: [
+            ['ctrl', 'e'],
+            ['command', 'e']
+        ],
+        action: function() { 
+            if(shell.notebook.controller.is_mine()) {
+                editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
+            }
+        }
     }]);
 
     // cell management:
