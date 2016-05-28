@@ -279,7 +279,7 @@ define(['angular'], function(angular) {
             //prompt
             var pr = prompt("Rename group "+$scope.selectedAdminGroup.name , $scope.selectedAdminGroup.name).trim();
             if(pr != null) {
-                var r = confirm('Are you sure you want to rename group "'+$scope.selectedAdminGroup.name+' to "'+pr+'"?');
+                var r = confirm('Are you sure you want to rename group "' + $scope.selectedAdminGroup.name + '" to "' + pr + '"?');
                 if(r === true) {
                     //call changeGroupName on BE with ID and new name
                     var prevGroupId = $scope.selectedAdminGroup.id;
