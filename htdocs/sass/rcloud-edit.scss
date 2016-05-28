@@ -722,10 +722,12 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
 #show-shortcuts {
     display: block;
     text-decoration: none;
-    margin: 5px 8px;
+    padding-top: 5px;
+    position: absolute;
+    right: 9px;
 
     & i {
-        margin-right: 5px;
+        margin-right: 2px;
     }
 }
 
