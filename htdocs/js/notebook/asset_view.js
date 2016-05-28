@@ -24,18 +24,21 @@ Notebook.Asset.create_html_view = function(asset_model)
                 filename_span.text(old_asset_name);
                 return;
             }
-            var found = shell.notebook.model.get_asset(new_asset_name);
-            if (found) {
-                alert('An asset with the name "' + new_asset_name + '" already exists. Please choose a different name.');
+            
+            if(old_asset_name === new_asset_name) {
                 filename_span.text(old_asset_name);
-            }
-            else {
-                shell.notebook.controller
-                    .append_asset(old_asset_content, new_asset_name)
-                    .spread(function(_, new_controller) {
-                        new_controller.select();
-                        asset_model.controller.remove(true);
-                    });
+            } else {
+                if(shell.notebook.model.get_asset(new_asset_name)) {
+                    alert('An asset with the name "' + new_asset_name + '" already exists. Please choose a different name.');
+                    filename_span.text(old_asset_name);
+                } else {
+                    shell.notebook.controller
+                        .append_asset(old_asset_content, new_asset_name)
+                        .spread(function(_, new_controller) {
+                            new_controller.select();
+                            asset_model.controller.remove(true);
+                        });
+                }
             }
         });
     };
