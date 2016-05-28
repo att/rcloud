@@ -16,7 +16,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         // this is massively inefficient - actually three round-trips to the server when
         // we could have one!  save, create new asset, delete old one
         shell.notebook.controller.save().then(function() {
-            var new_asset_name = filename_span.text();
+            var new_asset_name = filename_span.text().trim();
             new_asset_name = new_asset_name.replace(/\s/g, " ");
             var old_asset_content = asset_model.content();
             if (Notebook.is_part_name(new_asset_name)) {
@@ -26,7 +26,7 @@ Notebook.Asset.create_html_view = function(asset_model)
             }
             var found = shell.notebook.model.get_asset(new_asset_name);
             if (found) {
-                alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
+                alert('An asset with the name "' + new_asset_name + '" already exists. Please choose a different name.');
                 filename_span.text(asset_old_name);
             }
             else {
