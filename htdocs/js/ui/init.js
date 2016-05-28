@@ -161,7 +161,6 @@ RCloud.UI.init = function() {
             ['ctrl', 'e'],
             ['command', 'e']
         ],
-        modes: ['writeable'],
         action: function() { 
             editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
         }
