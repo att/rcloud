@@ -87,15 +87,6 @@ RCloud.UI.shortcut_manager = (function() {
                     shortcut_to_add.key_bindings.push(keys.join('+'));
                 }
 
-                // with existing shortcuts:
-                for(var loop = 0; loop < existing_shortcuts.length; loop++) {
-                    if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
-                        console.warn('Keyboard shortcut "' + shortcut_to_add.description + '" cannot be registered because its keycode clashes with an existing shortcut.');
-                        can_add = false;
-                        break;
-                    }
-                }
-
                 if(can_add) {
 
                     // update any 'command' entries to the '⌘' key:

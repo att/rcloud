@@ -192,7 +192,6 @@ RCloud.UI.init = function() {
         id: 'blur_cell',
         description: 'Blur Cell',
         keys: [
-            ['esc'],
             ['esc']
         ],
         modes: ['writeable']
