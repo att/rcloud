@@ -63,9 +63,6 @@ rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(
         if (f$isdir) stop("cannot upload a directory")
         tryCatch(content <- readBin(file, raw(), f$size), warning=function(e) stop(e$message))
     }
-    if (name=="thumb.png"){
-        content <- rcloud.set.thumb(content, notebook$content$id)
-    }
 
     if (is.list(notebook)){
         notebook <- notebook$content$id
