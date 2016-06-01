@@ -514,29 +514,19 @@ var editor = function () {
                 var root_data = [];
 
                 return Promise.all([rcloud.config.get_current_notebook(),
-                                    //rcloud.config.get_alluser_option('featured_users')
                                     get_featured()
-
                                     ])
                     .spread(function(current, featured_notebooks) {
-
                         current_ = current;
                         num_stars_ = starred_info.num_stars;
                         notebook_info_ = starred_info.notebooks;
                         featured_notebooks_ = featured_notebooks;
-
                     })
                     .then(function() {
 
                         var alls_root = populate_all_notebooks(all_the_users);
 
                         return [
-                            /*{
-                                label: 'RCloud Sample Notebooks',
-                                id: '/featured',
-                                children: []
-                                //children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes)
-                            },*/
                             featured_notebooks_,
                             populate_interests(starred_info.notebooks),
                             populate_friends(alls_root),
@@ -1135,6 +1125,10 @@ var editor = function () {
         // go off and get data for the given user:
         if(n.lazy_load) {
             get_notebooks_by_user(n.user).then(function(notebooks) {
+
+                // merge these notebooks:
+                _.extend(notebook_info_, notebooks);
+
                 var initial_node;
 
                 var selected_node = get_selected_node();
