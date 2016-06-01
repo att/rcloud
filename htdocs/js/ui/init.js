@@ -161,7 +161,7 @@ RCloud.UI.init = function() {
             ['command', 'u'],
             ['ctrl', 'u']
         ]
-    }]);            }
+    }]);            
 
     // cell management:
     RCloud.UI.shortcut_manager.add([{
