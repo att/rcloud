@@ -289,7 +289,8 @@ var editor = function () {
 
     function get_notebooks_by_user(username) {
 
-        var promise = Promise.resolve();
+        var user_notebooks,
+            promise = Promise.resolve();
 
         promise = promise.then(function() {
             return rcloud.config.all_user_notebooks(username);
@@ -298,7 +299,19 @@ var editor = function () {
         }).then(function(notebooks) {
             delete notebooks.r_attributes;
             delete notebooks.r_type;
-            return Promise.resolve(notebooks);
+            user_notebooks = notebooks;
+
+            // merge these notebooks:
+            _.extend(notebook_info_, notebooks);
+
+            return rcloud.stars.get_multiple_notebook_star_counts(Object.keys(notebooks));
+
+        }).then(function(stars) {
+
+            // merge stars:
+            _.extend(num_stars_, stars);
+
+            return Promise.resolve(user_notebooks);
         });
 
         return promise;
@@ -1125,9 +1138,6 @@ var editor = function () {
         // go off and get data for the given user:
         if(n.lazy_load) {
             get_notebooks_by_user(n.user).then(function(notebooks) {
-
-                // merge these notebooks:
-                _.extend(notebook_info_, notebooks);
 
                 var initial_node;
 
