@@ -11,7 +11,6 @@ RCloud.UI.discovery_page = (function() {
                   window.Masonry = Masonry;
 
                   rcloud.config.get_recent_notebooks().then(function(data){
-
                       var recent_notebooks_ = _.chain(data)
                       .pairs()
                       .filter(function(kv) {
@@ -23,7 +22,6 @@ RCloud.UI.discovery_page = (function() {
                       .map(function(notebook) {
                         var current = editor.get_notebook_info(notebook[0]);
                         return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
-                          console.log(thumb_src);
                           return Promise.resolve({
                             id: notebook[0],
                             time: notebook[1],
@@ -31,13 +29,13 @@ RCloud.UI.discovery_page = (function() {
                             last_commit: new Date(current.last_commit).toDateString(),
                             username: current.username,
                             num_stars: editor.num_stars(current[0]),
-                            image_src: thumb_src
+                            image_src: "data:image/png;base64," + thumb_src
                           })
                         });
                       })
+                      .value();
 
-                      Promise.all(recent_notebooks_).then(function(recent_notes){
-                        var recent_notebooks = recent_notes.value();
+                      Promise.all(recent_notebooks_).then(function(recent_notebooks){
 
                         $('progress').attr({
                           max: recent_notebooks.length
@@ -55,8 +53,6 @@ RCloud.UI.discovery_page = (function() {
                             new Masonry( '.grid', {
                               itemSelector: '.grid-item'
                             });
-
-
 
                             $('#progress').fadeOut(200, function() {
                               $('.navbar').fadeIn(200, function() {
@@ -78,7 +74,6 @@ RCloud.UI.discovery_page = (function() {
                             });
 
                           });
-                          
                       });
 
                   });

@@ -8,7 +8,7 @@
                       ## we cannot make this an error, because R attempts to try-load the package
                       error=function(e) if (is.null(getOption("rcs.silence.loadcheck"))) warning("WARNING: rcloud.support must be loaded by an Rserve instance, not stand-alone R!")))
 
-  printjs <- rcloud.install.js.module("",
+  printjs <<- rcloud.install.js.module("rcloud",
                 "(function() {
                     return {
                       console: function(message, k) {
