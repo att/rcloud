@@ -368,6 +368,16 @@ function create_cell_html_view(language, cell_model) {
             exec: function() {
                 ace_widget_.blur();
             }
+        }, {
+            name: 'executeAll',
+            bindKey: {
+                win: 'Ctrl-u',
+                mac: 'Command-u', 
+                sender: 'editor'
+            },
+            exec: function() {
+                RCloud.UI.run_button.run();
+            }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
         change_content_ = ui_utils.ignore_programmatic_changes(ace_widget_, function() {
