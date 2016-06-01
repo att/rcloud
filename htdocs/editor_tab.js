@@ -1142,8 +1142,8 @@ var editor = function () {
 
                 var selected_node = get_selected_node();
 
-                var notebook_nodes = convert_notebook_set('alls', n.user, notebooks);
-                $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id('alls', n.user)).sort(compare_nodes), n);
+                var notebook_nodes = convert_notebook_set(n.root, n.user, notebooks);
+                $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(n.root, n.user)).sort(compare_nodes), n);
 
                 // all children have been replaced, so if the selected node is 
                 // one of the children, reselect:
