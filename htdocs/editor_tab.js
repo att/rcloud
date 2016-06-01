@@ -1137,17 +1137,19 @@ var editor = function () {
             get_notebooks_by_user(n.user).then(function(notebooks) {
                 var initial_node;
 
-                if(n.children.length === 2 && !_.isUndefined(n.children[0].gistname)) {
-                    initial_node = n.children[0].gistname;
-                }
+                var selected_node = get_selected_node();
 
                 var notebook_nodes = convert_notebook_set('alls', n.user, notebooks);
                 $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id('alls', n.user)).sort(compare_nodes), n);
 
-                if(initial_node) {
-                    select_node(_.findWhere(n.children, { gistname : initial_node }));
-                }
+                // all children have been replaced, so if the selected node is 
+                // one of the children, reselect:
+                var node_to_select = _.findWhere(n.children, { id : selected_node.id });
 
+                if(node_to_select) {
+                    select_node(node_to_select);
+                }
+                
                 delete n.lazy_load;
             });
         }
