@@ -160,7 +160,8 @@ RCloud.UI.init = function() {
         keys: [
             ['command', 'u'],
             ['ctrl', 'u']
-        ]
+        ], 
+        action: function() { RCloud.UI.run_button.run(); }
     }]);            
 
     // cell management:
