@@ -153,7 +153,15 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable'],        
         action: function() { editor.step_history_redo(); }
-    }]);
+    }, {
+        category: 'Notebook Management',
+        id: 'notebook_run_all',
+        description: 'Run all',
+        keys: [
+            ['command', 'u'],
+            ['ctrl', 'u']
+        ]
+    }]);            }
 
     // cell management:
     RCloud.UI.shortcut_manager.add([{
