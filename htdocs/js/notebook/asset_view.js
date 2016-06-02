@@ -11,31 +11,34 @@ Notebook.Asset.create_html_view = function(asset_model)
     anchor.append(filename_span);
     filename_div.append(anchor);
     anchor.append(remove);
-    var asset_old_name = filename_span.text();
+    var old_asset_name = filename_span.text();
     var rename_file = function(v) {
         // this is massively inefficient - actually three round-trips to the server when
         // we could have one!  save, create new asset, delete old one
         shell.notebook.controller.save().then(function() {
-            var new_asset_name = filename_span.text();
+            var new_asset_name = filename_span.text().trim();
             new_asset_name = new_asset_name.replace(/\s/g, " ");
             var old_asset_content = asset_model.content();
             if (Notebook.is_part_name(new_asset_name)) {
                 alert("Asset names cannot start with 'part[0-9]', sorry!");
-                filename_span.text(asset_old_name);
+                filename_span.text(old_asset_name);
                 return;
             }
-            var found = shell.notebook.model.get_asset(new_asset_name);
-            if (found) {
-                alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
-                filename_span.text(asset_old_name);
-            }
-            else {
-                shell.notebook.controller
-                    .append_asset(old_asset_content, new_asset_name)
-                    .spread(function(_, new_controller) {
-                        new_controller.select();
-                        asset_model.controller.remove(true);
-                    });
+            
+            if(old_asset_name === new_asset_name) {
+                filename_span.text(old_asset_name);
+            } else {
+                if(shell.notebook.model.get_asset(new_asset_name)) {
+                    alert('An asset with the name "' + new_asset_name + '" already exists. Please choose a different name.');
+                    filename_span.text(old_asset_name);
+                } else {
+                    shell.notebook.controller
+                        .append_asset(old_asset_content, new_asset_name)
+                        .spread(function(_, new_controller) {
+                            new_controller.select();
+                            asset_model.controller.remove(true);
+                        });
+                }
             }
         });
     };

@@ -315,36 +315,53 @@ td {
     word-wrap: break-word;
 }
 
-#find-dialog .btn {
-    margin-left: 7px;
-    padding: 3px 12px;
-}
-
-#find-dialog label span {
-    margin-left: 7px;
-    margin-right: 5px;
-}
-
-#find-dialog form {
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-}
-
-#find-close {
-    float: right;
-    cursor: pointer;
+#find-dialog {
+    
     position: relative;
-    top: 7;
-    right: 5;
-}
 
-#replace-label span, #find-label span {
-    display: inline-block;
-    width: 50px;
-}
+    #find-form {
+        margin-bottom: 0;
+        padding-bottom: 5px;
+        padding-left: 6px;
+    }
 
-#find-dialog input {
-    width: 160px
+    .icon-search {
+        font-size: 16px;
+        vertical-align: middle;
+    }
+
+    input {
+        width: 160px;
+    }
+
+    #find-close {
+        position: absolute;
+        cursor: pointer;
+        top: 10px;
+        right: 8px;
+        color: #777;
+        transition: color .2s linear;
+        font-size: 18px;
+
+        &:hover {
+            text-decoration: none;
+            color: #000;
+        }
+    }
+
+    .find, .replace {
+        display: inline-block;
+        padding: 6px 6px 0 6px;
+    }
+
+    .replace {
+
+        margin-left: 18px;
+
+        .btn {
+            padding: 3px 10px;
+        }
+    }
 }
 
 .find-highlight {
@@ -365,8 +382,6 @@ td {
 .ace_start.find-highlight {
     position: absolute;
 }
-
-
 
 .inner-tab {
       padding: 30px;
@@ -452,7 +467,6 @@ td {
 }
 
 .dropdown.recent-notebooks-dropdown {
-    position: absolute;
     right: 29px;
     top: 0;
 }
@@ -461,6 +475,10 @@ td {
     color: #f1f1e5;
     text-decoration: none;
     padding: 5px;
+
+    .caret {
+        border-top-color: #f1f1e5;
+    }
 }
 
 ul.recent-notebooks-list {

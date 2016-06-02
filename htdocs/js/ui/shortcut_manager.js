@@ -2,8 +2,27 @@ RCloud.UI.shortcut_manager = (function() {
 
     var extension_;
 
+    function get_by_id(id) {
+        return _.find(extension_.sections.all.entries, function(s) {
+            return s.id === id;
+        });
+    };
+
+    function modify(ids, func) {
+        if(!_.isArray(ids)) {
+            ids = [ids];
+        }
+
+        _.each(ids, function(id) {
+            var shortcut = get_by_id(id);
+            if(shortcut) {
+                func(shortcut);
+            }
+        });
+    };
+
     function is_active(shortcut) {
-        return _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
+        return shortcut.enabled && _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
     }
 
     function convert_extension(shortcuts) {
@@ -21,7 +40,10 @@ RCloud.UI.shortcut_manager = (function() {
             var can_add = true;
 
             var shortcut_to_add = _.defaults(shortcut, {
-                category: 'General'
+                category: 'General',
+                modes: ['writeable', 'readonly'],
+                enable_in_dialogs: false,
+                enabled: true
             });
 
             // if this is not a mac, filter out the 'command' options:
@@ -47,12 +69,12 @@ RCloud.UI.shortcut_manager = (function() {
 
                 // construct the key bindings:
                 for (var i = 0; i < shortcut.keys.length; i++) {
-                    
+
                     // ensure consistent order across definitions:
                     var keys = _
                         .chain(shortcut.keys[i])
                         .map(function(element) { return element.toLowerCase(); })
-                        .sortBy(function(element){  
+                        .sortBy(function(element){
                           var rank = {
                               "command": 1,
                               "ctrl": 2,
@@ -65,45 +87,45 @@ RCloud.UI.shortcut_manager = (function() {
                     shortcut_to_add.key_bindings.push(keys.join('+'));
                 }
 
-                // with existing shortcuts:
-                for(var loop = 0; loop < existing_shortcuts.length; loop++) {
-                    if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
-                        console.warn('Keyboard shortcut "' + shortcut_to_add.description + '" cannot be registered because its keycode clashes with an existing shortcut.');
-                        can_add = false;
-                        break;
-                    }
-                }
-
                 if(can_add) {
 
                     // update any 'command' entries to the '⌘' key:
-                    /*
-                    _.each(shortcut_to_add.keys, function(keys){
-                        for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
-                            if(keys[keyLoop] === 'command') {
-                                keys[keyLoop] = '&#8984;';
-                            }
-                        }
-                    });*/
+                    //_.each(shortcut_to_add.keys, function(keys){
+                    //    for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
+                    //        if(keys[keyLoop] === 'command') {
+                    //            keys[keyLoop] = '&#8984;';
+                    //        }
+                    //    }
+                    //});
 
                     if(_.isUndefined(shortcut.action)){
                         shortcut_to_add.create = function() {};
                     }
                     else {
-                        shortcut_to_add.create = function() { 
+                        shortcut_to_add.create = function() {
                             _.each(shortcut_to_add.key_bindings, function(binding) {
-                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) { 
 
-                                    if(!is_active(shortcut_to_add)) {
-                                        return;
-                                    } else {
-                                        e.preventDefault(); 
-                                        shortcut.action();
+                                var func_to_bind = function(e) {
+
+                                    if(is_active(get_by_id(shortcut_to_add.id))) {
+                                        e.preventDefault();
+
+                                        // invoke if conditions are met:
+                                        if((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
+                                           !$('.modal').is(':visible')) {
+                                            shortcut.action(e);
+                                        }
+
                                     }
+                                };
 
-                                });
+                                if(shortcut_to_add.global) {
+                                    window.Mousetrap.bindGlobal(binding, func_to_bind);
+                                } else {
+                                   window.Mousetrap().bind(binding, func_to_bind);
+                                }
                             });
-                        }
+                        };
                     }
                 }
 
@@ -113,6 +135,7 @@ RCloud.UI.shortcut_manager = (function() {
                     // add to the existing shortcuts so that it can be compared:
                     existing_shortcuts.push(shortcut_to_add);
                 }
+
             }
         });
 
@@ -120,19 +143,26 @@ RCloud.UI.shortcut_manager = (function() {
     }
 
     var result = {
+
         init: function() {
 
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
-                // if the element has the class "mousetrap" then no need to stop
-                if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
-                    return false;
-                }
+                // this only executes if the shortcut is *not* defined as global
+                var search_values = ['mousetrap', 'ace_text-input'],
+                    has_modifier = e.metaKey || e.ctrlKey || e.altKey;
 
-                return (element.tagName == 'INPUT' && element.type !== 'checkbox') || 
-                       element.tagName == 'SELECT' || 
-                       element.tagName == 'TEXTAREA' || 
+                // allow the event to be handled:
+                if(has_modifier && search_values.some(function(v) {
+                    return (' ' + element.className + ' ').indexOf(' ' + v + ' ') > -1;
+                }))
+                   return false;
+
+                // prevent on form fields and content editables:
+                return (element.tagName == 'INPUT' && element.type !== 'checkbox') ||
+                       element.tagName == 'SELECT' ||
+                       element.tagName == 'TEXTAREA' ||
                        (element.contentEditable && element.contentEditable == 'true');
             };
 
@@ -156,15 +186,28 @@ RCloud.UI.shortcut_manager = (function() {
                 extension_.create('all');
             }
         },
+        disable: function(ids) {
+            modify(ids, function(s) {
+                s.enabled = false;
+            });
+        },
+        enable: function(ids) {
+            modify(ids, function(s) {
+                s.enabled = true;
+            });
+        },
         get_registered_shortcuts_by_category: function(sort_items) {
 
+            console.log(extension_.sections.all.entries);
+
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
-            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));   
-  
-            var available_shortcuts = _.filter(extension_.sections.all.entries, function(s) { return is_active(s); });
+            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
+
+            var available_shortcuts = _.filter(_.sortBy(extension_.sections.all.entries, function(shortcut) { return shortcut.category + shortcut.description; }), 
+                function(s) { return is_active(s); });
 
             return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
-                return { category: key, shortcuts: item }
+                return { category: key, shortcuts: item };
             }), function(group) {
                 return rank[group.category];
             });

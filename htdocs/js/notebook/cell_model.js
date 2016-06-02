@@ -31,6 +31,12 @@ Notebook.Cell.create_model = function(content, language)
                 version: this.parent_model.controller.current_gist().history[0].version
             };
         },
+        set_focus: function() {
+            this.notify_views(function(view) {
+                view.edit_source(true);
+                view.scroll_into_view(true);
+            });
+        },
         deselect_cell: function() {
             is_selected_ = false;
 
@@ -45,9 +51,15 @@ Notebook.Cell.create_model = function(content, language)
 
             this.notify_views(function(view) {
                 view.selected_updated();
+                view.blur_cell();
             });
 
             return is_selected_;  
+        },
+        blur_cell: function() {
+            this.notify_views(function(view) {
+                view.blur_cell();
+            });
         },
         toggle_cell: function() {
             is_selected_ = !is_selected_;
