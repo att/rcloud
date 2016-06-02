@@ -369,7 +369,7 @@ function create_cell_html_view(language, cell_model) {
                 shell.run_notebook_from(cell_model.id());
             }
         }, {
-            name: 'navigateTopPreviousCell',
+            name: 'navigateToPreviousCell',
             bindKey: {
                 win: 'Alt-Up',
                 mac: 'Alt-Up',
@@ -383,7 +383,7 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
         }, {
-            name: 'navigateTopNextCell',
+            name: 'navigateToNextCell',
             bindKey: {
                 win: 'Alt-Down',
                 mac: 'Alt-Down',
@@ -397,11 +397,11 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
         }, {
-            name: 'insertCellPrevious',
+            name: 'insertCellBefore',
             bindKey: {
                 win: 'Ctrl-[',
-                mac: 'Ctrl-[',
-                sender: 'editor',
+                mac: 'Cmd-[',
+                sender: 'editor'
             },
             exec: function() {
                 shell.insert_cell_before("", cell_model.language(), cell_model.id())
@@ -410,11 +410,11 @@ function create_cell_html_view(language, cell_model) {
                     });
             }
         }, {
-            name: 'insertCellNext',
+            name: 'insertCellAfter',
             bindKey: {
                 win: 'Ctrl-]',
-                mac: 'Ctrl-]',
-                sender: 'editor',
+                mac: 'Cmd-]',
+                sender: 'editor'
             },
             exec: function() {
                 shell.insert_cell_after("", cell_model.language(), cell_model.id())
@@ -423,7 +423,7 @@ function create_cell_html_view(language, cell_model) {
                     });
             }
         }, {
-            name: 'deactivateCell',
+            name: 'blurCell',
             bindKey: {
                 win: 'Escape',
                 mac: 'Escape',
