@@ -20,3 +20,7 @@ rcloud.packages/*.tar.gz
 REVISION
 run
 packages/src
+htdocs/js/rcloud_bundle.js
+htdocs/js/rcloud_bundle.min.js
+htdocs/js/rcloud_bundle.js.map
+htdocs/js/rcloud_bundle.min.js.map

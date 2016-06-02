@@ -1,0 +1,1 @@
+{"virtualbox":{"/data/rcloud":{"guestpath":"/data/rcloud","hostpath":"C:/Users/pshek/Documents/Mango/@Projects/ATT/rcloud","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/Users/pshek/Documents/Mango/@Projects/ATT/rcloud/vagrant","disabled":false,"__vagrantfile":true}}}

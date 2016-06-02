@@ -351,6 +351,9 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     if(is.current)
       .session$current.notebook <- aug.res
 
+    # set last commit date (approximate as we take the current date, instead of going to github API)
+    rcloud.config.set.recent.notebook(id, Sys.time())
+      
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
         # Curl SSL Bug. Don't fork Curl. Refer http://stackoverflow.com/questions/15466809/libcurl-ssl-error-after-fork
@@ -642,7 +645,7 @@ rcloud.config.get.alluser.option <- function(key)
 # notebook cache
 
 # single just changes the format for querying a single notebook (essentially acting as [[1]])
-rcloud.get.notebook.info <- function(id, single=TRUE) {
+rcloud.get.notebook.info <- function(id, single=TRUE, ) {
   base <- usr.key(user=".notebook", notebook=id)
   fields <- c("source", "username", "description", "last_commit", "visible")
   keys <- rcs.key(rep(base, each=length(fields)), fields)
@@ -663,7 +666,7 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids)
-    rcloud.get.notebook.info(ids, FALSE)
+    rcloud.get.notebook.info(ids, single = FALSE)
 
 # notebook properties settable by non-owners
 .anyone.settable = c('source', 'username', 'description', 'last_commit');
