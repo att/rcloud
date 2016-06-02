@@ -162,7 +162,7 @@ RCloud.UI.init = function() {
             ['command', 'e']
         ],
         action: function() { 
-            if(shell.notebook.controller.is_mine()) {
+            if(shell.notebook.controller.is_mine() && !shell.is_view_mode()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
