@@ -353,7 +353,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
     # set last commit date (approximate as we take the current date, instead of going to github API)
     rcloud.config.set.recent.notebook(id, Sys.time())
-      
+
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
         # Curl SSL Bug. Don't fork Curl. Refer http://stackoverflow.com/questions/15466809/libcurl-ssl-error-after-fork
@@ -611,19 +611,6 @@ rcloud.config.set.current.notebook <- function(current) {
 
 rcloud.config.new.notebook.number <- function()
   rcs.incr(usr.key(user=.session$username, notebook="system", "config", "nextwork"))
-
-rcloud.config.get.recent.notebooks <- function() {
-  keys <- rcs.list(usr.key(user=.session$username, notebook="system", "config", "recent", "*"))
-  vals <- rcs.get(keys, list=TRUE)
-  names(vals) <- gsub(".*/", "", names(vals))
-  vals
-}
-
-rcloud.config.set.recent.notebook <- function(id, date)
-  rcs.set(usr.key(user=.session$username, notebook="system", "config", "recent", id), date)
-
-rcloud.config.clear.recent.notebook <- function(id)
-  rcs.rm(usr.key(user=.session$username, notebook="system", "config", "recent", id))
 
 rcloud.config.get.user.option <- function(key) {
   if(length(key)>1) {
