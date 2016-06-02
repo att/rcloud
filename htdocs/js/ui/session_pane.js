@@ -62,6 +62,7 @@ RCloud.UI.session_pane = {
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
+        dest = dest || this.error_dest_;
         if(!dest || !dest.length) {
             if(typeof msg === 'object')
                 msg = msg.text();
@@ -76,14 +77,11 @@ RCloud.UI.session_pane = {
             else if (typeof msg !== 'object')
                 throw new Error("post_error expects a string or a jquery div");
             msg.addClass(errclass);
-            dest = dest || this.error_dest_;
-            if(dest && dest.length) { // if initialized, we can use the UI
-                dest.append(msg);
-                this.show_error_area();
-                ui_utils.on_next_tick(function() {
-                    ui_utils.scroll_to_after($("#session-info"));
-                });
-            }
+            dest.append(msg);
+            this.show_error_area();
+            ui_utils.on_next_tick(function() {
+                ui_utils.scroll_to_after($("#session-info"));
+            });
         }
         if(!logged)
             console.log("pre-init post_error: " + msg.text());
