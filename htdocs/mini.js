@@ -12,6 +12,22 @@ function main() {
         return res;
     }
 
+    // loosely based on https://codepen.io/gapcode/pen/vEJNZN
+    function isIE() {
+        var ua = window.navigator.userAgent;
+
+        return(ua.indexOf('MSIE ') > 0 ||
+            ua.indexOf('Trident/') > 0 || 
+            ua.indexOf('Edge/') > 0);
+    }
+
+    RCloud.UI.session_pane.init();
+
+    if(isIE()) {
+        RCloud.UI.fatal_dialog("Sorry, Internet Explorer is not supported by RCloud.", "Close");
+        return;
+    }
+
     rclient = RClient.create({
         debug: false,
         mode: "client", // "IDE" = edit (separated), "call" = API (one process), "client" = JS (currently one process but may change)
@@ -19,11 +35,13 @@ function main() {
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
             var promise;
+
             if (rcloud.authenticated) {
                 promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
             } else {
                 promise = rcloud.anonymous_session_init();
             }
+
             promise = promise.then(function(hello) {
                 rclient.post_response(hello);
             });
