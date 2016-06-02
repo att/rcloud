@@ -24,7 +24,7 @@ function main() {
     RCloud.UI.session_pane.init();
 
     if(isIE()) {
-        RCloud.UI.fatal_dialog("Sorry, Internet Explorer is not supported by RCloud.", "Close");
+        RCloud.UI.fatal_dialog("Sorry, RCloud does not currently support IE or Edge. Please try another browser.", "Close");
         return;
     }
 
