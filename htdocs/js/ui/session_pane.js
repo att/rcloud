@@ -62,23 +62,28 @@ RCloud.UI.session_pane = {
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
-        var errclass = 'session-error';
-        if (typeof msg === 'string') {
-            msg = ui_utils.string_error(msg);
-            errclass = 'session-error spare';
+        if(!dest || !dest.length) {
+            if(typeof msg === 'object')
+                msg = msg.text();
+            RCloud.UI.fatal_dialog(msg, "Login", ui_utils.relogin_uri());
         }
-        else if (typeof msg !== 'object')
-            throw new Error("post_error expects a string or a jquery div");
-        msg.addClass(errclass);
-        dest = dest || this.error_dest_;
-        if(dest && dest.length) { // if initialized, we can use the UI
-            dest.append(msg);
-            this.show_error_area();
-            ui_utils.on_next_tick(function() {
-                ui_utils.scroll_to_after($("#session-info"));
-            });
-        } else {
-            RCloud.UI.fatal_dialog(msg.text(), "Error", ui_utils.relogin_uri());
+        else {
+            var errclass = 'session-error';
+            if (typeof msg === 'string') {
+                msg = ui_utils.string_error(msg);
+                errclass = 'session-error spare';
+            }
+            else if (typeof msg !== 'object')
+                throw new Error("post_error expects a string or a jquery div");
+            msg.addClass(errclass);
+            dest = dest || this.error_dest_;
+            if(dest && dest.length) { // if initialized, we can use the UI
+                dest.append(msg);
+                this.show_error_area();
+                ui_utils.on_next_tick(function() {
+                    ui_utils.scroll_to_after($("#session-info"));
+                });
+            }
         }
         if(!logged)
             console.log("pre-init post_error: " + msg.text());
