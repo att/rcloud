@@ -10,7 +10,7 @@ RCloud.UI.discovery_page = (function() {
                   window.imagesLoaded = imagesLoaded;
                   window.Masonry = Masonry;
 
-                  rcloud.config.get_recent_notebooks().then(function(data){
+                  rcloud.config.get_notebooks_discover().then(function(data){
                       var recent_notebooks_ = _.chain(data)
                       .pairs()
                       .filter(function(kv) {
@@ -35,8 +35,7 @@ RCloud.UI.discovery_page = (function() {
                       })
                       .value();
 
-                      Promise.all(recent_notebooks_).then(function(recent_notebooks){
-
+                      Promise.all(recent_notebooks_).then(function(recent_notebooks) {
                         $('progress').attr({
                           max: recent_notebooks.length
                         });
@@ -49,7 +48,6 @@ RCloud.UI.discovery_page = (function() {
                           notebooks: recent_notebooks
                         })).imagesLoaded()
                           .always(function() {
-
                             new Masonry( '.grid', {
                               itemSelector: '.grid-item'
                             });
@@ -60,7 +58,6 @@ RCloud.UI.discovery_page = (function() {
                                 $('body').addClass('loaded');
                               });
                             });
-
                           })
                           .progress(function(imgLoad, image) {
                             if(!image.isLoaded) {
@@ -72,10 +69,8 @@ RCloud.UI.discovery_page = (function() {
                             $('progress').attr({
                               value: new_value
                             });
-
                           });
                       });
-
                   });
             });
         }
