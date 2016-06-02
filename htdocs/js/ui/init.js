@@ -214,7 +214,7 @@ RCloud.UI.init = function() {
         modes: ['writeable']
     }*/, {
         category: 'Cell Management',
-        id: 'beginning_previous_cell',
+        id: 'goto_previous_cell',
         description: 'Go to previous cell',
         keys: [
             ['alt', 'up']
@@ -222,7 +222,7 @@ RCloud.UI.init = function() {
         modes: ['writeable']
     }, {
         category: 'Cell Management',
-        id: 'beginning_next_cell',
+        id: 'goto_next_cell',
         description: 'Go to next cell',
         keys: [
             ['alt', 'down']
