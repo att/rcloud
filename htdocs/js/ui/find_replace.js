@@ -139,6 +139,13 @@ RCloud.UI.find_replace = (function() {
         }
 
         find_dialog_.show();
+
+        var active_cell_selection = get_active_cell_selection();
+
+        if(active_cell_selection) {
+            find_input_.val(active_cell_selection);
+        }
+
         find_input_.focus();
         if(replace)
             replace_stuff_.show();
@@ -169,6 +176,19 @@ RCloud.UI.find_replace = (function() {
         shell.notebook.model.cells[match.index].notify_views(function(view) {
             view.change_highlights(matches);
         });
+    }
+    function get_active_cell_selection() {
+        var selection;
+
+        var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
+            return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
+        });
+        
+        if(focussed_cell) {
+            selection = focussed_cell.views[0].get_selection();
+        }
+
+        return selection;
     }
     function active_transition(transition) {
         if(active_match_ !== undefined) {
