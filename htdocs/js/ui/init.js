@@ -215,7 +215,7 @@ RCloud.UI.init = function() {
     }*/, {
         category: 'Cell Management',
         id: 'beginning_next_cell',
-        description: 'Go to beginning of next cell',
+        description: 'Go to next cell',
         keys: [
             ['alt', 'down']
         ],
@@ -223,7 +223,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'beginning_previous_cell',
-        description: 'Go to beginning of previous cell',
+        description: 'Go to previous cell',
         keys: [
             ['alt', 'up']
         ],
@@ -233,7 +233,8 @@ RCloud.UI.init = function() {
         id: 'insert_cell_after',
         description: 'Insert cell after current',
         keys: [
-            ['ctrl', '/']
+            ['ctrl', ']'],
+            ['command', ']']
         ],
         modes: ['writeable'],
         action: function() { }
@@ -242,7 +243,8 @@ RCloud.UI.init = function() {
         id: 'insert_cell_before',
         description: 'Insert cell before current',
         keys: [
-            ['ctrl', '\\']
+            ['ctrl', '['],
+            ['command', '[']
         ],
         modes: ['writeable'],
         action: function() { }
