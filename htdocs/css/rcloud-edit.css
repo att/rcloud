@@ -600,6 +600,15 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
   width: 100%;
   height: 100%; }
 
+#show-shortcuts {
+  display: block;
+  text-decoration: none;
+  padding-top: 5px;
+  position: absolute;
+  right: 9px; }
+  #show-shortcuts i {
+    margin-right: 2px; }
+
 #help-frame {
   width: 100%;
   height: 100%; }
