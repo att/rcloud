@@ -151,7 +151,7 @@ RCloud.UI.init = function() {
             ['ctrl', 'y'],
             ['command', 'shift', 'z']
         ],
-        modes: ['writeable'],        
+        modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
     }, {
         category: 'Notebook Management',
@@ -160,9 +160,9 @@ RCloud.UI.init = function() {
         keys: [
             ['command', 'u'],
             ['ctrl', 'u']
-        ], 
+        ],
         action: function() { RCloud.UI.run_button.run(); }
-    }]);            
+    }]);
 
     // cell management:
     RCloud.UI.shortcut_manager.add([{
@@ -197,40 +197,40 @@ RCloud.UI.init = function() {
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }/*, {
-        category: 'Cell Management', 
-        id: 'arrow_next_cell', 
+        category: 'Cell Management',
+        id: 'arrow_next_cell',
         description: 'Enter next cell (from end of current)',
         keys: [
             ['right']
         ],
         modes: ['writeable']
     }, {
-        category: 'Cell Management', 
-        id: 'arrow_previous_cell', 
+        category: 'Cell Management',
+        id: 'arrow_previous_cell',
         description: 'Enter previous cell (from start of current)',
         keys: [
             ['left']
         ],
         modes: ['writeable']
     }*/, {
-        category: 'Cell Management', 
-        id: 'beginning_next_cell', 
+        category: 'Cell Management',
+        id: 'beginning_next_cell',
         description: 'Go to beginning of next cell',
         keys: [
             ['alt', 'down']
         ],
         modes: ['writeable']
     }, {
-        category: 'Cell Management', 
-        id: 'beginning_previous_cell', 
+        category: 'Cell Management',
+        id: 'beginning_previous_cell',
         description: 'Go to beginning of previous cell',
         keys: [
             ['alt', 'up']
         ],
         modes: ['writeable']
     }, {
-        category: 'Cell Management', 
-        id: 'insert_cell_after', 
+        category: 'Cell Management',
+        id: 'insert_cell_after',
         description: 'Insert cell after current',
         keys: [
             ['ctrl', '/']
@@ -238,8 +238,8 @@ RCloud.UI.init = function() {
         modes: ['writeable'],
         action: function() { }
     }, {
-        category: 'Cell Management', 
-        id: 'insert_cell_before', 
+        category: 'Cell Management',
+        id: 'insert_cell_before',
         description: 'Insert cell before current',
         keys: [
             ['ctrl', '\\']
@@ -247,8 +247,8 @@ RCloud.UI.init = function() {
         modes: ['writeable'],
         action: function() { }
     }, {
-        category: 'Cell Management', 
-        id: 'cell_run_from_here', 
+        category: 'Cell Management',
+        id: 'cell_run_from_here',
         description: 'Run from here (within a cell)',
         keys: [
             ['shift', 'alt', 'enter']
@@ -274,7 +274,7 @@ RCloud.UI.init = function() {
         ],
         modes: ['writeable', 'readonly'],
         action: function(e) {
-            RCloud.UI.shortcut_dialog.show(); 
+            RCloud.UI.shortcut_dialog.show();
         }
     }, {
         category: 'General',
