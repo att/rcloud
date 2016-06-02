@@ -912,6 +912,9 @@ function create_cell_html_view(language, cell_model) {
         get_content: function() { // for debug
             return cell_model.content();
         },
+        get_selection: function() {
+            return this.ace_widget().getSession().doc.getTextRange(this.ace_widget().selection.getRange());
+        },
         reformat: function() {
             if(edit_mode_) {
                 // resize once to get right height, then set height,
