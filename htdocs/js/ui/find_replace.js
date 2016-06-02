@@ -91,8 +91,8 @@ RCloud.UI.find_replace = (function() {
                 return false;
             });
 
-            find_cycle_ = ['find-input', 'find-next', 'find-last'];
-            replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'find-last', 'replace-all'];
+            find_cycle_ = ['find-input', 'find-last', 'find-next'];
+            replace_cycle_ = ['find-input', 'find-last', 'find-next', 'replace-input', 'replace', 'replace-all'];
 
             function click_find_next(e) {
                 if(e.keyCode===$.ui.keyCode.ENTER) {
