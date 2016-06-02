@@ -30,7 +30,7 @@ RCloud.UI.discovery_page = (function() {
                             username: current.username,
                             num_stars: editor.num_stars(current[0]),
                             image_src: "data:image/png;base64," + thumb_src
-                          }
+                          };
                         });
                       })
                       .value();
