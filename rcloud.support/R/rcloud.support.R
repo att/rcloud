@@ -345,11 +345,8 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     }
     content <- .gist.binary.process.outgoing(id, content)
 
-    # special treatment for thumbnails
-    if ("thumb.png.b64" %in% names(content$files)){
-      # save to key-value database
-      rcloud.set.thumb(id = id,thumb_png = content$files$thumb.png.b64$content)
-    }
+    # save thumbnails to key-value database
+    # rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
 
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     aug.res <- rcloud.augment.notebook(res)
