@@ -22,7 +22,7 @@ RCloud.UI.discovery_page = (function() {
                       .map(function(notebook) {
                         var current = editor.get_notebook_info(notebook[0]);
                         return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
-                          return Promise.resolve({
+                          return {
                             id: notebook[0],
                             time: notebook[1],
                             description: current.description,
@@ -30,7 +30,7 @@ RCloud.UI.discovery_page = (function() {
                             username: current.username,
                             num_stars: editor.num_stars(current[0]),
                             image_src: "data:image/png;base64," + thumb_src
-                          })
+                          }
                         });
                       })
                       .value();
