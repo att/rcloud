@@ -11,7 +11,7 @@ RCloud.UI.discovery_page = (function() {
                   window.imagesLoaded = imagesLoaded;
                   window.Masonry = Masonry;
 
-                  rcloud.config.get_recent_notebooks().then(function(data){
+                  rcloud.config.get_notebooks_discover().then(function(data){
 
                       var recent_notebooks = _.chain(data)
                       .pairs()
@@ -34,7 +34,7 @@ RCloud.UI.discovery_page = (function() {
                         }
                       })
                       .value();
-
+                      console.log(data);
                       $('progress').attr({
                         max: recent_notebooks.length
                       });
@@ -52,7 +52,7 @@ RCloud.UI.discovery_page = (function() {
                             itemSelector: '.grid-item'
                           });
 
-                         
+
 
                           $('#progress').fadeOut(200, function() {
                             $('.navbar').fadeIn(200, function() {
@@ -60,11 +60,11 @@ RCloud.UI.discovery_page = (function() {
                               $('body').addClass('loaded');
                             });
                           });
-                          
+
                         })
                         .progress(function(imgLoad, image) {
                           if(!image.isLoaded) {
-                            $(image.img).attr('src', './img/missing.png');  
+                            $(image.img).attr('src', './img/missing.png');
                           }
 
                           var new_value = +$('progress').attr('value') + 1;

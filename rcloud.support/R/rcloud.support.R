@@ -354,7 +354,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     # set last commit date
     # (approximate as we take the current date, instead of going to github API)
     # also it's all relative so won't affect ordering
-    rcloud.config.set.recent.notebook(id, Sys.time())
+    rcloud.config.set.recently.modified.notebook(id, res$last_commit)
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
