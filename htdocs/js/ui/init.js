@@ -259,53 +259,69 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'goto_previous_cell',
         description: 'Go to previous cell',
-        keys: [
-            ['alt', 'up']
-        ],
+        keys: {
+            win_mac: [
+                ['alt', 'up']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'goto_next_cell',
         description: 'Go to next cell',
-        keys: [
-            ['alt', 'down']
-        ],
+        keys: {
+            win_mac: [
+                ['alt', 'down']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'insert_cell_before',
         description: 'Insert cell before current',
-        keys: [
-            ['ctrl', '['],
-            ['command', '[']
-        ],
+        keys: {
+            win: [
+                ['ctrl', '[']
+            ],
+            mac: [
+                ['command', '[']
+            ]
+        },
         modes: ['writeable'],
         action: function() { }
     }, {
         category: 'Cell Management',
         id: 'insert_cell_after',
         description: 'Insert cell after current',
-        keys: [
-            ['ctrl', ']'],
-            ['command', ']']
-        ],
+        keys: {
+            win: [
+                ['ctrl', ']']
+            ],
+            mac: [
+                ['command', ']']
+            ]
+        },
         modes: ['writeable'],
         action: function() { }
     }, {
         category: 'Cell Management',
         id: 'cell_run_from_here',
         description: 'Run from here (within a cell)',
-        keys: [
-            ['shift', 'alt', 'enter']
-        ],
+        keys: {
+            win_mac: [
+                ['shift', 'alt', 'enter']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
         description: 'Blur Cell',
-        keys: [
-            ['esc']
-        ],
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
         modes: ['writeable']
     }]);
 

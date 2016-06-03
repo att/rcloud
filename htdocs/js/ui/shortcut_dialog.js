@@ -42,6 +42,14 @@ RCloud.UI.shortcut_dialog = (function() {
                     var keys_markup = []; 
 
                     _.each(shortcut.bind_keys, function(keys) {
+
+                        if(!_.isArray(keys)) {
+                            console.log('bad: ', shortcut);
+                        } else {
+                            console.log('good: ', shortcut);
+                        }
+
+
                         keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 
