@@ -345,6 +345,9 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     }
     content <- .gist.binary.process.outgoing(id, content)
 
+    # save thumbnail to key-value database
+    rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
+
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     aug.res <- rcloud.augment.notebook(res)
 
@@ -357,6 +360,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
         #mcparallel(update.solr(res, star.count), detached=TRUE)
         update.solr(res,star.count)
     }
+
     aug.res
 }
 

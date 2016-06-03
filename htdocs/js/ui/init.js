@@ -23,6 +23,7 @@ RCloud.UI.init = function() {
                 shell.notebook.controller.move_cell(model, next);
             },
             handle: " .cell-status",
+            helper: 'clone',
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true
@@ -169,6 +170,27 @@ RCloud.UI.init = function() {
         },        
         modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_revert',
+        description: 'Reverts a notebook',
+        keys: [
+            ['ctrl', 'e'],
+            ['command', 'e']
+        ],
+        action: function() { 
+            if(shell.notebook.controller.is_mine() && !shell.is_view_mode()) {
+                editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
+            }
+        }
+    }, {
+        id: 'notebook_run_all',
+        description: 'Run all',
+        keys: [
+            ['command', 'u'],
+            ['ctrl', 'u']
+        ],
+        action: function() { RCloud.UI.run_button.run(); }
     }]);
 
     // cell management:
@@ -217,6 +239,74 @@ RCloud.UI.init = function() {
         },        
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
+    }/*, {
+        category: 'Cell Management',
+        id: 'arrow_next_cell',
+        description: 'Enter next cell (from end of current)',
+        keys: [
+            ['right']
+        ],
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'arrow_previous_cell',
+        description: 'Enter previous cell (from start of current)',
+        keys: [
+            ['left']
+        ],
+        modes: ['writeable']
+    }*/, {
+        category: 'Cell Management',
+        id: 'goto_previous_cell',
+        description: 'Go to previous cell',
+        keys: {
+            win_mac: ['alt', 'up']
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'goto_next_cell',
+        description: 'Go to next cell',
+        keys: {
+            win_mac: ['alt', 'down']
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'insert_cell_before',
+        description: 'Insert cell before current',
+        keys: {
+            win: ['ctrl', '['],
+            mac: ['command', '[']
+        },
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management',
+        id: 'insert_cell_after',
+        description: 'Insert cell after current',
+        keys: {
+            win: ['ctrl', ']'],
+            mac: ['command', ']']
+        },
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management',
+        id: 'cell_run_from_here',
+        description: 'Run from here (within a cell)',
+        keys: {
+            win_mac: ['shift', 'alt', 'enter']
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'blur_cell',
+        description: 'Blur Cell',
+        keys: {
+            win_mac: ['esc']
+        },
+        modes: ['writeable']
     }]);
 
     // general:
@@ -240,6 +330,8 @@ RCloud.UI.init = function() {
                 ['esc']
             ]
         },
+        enable_in_dialogs: true,
+        global: true,
         action: function() { $('.modal').modal('hide'); }
     }]);
 

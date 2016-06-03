@@ -145,8 +145,17 @@ RCloud.UI.import_export = (function() {
                             }
                             var body = $('<div class="container"/>');
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
-                            file_select.click(function() { ui_utils.disable_bs_button(import_button); })
-                                .change(function() { do_upload(file_select[0].files[0]); });
+
+                            file_select
+                                .click(function() { 
+                                    ui_utils.disable_bs_button(import_button); 
+                                    [notebook_desc, notebook_status].forEach(function(el) { el.hide(); });
+                                    file_select.val(null);
+                                })
+                                .change(function() { 
+                                    do_upload(file_select[0].files[0]); 
+                                });
+
                             notebook_status = $('<span />');
                             notebook_status.append(notebook_status);
                             var notebook_desc = $('<span>Notebook description: </span>');

@@ -56,11 +56,30 @@
       </span>
     </a>
     <div class="dropdown recent-notebooks-dropdown">
-      <a href="#" class="dropdown-toggle recent-btn" data-toggle="dropdown">Recent</a>
+      <a href="#" class="dropdown-toggle recent-btn" data-toggle="dropdown">Recent<b class="caret"></b></a>
       <ul class="dropdown-menu recent-notebooks-list">
       </ul>
     </div>
   </span>
+</script>
+
+<script type="text/template" id="find-in-notebook-snippet">
+  <div id="find-dialog">
+    <form id="find-form">
+      <i class="icon-search"></i>
+      <div class="find">
+        <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+        <button id="find-last" class="btn"><i class="icon-arrow-left"></i></button>
+        <button id="find-next" class="btn btn-primary"><i class="icon-arrow-right"></i></button>
+      </div>
+      <div class="replace" style="display:none">
+        <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
+        <button id="replace" class="btn">Replace</button>
+        <button id="replace-all" class="btn">Replace All</button>
+      </div>
+      <a id="find-close" href="javascript:void(0)"><i class="icon-remove"></i></a>
+    </form>
+  </div>
 </script>
 
 <script type="text/html" id="search-snippet">
@@ -113,6 +132,9 @@
 
 <script type="text/html" id="help-snippet">
   <div id="help-wrapper" class="panel-body widget-vsize">
+    <a href="#" id="show-shortcuts">
+      <i class="icon-keyboard"></i>Keyboard
+    </a>
     <div id="help-header">
       <form id="help-form" action="#">
         <div class="input-group input-group-sm" style="width: 160px;padding-left: 8px;">
@@ -145,6 +167,7 @@
         <li><a href="javascript:void(0)" data-action="invert_selected_cells">Invert</a></li>
       </ul>
     </div>
+    <button id="selection-bar-crop" title="Crop cells (delete unselected cells)" type="button" class="btn btn-link navbar-btn"><i class="icon-crop"></i></button>
     <button id="selection-bar-delete" title="Delete selected cells" type="button" class="btn btn-link navbar-btn"><i class="icon-trash"></i></button>
   </div>
 </script>
@@ -282,7 +305,7 @@
             <span>Assign to Group</span>&nbsp;&nbsp;&nbsp;
             <select ng-model="selectedUserGroup"
                     ng-disabled="sharedStatus !== 'group'"
-                    ng-options="group.name for group in allUserGroups"
+                    ng-options="group.name for group in allUserGroups | orderBy:'name'"
                     ng-change="anotherUserGroupSelected()">
             </select>
           </div>
@@ -297,7 +320,7 @@
             <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
               <span>Select group:</span></br>
               <select ng-model="selectedAdminGroup"
-                      ng-options="group.name for group in allAdminGroups"
+                      ng-options="group.name for group in allAdminGroups | orderBy:'name'"
                       ng-change="anotherAdminGroupSelected()" >
               </select>
             </div>

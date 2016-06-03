@@ -977,6 +977,7 @@ var editor = function () {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
         title.css('color', node.color);
+
         if(node.gistname) {
             if(node.source)
                 title.addClass('foreign-notebook');
@@ -1475,17 +1476,27 @@ var editor = function () {
                 });
         },
         step_history_undo: function() {
+
+            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+
             var previous_version = history_manager.get_previous();
 
             if(!_.isUndefined(previous_version)) {
-                this.load_notebook(current_.notebook, previous_version);
+                this.load_notebook(current_.notebook, previous_version).then(function() {
+                    RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
+                });
             }
         },
         step_history_redo: function() {
+
+            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+
             var next_version = history_manager.get_next();
 
             if(!_.isUndefined(next_version)) {
-                this.load_notebook(current_.notebook, next_version);
+                this.load_notebook(current_.notebook, next_version).then(function() {
+                    RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
+                });
             }
         },
         update_recent_notebooks: function(data) {
@@ -1513,7 +1524,7 @@ var editor = function () {
                 e.preventDefault();
                 var gist = $(e.currentTarget).data('gist');
                 $('.dropdown-toggle.recent-btn').dropdown("toggle");
-                result.open_notebook(gist);
+                result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
             };
             for(var i = 0; i < sorted.length; i ++) {
                 var li = $('<li></li>');

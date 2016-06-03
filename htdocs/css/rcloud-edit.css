@@ -259,6 +259,7 @@ rect.frame {
   padding: 5px;
   padding-left: 7px;
   /* align check-all */
+  padding-bottom: 6px;
   color: #dddddd;
   display: none;
   margin-bottom: 1px; }
@@ -273,7 +274,7 @@ rect.frame {
   padding-left: 14px; }
 
 #selection-bar > button {
-  margin: 0;
+  margin: 0 0.2em;
   color: #454545;
   padding: 0; }
 
@@ -599,6 +600,15 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
   width: 100%;
   height: 100%; }
 
+#show-shortcuts {
+  display: block;
+  text-decoration: none;
+  padding-top: 5px;
+  position: absolute;
+  right: 9px; }
+  #show-shortcuts i {
+    margin-right: 2px; }
+
 #help-frame {
   width: 100%;
   height: 100%; }
@@ -800,7 +810,7 @@ pre {
 
 #rcloud-cellarea {
   width: 100%;
-  height: calc(100% - 37px);
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden; }
 

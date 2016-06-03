@@ -54,7 +54,8 @@ function create_cell_html_view(language, cell_model) {
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
     function set_widget_height(widget_height) {
-        outer_ace_div.css('height', widget_height);
+        outer_ace_div.css('height', widget_height ?
+            widget_height : (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +  EXTRA_HEIGHT_SOURCE) + "px");
     }
 
     cell_status_ = $("<div class='cell-status nonselectable'></div>");
@@ -224,9 +225,85 @@ function create_cell_html_view(language, cell_model) {
             session.getUndoManager().reset();
         });
         var document = session.getDocument();
+
+        widget.gotoPageUp = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(-1, false);
+        }
+
+        widget.gotoPageDown = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(1, false);
+        }
+
+        widget.setAutoScrollEditorIntoView = function(enable) {
+            if (!enable)
+                return;
+            var rect;
+            var self = widget;
+            var shouldScroll = false;
+            if (!widget.$scrollAnchor) {
+                widget.$scrollAnchor = window.document.createElement("div");
+            }
+            var scrollAnchor = widget.$scrollAnchor;
+            scrollAnchor.style.cssText = "position:absolute;";
+
+            $('#rcloud-cellarea').prepend(scrollAnchor);
+
+            var onChangeSelection = widget.on("changeSelection", function() {
+                shouldScroll = true;
+            });
+            var onBeforeRender = widget.renderer.on("beforeRender", function() {
+                if (shouldScroll)
+                    rect = self.renderer.container.getBoundingClientRect();
+            });
+            var onAfterRender = widget.renderer.on("afterRender", function() {
+                if (shouldScroll && rect && self.isFocused()) {
+                    var renderer = self.renderer;
+                    var pos = renderer.$cursorLayer.$pixelPos;
+                    var config = renderer.layerConfig;
+                    var top = pos.top - config.offset;
+
+                    // shouldScoll  = true  = ^
+                    // shouldScroll = false = v
+                    if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                        shouldScroll = true;
+                    } else if (pos.top < config.height &&
+                        pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                        shouldScroll = false;
+                    } else {
+                        shouldScroll = null;
+                    }
+
+                    if (shouldScroll != null) {
+                        var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                        var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                        scroll_top += pos.top;
+
+                        if(shouldScroll) {
+                            $('#rcloud-cellarea').scrollTop(scroll_top);
+                        } else {
+                            $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                        }
+                    }
+                    shouldScroll = rect = null;
+                }
+            });
+            widget.setAutoScrollEditorIntoView = function(enable) {
+                if (enable)
+                    return;
+                delete widget.setAutoScrollEditorIntoView;
+                widget.removeEventListener("changeSelection", onChangeSelection);
+                widget.renderer.removeEventListener("afterRender", onAfterRender);
+                widget.renderer.removeEventListener("beforeRender", onBeforeRender);
+            };
+        };
+
         widget.setOptions({
-            enableBasicAutocompletion: true
+            enableBasicAutocompletion: true,
+            autoScrollEditorIntoView: true
         });
+
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
         return {
@@ -278,8 +355,92 @@ function create_cell_html_view(language, cell_model) {
                 mac: 'Alt-Return',
                 sender: 'editor'
             },
-            exec: function(ace_widget_, args, request) {
+            exec: function() {
                 result.execute_cell();
+            }
+        }, {
+            name: 'executeCellsFromHere',
+            bindKey: {
+                win: 'Shift-Alt-Return',
+                mac: 'Shift-Alt-Return',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'navigateToPreviousCell',
+            bindKey: {
+                win: 'Alt-Up',
+                mac: 'Alt-Up',
+                sender: 'editor'
+            },
+            exec: function() {
+                var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                if(prior_cell) {
+                    prior_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'navigateToNextCell',
+            bindKey: {
+                win: 'Alt-Down',
+                mac: 'Alt-Down',
+                sender: 'editor'
+            },
+            exec: function() {
+                var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                if(subsequent_cell) {
+                    subsequent_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'insertCellBefore',
+            bindKey: {
+                win: 'Ctrl-[',
+                mac: 'Cmd-[',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'insertCellAfter',
+            bindKey: {
+                win: 'Ctrl-]',
+                mac: 'Cmd-]',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.insert_cell_after("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'blurCell',
+            bindKey: {
+                win: 'Escape',
+                mac: 'Escape',
+                sender: 'editor'
+            },
+            exec: function() {
+                ace_widget_.blur();
+            }
+        }, {
+            name: 'executeAll',
+            bindKey: {
+                win: 'Ctrl-u',
+                mac: 'Command-u',
+                sender: 'editor'
+            },
+            exec: function() {
+                RCloud.UI.run_button.run();
             }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
@@ -658,6 +819,36 @@ function create_cell_html_view(language, cell_model) {
             edit_mode_ = edit_mode;
             this.change_highlights(highlights_); // restore highlights
         },
+        scroll_into_view: function() {
+            var renderer = ace_widget_.renderer;
+            var rect = renderer.container.getBoundingClientRect();
+            var pos = renderer.$cursorLayer.$pixelPos;
+            var config = renderer.layerConfig;
+            var top = pos.top - config.offset;
+
+            // shouldScoll  = true  = ^
+            // shouldScroll = false = v
+            if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                shouldScroll = true;
+            } else if (pos.top < config.height &&
+                pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                shouldScroll = false;
+            } else {
+                shouldScroll = null;
+            }
+
+            if (shouldScroll != null) {
+                var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                scroll_top += pos.top;
+
+                if(shouldScroll) {
+                    $('#rcloud-cellarea').scrollTop(scroll_top);
+                } else {
+                    $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                }
+            }
+        },
         toggle_source: function() {
             this.hide_source($(source_div_).is(":visible"));
         },
@@ -721,6 +912,9 @@ function create_cell_html_view(language, cell_model) {
         get_content: function() { // for debug
             return cell_model.content();
         },
+        get_selection: function() {
+            return this.ace_widget().getSession().doc.getTextRange(this.ace_widget().selection.getRange());
+        },
         reformat: function() {
             if(edit_mode_) {
                 // resize once to get right height, then set height,
@@ -766,6 +960,11 @@ function create_cell_html_view(language, cell_model) {
 
             }
             return this;
+        },
+        blur_cell: function() {
+            if(ace_widget_) {
+                ace_widget_.blur();
+            }
         }
     });
 

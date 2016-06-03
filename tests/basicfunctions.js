@@ -18,7 +18,6 @@
  >Search Elements
  */
 
-
 var casper = require("casper").create();
 
 //login to Github and RCloud
@@ -114,8 +113,8 @@ exports.addnewcell = function (casper) {
         .then(function () {
             this.test.assertTruthy(this.click({
                 type: 'xpath',
-                path: '/html/body/div[3]/div/div[2]/div/div[3]/div[1]/div/span/i'
-            }), 'created new cell');
+                path: ".//*[@id='prompt-area']/div[1]/div/span/i"
+            }, "Creating new cell"));
             this.wait(7000);
         });
 };
@@ -124,23 +123,12 @@ exports.addnewcell = function (casper) {
 exports.addcontentstocell = function (casper, input_code) {
     return casper
         .then(function () {
-            if (this.visible({
-                    type: 'xpath',
-                    path: '/html/body/div[3]/div/div[2]/div/div[1]/div/div[3]/div[1]/div[2]/div/div[2]/div'
-                })) {
+            if (this.visible("div.edit-code > div:nth-child(3) > div:nth-child(1)")) {
                 this.test.pass('The cell is present');
                 console.log('Adding contents to the cell')
-                this.sendKeys({
-                    type: 'xpath',
-                    path: '/html/body/div[3]/div/div[2]/div/div[1]/div/div[3]/div[1]/div[2]/div/div[2]/div'
-                }, input_code);
+                this.sendKeys("div.edit-code > div:nth-child(3) > div:nth-child(1)", input_code);
 
-                this.click({
-                    type: 'xpath',
-                    path: '/html/body/div[3]/div/div[2]/div/div[1]/div/div[2]/div[2]/span[1]/i'
-                });//xpath for executing the contents
-
-                this.echo("executed contents of First cell");
+                this.click("div.cell-control-bar:nth-child(2) > span:nth-child(2) > i:nth-child(1)", "Executing cell contents");//xpath for executing the contents
                 this.wait(6000);
             }
             else {
