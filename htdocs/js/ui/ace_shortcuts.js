@@ -30,7 +30,7 @@ RCloud.UI.ace_shortcuts = (function() {
                         ['down']
                     ]
                 }
-            }, {                           // !
+            }, {                           
                 category: 'Code Editor',
                 id: 'code_editor_execute',
                 description: 'Execute code',
@@ -417,8 +417,6 @@ RCloud.UI.ace_shortcuts = (function() {
                     ]
                 }
             },
-
-            // multicursor -- ?! :(
 
             // go to:
             {

@@ -306,7 +306,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'cell_run_from_here',
-        description: 'Run from here (within a cell)',
+        description: 'Run from here',
         keys: {
             win_mac: [
                 ['shift', 'alt', 'enter']
@@ -343,9 +343,12 @@ RCloud.UI.init = function() {
         category: 'General',
         id: 'close_modal',
         description: 'Close dialog',
-        keys: [
-            ['esc']
-        ],
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
+        ignore_clash: true,
         enable_in_dialogs: true,
         global: true,
         action: function() { $('.modal').modal('hide'); }
