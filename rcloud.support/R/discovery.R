@@ -1,6 +1,6 @@
 rcloud.config.get.notebooks.discover <- function(order = "recently.modified") {
   switch(order,
-    recently.modified = rcloud.get.recently.modified.notebooks()
+    recently.modified = rcloud.config.get.recently.modified.notebooks()
     )
 }
 
