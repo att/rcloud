@@ -1090,7 +1090,7 @@ var editor = function () {
             return histories_[current_.notebook];
         },
         get_current_notebook_history_index : function() {
-            return current_.version === null ? 
+            return current_.version === null ?
                 0 :
                 find_index(this.get_current_notebook_histories(), function(h) {
                     return h.version === current_.version;
@@ -1499,102 +1499,102 @@ var editor = function () {
                 });
             }
         },
-        update_recent_notebooks: function(data) {
-            var sorted = _.chain(data)
-                .pairs()
-                .filter(function(kv) {
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ;
-                })
-                .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                .sortBy(function(kv) { return kv[1] * -1; })
-                .value();
-
-            sorted.shift();//remove the first item
-            sorted = sorted.slice(0, 20); //limit to 20 entries
-
-            $('.recent-notebooks-list a').each(function() {
-                $(this).off('click');
-            });
-
-            $('.recent-notebooks-list').empty();
-
-            // premature optimization? define function outside loop to make jshint happy
-            var click_recent = function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                var gist = $(e.currentTarget).data('gist');
-                $('.dropdown-toggle.recent-btn').dropdown("toggle");
-                result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
-            };
-            for(var i = 0; i < sorted.length; i ++) {
-                var li = $('<li></li>');
-                li.appendTo($('.recent-notebooks-list'));
-                var currentNotebook = get_notebook_info(sorted[i][0]);
-                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
-                var desc = truncateNotebookPath(currentNotebook.description, 40);
-
-                anchor.addClass('ui-all')
-                    .append($('<span class="username">'+currentNotebook.username+'</span>'))
-                    .append($('<span class="description">'+desc+'</span>'))
-                    .appendTo(li);
-
-                anchor.click(click_recent);
-            }
-
-            function truncateNotebookPath(txt, chars) {
-                if(!txt || typeof txt === 'undefined' || txt.length === 0 ){
-                    return 'something went wrong';
-                }
-
-                var foldersReplaced = 0;
-                var folders = txt.split('/');
-                var foldersLength = folders.length -1;
-                var text = txt;
-                var folderStringLength = 3; //
-                var trimReplacements = false;
-
-                return doTrim();
-
-                function doTrim() {
-                    if(text.length > chars) {
-                        //if folders
-                        if(folders.length > 2) {
-                            //replace each dir with ../
-                            if(foldersLength - foldersReplaced >1 && !trimReplacements){
-                                foldersReplaced ++;
-                                folders.shift();
-                                var fldrs = '';
-                                for(var a = 0; a < foldersReplaced; a ++) {
-                                    fldrs += '../';
-                                }
-                                text = fldrs + folders.join('/');
-                                return doTrim();
-                            }
-                            //folder replacements exhausted, drop the first replacement and try
-                            else if(trimReplacements) {
-                                trimReplacements = true;
-                                text = text.slice(3);
-                                foldersReplaced --;
-                                var timeToTrimFolders;
-                                return doTrim();
-                            }
-                        }
-                        //if no folders
-                        else if(folders.length === 2){
-                            text = text.substring(0, text.length - 6);
-                            text += '...';
-                            return doTrim();
-                        }
-                        else{
-                            text = text.substring(0, text.length - 6);
-                            text += '...';
-                            return doTrim();
-                        }
-                    }
-                    return text;
-                }
-            }
-        },
+        // update_recent_notebooks: function(data) {
+        //     var sorted = _.chain(data)
+        //         .pairs()
+        //         .filter(function(kv) {
+        //             return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ;
+        //         })
+        //         .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+        //         .sortBy(function(kv) { return kv[1] * -1; })
+        //         .value();
+        //
+        //     sorted.shift();//remove the first item
+        //     sorted = sorted.slice(0, 2); //limit to 20 entries
+        //
+        //     $('.recent-notebooks-list a').each(function() {
+        //         $(this).off('click');
+        //     });
+        //
+        //     $('.recent-notebooks-list').empty();
+        //
+        //     // premature optimization? define function outside loop to make jshint happy
+        //     var click_recent = function(e) {
+        //         e.stopPropagation();
+        //         e.preventDefault();
+        //         var gist = $(e.currentTarget).data('gist');
+        //         $('.dropdown-toggle.recent-btn').dropdown("toggle");
+        //         result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
+        //     };
+        //     for(var i = 0; i < sorted.length; i ++) {
+        //         var li = $('<li></li>');
+        //         li.appendTo($('.recent-notebooks-list'));
+        //         var currentNotebook = get_notebook_info(sorted[i][0]);
+        //         var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
+        //         var desc = truncateNotebookPath(currentNotebook.description, 40);
+        //
+        //         anchor.addClass('ui-all')
+        //             .append($('<span class="username">'+currentNotebook.username+'</span>'))
+        //             .append($('<span class="description">'+desc+'</span>'))
+        //             .appendTo(li);
+        //
+        //         anchor.click(click_recent);
+        //     }
+        //
+        //     function truncateNotebookPath(txt, chars) {
+        //         if(!txt || typeof txt === 'undefined' || txt.length === 0 ){
+        //             return 'something went wrong';
+        //         }
+        //
+        //         var foldersReplaced = 0;
+        //         var folders = txt.split('/');
+        //         var foldersLength = folders.length -1;
+        //         var text = txt;
+        //         var folderStringLength = 3; //
+        //         var trimReplacements = false;
+        //
+        //         return doTrim();
+        //
+        //         function doTrim() {
+        //             if(text.length > chars) {
+        //                 //if folders
+        //                 if(folders.length > 2) {
+        //                     //replace each dir with ../
+        //                     if(foldersLength - foldersReplaced >1 && !trimReplacements){
+        //                         foldersReplaced ++;
+        //                         folders.shift();
+        //                         var fldrs = '';
+        //                         for(var a = 0; a < foldersReplaced; a ++) {
+        //                             fldrs += '../';
+        //                         }
+        //                         text = fldrs + folders.join('/');
+        //                         return doTrim();
+        //                     }
+        //                     //folder replacements exhausted, drop the first replacement and try
+        //                     else if(trimReplacements) {
+        //                         trimReplacements = true;
+        //                         text = text.slice(3);
+        //                         foldersReplaced --;
+        //                         var timeToTrimFolders;
+        //                         return doTrim();
+        //                     }
+        //                 }
+        //                 //if no folders
+        //                 else if(folders.length === 2){
+        //                     text = text.substring(0, text.length - 6);
+        //                     text += '...';
+        //                     return doTrim();
+        //                 }
+        //                 else{
+        //                     text = text.substring(0, text.length - 6);
+        //                     text += '...';
+        //                     return doTrim();
+        //                 }
+        //             }
+        //             return text;
+        //         }
+        //     }
+        // },
 
         load_callback: function(opts) {
             var that = this;
@@ -1610,13 +1610,6 @@ var editor = function () {
                 if(find_version)
                     tag = find_version.tag;
                 rcloud.config.set_current_notebook(current_);
-                rcloud.config.set_recent_notebook(result.id, (new Date()).toString())
-                .then(function(){
-                    return rcloud.config.get_recent_notebooks();
-                })
-                .then(function(data){
-                    that.update_recent_notebooks(data);
-                });
 
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)
