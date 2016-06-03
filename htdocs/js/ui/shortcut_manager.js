@@ -203,7 +203,7 @@ RCloud.UI.shortcut_manager = (function() {
         },
         get_registered_shortcuts_by_category: function(sort_items) {
 
-            console.log(extension_.sections.all.entries);
+            //console.log(extension_.sections.all.entries);
 
             var rank = _.map(sort_items, (function(item, index) {
                 return { key: item, value: index + 1 } }));

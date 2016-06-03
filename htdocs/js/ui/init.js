@@ -260,7 +260,9 @@ RCloud.UI.init = function() {
         id: 'goto_previous_cell',
         description: 'Go to previous cell',
         keys: {
-            win_mac: ['alt', 'up']
+            win_mac: [
+                ['alt', 'up']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -268,7 +270,9 @@ RCloud.UI.init = function() {
         id: 'goto_next_cell',
         description: 'Go to next cell',
         keys: {
-            win_mac: ['alt', 'down']
+            win_mac: [
+                ['alt', 'down']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -276,8 +280,12 @@ RCloud.UI.init = function() {
         id: 'insert_cell_before',
         description: 'Insert cell before current',
         keys: {
-            win: ['ctrl', '['],
-            mac: ['command', '[']
+            win: [
+                ['ctrl', '[']
+            ],
+            mac: [
+                ['command', '[']
+            ]
         },
         modes: ['writeable'],
         action: function() { }
@@ -286,8 +294,12 @@ RCloud.UI.init = function() {
         id: 'insert_cell_after',
         description: 'Insert cell after current',
         keys: {
-            win: ['ctrl', ']'],
-            mac: ['command', ']']
+            win: [
+                ['ctrl', ']']
+            ],
+            mac: [
+                ['command', ']']
+            ]
         },
         modes: ['writeable'],
         action: function() { }
@@ -296,7 +308,9 @@ RCloud.UI.init = function() {
         id: 'cell_run_from_here',
         description: 'Run from here (within a cell)',
         keys: {
-            win_mac: ['shift', 'alt', 'enter']
+            win_mac: [
+                ['shift', 'alt', 'enter']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -304,7 +318,9 @@ RCloud.UI.init = function() {
         id: 'blur_cell',
         description: 'Blur Cell',
         keys: {
-            win_mac: ['esc']
+            win_mac: [
+                ['esc']
+            ]
         },
         modes: ['writeable']
     }]);
