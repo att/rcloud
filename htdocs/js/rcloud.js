@@ -124,9 +124,12 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_by_name"],
             ["languages", "get_list"],
             ["plots", "render"],
-            ["plots", "get_formats"]
+            ["plots", "get_formats"],
+            ["get_thumb"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
+
+        rcloud.get_thumb = rcloud_ocaps.get_thumbAsync;
 
         rcloud.username = function() {
             return $.cookies.get('user');

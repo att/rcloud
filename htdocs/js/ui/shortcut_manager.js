@@ -87,15 +87,6 @@ RCloud.UI.shortcut_manager = (function() {
                     shortcut_to_add.key_bindings.push(keys.join('+'));
                 }
 
-                // with existing shortcuts:
-                for(var loop = 0; loop < existing_shortcuts.length; loop++) {
-                    if(_.intersection(existing_shortcuts[loop].key_bindings, shortcut_to_add.key_bindings).length > 0) {
-                        console.warn('Keyboard shortcut "' + shortcut_to_add.description + '" cannot be registered because its keycode clashes with an existing shortcut.');
-                        can_add = false;
-                        break;
-                    }
-                }
-
                 if(can_add) {
 
                     // update any 'command' entries to the '⌘' key:
@@ -207,10 +198,13 @@ RCloud.UI.shortcut_manager = (function() {
         },
         get_registered_shortcuts_by_category: function(sort_items) {
 
+            console.log(extension_.sections.all.entries);
+
             var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
 
-            var available_shortcuts = _.filter(extension_.sections.all.entries, function(s) { return is_active(s); });
+            var available_shortcuts = _.filter(_.sortBy(extension_.sections.all.entries, function(shortcut) { return shortcut.category + shortcut.description; }), 
+                function(s) { return is_active(s); });
 
             return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item };
