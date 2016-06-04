@@ -354,7 +354,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     if(is.current)
       .session$current.notebook <- aug.res
 
-    rcloud.config.set.recently.modified.notebook(id, res$last_commit)
+    rcloud.config.set.recently.modified.notebook(id, res$content$updated_at)
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
