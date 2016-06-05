@@ -1396,7 +1396,8 @@ var editor = function () {
                     .then(that.load_callback({version: version,
                                               source: source,
                                               selroot: selroot,
-                                              push_history: push_history}));
+                                              push_history: push_history}))
+                    .then(function() { RCloud.UI.find_replace.reset(); });
             })
                 .catch(function(xep) {
                     return shell.improve_load_error(xep, gistname, version).then(function(message) {

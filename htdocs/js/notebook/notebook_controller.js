@@ -26,6 +26,10 @@ Notebook.create_controller = function(model)
         };
     }();
 
+    var refresh_search = _.debounce(function() {
+        update_notebook(refresh_buffers()).then(function() { RCloud.UI.find_replace.reset(); })
+    }, 350);
+
     function append_cell_helper(content, type, id) {
         var cell_model = Notebook.Cell.create_model(content, type);
         var cell_controller = Notebook.Cell.create_controller(cell_model);
@@ -228,6 +232,8 @@ Notebook.create_controller = function(model)
                 result.save();
                 save_timer_ = null;
             }, save_timeout);
+
+        refresh_search();
     }
 
     model.dishers.push({on_dirty: on_dirty});
