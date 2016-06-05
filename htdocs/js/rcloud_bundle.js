@@ -523,6 +523,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "set_current_notebook"],
             ["config", "new_notebook_number"],
             ["config", "get_recent_notebooks"],
+            ["config", "get_notebooks_discover"],
             ["config", "set_recent_notebook"],
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
@@ -709,6 +710,7 @@ RCloud.create = function(rcloud_ocaps) {
             set_current_notebook: rcloud_ocaps.config.set_current_notebookAsync,
             new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
             get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
+            get_notebooks_discover: rcloud_ocaps.config.get_notebooks_discoverAsync,
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
@@ -9676,8 +9678,11 @@ RCloud.UI.session_pane = {
                 ui_utils.scroll_to_after($("#session-info"));
             });
         }
-        if(!logged)
-            console.log("pre-init post_error: " + msg.text());
+        if(!logged) {
+            if(typeof msg === 'object')
+                msg = msg.text();
+            console.log("pre-init post_error: " + msg);
+        }
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
@@ -10344,82 +10349,79 @@ RCloud.UI.notebook_protection = (function() {
 RCloud.UI.discovery_page = (function() {
     return {
         init: function() {
-            require([
-                './../../lib/js/imagesloaded',
-                './../../lib/js/masonry.pkgd.min'
-              ], function(imagesLoaded, Masonry) {
-                  'use strict';
+            return new Promise(function(resolve, reject) {
+                require([
+                    './../../lib/js/imagesloaded',
+                    './../../lib/js/masonry.pkgd.min'
+                ], function(imagesLoaded, Masonry) {
+                    'use strict';
 
-                  window.imagesLoaded = imagesLoaded;
-                  window.Masonry = Masonry;
+                    window.imagesLoaded = imagesLoaded;
+                    window.Masonry = Masonry;
 
-                  rcloud.config.get_recent_notebooks().then(function(data){
-                      var recent_notebooks_ = _.chain(data)
-                      .pairs()
-                      .filter(function(kv) {
-                          return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(editor.get_notebook_info(kv[0])) ;
-                      })
-                      .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                      .sortBy(function(kv) { return kv[1] * -1; })
-                      .first(20)
-                      .map(function(notebook) {
-                        var current = editor.get_notebook_info(notebook[0]);
-                        return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
-                          return {
-                            id: notebook[0],
-                            time: notebook[1],
-                            description: current.description,
-                            last_commit: new Date(current.last_commit).toDateString(),
-                            username: current.username,
-                            num_stars: editor.num_stars(current[0]),
-                            image_src: "data:image/png;base64," + thumb_src
-                          };
-                        });
-                      })
-                      .value();
+                    resolve(rcloud.config.get_notebooks_discover().then(function(data){
+                        var recent_notebooks_ = _.chain(data)
+                                .pairs()
+                                .filter(function(kv) {
+                                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(editor.get_notebook_info(kv[0])) ;
+                                })
+                                .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                                .sortBy(function(kv) { return kv[1] * -1; })
+                                .first(20)
+                                .map(function(notebook) {
+                                    var current = editor.get_notebook_info(notebook[0]);
+                                    return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
+                                        return {
+                                            id: notebook[0],
+                                            time: notebook[1],
+                                            description: current.description,
+                                            last_commit: new Date(current.last_commit).toDateString(),
+                                            username: current.username,
+                                            num_stars: editor.num_stars(current[0]),
+                                            image_src: "data:image/png;base64," + thumb_src
+                                        };
+                                    });
+                                })
+                                .value();
 
-                      Promise.all(recent_notebooks_).then(function(recent_notebooks){
-
-                        $('progress').attr({
-                          max: recent_notebooks.length
-                        });
-
-                        var template = _.template(
-                            $("#item_template").html()
-                        );
-
-                        $('.grid').html(template({
-                          notebooks: recent_notebooks
-                        })).imagesLoaded()
-                          .always(function() {
-
-                            new Masonry( '.grid', {
-                              itemSelector: '.grid-item'
-                            });
-
-                            $('#progress').fadeOut(200, function() {
-                              $('.navbar').fadeIn(200, function() {
-                                $('#discovery-app').css('visibility', 'visible');
-                                $('body').addClass('loaded');
-                              });
-                            });
-
-                          })
-                          .progress(function(imgLoad, image) {
-                            if(!image.isLoaded) {
-                              $(image.img).attr('src', './img/missing.png');
-                            }
-
-                            var new_value = +$('progress').attr('value') + 1;
-
+                        Promise.all(recent_notebooks_).then(function(recent_notebooks) {
                             $('progress').attr({
-                              value: new_value
+                                max: recent_notebooks.length
                             });
 
-                          });
-                      });
+                            var template = _.template(
+                                $("#item_template").html()
+                            );
 
-                  });
+                            $('.grid').html(template({
+                                notebooks: recent_notebooks
+                            })).imagesLoaded()
+                                .always(function() {
+                                    new Masonry( '.grid', {
+                                        itemSelector: '.grid-item'
+                                    });
+
+                                    $('#progress').fadeOut(200, function() {
+                                        $('.navbar').fadeIn(200, function() {
+                                            $('#discovery-app').css('visibility', 'visible');
+                                            $('body').addClass('loaded');
+                                        });
+                                    });
+                                })
+                                .progress(function(imgLoad, image) {
+                                    if(!image.isLoaded) {
+                                        $(image.img).attr('src', './img/missing.png');
+                                    }
+
+                                    var new_value = +$('progress').attr('value') + 1;
+
+                                    $('progress').attr({
+                                        value: new_value
+                                    });
+                                });
+                        });
+                    }));
+                }, reject);
             });
         }
     };
