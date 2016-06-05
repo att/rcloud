@@ -34,7 +34,6 @@ var editor = function () {
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
-        featured_notebooks_ = [],
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
         path_tips_ = false; // debugging tool: show path tips on tree
@@ -528,6 +527,7 @@ var editor = function () {
                 path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
                 var root_data = [];
+                var featured_tree;
 
                 return Promise.all([rcloud.config.get_current_notebook(),
                                     get_featured()
@@ -536,14 +536,14 @@ var editor = function () {
                         current_ = current;
                         num_stars_ = starred_info.num_stars;
                         notebook_info_ = starred_info.notebooks;
-                        featured_notebooks_ = featured_notebooks;
+                        featured_tree = featured_notebooks;
                     })
                     .then(function() {
 
                         var alls_root = populate_all_notebooks(all_the_users);
 
                         return [
-                            featured_notebooks_,
+                            featured_tree,
                             populate_interests(starred_info.notebooks),
                             populate_friends(alls_root),
                             alls_root
