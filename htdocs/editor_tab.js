@@ -36,7 +36,8 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         featured_notebooks_ = [],
         invalid_notebooks_ = {},
-        current_ = null; // current notebook and version
+        current_ = null, // current notebook and version
+        path_tips_ = false; // debugging tool: show path tips on tree
 
     // view
     var $tree_ = null;
@@ -519,10 +520,11 @@ var editor = function () {
         return Promise.all([
             rcloud.get_users(),
             get_starred_info(),
-            rcloud.get_gist_sources()
+            rcloud.get_gist_sources(),
+            rcloud.config.get_user_option('notebook-path-tips')
         ])
-            .spread(function(all_the_users, starred_info, gist_sources) {
-
+            .spread(function(all_the_users, starred_info, gist_sources, path_tips) {
+                path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
                 var root_data = [];
 
@@ -1061,6 +1063,9 @@ var editor = function () {
             title = element.find('.jqtree-title');
         title.css('color', node.color);
 
+        if(path_tips_)
+            element.attr('title', node.id);
+
         if(node.gistname) {
             if(node.source)
                 title.addClass('foreign-notebook');
@@ -1282,7 +1287,8 @@ var editor = function () {
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
+                    return that.load_notebook(opts.notebook, opts.version, opts.source,
+                                              true, false, ui_utils.make_url('edit.html'));
                 } else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
                         .catch(function(xep) {
