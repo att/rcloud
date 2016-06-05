@@ -23,9 +23,11 @@ RCloud.UI.shortcut_dialog = (function() {
             } 
 
             shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
-                'General',
+                'Code Editor',
+                'Code Prompt',
+                'Cell Management',
                 'Notebook Management',
-                'Cell Management']);
+                'General']);
 
             content_ = '';
 
@@ -38,7 +40,8 @@ RCloud.UI.shortcut_dialog = (function() {
                 _.each(group.shortcuts, function(shortcut) {
 
                     var keys_markup = []; 
-                    _.each(shortcut.keys, function(keys) {
+
+                    _.each(shortcut.bind_keys, function(keys) {
                         keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 
