@@ -262,7 +262,7 @@ var editor = function () {
             counts,
             infos,
             promise = Promise.resolve(),
-            clean_r = function(obj) { delete obj.r_attributes; delete obj.r_type; return obj; }
+            clean_r = function(obj) { delete obj.r_attributes; delete obj.r_type; return obj; };
 
         promise = promise.then(function() {
             return rcloud.stars.get_my_starred_notebooks();
@@ -382,7 +382,7 @@ var editor = function () {
                     children: [{ label : 'loading...' }],
                     lazy_load: true, // as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
                     user: u
-                }
+                };
             }).sort(compare_nodes)
         };
     }
@@ -454,12 +454,12 @@ var editor = function () {
                     notebook.id = '/featured/' + notebook.gistname;
                     return notebook;
                 });
-                
+
                 return {
                     label: 'RCloud Sample Notebooks',
                     id: '/featured',
                     children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes)
-                }
+                };
             });
 
         });
@@ -482,7 +482,7 @@ var editor = function () {
                     notebook.id = '/featured/' + notebook.gistname;
                     return notebook;
                 });
-                
+
                 return {
                     label: 'RCloud Sample Notebooks',
                     id: '/featured',
@@ -1146,13 +1146,13 @@ var editor = function () {
                 var notebook_nodes = convert_notebook_set(n.root, n.user, notebooks);
                 $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(n.root, n.user)).sort(compare_nodes), n);
 
-                // all children have been replaced, so if the selected node is 
+                // all children have been replaced, so if the selected node is
                 // one of the children, reselect:
                 function find_node(root_node, id_to_find) {
                     var found;
-                    
+
                     function recurse(node) {
-                        
+
                         for (var i = 0; i < node.children.length; i++) {
                             if ((node.children[i].id === id_to_find)) {
                                 found = node.children[i];
@@ -1167,9 +1167,9 @@ var editor = function () {
                             }
                         }
                     }
-                    
+
                     recurse(root_node);
-                    
+
                     return found;
                 }
 
@@ -1179,7 +1179,7 @@ var editor = function () {
                 if(node_to_select) {
                     select_node(node_to_select);
                 }
-                
+
                 delete n.lazy_load;
             });
         }
@@ -1246,7 +1246,7 @@ var editor = function () {
             return histories_[current_.notebook];
         },
         get_current_notebook_history_index : function() {
-            return current_.version === null ? 
+            return current_.version === null ?
                 0 :
                 find_index(this.get_current_notebook_histories(), function(h) {
                     return h.version === current_.version;
