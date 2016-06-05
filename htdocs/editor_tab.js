@@ -382,7 +382,8 @@ var editor = function () {
                     sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
                     children: [{ label : 'loading...' }],
                     lazy_load: true, // as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-                    user: u
+                    user: u,
+                    root: 'alls'
                 };
             }).sort(compare_nodes)
         };
