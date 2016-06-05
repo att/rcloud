@@ -460,7 +460,7 @@ var editor = function () {
                 return {
                     label: 'RCloud Sample Notebooks',
                     id: '/featured',
-                    children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes)
+                    children: as_folder_hierarchy(notebook_nodes, node_id('featured')).sort(compare_nodes)
                 };
             });
 
