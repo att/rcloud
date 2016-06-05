@@ -6285,20 +6285,27 @@ RCloud.UI.find_replace = (function() {
                 category: 'Notebook Management',
                 id: 'notebook_find',
                 description: 'Find text',
-                keys: [
-                    ['command', 'f'],
-                    ['ctrl', 'f']
-                ],
-                modes: ['writeable', 'readonly'],
+                keys: { 
+                    mac: [
+                        ['command', 'f'] 
+                    ],
+                    win: [
+                        ['ctrl', 'f']
+                    ]
+                },
                 action: function() { toggle_find_replace(false); }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
                 description: 'Replace text',
-                keys: [
-                    ['command', 'option', 'f'],
-                    ['ctrl', 'h']
-                ],
+                keys: { 
+                    mac: [
+                        ['command', 'option', 'f'] 
+                    ],
+                    win: [
+                        ['ctrl', 'h']
+                    ]
+                },
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);
@@ -6323,13 +6330,13 @@ RCloud.UI.shortcut_manager = (function() {
     };
 
     function modify(ids, func) {
-        if(!_.isArray(ids)) {
+        if (!_.isArray(ids)) {
             ids = [ids];
         }
 
         _.each(ids, function(id) {
             var shortcut = get_by_id(id);
-            if(shortcut) {
+            if (shortcut) {
                 func(shortcut);
             }
         });
@@ -6343,7 +6350,7 @@ RCloud.UI.shortcut_manager = (function() {
         var shortcuts_to_add, obj = {};
         var existing_shortcuts = extension_.sections.all.entries;
 
-        if(!_.isArray(shortcuts)) {
+        if (!_.isArray(shortcuts)) {
             shortcuts_to_add = [shortcuts];
         } else {
             shortcuts_to_add = shortcuts;
@@ -6356,105 +6363,109 @@ RCloud.UI.shortcut_manager = (function() {
             var shortcut_to_add = _.defaults(shortcut, {
                 category: 'General',
                 modes: ['writeable', 'readonly'],
+                ignore_clash: false,
                 enable_in_dialogs: false,
                 enabled: true
             });
 
-            // if this is not a mac, filter out the 'command' options:
-            if(!ui_utils.is_a_mac()) {
-                shortcut.keys = _.reject(shortcut.keys, function(keys) {
-                    return _.contains(keys, 'command');
-                });
+            // clean-up:
+            var is_mac = ui_utils.is_a_mac();
+
+            if (shortcut.keys.hasOwnProperty('win_mac')) {
+                shortcut.bind_keys = shortcut.keys.win_mac;
             } else {
-                // and if it is a mac, filter out 'ctrl' based commands if there
-                // is also a 'command' variant:
-                var all_keys = _.flatten(shortcut.keys);
-                if(_.contains(all_keys, 'command') && _.contains(all_keys, 'ctrl')) {
-                    shortcut.keys = _.reject(shortcut.keys, function(keys) {
-                        return _.contains(keys, 'ctrl');
-                    });
-                }
+                shortcut.bind_keys = shortcut.keys[is_mac ? 'mac' : 'win'];
             }
 
             // if this is a shortcut that needs to be added:
-            if(!_.isUndefined(shortcut.keys) && shortcut.keys.length) {
+            if (shortcut.bind_keys && shortcut.bind_keys.length) {
 
-                shortcut_to_add.key_bindings = [];
+                shortcut_to_add.key_desc = [];
 
                 // construct the key bindings:
-                for (var i = 0; i < shortcut.keys.length; i++) {
+                for (var i = 0; i < shortcut.bind_keys.length; i++) {
 
                     // ensure consistent order across definitions:
-                    var keys = _
-                        .chain(shortcut.keys[i])
-                        .map(function(element) { return element.toLowerCase(); })
-                        .sortBy(function(element){
-                          var rank = {
-                              "command": 1,
-                              "ctrl": 2,
-                              "shift": 3
-                          };
-                          return rank[element];
-                      }).value();
+                    var bind_keys = _
+                        .chain(shortcut.bind_keys[i])
+                        .map(function(element) {
+                            return element.toLowerCase(); })
+                        .sortBy(function(element) {
+                            var rank = {
+                                "command": 1,
+                                "ctrl": 2,
+                                "shift": 3
+                            };
+                            return rank[element];
+                        }).value();
 
                     // so that they can be compared:
-                    shortcut_to_add.key_bindings.push(keys.join('+'));
+                    shortcut_to_add.key_desc.push(bind_keys.join('+'));
                 }
 
-                if(can_add) {
+                // with existing shortcuts:
+                if (!shortcut_to_add.ignore_clash) {
+                    for (var loop = 0; loop < existing_shortcuts.length; loop++) {
 
-                    // update any 'command' entries to the '⌘' key:
-                    //_.each(shortcut_to_add.keys, function(keys){
-                    //    for(var keyLoop = 0; keyLoop < keys.length; keyLoop++) {
-                    //        if(keys[keyLoop] === 'command') {
-                    //            keys[keyLoop] = '&#8984;';
-                    //        }
-                    //    }
-                    //});
+                        if (existing_shortcuts[loop].ignore_clash)
+                            continue;
 
-                    if(_.isUndefined(shortcut.action)){
+                        if (_.intersection(existing_shortcuts[loop].key_desc, shortcut_to_add.key_desc).length > 0) {
+                            console.warn('Keyboard shortcut "' + shortcut_to_add.description +
+                                '" cannot be registered because its keycode clashes with an existing shortcut id "' +
+                                existing_shortcuts[loop].id + '" in the "' + existing_shortcuts[loop].category + '" category.');
+                            can_add = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (can_add) {
+
+                    if (_.isUndefined(shortcut.action)) {
                         shortcut_to_add.create = function() {};
-                    }
-                    else {
+                    } else {
                         shortcut_to_add.create = function() {
-                            _.each(shortcut_to_add.key_bindings, function(binding) {
+                            _.each(shortcut_to_add.key_desc, function(binding) {
+                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) {
 
-                                var func_to_bind = function(e) {
+                                    var func_to_bind = function(e) {
 
-                                    if(is_active(get_by_id(shortcut_to_add.id))) {
-                                        e.preventDefault();
+                                        if (is_active(get_by_id(shortcut_to_add.id))) {
+                                            e.preventDefault();
 
-                                        // invoke if conditions are met:
-                                        if((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
-                                           !$('.modal').is(':visible')) {
-                                            shortcut.action(e);
+                                            // invoke if conditions are met:
+                                            if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
+                                                !$('.modal').is(':visible')) {
+                                                shortcut.action(e);
+                                            }
+
                                         }
+                                    };
 
+                                    if (shortcut_to_add.global) {
+                                        window.Mousetrap.bindGlobal(binding, func_to_bind);
+                                    } else {
+                                        window.Mousetrap().bind(binding, func_to_bind);
                                     }
-                                };
-
-                                if(shortcut_to_add.global) {
-                                    window.Mousetrap.bindGlobal(binding, func_to_bind);
-                                } else {
-                                   window.Mousetrap().bind(binding, func_to_bind);
-                                }
+                                });
                             });
-                        };
+                        }
                     }
+
+                    if (can_add) {
+                        obj[shortcut.id] = shortcut_to_add;
+
+                        // add to the existing shortcuts so that it can be compared:
+                        existing_shortcuts.push(shortcut_to_add);
+                    }
+
                 }
-
-                if(can_add) {
-                    obj[shortcut.id] = shortcut_to_add;
-
-                    // add to the existing shortcuts so that it can be compared:
-                    existing_shortcuts.push(shortcut_to_add);
-                }
-
             }
         });
 
         return obj;
-    }
+    };
 
     var result = {
 
@@ -6468,16 +6479,16 @@ RCloud.UI.shortcut_manager = (function() {
                     has_modifier = e.metaKey || e.ctrlKey || e.altKey;
 
                 // allow the event to be handled:
-                if(has_modifier && search_values.some(function(v) {
-                    return (' ' + element.className + ' ').indexOf(' ' + v + ' ') > -1;
-                }))
-                   return false;
+                if (has_modifier && search_values.some(function(v) {
+                        return (' ' + element.className + ' ').indexOf(' ' + v + ' ') > -1;
+                    }))
+                    return false;
 
                 // prevent on form fields and content editables:
                 return (element.tagName == 'INPUT' && element.type !== 'checkbox') ||
-                       element.tagName == 'SELECT' ||
-                       element.tagName == 'TEXTAREA' ||
-                       (element.contentEditable && element.contentEditable == 'true');
+                    element.tagName == 'SELECT' ||
+                    element.tagName == 'TEXTAREA' ||
+                    (element.contentEditable && element.contentEditable == 'true');
             };
 
             extension_ = RCloud.extension.create({
@@ -6489,14 +6500,14 @@ RCloud.UI.shortcut_manager = (function() {
             return this;
         },
         add: function(s) {
-            if(extension_) {
+            if (extension_) {
                 extension_.add(convert_extension(s));
             }
 
             return this;
         },
         load: function() {
-            if(extension_) {
+            if (extension_) {
                 extension_.create('all');
             }
         },
@@ -6512,13 +6523,16 @@ RCloud.UI.shortcut_manager = (function() {
         },
         get_registered_shortcuts_by_category: function(sort_items) {
 
-            console.log(extension_.sections.all.entries);
+            //console.log(extension_.sections.all.entries);
 
-            var rank = _.map(sort_items, (function(item, index) { return { key: item, value: index + 1 }}));
+            var rank = _.map(sort_items, (function(item, index) {
+                return { key: item, value: index + 1 } }));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
 
-            var available_shortcuts = _.filter(_.sortBy(extension_.sections.all.entries, function(shortcut) { return shortcut.category + shortcut.description; }), 
-                function(s) { return is_active(s); });
+            var available_shortcuts = _.filter(_.sortBy(extension_.sections.all.entries, function(shortcut) {
+                    return shortcut.category + shortcut.description; }),
+                function(s) {
+                    return is_active(s); });
 
             return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
                 return { category: key, shortcuts: item };
@@ -6538,10 +6552,10 @@ RCloud.UI.shortcut_dialog = (function() {
     var result = {
 
         show: function() {
-           
+
             $('#loading-animation').hide();
 
-            if(!shortcut_dialog_) {              
+            if(!shortcut_dialog_) {
                 shortcut_dialog_ = $('<div id="shortcut-dialog" class="modal fade" />')
                     .append($('<div class="modal-dialog" />')
                             .append($('<div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)" />')
@@ -6551,14 +6565,16 @@ RCloud.UI.shortcut_dialog = (function() {
                                     .append($('<div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;" />'))
                                     /*.append($('<div class="modal-footer" />')
                                         .append($('<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>')))*/));
-                                       
+
                 $("body").append(shortcut_dialog_);
-            } 
+            }
 
             shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
-                'General',
+                'Code Editor',
+                'Code Prompt',
+                'Cell Management',
                 'Notebook Management',
-                'Cell Management']);
+                'General']);
 
             content_ = '';
 
@@ -6570,8 +6586,10 @@ RCloud.UI.shortcut_dialog = (function() {
 
                 _.each(group.shortcuts, function(shortcut) {
 
-                    var keys_markup = []; 
-                    _.each(shortcut.keys, function(keys) {
+                    var keys_markup = [];
+
+                    _.each(shortcut.bind_keys, function(keys) {
+                        keys = keys || ['SNAFU'];
                         keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 
@@ -6590,10 +6608,785 @@ RCloud.UI.shortcut_dialog = (function() {
             });
 
             $('#shortcut-dialog .modal-body').html(content_);
-            
-            shortcut_dialog_.modal({ 
-                keyboard: false 
+
+            shortcut_dialog_.modal({
+                keyboard: false
             });
+        }
+    };
+
+    return result;
+
+})();
+
+RCloud.UI.ace_shortcuts = (function() {
+
+    var result = {
+        init: function() {
+
+            var ace_shortcuts = [{
+                category: 'Code prompt',
+                id: 'code_prompt_execute',
+                description: 'Create cell and execute code',
+                keys: { 
+                    win_mac: [
+                        ['enter'], ['alt', 'return']
+                    ]
+                }
+            }, {
+                category: 'Code prompt',
+                id: 'code_prompt_history_back',
+                description: 'Go back in code history',
+                keys: { 
+                    win_mac: [
+                        ['up']
+                    ]
+                }
+            }, {
+                category: 'Code prompt',
+                id: 'code_prompt_history_forwards',
+                description: 'Go forwards in code history',
+                keys: { 
+                    win_mac: [
+                        ['down']
+                    ]
+                }
+            }, {                           
+                category: 'Code Editor',
+                id: 'code_editor_execute',
+                description: 'Execute code',
+                keys: { 
+                    win_mac: [
+                        ['alt', 'return']
+                    ]
+                }
+            }, {
+                category: 'Code Editor',
+                id: 'code_editor_autocomplete',
+                description: 'Suggest autocompletion',
+                keys: { 
+                    win_mac: [
+                        ['ctrl', '.'], ['tab']
+                    ]
+                }
+            }, {
+                category: 'Code Editor',
+                id: 'code_editor_disable_gotoline',
+                description: 'Disable goto line',
+                keys: { 
+                    mac: [
+                        ['command', 'l'] 
+                    ],
+                    win: [
+                        ['ctrl', 'l']
+                    ]
+                }
+            }, {
+                category: 'Code Editor',
+                id: 'code_editor_execute_selection_or_line',
+                description: 'Execute selection or line',
+                keys: { 
+                    mac: [
+                        ['command', 'return'] 
+                    ],
+                    win: [
+                        ['ctrl', 'return']
+                    ]
+                }
+            }, {                                                        // !
+                category: 'Code Editor',
+                id: 'code_editor_cursor_start_of_line',
+                description: 'Cursor at beginning of line',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'a'] 
+                    ]
+                },
+            }, {
+                category: 'Code Editor',
+                id: 'code_editor_cursor_end_of_line',
+                description: 'Cursor at end of line',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'e'] 
+                    ]
+                }
+            },
+
+            // line operations:
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_line',
+                description: 'Remove line',
+                keys: { 
+                    mac: [
+                        ['cmd', 'd'] 
+                    ],
+                    win: [
+                        ['ctrl', 'd']
+                    ]
+                }
+            },          
+            {
+                category: 'Code Editor',
+                id: 'ace_copy_lines_down',
+                description: 'Copy lines down',
+                keys: { 
+                    mac: [
+                        ['cmd', 'option', 'down'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'down']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_line',
+                description: 'Copy lines up',
+                keys: { 
+                    mac: [
+                        ['cmd', 'option', 'up'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'up']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_move_lines_down',
+                description: 'Move lines down',
+                keys: { 
+                    mac: [
+                        ['option', 'down'] 
+                    ],
+                    win: [
+                        ['alt', 'down']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_move_lines_up',
+                description: 'Moves lines up',
+                keys: { 
+                    mac: [
+                        ['option', 'up'] 
+                    ],
+                    win: [
+                        ['alt', 'up']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_to_line_end',
+                description: 'Remove to line end',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'k'] 
+                    ],
+                    win: [
+                        ['alt', 'delete']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_to_line_start',
+                description: 'Remove to line start',
+                keys: { 
+                    mac: [
+                        ['cmd', 'backspace'] 
+                    ],
+                    win: [
+                        ['alt', 'backspace']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_word_left',
+                description: 'Remove word left',
+                keys: { 
+                    mac: [
+                        ['option', 'backspace'],
+                        ['ctrl', 'option', 'backspace']
+                    ],
+                    win: [
+                        ['ctrl', 'backspace']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_word_right',
+                description: 'Remove word right',
+                keys: { 
+                    mac: [
+                        ['option', 'delete'] 
+                    ],
+                    win: [
+                        ['ctrl', 'delete']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_split_line',
+                description: 'Split line',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'o'] 
+                    ]
+                }
+            },
+
+            // selection
+            {
+                category: 'Code Editor',
+                id: 'ace_select_all',
+                description: 'Select all',
+                keys: { 
+                    mac: [
+                        ['cmd', 'a'] 
+                    ],
+                    win: [
+                        ['ctrl', 'a']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_left',
+                description: 'Select left',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'left'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_right',
+                description: 'Select right',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'right'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_word_left',
+                description: 'Select word left',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'left'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_word_right',
+                description: 'Select word right',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'right'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_start',
+                description: 'Select line start',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'home'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_end',
+                description: 'Select line end',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'end'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_end',
+                description: 'Select to line end',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'right'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_start',
+                description: 'Select to line start',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'left'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_up',
+                description: 'Select up',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'up'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_down',
+                description: 'Select down',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'down'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_page_up',
+                description: 'Select page up',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'pageup'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_page_down',
+                description: 'Select page down',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'pagedown'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_to_start',
+                description: 'Select to start',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'up'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'home']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_to_end',
+                description: 'Select to end',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'down'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'end']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_duplicate_selection',
+                description: 'Duplicate selection',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'd'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'd']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_to_matching_bracket',
+                description: 'Select to matching bracket',
+                keys: { 
+                    win: [
+                        ['ctrl', 'shift', 'p']
+                    ]
+                }
+            },
+
+            // go to:
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_left',
+                description: 'Go to left',
+                keys: { 
+                    mac: [
+                        ['left'],
+                        ['ctrl', 'b']
+                    ],
+                    win: [
+                        ['left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_right',
+                description: 'Go to right',
+                keys: { 
+                    mac: [
+                        ['right'],
+                        ['ctrl', 'f']
+                    ],
+                    win: [
+                        ['right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_word_left',
+                description: 'Go to word left',
+                keys: { 
+                    mac: [
+                        ['option', 'left'] 
+                    ],
+                    win: [
+                        ['ctrl', 'left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_word_right',
+                description: 'Go to word right',
+                keys: { 
+                    mac: [
+                        ['option', 'right'] 
+                    ],
+                    win: [
+                        ['ctrl', 'right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_line_up',
+                description: 'Go line up',
+                keys: { 
+                    mac: [
+                        ['up'],
+                        ['ctrl', 'p']
+                    ],
+                    win: [
+                        ['up']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_line_down',
+                description: 'Go line down',
+                keys: { 
+                    mac: [
+                        ['down'],
+                        ['ctrl', 'n']
+                    ],
+                    win: [
+                        ['down']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_line_start',
+                description: 'Go to line start',
+                keys: { 
+                    mac: [
+                        ['command', 'left'],
+                        ['home'],
+                        ['ctrl', 'a']
+                    ],
+                    win: [
+                        ['alt', 'left'],
+                        ['home']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_line_end',
+                description: 'Go to line end',
+                keys: { 
+                    mac: [
+                        ['command', 'right'],
+                        ['end'],
+                        ['ctrl', 'e']
+                    ],
+                    win: [
+                        ['alt', 'right'],
+                        ['end']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_page_up',
+                description: 'Go to page up',
+                keys: { 
+                    mac: [
+                        ['option', 'pageup']
+                    ],
+                    win: [
+                        ['pageup']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_page_down',
+                description: 'Go to page down',
+                keys: { 
+                    mac: [
+                        ['option', 'pagedown'],
+                        ['ctrl', 'v']
+                    ],
+                    win: [
+                        ['pagedown']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_start',
+                description: 'Go to start',
+                keys: { 
+                    mac: [
+                        ['command', 'home'],
+                        ['command', 'up']
+                    ],
+                    win: [
+                        ['ctrl', 'home']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_end',
+                description: 'Go to end',
+                keys: { 
+                    mac: [
+                        ['command', 'end'],
+                        ['command', 'down']
+                    ],
+                    win: [
+                        ['ctrl', 'end']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_line',
+                description: 'Go to line',
+                keys: { 
+                    mac: [
+                        ['command', 'l']
+                    ],
+                    win: [
+                        ['ctrl', 'l']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_scroll_line_down',
+                description: 'Scroll line down',
+                keys: { 
+                    mac: [
+                        ['command', 'down']
+                    ],
+                    win: [
+                        ['ctrl', 'down']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_scroll_line_up',
+                description: 'Scroll line up',
+                keys: { 
+                    win: [
+                        ['ctrl', 'up']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_matching_bracket',
+                description: 'Go to matching bracket',
+                keys: { 
+                    win: [
+                        ['ctrl', 'p']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_scroll_page_down',
+                description: 'Scroll page down',
+                keys: { 
+                    mac: [
+                        ['option', 'pagedown']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_scroll_page_up',
+                description: 'Scroll page up',
+                keys: { 
+                    mac: [
+                        ['option', 'pageup']
+                    ]
+                }
+            },
+
+            // find/replace
+
+            // folding
+
+            // other:
+            {
+                category: 'Code Editor',
+                id: 'ace_indent',
+                description: 'Indent',
+                keys: { 
+                    win_mac: [
+                        ['tab']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_outdent',
+                description: 'Outdent',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'tab']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_undo',
+                description: 'Undo',
+                keys: { 
+                    mac: [
+                        ['command', 'z']
+                    ],
+                    win: [
+                        ['ctrl', 'z']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_redo',
+                description: 'Redo',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'z']
+                        ['command', 'y']
+                    ],
+                    win: [
+                        ['ctrl', 'y'],
+                        ['ctrl', 'shift', 'z']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_toggle_comment',
+                description: 'Toggle comment',
+                keys: { 
+                    mac: [
+                        ['command', '/']
+                    ],
+                    win: [
+                        ['ctrl', '/']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_change_to_lower_case',
+                description: 'Change to lower case',
+                keys: { 
+                    win_mac: [
+                        ['ctrl', 'shift', 'u']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_change_to_upper_case',
+                description: 'Change to upper case',
+                keys: { 
+                    win_mac: [
+                        ['ctrl', 'u']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_insert',
+                description: 'Overwrite',
+                keys: { 
+                    win_mac: [
+                        ['insert']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_delete',
+                description: 'Delete',
+                keys: { 
+                    win_mac: [
+                        ['delete']
+                    ]
+                }
+            }];
+
+            _.each(ace_shortcuts, function(s) { s.ignore_clash = true; s.modes = ['writeable']; });
+
+            RCloud.UI.shortcut_manager.add(ace_shortcuts);
+
         }
     };
 
@@ -7164,6 +7957,7 @@ RCloud.UI.init = function() {
 
     // keyboard shortcuts:
     RCloud.UI.shortcut_manager.init();
+    RCloud.UI.ace_shortcuts.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -7226,20 +8020,28 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'notebook_cell',
         description: 'Saves the current notebook',
-        keys: [
-            ['command', 's'],
-            ['ctrl', 's']
-        ],
+        keys: { 
+            mac: [
+                ['command', 's'] 
+            ],
+            win: [
+                ['ctrl', 's']
+            ]
+        },
         modes: ['writeable'],
         action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
     }, {
         category: 'Notebook Management',
         id: 'select_all',
         description: 'Select all',
-        keys: [
-            ['command', 'a'],
-            ['ctrl', 'a']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'a'] 
+            ],
+            win: [
+                ['ctrl', 'a']
+            ]
+        },
         modes: ['writeable'],
         action: function() {
             var selection = window.getSelection();
@@ -7253,20 +8055,28 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'history_undo',
         description: 'Steps back through the notebook\'s history',
-        keys: [
-            ['command', 'z'],
-            ['ctrl', 'z']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'z'] 
+            ],
+            win: [
+                ['ctrl', 'z']
+            ]
+        },
         modes: ['writeable'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
         id: 'history_redo',
         description: 'Steps forwards through the notebook\'s history',
-        keys: [
-            ['ctrl', 'y'],
-            ['command', 'shift', 'z']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'shift', 'z'] 
+            ],
+            win: [
+                ['ctrl', 'y']
+            ]
+        },        
         modes: ['writeable'],
         action: function() { editor.step_history_redo(); }
     }, {
@@ -7297,100 +8107,130 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'remove_cells',
         description: 'Removes selected cells',
-        keys: [
-            ['del'],
-            ['backspace'],
-            ['command', 'backspace']
-        ],
+        keys: { 
+            mac: [
+                ['del'],
+                ['backspace'],
+                ['command', 'backspace']
+            ],
+            win: [
+                ['del'],
+                ['backspace']
+            ]
+        },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.remove_selected_cells(); }
     }, {
         category: 'Cell Management',
         id: 'invert_cells',
         description: 'Invert selected cells',
-        keys: [
-            ['ctrl', 'shift', 'i'],
-            ['command', 'shift', 'i']
-        ],
+        keys: { 
+            mac: [
+                ['ctrl', 'shift', 'i']
+            ],
+            win: [
+                ['command', 'shift', 'i']
+            ]
+        },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.invert_selected_cells(); }
     }, {
         category: 'Cell Management',
         id: 'crop_cells',
         description: 'Crop cells',
-        keys: [
-            ['ctrl', 'k'],
-            ['command', 'k']
-        ],
+        keys: { 
+            mac: [
+                ['command', 'k']
+            ],
+            win: [
+                ['ctrl', 'k']
+            ]
+        },        
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }/*, {
         category: 'Cell Management',
         id: 'arrow_next_cell',
         description: 'Enter next cell (from end of current)',
-        keys: [
-            ['right']
-        ],
+        keys: {
+            win_mac: ['right']
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'arrow_previous_cell',
         description: 'Enter previous cell (from start of current)',
-        keys: [
-            ['left']
-        ],
+        keys: {
+            win_mac: ['left']
+        },
         modes: ['writeable']
     }*/, {
         category: 'Cell Management',
         id: 'goto_previous_cell',
         description: 'Go to previous cell',
-        keys: [
-            ['alt', 'up']
-        ],
+        keys: {
+            win_mac: [
+                ['alt', 'up']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'goto_next_cell',
         description: 'Go to next cell',
-        keys: [
-            ['alt', 'down']
-        ],
+        keys: {
+            win_mac: [
+                ['alt', 'down']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'insert_cell_before',
         description: 'Insert cell before current',
-        keys: [
-            ['ctrl', '['],
-            ['command', '[']
-        ],
+        keys: {
+            win: [
+                ['ctrl', '[']
+            ],
+            mac: [
+                ['command', '[']
+            ]
+        },
         modes: ['writeable'],
         action: function() { }
     }, {
         category: 'Cell Management',
         id: 'insert_cell_after',
         description: 'Insert cell after current',
-        keys: [
-            ['ctrl', ']'],
-            ['command', ']']
-        ],
+        keys: {
+            win: [
+                ['ctrl', ']']
+            ],
+            mac: [
+                ['command', ']']
+            ]
+        },
         modes: ['writeable'],
         action: function() { }
     }, {
         category: 'Cell Management',
         id: 'cell_run_from_here',
-        description: 'Run from here (within a cell)',
-        keys: [
-            ['shift', 'alt', 'enter']
-        ],
+        description: 'Run from here',
+        keys: {
+            win_mac: [
+                ['shift', 'alt', 'enter']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
         description: 'Blur Cell',
-        keys: [
-            ['esc']
-        ],
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
         modes: ['writeable']
     }]);
 
@@ -7399,9 +8239,11 @@ RCloud.UI.init = function() {
         category: 'General',
         id: 'show_help',
         description: 'Show shortcuts help',
-        keys: [
-            ['?']
-        ],
+        keys: { 
+            win_mac: [
+                ['?']
+            ]
+        },  
         modes: ['writeable', 'readonly'],
         action: function(e) {
             RCloud.UI.shortcut_dialog.show();
@@ -7410,9 +8252,12 @@ RCloud.UI.init = function() {
         category: 'General',
         id: 'close_modal',
         description: 'Close dialog',
-        keys: [
-            ['esc']
-        ],
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
+        ignore_clash: true,
         enable_in_dialogs: true,
         global: true,
         action: function() { $('.modal').modal('hide'); }
