@@ -526,6 +526,7 @@ var editor = function () {
             .spread(function(all_the_users, starred_info, gist_sources, path_tips) {
                 path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
+                notebook_info_ = starred_info.notebooks;
                 var root_data = [];
                 var featured_tree;
 
@@ -535,7 +536,6 @@ var editor = function () {
                     .spread(function(current, featured_notebooks) {
                         current_ = current;
                         num_stars_ = starred_info.num_stars;
-                        notebook_info_ = starred_info.notebooks;
                         featured_tree = featured_notebooks;
                     })
                     .then(function() {
