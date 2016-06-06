@@ -39,6 +39,10 @@ RCloud.UI.shortcut_dialog = (function() {
 
                 _.each(group.shortcuts, function(shortcut) {
 
+                    // if(!shortcut.keys.hasOwnProperty('win') && !shortcut.keys.hasOwnProperty('mac') && !shortcut.keys.hasOwnProperty('win_mac')) {
+                    //     console.error('invalid shortcut: ', shortcut);
+                    // }
+
                     var keys_markup = [];
 
                     _.each(shortcut.bind_keys, function(keys) {
