@@ -449,8 +449,10 @@ var editor = function () {
             if(_.isString(featured_))
                 featured_ = [featured_];
 
-            return get_notebooks_by_user(featured_[0]).then(function(notebooks) {
+            if(!featured_.length)
+                return null;
 
+            return get_notebooks_by_user(featured_[0]).then(function(notebooks) {
                 var notebook_nodes = convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
                     notebook.id = '/featured/' + notebook.gistname;
                     return notebook;
