@@ -31,6 +31,7 @@ var editor = function () {
         histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
+        fork_count_ = {},
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
@@ -1337,6 +1338,9 @@ var editor = function () {
         num_stars: function(gistname) {
             return num_stars_[gistname] || 0;
         },
+        fork_count: function(gistname) {
+            return fork_count_[gistname] || 0;
+        }, 
         i_starred: function(gistname) {
             return my_stars_[gistname] || false;
         },
@@ -1808,6 +1812,11 @@ var editor = function () {
                                     : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                         num_stars_[result.id] = count;
                                     })).then(function() {
+                                      _.has(fork_count_, result.id) ? Promise.resolve(undefined)
+                                    : rcloud.stars.get_notebook_fork_count(result.id).then(function(count) {
+                                        fork_count_[result.id] = count;
+                                    })
+                                    }).then(function() {
                                         update_notebook_from_gist(result, history, options.selroot);
                                     }));
 
