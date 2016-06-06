@@ -137,7 +137,7 @@ unauthenticated.ocaps <- function(mode, compute)
       signal_to_compute = make.oc(.signal.to.compute),
       help = compute$help,
       get_thumb = compute$get_thumb,
-
+      get_fork_count = make.oc(rcloud.get.fork.count),
       get_users = make.oc(rcloud.get.users),
 
       # javascript.R

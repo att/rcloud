@@ -125,7 +125,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["languages", "get_list"],
             ["plots", "render"],
             ["plots", "get_formats"],
-            ["get_thumb"]
+            ["get_thumb"],
+            ["get_fork_count"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
