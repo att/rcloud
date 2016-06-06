@@ -428,7 +428,8 @@ rcloud.update.fork.count <- function(id) {
 }
 
 rcloud.get.fork.count <- function(id) {
-  rcs.get(rcs.key('.notebook', id, 'forkcount'))
+  #rcs.get(rcs.key('.notebook', id, 'forkcount'))
+  1
 }
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
