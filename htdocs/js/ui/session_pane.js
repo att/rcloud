@@ -83,8 +83,11 @@ RCloud.UI.session_pane = {
                 ui_utils.scroll_to_after($("#session-info"));
             });
         }
-        if(!logged)
-            console.log("pre-init post_error: " + msg.text());
+        if(!logged) {
+            if(typeof msg === 'object')
+                msg = msg.text();
+            console.log("pre-init post_error: " + msg);
+        }
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";

@@ -20,4 +20,3 @@ rcloud.packages/*.tar.gz
 REVISION
 run
 packages/src
-/vagrant/.vagrant

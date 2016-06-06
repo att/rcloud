@@ -1,2 +1,2 @@
-export(auth.url, create.gist, create.gist.comment, current.gist.context, delete.gist.comment, fork.gist, get.gist,
+export(auth.url, create.gist, create.gist.comment, current.gist.context, delete.gist.comment, fork.gist, get.gist.forks, get.gist,
        get.gist.comments, modify.gist, modify.gist.comment, set.gist.context, access.token, context.info, get.user, is.read.only, is.read.only.default)
