@@ -346,7 +346,8 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     content <- .gist.binary.process.outgoing(id, content)
 
     # save thumbnail to key-value database
-    rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
+    if ("thumb.png.b64" %in% names(content$files))
+      rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
 
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     aug.res <- rcloud.augment.notebook(res)
@@ -424,6 +425,10 @@ rcloud.get.notebook.forks <- function(id)
 rcloud.update.fork.count <- function(id) {
   count <- length(rcloud.get.notebook.forks(id)$content)
   rcs.set(rcs.key('.notebook', id, 'forkcount'), count)
+}
+
+rcloud.get.fork.count <- function(id) {
+  rcs.get(rcs.key('.notebook', id, 'forkcount'))
 }
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
