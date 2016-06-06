@@ -306,7 +306,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'cell_run_from_here',
-        description: 'Run from here',
+        description: 'Run from this cell on',
         keys: {
             win_mac: [
                 ['shift', 'alt', 'enter']
