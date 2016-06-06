@@ -51,7 +51,7 @@ RCloud.UI.shortcut_manager = (function() {
             });
 
             // clean-up:
-            var is_mac = ui_utils.is_a_mac();
+            var is_mac = true; //ui_utils.is_a_mac();
 
             if (shortcut.keys.hasOwnProperty('win_mac')) {
                 shortcut.bind_keys = shortcut.keys.win_mac;
