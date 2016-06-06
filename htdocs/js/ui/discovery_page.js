@@ -3,15 +3,28 @@ RCloud.UI.discovery_page = (function() {
     var discovery = {
         load_current_metric: function() {
             var current_metric = $('input[name=metric]:checked').val();
-            return rcloud.config.get_notebooks_discover(current_metric).then(function(data){
-                var recent_notebooks_ = _.chain(data)
+            return rcloud.config.get_notebooks_discover(current_metric).then(function(data) {
+                var notebook_pairs = _.chain(data.values)
                         .pairs()
                         .filter(function(kv) {
-                            return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(editor.get_notebook_info(kv[0])) ;
-                        })
+                            return kv[0] != 'r_attributes' && kv[0] != 'r_type' &&
+                                !_.isEmpty(editor.get_notebook_info(kv[0]));
+                        });
+                // assumes we always want descending, among other things
+                switch(data.sort) {
+                case 'date':
+                    notebook_pairs = notebook_pairs
                         .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                        .sortBy(function(kv) { return kv[1] * -1; })
-                        .first(20)
+                        .sortBy(function(kv) { return kv[1] * -1; });
+                    break;
+                case 'number':
+                    notebook_pairs = notebook_pairs.sortBy(function(kv) {
+                        return kv[1] * -1;
+                    });
+                    break;
+                }
+                notebook_pairs = notebook_pairs.first(20); // bug #2026
+                var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
                             var current = editor.get_notebook_info(notebook[0]);
                             return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
@@ -28,7 +41,7 @@ RCloud.UI.discovery_page = (function() {
                         })
                         .value();
 
-                Promise.all(recent_notebooks_).then(function(recent_notebooks) {
+                Promise.all(notebook_data_promises).then(function(recent_notebooks) {
                     $('progress').attr({
                         max: recent_notebooks.length
                     });

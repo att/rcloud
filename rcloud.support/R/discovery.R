@@ -11,11 +11,12 @@ rcloud.config.get.recently.modified.notebooks <- function() {
                                "config", "recently-modified", "*"), rcs.list))
   vals <- rcs.get(keys, list=TRUE)
   names(vals) <- gsub(".*/", "", names(vals))
-  vals
+  list(sort='date', values=vals)
 }
 
 rcloud.config.set.recently.modified.notebook <- function(id, date) {
   rcs.set(usr.key(user=.session$username, notebook="system", "config", "recently-modified", id), date)
 }
 
-rcloud.config.get.most.popular.notebooks <- function() list()
+rcloud.config.get.most.popular.notebooks <- function()
+  list(sort='number', values=list())
