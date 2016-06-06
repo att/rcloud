@@ -1813,7 +1813,7 @@ var editor = function () {
                                         num_stars_[result.id] = count;
                                     })).then(function() {
                                       _.has(fork_count_, result.id) ? Promise.resolve(undefined)
-                                    : rcloud.stars.get_notebook_fork_count(result.id).then(function(count) {
+                                    : rcloud.get_fork_count(result.id).then(function(count) {
                                         fork_count_[result.id] = count;
                                     })
                                     }).then(function() {
