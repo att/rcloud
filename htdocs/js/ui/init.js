@@ -74,7 +74,7 @@ RCloud.UI.init = function() {
            !$(arguments[0].target).closest($("#output")).size())
             return;
 
-        ui_utils.copy_document_seleciton();
+        ui_utils.copy_document_selection();
     });
 
     // prevent unwanted document scrolling e.g. by dragging
