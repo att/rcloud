@@ -416,6 +416,9 @@ rcloud.fork.notebook <- function(id, source = NULL) {
     new.nb
 }
 
+rcloud.get.notebook.forks <- function(id)
+  get.gist.forks(id, ctx = .rcloud.get.gist.context())
+
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
   gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config", "current", "notebook")))
