@@ -148,23 +148,7 @@ RCloud.UI.find_replace = (function() {
         if(active_cell_selection) {
             find_input_.val(active_cell_selection);
         } else {
-            // any doc-level selection?
-            var sel = window.getSelection(), text;
-
-            var offscreen = $('<pre class="offscreen"></pre>');
-            $('body').append(offscreen);
-            for(var i=0; i < sel.rangeCount; ++i) {
-                var range = sel.getRangeAt(i);
-                offscreen.append(range.cloneContents());
-            }
-            offscreen.find('.nonselectable').remove();
-            sel.selectAllChildren(offscreen[0]);
-
-            text = $(offscreen).text();
-
-            window.setTimeout(function() {
-                offscreen.remove();
-            }, 1000);
+            var text = ui_utils.copy_document_selection();
 
             if(text) {
                 find_input_.val(text);

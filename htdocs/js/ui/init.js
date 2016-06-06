@@ -73,18 +73,8 @@ RCloud.UI.init = function() {
         if($(arguments[0].target).hasClass('ace_text-input') ||
            !$(arguments[0].target).closest($("#output")).size())
             return;
-        var sel = window.getSelection();
-        var offscreen = $('<pre class="offscreen"></pre>');
-        $('body').append(offscreen);
-        for(var i=0; i < sel.rangeCount; ++i) {
-            var range = sel.getRangeAt(i);
-            offscreen.append(range.cloneContents());
-        }
-        offscreen.find('.nonselectable').remove();
-        sel.selectAllChildren(offscreen[0]);
-        window.setTimeout(function() {
-            offscreen.remove();
-        }, 1000);
+
+        ui_utils.copy_document_seleciton();
     });
 
     // prevent unwanted document scrolling e.g. by dragging
