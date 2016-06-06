@@ -75,7 +75,8 @@ compute.ocaps <- function(mode, authenticated) {
         render_plot = make.oc(rcloud.render.plot),
         render_formats = make.oc(rcloud.available.render.formats),
         help = make.oc(rcloud.help),
-        get_thumb = make.oc(rcloud.get.thumb)
+        get_thumb = make.oc(rcloud.get.thumb),
+        get_fork_count = make.oc(rcloud.get.fork.count)
         )
     if (authenticated) c(caps, list(
         compute_init = make.oc(rcloud.compute.init),
@@ -137,7 +138,7 @@ unauthenticated.ocaps <- function(mode, compute)
       signal_to_compute = make.oc(.signal.to.compute),
       help = compute$help,
       get_thumb = compute$get_thumb,
-      get_fork_count = make.oc(rcloud.get.fork.count),
+      get_fork_count = compute$get_fork_count,
       get_users = make.oc(rcloud.get.users),
 
       # javascript.R
@@ -223,6 +224,7 @@ authenticated.ocaps <- function(mode)
       port_notebooks = make.oc(rcloud.port.notebooks),
       notebook_cells = make.oc(rcloud.notebook.cells),
       get_thumb = make.oc(rcloud.get.thumb),
+      get_fork_count = make.oc(rcloud.get.fork.count),
       call_notebook = compute$call_notebook,
       get_completions = compute$get_completions,
 
