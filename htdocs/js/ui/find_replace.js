@@ -1,11 +1,11 @@
 RCloud.UI.find_replace = (function() {
     var find_dialog_ = null, regex_,
         find_form_,
-        /*find_desc_,*/ find_input_, /*replace_desc_,*/ replace_input_, replace_stuff_,
+        find_input_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
-        highlights_removed_ = false,
+        has_focus_ = false,
         matches_ = [], active_match_;
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
@@ -27,12 +27,28 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('focus input', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            var generate_matches = function() {
                 active_match_ = undefined;
                 build_regex(find_input_.val());
                 highlight_all();
+            };
+
+            find_input_.on('input', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                generate_matches();
+            });
+
+            find_form_.on('focusout', function() {
+                has_focus_ = false;
+            });
+
+            find_form_.on('focusin', function(e) {
+                if(!has_focus_) {
+                    generate_matches(); 
+                }
+
+                has_focus_ = true;
             });
 
             function find_next(reason) {
