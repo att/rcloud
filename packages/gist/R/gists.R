@@ -4,6 +4,9 @@ get.gist  <- function (id, version = NULL, ctx = current.gist.context())
 fork.gist  <- function (id, ctx = current.gist.context())
   UseMethod("fork.gist", ctx)
 
+get.gist.forks  <- function (id, ctx = current.gist.context())
+  UseMethod("get.gist.forks", ctx)
+
 modify.gist  <- function (id, content, ctx = current.gist.context())
   UseMethod("modify.gist", ctx)
 
