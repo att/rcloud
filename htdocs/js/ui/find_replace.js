@@ -1,4 +1,5 @@
 RCloud.UI.find_replace = (function() {
+    
     var find_dialog_ = null, regex_,
         find_form_,
         find_input_, replace_input_, replace_stuff_,
@@ -7,6 +8,7 @@ RCloud.UI.find_replace = (function() {
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_;
+
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
 
