@@ -44,6 +44,17 @@ RCloud.UI.shortcut_dialog = (function() {
                     var keys_markup = [];
 
                     _.each(shortcut.bind_keys, function(keys) {
+
+                        keys = _.map(keys, function(key) { 
+                            
+                            var replacement =  _.findWhere([
+                                { initial: 'option', replace_with: 'opt' },
+                                { initial: 'command', replace_with: 'cmd' }
+                            ], { initial : key });
+                          
+                            return replacement ? replacement.replace_with : key;
+                        });
+
                         keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 
