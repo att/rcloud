@@ -413,11 +413,18 @@ rcloud.fork.notebook <- function(id, source = NULL) {
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
+
+    rcloud.update.fork.count(id)
     new.nb
 }
 
 rcloud.get.notebook.forks <- function(id)
   get.gist.forks(id, ctx = .rcloud.get.gist.context())
+
+rcloud.update.fork.count <- function(id) {
+  count <- length(rcloud.get.notebook.forks(id)$content)
+  rcs.set(rcs.key('.notebook', id, 'forkcount'), count)
+}
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
