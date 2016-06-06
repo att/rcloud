@@ -74,7 +74,8 @@ compute.ocaps <- function(mode, authenticated) {
         load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute),
         render_plot = make.oc(rcloud.render.plot),
         render_formats = make.oc(rcloud.available.render.formats),
-        help = make.oc(rcloud.help)
+        help = make.oc(rcloud.help),
+        get_thumb = make.oc(rcloud.get.thumb)
         )
     if (authenticated) c(caps, list(
         compute_init = make.oc(rcloud.compute.init),
@@ -135,6 +136,7 @@ unauthenticated.ocaps <- function(mode, compute)
       is_notebook_visible = make.oc(rcloud.is.notebook.visible),
       signal_to_compute = make.oc(.signal.to.compute),
       help = compute$help,
+      get_thumb = compute$get_thumb,
 
       get_users = make.oc(rcloud.get.users),
 
@@ -220,6 +222,7 @@ authenticated.ocaps <- function(mode)
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
       notebook_cells = make.oc(rcloud.notebook.cells),
+      get_thumb = make.oc(rcloud.get.thumb),
       call_notebook = compute$call_notebook,
       get_completions = compute$get_completions,
 
@@ -276,6 +279,7 @@ authenticated.ocaps <- function(mode)
         set_current_notebook = make.oc(rcloud.config.set.current.notebook),
         new_notebook_number = make.oc(rcloud.config.new.notebook.number),
         get_recent_notebooks = make.oc(rcloud.config.get.recent.notebooks),
+        get_notebooks_discover = make.oc(rcloud.config.get.notebooks.discover),
         set_recent_notebook = make.oc(rcloud.config.set.recent.notebook),
         clear_recent_notebook = make.oc(rcloud.config.clear.recent.notebook),
         get_user_option = make.oc(rcloud.config.get.user.option),

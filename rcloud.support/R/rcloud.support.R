@@ -345,11 +345,16 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     }
     content <- .gist.binary.process.outgoing(id, content)
 
+    # save thumbnail to key-value database
+    rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
+
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     aug.res <- rcloud.augment.notebook(res)
 
     if(is.current)
       .session$current.notebook <- aug.res
+
+    rcloud.config.set.recently.modified.notebook(id, res$content$updated_at)
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
@@ -408,7 +413,17 @@ rcloud.fork.notebook <- function(id, source = NULL) {
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
+
+    rcloud.update.fork.count(id)
     new.nb
+}
+
+rcloud.get.notebook.forks <- function(id)
+  get.gist.forks(id, ctx = .rcloud.get.gist.context())
+
+rcloud.update.fork.count <- function(id) {
+  count <- length(rcloud.get.notebook.forks(id)$content)
+  rcs.set(rcs.key('.notebook', id, 'forkcount'), count)
 }
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...

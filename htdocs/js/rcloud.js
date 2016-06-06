@@ -124,9 +124,12 @@ RCloud.create = function(rcloud_ocaps) {
             ["get_notebook_by_name"],
             ["languages", "get_list"],
             ["plots", "render"],
-            ["plots", "get_formats"]
+            ["plots", "get_formats"],
+            ["get_thumb"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
+
+        rcloud.get_thumb = rcloud_ocaps.get_thumbAsync;
 
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -411,6 +414,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "set_current_notebook"],
             ["config", "new_notebook_number"],
             ["config", "get_recent_notebooks"],
+            ["config", "get_notebooks_discover"],
             ["config", "set_recent_notebook"],
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
@@ -597,6 +601,7 @@ RCloud.create = function(rcloud_ocaps) {
             set_current_notebook: rcloud_ocaps.config.set_current_notebookAsync,
             new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
             get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
+            get_notebooks_discover: rcloud_ocaps.config.get_notebooks_discoverAsync,
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
