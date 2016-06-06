@@ -243,7 +243,7 @@ RCloud.UI.notebook_commands = (function() {
             }
 
             do_always();
-            $li.find('*:not(ul)').hover(
+            $li.find('div.jqtree-element').hover(
                 function() {
                     if(!appeared)
                         do_appear();

@@ -76,7 +76,7 @@ var shell = (function() {
             return version_;
         },
         init: function() {
-            rcloud.get_gist_sources().then(function(sources) {
+            return rcloud.get_gist_sources().then(function(sources) {
                 // de-rserve-ify
                 if(_.isString(sources))
                     sources = [sources];

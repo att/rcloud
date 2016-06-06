@@ -296,20 +296,27 @@ RCloud.UI.find_replace = (function() {
                 category: 'Notebook Management',
                 id: 'notebook_find',
                 description: 'Find text',
-                keys: [
-                    ['command', 'f'],
-                    ['ctrl', 'f']
-                ],
-                modes: ['writeable', 'readonly'],
+                keys: { 
+                    mac: [
+                        ['command', 'f'] 
+                    ],
+                    win: [
+                        ['ctrl', 'f']
+                    ]
+                },
                 action: function() { toggle_find_replace(false); }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
                 description: 'Replace text',
-                keys: [
-                    ['command', 'option', 'f'],
-                    ['ctrl', 'h']
-                ],
+                keys: { 
+                    mac: [
+                        ['command', 'option', 'f'] 
+                    ],
+                    win: [
+                        ['ctrl', 'h']
+                    ]
+                },
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }]);

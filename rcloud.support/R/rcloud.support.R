@@ -354,13 +354,14 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     if(is.current)
       .session$current.notebook <- aug.res
 
+    rcloud.config.set.recently.modified.notebook(id, res$content$updated_at)
+
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
         # Curl SSL Bug. Don't fork Curl. Refer http://stackoverflow.com/questions/15466809/libcurl-ssl-error-after-fork
         #mcparallel(update.solr(res, star.count), detached=TRUE)
         update.solr(res,star.count)
     }
-
     aug.res
 }
 
@@ -412,7 +413,17 @@ rcloud.fork.notebook <- function(id, source = NULL) {
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
+
+    rcloud.update.fork.count(id)
     new.nb
+}
+
+rcloud.get.notebook.forks <- function(id)
+  get.gist.forks(id, ctx = .rcloud.get.gist.context())
+
+rcloud.update.fork.count <- function(id) {
+  count <- length(rcloud.get.notebook.forks(id)$content)
+  rcs.set(rcs.key('.notebook', id, 'forkcount'), count)
 }
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...

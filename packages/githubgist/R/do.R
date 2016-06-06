@@ -47,6 +47,8 @@ get.gist.githubcontext <- function(...) .fix.truncated(github::get.gist(...))
 
 fork.gist.githubcontext <- function(...) .fix.truncated(github::fork.gist(...))
 
+get.gist.forks.githubcontext <- function(...) github::get.gist.forks(...)
+
 modify.gist.githubcontext <- function(...) .fix.truncated(github::modify.gist(...))
 
 create.gist.githubcontext <- function(...) .fix.truncated(github::create.gist(...))
