@@ -344,7 +344,7 @@ function create_cell_html_view(language, cell_model) {
         });
 
         ace_widget_.on('focus', function() {
-            
+            RCloud.UI.find_replace.clear_highlights();
         });
 
         ace_widget_.resize();
