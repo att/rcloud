@@ -164,10 +164,14 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'history_revert',
         description: 'Reverts a notebook',
-        keys: [
-            ['ctrl', 'e'],
-            ['command', 'e']
-        ],
+        keys: {
+            mac: [
+                ['command', 'e']
+            ],
+            win: [
+                ['ctrl', 'e']
+            ]
+        },
         action: function() { 
             if(shell.notebook.controller.is_mine() && !shell.is_view_mode()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
@@ -176,10 +180,14 @@ RCloud.UI.init = function() {
     }, {
         id: 'notebook_run_all',
         description: 'Run all',
-        keys: [
-            ['command', 'u'],
-            ['ctrl', 'u']
-        ],
+        keys: {
+            mac: [
+                ['command', 'u']
+            ],     
+            win: [
+                ['ctrl', 'u']
+            ]
+        },
         action: function() { RCloud.UI.run_button.run(); }
     }]);
 
