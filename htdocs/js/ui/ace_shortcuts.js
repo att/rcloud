@@ -699,7 +699,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Redo',
                 keys: { 
                     mac: [
-                        ['command', 'shift', 'z']
+                        ['command', 'shift', 'z'],
                         ['command', 'y']
                     ],
                     win: [
