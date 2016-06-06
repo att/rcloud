@@ -5,6 +5,7 @@ RCloud.UI.find_replace = (function() {
         find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
+        highlights_removed_ = false,
         matches_ = [], active_match_;
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
@@ -26,7 +27,7 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('input', function(e) {
+            find_input_.on('focus input', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 active_match_ = undefined;
@@ -159,10 +160,13 @@ RCloud.UI.find_replace = (function() {
         shown_ = true;
         replace_mode_ = replace;
     }
-    function hide_dialog() {
+    function clear_highlights() {
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
+    }
+    function hide_dialog() {
+        clear_highlights();
         find_dialog_.hide();
         shown_ = false;
     }
@@ -318,6 +322,9 @@ RCloud.UI.find_replace = (function() {
             if(replace_stuff_) {
                 replace_stuff_.hide();
             }
+        },
+        clear_highlights: function() {
+            clear_highlights();
         }
     };
     return result;
