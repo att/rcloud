@@ -38,7 +38,7 @@ var editor = function () {
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
         path_tips_ = false; // debugging tool: show path tips on tree
-
+        
     // view
     var $tree_ = null;
 
@@ -1815,11 +1815,11 @@ var editor = function () {
                                         update_notebook_from_gist(result, history, options.selroot);
                                     }));
 
-                     promises.push(_.has(fork_count_, result.id) ? Promise.resolve(undefined)
-                                    : rcloud.get_fork_count(result.id).then(function(count) {
+                     promises.push(rcloud.get_fork_count(result.id).then(function(count) {
                                         fork_count_[result.id] = count;
-                                    }));
-                     
+                                    });
+                                   
+                                    
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
                      promises.push(RCloud.UI.comments_frame.display_comments());
                      promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
