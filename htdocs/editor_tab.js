@@ -1817,7 +1817,7 @@ var editor = function () {
 
                      promises.push(rcloud.get_fork_count(result.id).then(function(count) {
                                         fork_count_[result.id] = count;
-                                    });
+                                    }));
                                    
                                     
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
