@@ -373,6 +373,8 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
         .session$current.notebook <- res
         rcloud.reset.session()
     }
+    rcloud.config.set.recently.modified.notebook(res$content$id, 
+        res$content$updated_at)
     rcloud.augment.notebook(res)
 }
 
@@ -408,14 +410,17 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                      list(owner=owner,
                                           description=src.nb$content$description,
                                           id=src.nb$content$id))
-    } else ## src=dst, regular fork
+    } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
-
+        rcloud.config.set.recently.modified.notebook(id, new.nb$content$updated_at)
+    }
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
 
     rcloud.update.fork.count(id)
+    
+    
     new.nb
 }
 
