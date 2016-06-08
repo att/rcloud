@@ -433,8 +433,6 @@ rcloud.update.fork.count <- function(id) {
 }
 
 rcloud.get.fork.count <- function(id) {
-  rcloud.session.log(paste0("fork count is ",
-    rcs.get(rcs.key('.notebook', id, 'forkcount'))))
   rcs.get(rcs.key('.notebook', id, 'forkcount'))
 }
 
