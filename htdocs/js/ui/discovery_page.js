@@ -66,9 +66,6 @@ RCloud.UI.discovery_page = (function() {
                             });
                         })
                         .progress(function(imgLoad, image) {
-                            if(!image.isLoaded) {
-                                $(image.img).attr('src', './img/missing.png');
-                            }
 
                             var new_value = +$('progress').attr('value') + 1;
 
