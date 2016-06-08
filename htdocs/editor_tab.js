@@ -468,44 +468,6 @@ var editor = function () {
         });
     }
 
-
-/*
-    function populate_featured(alls_root) {
-        var featured_subtrees = alls_root.children.filter(function(subtree) {
-            return featured_.indexOf(alls_name(subtree))>=0;
-        });
-        featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
-        if(!featured_subtrees.length)
-            return null;
-        else {
-
-            return get_notebooks_by_user(featured_).then(function(notebooks) {
-
-                var notebook_nodes = convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
-                    notebook.id = '/featured/' + notebook.gistname;
-                    return notebook;
-                });
-
-                return {
-                    label: 'RCloud Sample Notebooks',
-                    id: '/featured',
-                    children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes),
-                    //user: featured_[0]
-                }
-            });
-
-            // // load all of these items:
-            // return {
-            //     label: 'RCloud Sample Notebooks',
-            //     id: '/featured',
-            //     children: [{ label: 'loading...' }],
-            //     lazy_load: true,
-            //     user: featured_[0]
-            // };
-        }
-    }
-*/
-
     function load_tree(root_data) {
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
