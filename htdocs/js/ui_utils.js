@@ -660,7 +660,27 @@ ui_utils.kill_popovers = function() {
 ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
-
     
     //$('div.selectize-input > input').blur();
+};
+
+ui_utils.copy_document_selection = function(callback) {
+    var sel = window.getSelection();
+    var offscreen = $('<pre class="offscreen"></pre>');
+
+    $('body').append(offscreen);
+
+    for(var i=0; i < sel.rangeCount; ++i) {
+        var range = sel.getRangeAt(i);
+        offscreen.append(range.cloneContents());
+    }
+
+    offscreen.find('.nonselectable').remove();
+    sel.selectAllChildren(offscreen[0]);
+
+    window.setTimeout(function() {
+        offscreen.remove();
+    }, 1000);
+
+    return $(offscreen).text();
 };

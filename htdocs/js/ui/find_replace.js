@@ -147,6 +147,12 @@ RCloud.UI.find_replace = (function() {
 
         if(active_cell_selection) {
             find_input_.val(active_cell_selection);
+        } else {
+            var text = ui_utils.copy_document_selection();
+
+            if(text) {
+                find_input_.val(text);
+            }
         }
 
         find_input_.focus();
@@ -154,6 +160,7 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_.show();
         else
             replace_stuff_.hide();
+
         build_regex(find_input_.val());
         highlight_all();
         shown_ = true;
@@ -189,6 +196,8 @@ RCloud.UI.find_replace = (function() {
         
         if(focussed_cell) {
             selection = focussed_cell.views[0].get_selection();
+        } else {
+            selection = RCloud.UI.command_prompt.get_selection();
         }
 
         return selection;
@@ -304,7 +313,9 @@ RCloud.UI.find_replace = (function() {
                         ['ctrl', 'f']
                     ]
                 },
-                action: function() { toggle_find_replace(false); }
+                action: function() { 
+                    toggle_find_replace(false); 
+                }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
