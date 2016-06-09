@@ -41,13 +41,16 @@ RCloud.UI.find_replace = (function() {
                 generate_matches();
             });
 
-            find_form_.on('blur', function() {
-                console.log('blur');
-                has_focus_ = false;
-                clear_highlights();
+            find_form_.on('focusout', function(e) {
+                setTimeout(function() {
+                    if($(document.activeElement).closest(find_form_).length === 0) {
+                        has_focus_ = false;
+                        clear_highlights();
+                    }
+                }, 0);
             });
 
-            find_form_.on('focus', function(e) {
+            find_form_.on('focusin', function(e) {
                 if(!has_focus_) {
                     generate_matches(); 
                 }
