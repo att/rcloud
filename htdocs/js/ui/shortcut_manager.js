@@ -42,6 +42,7 @@ RCloud.UI.shortcut_manager = (function() {
             var shortcut_to_add = _.defaults(shortcut, {
                 category: 'General',
                 modes: ['writeable', 'readonly'],
+                on_page: ['view', 'edit'],
                 ignore_clash: false,
                 enable_in_dialogs: false,
                 enabled: true
