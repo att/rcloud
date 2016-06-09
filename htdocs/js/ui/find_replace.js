@@ -48,6 +48,8 @@ RCloud.UI.find_replace = (function() {
 
             find_form_.on('focusin', function(e) {
                 if(!has_focus_) {
+                    // save so that any new content since last save is matched:
+                    shell.save_notebook();
                     generate_matches(); 
                 }
 
