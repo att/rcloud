@@ -40,7 +40,6 @@ RCloud.UI.shortcut_dialog = (function() {
                     var keys_markup = [];
 
                     _.each(shortcut.bind_keys, function(keys) {
-                        keys = keys || ['SNAFU'];
 
                         keys = _.map(keys, function(key) { 
                             

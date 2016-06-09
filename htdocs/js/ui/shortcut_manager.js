@@ -106,28 +106,27 @@ RCloud.UI.shortcut_manager = (function() {
                     } else {
                         shortcut_to_add.create = function() {
                             _.each(shortcut_to_add.key_desc, function(binding) {
-                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) {
 
-                                    var func_to_bind = function(e) {
+                                var func_to_bind = function(e) {
 
-                                        if (is_active(get_by_id(shortcut_to_add.id))) {
-                                            e.preventDefault();
+                                    if (is_active(get_by_id(shortcut_to_add.id))) {
+                                        e.preventDefault();
 
-                                            // invoke if conditions are met:
-                                            if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
-                                                !$('.modal').is(':visible')) {
-                                                shortcut.action(e);
-                                            }
-
+                                        // invoke if conditions are met:
+                                        if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
+                                            !$('.modal').is(':visible')) {
+                                            shortcut.action(e);
                                         }
-                                    };
 
-                                    if (shortcut_to_add.global) {
-                                        window.Mousetrap.bindGlobal(binding, func_to_bind);
-                                    } else {
-                                        window.Mousetrap().bind(binding, func_to_bind);
                                     }
-                                });
+                                };
+
+                                if (shortcut_to_add.global) {
+                                    window.Mousetrap.bindGlobal(binding, func_to_bind);
+                                } else {
+                                    window.Mousetrap().bind(binding, func_to_bind);
+                                }
+
                             });
                         }
                     }

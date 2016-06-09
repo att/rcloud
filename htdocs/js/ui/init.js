@@ -74,18 +74,8 @@ RCloud.UI.init = function() {
         if($(arguments[0].target).hasClass('ace_text-input') ||
            !$(arguments[0].target).closest($("#output")).size())
             return;
-        var sel = window.getSelection();
-        var offscreen = $('<pre class="offscreen"></pre>');
-        $('body').append(offscreen);
-        for(var i=0; i < sel.rangeCount; ++i) {
-            var range = sel.getRangeAt(i);
-            offscreen.append(range.cloneContents());
-        }
-        offscreen.find('.nonselectable').remove();
-        sel.selectAllChildren(offscreen[0]);
-        window.setTimeout(function() {
-            offscreen.remove();
-        }, 1000);
+
+        ui_utils.copy_document_selection();
     });
 
     // prevent unwanted document scrolling e.g. by dragging
@@ -134,13 +124,19 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable'],
-        action: function() {
-            var selection = window.getSelection();
-            selection.removeAllRanges();
-            var range = new Range();
-            range.selectNode(document.getElementById('output'));
-            range.setStartAfter($('.response')[0]);
-            selection.addRange(range);
+        action: function(e) {
+
+            if(!$(e.target).parents('#find-form').length) {
+                var selection = window.getSelection();
+                selection.removeAllRanges();
+                var range = new Range();
+                range.selectNode(document.getElementById('output'));
+                range.setStartAfter($('.response')[0]);
+                selection.addRange(range);
+            } else {
+                $(e.target).select();
+            }
+            
         }
     }, {
         category: 'Notebook Management',
@@ -174,10 +170,14 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'history_revert',
         description: 'Reverts a notebook',
-        keys: [
-            ['ctrl', 'e'],
-            ['command', 'e']
-        ],
+        keys: {
+            mac: [
+                ['command', 'e']
+            ],
+            win: [
+                ['ctrl', 'e']
+            ]
+        },
         action: function() { 
             if(shell.notebook.controller.is_mine() && !shell.is_view_mode()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
@@ -186,10 +186,14 @@ RCloud.UI.init = function() {
     }, {
         id: 'notebook_run_all',
         description: 'Run all',
-        keys: [
-            ['command', 'u'],
-            ['ctrl', 'u']
-        ],
+        keys: {
+            mac: [
+                ['command', 'u']
+            ],     
+            win: [
+                ['ctrl', 'u']
+            ]
+        },
         action: function() { RCloud.UI.run_button.run(); }
     }]);
 
@@ -306,7 +310,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'cell_run_from_here',
-        description: 'Run from here',
+        description: 'Run from this cell on',
         keys: {
             win_mac: [
                 ['shift', 'alt', 'enter']
