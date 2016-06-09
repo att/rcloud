@@ -649,7 +649,6 @@ var editor = function () {
         return -1;
     }
 
-
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
     function update_history_nodes(node, whither, where) {
@@ -1180,62 +1179,10 @@ var editor = function () {
         // go off and get data for the given user:
         var p_load_children;
         if(n.lazy_load) {
-
             p_load_children = load_lazy_children(n, true);
-
-            /*
-            get_notebooks_by_user(n.user).then(function(notebooks) {
-
-                var initial_node;
-
-                var selected_node = get_selected_node();
-
-                var notebook_nodes = convert_notebook_set(n.root, n.user, notebooks);
-                $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(n.root, n.user)).sort(compare_nodes), n);
-
-                // all children have been replaced, so if the selected node is
-                // one of the children, reselect:
-                function find_node(root_node, id_to_find) {
-                    var found;
-
-                    function recurse(node) {
-
-                        for (var i = 0; i < node.children.length; i++) {
-                            if ((node.children[i].id === id_to_find)) {
-                                found = node.children[i];
-                                break;
-                            } else {
-                                if (node.children[i].children && node.children[i].children.length > 0) {
-                                    recurse(node.children[i]);
-                                    if(found){
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    recurse(root_node);
-
-                    return found;
-                }
-
-                var node_to_select = find_node(n, selected_node.id);
-
-                if(node_to_select) {
-                    select_node(node_to_select);
-                }
-
-                delete n.lazy_load;
-            });
-            */
-
         } else {
             p_load_children = Promise.resolve();
         }
-
-        //if(n.delay_children)
-        //    load_children(n);
 
         p_load_children.then(function() {
             // notebook folder name only editable when open
