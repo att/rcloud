@@ -1577,7 +1577,7 @@ var discover = function () {
             var that = this;
             var is_mine = node.user === that.username();
             var promises = [];
-            editor.for_each_notebook(node, null, function(node) {
+            discover.for_each_notebook(node, null, function(node) {
                 var promise_fork;
                 if(is_mine)
                     promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
@@ -1589,7 +1589,7 @@ var discover = function () {
                     if(notebook_info_[notebook.id])
                         return notebook.description;
                     else
-                        return editor.star_and_show(notebook, false, false);
+                        return discover.star_and_show(notebook, false, false);
                 }));
             });
             Promise.all(promises).then(function(results) {
