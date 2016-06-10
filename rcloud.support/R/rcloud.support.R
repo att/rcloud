@@ -412,7 +412,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                           id=src.nb$content$id))
     } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
-        rcloud.config.set.recently.modified.notebook(id, new.nb$content$updated_at)
+        rcloud.config.set.recently.modified.notebook(id, src.nb$content$updated_at)
     }
     ## inform the UI as well
     if (!is.null(group))
