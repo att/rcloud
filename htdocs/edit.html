@@ -369,6 +369,75 @@
   </div>
 </script>
 
+<div id="shortcut-dialog" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
+            <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+                <h4 class="modal-title" style="font-size: 20px">Keyboard shortcuts</h4>
+            </div>
+            <div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/template" id="shortcut_dialog_content_template">
+<% _.each(categories, function(category) { %>
+  <div class="category">
+    <h3><%=category.name%></h3>
+    <% _.each(category.shortcuts, function(shortcut) { %>
+      <table class="category">
+        <tbody>
+          <tr>
+            <td>
+              <% _.each(shortcut.keys, function(key_combo) { %>
+                <kbd><%=key_combo%></kbd>
+              <% }); %>
+            </td>
+            <td>
+              <%=shortcut.description%>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    <% }); %>
+  </div>
+<% }); %>
+</script>
+
+<script type="text/template" id="item_template">
+  <% _.each(notebooks, function(notebook) { %>
+  <div class="grid-item">
+    <a href="edit.html?notebook=<%=notebook.id%>">
+
+      <div class="row" style="position:relative">
+        <div class='header col-sm-10'>
+          <h1><%=notebook.description%></h1>
+          <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
+        </div>
+        <div class="star-holder">
+          <button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
+            <i class="icon-star"></i><sub><span id="curr-star-count"><%=editor.num_stars(notebook.id)%></span></sub>
+          </button>
+        </div>
+        <div class="fork-holder">
+          <button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
+            <i class="icon-code-fork"></i><sub><span id="curr-fork-count"><%=editor.fork_count(notebook.id)%></span></sub>
+          </button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="image-holder col-sm-12">
+          <img src="<%=notebook.image_src%>" class="img-responsive" alt="Responsive image">
+        </div>
+      </div>
+    </a>
+  </div>
+  <% }); %>
+</script>
+
+
 <div class="container nopad" id="main-div">
   <div class="row">
     <div class="col-md-1 col-sm-1 no-padding" style="height:100%" id="left-column">
