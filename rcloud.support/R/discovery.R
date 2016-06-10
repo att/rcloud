@@ -6,16 +6,19 @@ rcloud.config.get.notebooks.discover <- function(order = "recently.modified") {
 }
 
 rcloud.config.get.recently.modified.notebooks <- function() {
-  users <- rcloud.get.users()
-  keys = unlist(lapply(usr.key(user = users, notebook = "system",
+  keys <- unlist(lapply(usr.key(user = ".allusers", notebook = "system",
                                "config", "recently-modified", "*"), rcs.list))
-  vals <- rcs.get(keys, list=TRUE)
-  names(vals) <- gsub(".*/", "", names(vals))
+  if(length(keys) == 0) {
+    vals <- list()
+  } else {
+    vals <- rcs.get(keys, list=TRUE)
+    names(vals) <- gsub(".*/", "", names(vals))
+  }
   list(sort='date', values=vals)
 }
 
 rcloud.config.set.recently.modified.notebook <- function(id, date) {
-  rcs.set(usr.key(user=.session$username, notebook="system", "config", "recently-modified", id), date)
+  rcs.set(usr.key(user=".allusers", notebook="system", "config", "recently-modified", id), date)
 }
 
 middle.key <- function(x) sub('.*/(.*)/.*', '\\1', x)

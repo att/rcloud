@@ -4,7 +4,9 @@ RCloud.UI.command_prompt = (function() {
         history_ = null,
         entry_ = null,
         language_ = null,
-        command_bar_ = null;
+        command_bar_ = null,
+        ace_widget_,
+        ace_session_;
 
     function setup_command_entry() {
         var prompt_div = $("#command-prompt");
@@ -20,9 +22,11 @@ RCloud.UI.command_prompt = (function() {
         prompt_div.addClass("r-language-pseudo");
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
+        ace_widget_ = widget;
         set_ace_height();
         var RMode = ace.require("ace/mode/r").Mode;
         var session = widget.getSession();
+        ace_session_ = session;
         var doc = session.doc;
         widget.setOptions({
             enableBasicAutocompletion: true
@@ -284,6 +288,13 @@ RCloud.UI.command_prompt = (function() {
                 return;
             entry_.widget.focus();
             entry_.restore();
+        },
+        get_selection: function() {
+            if(!show_prompt_) {
+                return undefined;
+            } else {
+                return ace_session_.doc.getTextRange(ace_widget_.selection.getRange());
+            }
         }
     };
     return result;

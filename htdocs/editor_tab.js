@@ -31,13 +31,14 @@ var editor = function () {
         histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
+        fork_count_ = {},
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
         path_tips_ = false; // debugging tool: show path tips on tree
-
+        
     // view
     var $tree_ = null;
 
@@ -1337,6 +1338,9 @@ var editor = function () {
         num_stars: function(gistname) {
             return num_stars_[gistname] || 0;
         },
+        fork_count: function(gistname) {
+            return fork_count_[gistname] || 0;
+        }, 
         i_starred: function(gistname) {
             return my_stars_[gistname] || false;
         },
@@ -1811,6 +1815,11 @@ var editor = function () {
                                         update_notebook_from_gist(result, history, options.selroot);
                                     }));
 
+                     promises.push(rcloud.get_fork_count(result.id).then(function(count) {
+                                        fork_count_[result.id] = count;
+                                    }));
+                                   
+                                    
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
                      promises.push(RCloud.UI.comments_frame.display_comments());
                      promises.push(rcloud.is_notebook_published(result.id).then(function(p) {

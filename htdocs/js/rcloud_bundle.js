@@ -234,12 +234,13 @@ RCloud.create = function(rcloud_ocaps) {
             ["languages", "get_list"],
             ["plots", "render"],
             ["plots", "get_formats"],
-            ["get_thumb"]
+            ["get_thumb"],
+            ["get_fork_count"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.get_thumb = rcloud_ocaps.get_thumbAsync;
-
+        rcloud.get_fork_count = rcloud_ocaps.get_fork_countAsync;
         rcloud.username = function() {
             return $.cookies.get('user');
         };
@@ -1407,9 +1408,29 @@ ui_utils.kill_popovers = function() {
 ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
-
     
     //$('div.selectize-input > input').blur();
+};
+
+ui_utils.copy_document_selection = function(callback) {
+    var sel = window.getSelection();
+    var offscreen = $('<pre class="offscreen"></pre>');
+
+    $('body').append(offscreen);
+
+    for(var i=0; i < sel.rangeCount; ++i) {
+        var range = sel.getRangeAt(i);
+        offscreen.append(range.cloneContents());
+    }
+
+    offscreen.find('.nonselectable').remove();
+    sel.selectAllChildren(offscreen[0]);
+
+    window.setTimeout(function() {
+        offscreen.remove();
+    }, 1000);
+
+    return $(offscreen).text();
 };
 
 RCloud.utils = {};
@@ -5458,7 +5479,9 @@ RCloud.UI.command_prompt = (function() {
         history_ = null,
         entry_ = null,
         language_ = null,
-        command_bar_ = null;
+        command_bar_ = null,
+        ace_widget_,
+        ace_session_;
 
     function setup_command_entry() {
         var prompt_div = $("#command-prompt");
@@ -5474,9 +5497,11 @@ RCloud.UI.command_prompt = (function() {
         prompt_div.addClass("r-language-pseudo");
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
+        ace_widget_ = widget;
         set_ace_height();
         var RMode = ace.require("ace/mode/r").Mode;
         var session = widget.getSession();
+        ace_session_ = session;
         var doc = session.doc;
         widget.setOptions({
             enableBasicAutocompletion: true
@@ -5738,6 +5763,13 @@ RCloud.UI.command_prompt = (function() {
                 return;
             entry_.widget.focus();
             entry_.restore();
+        },
+        get_selection: function() {
+            if(!show_prompt_) {
+                return undefined;
+            } else {
+                return ace_session_.doc.getTextRange(ace_widget_.selection.getRange());
+            }
         }
     };
     return result;
@@ -5988,13 +6020,16 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
 })();
 
 RCloud.UI.find_replace = (function() {
+    
     var find_dialog_ = null, regex_,
         find_form_,
-        /*find_desc_,*/ find_input_, /*replace_desc_,*/ replace_input_, replace_stuff_,
+        find_input_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
+        has_focus_ = false,
         matches_ = [], active_match_;
+
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
 
@@ -6015,12 +6050,29 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('input', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            var generate_matches = function() {
                 active_match_ = undefined;
                 build_regex(find_input_.val());
                 highlight_all();
+            };
+
+            find_input_.on('input', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                generate_matches();
+            });
+
+            find_form_.on('focusout', function() {
+                has_focus_ = false;
+                clear_highlights();
+            });
+
+            find_form_.on('focusin', function(e) {
+                if(!has_focus_) {
+                    generate_matches(); 
+                }
+
+                has_focus_ = true;
             });
 
             function find_next(reason) {
@@ -6136,6 +6188,12 @@ RCloud.UI.find_replace = (function() {
 
         if(active_cell_selection) {
             find_input_.val(active_cell_selection);
+        } else {
+            var text = ui_utils.copy_document_selection();
+
+            if(text) {
+                find_input_.val(text);
+            }
         }
 
         find_input_.focus();
@@ -6143,15 +6201,19 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_.show();
         else
             replace_stuff_.hide();
+
         build_regex(find_input_.val());
         highlight_all();
         shown_ = true;
         replace_mode_ = replace;
     }
-    function hide_dialog() {
+    function clear_highlights() {
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
+    }
+    function hide_dialog() {
+        clear_highlights();
         find_dialog_.hide();
         shown_ = false;
     }
@@ -6178,6 +6240,8 @@ RCloud.UI.find_replace = (function() {
         
         if(focussed_cell) {
             selection = focussed_cell.views[0].get_selection();
+        } else {
+            selection = RCloud.UI.command_prompt.get_selection();
         }
 
         return selection;
@@ -6293,7 +6357,9 @@ RCloud.UI.find_replace = (function() {
                         ['ctrl', 'f']
                     ]
                 },
-                action: function() { toggle_find_replace(false); }
+                action: function() { 
+                    toggle_find_replace(false); 
+                }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
@@ -6314,6 +6380,9 @@ RCloud.UI.find_replace = (function() {
             if(replace_stuff_) {
                 replace_stuff_.hide();
             }
+        },
+        clear_highlights: function() {
+            clear_highlights();
         }
     };
     return result;
@@ -6427,28 +6496,27 @@ RCloud.UI.shortcut_manager = (function() {
                     } else {
                         shortcut_to_add.create = function() {
                             _.each(shortcut_to_add.key_desc, function(binding) {
-                                window.Mousetrap(document.querySelector('body')).bind(binding, function(e) {
 
-                                    var func_to_bind = function(e) {
+                                var func_to_bind = function(e) {
 
-                                        if (is_active(get_by_id(shortcut_to_add.id))) {
-                                            e.preventDefault();
+                                    if (is_active(get_by_id(shortcut_to_add.id))) {
+                                        e.preventDefault();
 
-                                            // invoke if conditions are met:
-                                            if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
-                                                !$('.modal').is(':visible')) {
-                                                shortcut.action(e);
-                                            }
-
+                                        // invoke if conditions are met:
+                                        if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
+                                            !$('.modal').is(':visible')) {
+                                            shortcut.action(e);
                                         }
-                                    };
 
-                                    if (shortcut_to_add.global) {
-                                        window.Mousetrap.bindGlobal(binding, func_to_bind);
-                                    } else {
-                                        window.Mousetrap().bind(binding, func_to_bind);
                                     }
-                                });
+                                };
+
+                                if (shortcut_to_add.global) {
+                                    window.Mousetrap.bindGlobal(binding, func_to_bind);
+                                } else {
+                                    window.Mousetrap().bind(binding, func_to_bind);
+                                }
+
                             });
                         }
                     }
@@ -6586,10 +6654,13 @@ RCloud.UI.shortcut_dialog = (function() {
 
                 _.each(group.shortcuts, function(shortcut) {
 
+                    // if(!shortcut.keys.hasOwnProperty('win') && !shortcut.keys.hasOwnProperty('mac') && !shortcut.keys.hasOwnProperty('win_mac')) {
+                    //     console.error('invalid shortcut: ', shortcut);
+                    // }
+
                     var keys_markup = [];
 
                     _.each(shortcut.bind_keys, function(keys) {
-                        keys = keys || ['SNAFU'];
                         keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
                     });
 
@@ -7320,7 +7391,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Redo',
                 keys: { 
                     mac: [
-                        ['command', 'shift', 'z']
+                        ['command', 'shift', 'z'],
                         ['command', 'y']
                     ],
                     win: [
@@ -7983,18 +8054,8 @@ RCloud.UI.init = function() {
         if($(arguments[0].target).hasClass('ace_text-input') ||
            !$(arguments[0].target).closest($("#output")).size())
             return;
-        var sel = window.getSelection();
-        var offscreen = $('<pre class="offscreen"></pre>');
-        $('body').append(offscreen);
-        for(var i=0; i < sel.rangeCount; ++i) {
-            var range = sel.getRangeAt(i);
-            offscreen.append(range.cloneContents());
-        }
-        offscreen.find('.nonselectable').remove();
-        sel.selectAllChildren(offscreen[0]);
-        window.setTimeout(function() {
-            offscreen.remove();
-        }, 1000);
+
+        ui_utils.copy_document_selection();
     });
 
     // prevent unwanted document scrolling e.g. by dragging
@@ -8043,13 +8104,19 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable'],
-        action: function() {
-            var selection = window.getSelection();
-            selection.removeAllRanges();
-            var range = new Range();
-            range.selectNode(document.getElementById('output'));
-            range.setStartAfter($('.response')[0]);
-            selection.addRange(range);
+        action: function(e) {
+
+            if(!$(e.target).parents('#find-form').length) {
+                var selection = window.getSelection();
+                selection.removeAllRanges();
+                var range = new Range();
+                range.selectNode(document.getElementById('output'));
+                range.setStartAfter($('.response')[0]);
+                selection.addRange(range);
+            } else {
+                $(e.target).select();
+            }
+            
         }
     }, {
         category: 'Notebook Management',
@@ -8083,10 +8150,14 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'history_revert',
         description: 'Reverts a notebook',
-        keys: [
-            ['ctrl', 'e'],
-            ['command', 'e']
-        ],
+        keys: {
+            mac: [
+                ['command', 'e']
+            ],
+            win: [
+                ['ctrl', 'e']
+            ]
+        },
         action: function() { 
             if(shell.notebook.controller.is_mine() && !shell.is_view_mode()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
@@ -8095,10 +8166,14 @@ RCloud.UI.init = function() {
     }, {
         id: 'notebook_run_all',
         description: 'Run all',
-        keys: [
-            ['command', 'u'],
-            ['ctrl', 'u']
-        ],
+        keys: {
+            mac: [
+                ['command', 'u']
+            ],     
+            win: [
+                ['ctrl', 'u']
+            ]
+        },
         action: function() { RCloud.UI.run_button.run(); }
     }]);
 
@@ -8215,7 +8290,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'cell_run_from_here',
-        description: 'Run from here',
+        description: 'Run from this cell on',
         keys: {
             win_mac: [
                 ['shift', 'alt', 'enter']
@@ -11228,7 +11303,8 @@ RCloud.UI.discovery_page = (function() {
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     username: current.username,
                                     num_stars: editor.num_stars(current[0]),
-                                    image_src: "data:image/png;base64," + thumb_src
+                                    image_src: "data:image/png;base64," + thumb_src,
+                                    fork_count: editor.fork_count(current[0])
                                 };
                             });
                         })
@@ -11259,9 +11335,6 @@ RCloud.UI.discovery_page = (function() {
                             });
                         })
                         .progress(function(imgLoad, image) {
-                            if(!image.isLoaded) {
-                                $(image.img).attr('src', './img/missing.png');
-                            }
 
                             var new_value = +$('progress').attr('value') + 1;
 

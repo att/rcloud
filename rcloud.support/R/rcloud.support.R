@@ -346,7 +346,8 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     content <- .gist.binary.process.outgoing(id, content)
 
     # save thumbnail to key-value database
-    rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
+    if ("thumb.png.b64" %in% names(content$files))
+      rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
 
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     aug.res <- rcloud.augment.notebook(res)
@@ -372,6 +373,8 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
         .session$current.notebook <- res
         rcloud.reset.session()
     }
+    rcloud.config.set.recently.modified.notebook(res$content$id, 
+        res$content$updated_at)
     rcloud.augment.notebook(res)
 }
 
@@ -407,14 +410,17 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                      list(owner=owner,
                                           description=src.nb$content$description,
                                           id=src.nb$content$id))
-    } else ## src=dst, regular fork
+    } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
-
+        rcloud.config.set.recently.modified.notebook(id, new.nb$content$updated_at)
+    }
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
 
     rcloud.update.fork.count(id)
+    
+    
     new.nb
 }
 
@@ -424,6 +430,10 @@ rcloud.get.notebook.forks <- function(id)
 rcloud.update.fork.count <- function(id) {
   count <- length(rcloud.get.notebook.forks(id)$content)
   rcs.set(rcs.key('.notebook', id, 'forkcount'), count)
+}
+
+rcloud.get.fork.count <- function(id) {
+  rcs.get(rcs.key('.notebook', id, 'forkcount'))
 }
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...

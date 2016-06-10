@@ -1,11 +1,14 @@
 RCloud.UI.find_replace = (function() {
+    
     var find_dialog_ = null, regex_,
         find_form_,
-        /*find_desc_,*/ find_input_, /*replace_desc_,*/ replace_input_, replace_stuff_,
+        find_input_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
+        has_focus_ = false,
         matches_ = [], active_match_;
+
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
 
@@ -26,12 +29,29 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('input', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            var generate_matches = function() {
                 active_match_ = undefined;
                 build_regex(find_input_.val());
                 highlight_all();
+            };
+
+            find_input_.on('input', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                generate_matches();
+            });
+
+            find_form_.on('focusout', function() {
+                has_focus_ = false;
+                clear_highlights();
+            });
+
+            find_form_.on('focusin', function(e) {
+                if(!has_focus_) {
+                    generate_matches(); 
+                }
+
+                has_focus_ = true;
             });
 
             function find_next(reason) {
@@ -147,6 +167,12 @@ RCloud.UI.find_replace = (function() {
 
         if(active_cell_selection) {
             find_input_.val(active_cell_selection);
+        } else {
+            var text = ui_utils.copy_document_selection();
+
+            if(text) {
+                find_input_.val(text);
+            }
         }
 
         find_input_.focus();
@@ -154,15 +180,19 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_.show();
         else
             replace_stuff_.hide();
+
         build_regex(find_input_.val());
         highlight_all();
         shown_ = true;
         replace_mode_ = replace;
     }
-    function hide_dialog() {
+    function clear_highlights() {
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
+    }
+    function hide_dialog() {
+        clear_highlights();
         find_dialog_.hide();
         shown_ = false;
     }
@@ -189,6 +219,8 @@ RCloud.UI.find_replace = (function() {
         
         if(focussed_cell) {
             selection = focussed_cell.views[0].get_selection();
+        } else {
+            selection = RCloud.UI.command_prompt.get_selection();
         }
 
         return selection;
@@ -304,7 +336,9 @@ RCloud.UI.find_replace = (function() {
                         ['ctrl', 'f']
                     ]
                 },
-                action: function() { toggle_find_replace(false); }
+                action: function() { 
+                    toggle_find_replace(false); 
+                }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
@@ -325,6 +359,9 @@ RCloud.UI.find_replace = (function() {
             if(replace_stuff_) {
                 replace_stuff_.hide();
             }
+        },
+        clear_highlights: function() {
+            clear_highlights();
         }
     };
     return result;
