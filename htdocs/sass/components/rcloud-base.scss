@@ -559,8 +559,8 @@ body .modal-dialog.full {
 }
 
 #shortcut-dialog .modal-dialog {
-    width: 60%;
-    max-width: 800px;
+    width: 95%;
+    max-width: 1040px;
 }
 
 #shortcut-dialog .modal-body {
@@ -568,8 +568,9 @@ body .modal-dialog.full {
 }
 
 #shortcut-dialog .category {
-    width: 360px;
+    width: 450px;
     float: left;
+    margin-right: 20px;
 }
 
 .category kbd {
@@ -595,7 +596,7 @@ body .modal-dialog.full {
 }
 
 .category td:first-child {
-
+    width: 45%;
 }
 
 .shortcut {
