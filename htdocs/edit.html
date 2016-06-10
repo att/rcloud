@@ -386,9 +386,9 @@
 <% _.each(categories, function(category) { %>
   <div class="category">
     <h3><%=category.name%></h3>
-    <% _.each(category.shortcuts, function(shortcut) { %>
-      <table class="category">
-        <tbody>
+    <table>
+      <tbody>
+        <% _.each(category.shortcuts, function(shortcut) { %>
           <tr>
             <td>
               <% _.each(shortcut.keys, function(key_combo) { %>
@@ -399,9 +399,9 @@
               <%=shortcut.description%>
             </td>
           </tr>
-        </tbody>
-      </table>
-    <% }); %>
+        <% }); %>
+      </tbody>
+    </table>
   </div>
 <% }); %>
 </script>
