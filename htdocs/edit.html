@@ -392,7 +392,8 @@
         <% _.each(category.shortcuts, function(shortcut) { %>
           <tr>
             <td>
-              <% _.each(shortcut.keys, function(key_combo) { %>
+              <% _.each(shortcut.keys, function(key_combo, index) { %>
+                <%if(index > 0) {%> / <%}%>
                 <kbd><%=key_combo%></kbd>
               <% }); %>
             </td>
