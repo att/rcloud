@@ -65,7 +65,7 @@ RCloud.UI.shortcut_dialog = (function() {
                 categories : template_data
             });
 
-            $('#shortcut-dialog .modal-body').html(dialog_content);
+            $('#shortcut-content').html(dialog_content);
        
             $('#shortcut-dialog').modal({
                 keyboard: false
