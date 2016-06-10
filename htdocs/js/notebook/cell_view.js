@@ -90,7 +90,6 @@ function create_cell_html_view(language, cell_model) {
                 is_exclusive: !e.ctrlKey && !e.shiftKey
             });
 
-            // so that keyboard shortcuts work:
             $(':focus').blur();
 
         }).children().click(function(e) {
