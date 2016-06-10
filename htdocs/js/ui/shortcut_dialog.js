@@ -1,6 +1,6 @@
 RCloud.UI.shortcut_dialog = (function() {
 
-    var content_, shortcuts_by_category_ = [];
+    var shortcuts_by_category_ = [];
 
     var result = {
 
@@ -19,7 +19,6 @@ RCloud.UI.shortcut_dialog = (function() {
                 'General']);
             }
 
-            // dynamic content:
             _.each(shortcuts_by_category_, function(group) {
 
                 var key_group = {
