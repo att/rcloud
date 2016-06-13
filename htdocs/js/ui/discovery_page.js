@@ -35,7 +35,7 @@ RCloud.UI.discovery_page = (function() {
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     username: current.username,
                                     num_stars: discover.num_stars(current[0]),
-                                    image_src: "data:image/png;base64," + thumb_src,
+                                    image_src: thumb_src,
                                     fork_count: discover.fork_count(current[0])
                                 };
                             });
