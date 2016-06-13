@@ -19,7 +19,7 @@ requirejs_config_obj = {
         "jquery.bootpag" : ["jquery"],
         "jquery.scrollto": ["jquery"],
         "jquery.whiny": ["jquery"],
-        "bootstrap": ["jquery"],
+        "bootstrap": ["jquery-ui", "jquery"],
         "shell_tab": ["rcloud_bundle", "editor_tab"],
         "editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
         "rserve": ["underscore"],
