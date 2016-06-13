@@ -8,7 +8,7 @@ RCloud.UI.discovery_page = (function() {
                         .pairs()
                         .filter(function(kv) {
                             return kv[0] != 'r_attributes' && kv[0] != 'r_type' &&
-                                !_.isEmpty(editor.get_notebook_info(kv[0]));
+                                !_.isEmpty(discover.get_notebook_info(kv[0]));
                         });
                 // assumes we always want descending, among other things
                 switch(data.sort) {
@@ -26,7 +26,7 @@ RCloud.UI.discovery_page = (function() {
                 notebook_pairs = notebook_pairs.first(20); // bug #2026
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
-                            var current = editor.get_notebook_info(notebook[0]);
+                            var current = discover.get_notebook_info(notebook[0]);
                             return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
                                 return {
                                     id: notebook[0],
@@ -34,9 +34,9 @@ RCloud.UI.discovery_page = (function() {
                                     description: current.description,
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     username: current.username,
-                                    num_stars: editor.num_stars(current[0]),
-                                    image_src: "data:image/png;base64," + thumb_src,
-                                    fork_count: editor.fork_count(current[0])
+                                    num_stars: discover.num_stars(current[0]),
+                                    image_src: thumb_src,
+                                    fork_count: discover.fork_count(current[0])
                                 };
                             });
                         })

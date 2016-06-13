@@ -22,7 +22,7 @@ function main() {
     }).then(function() {
         // we don't want to load_everything, it's not even sufficient with lazy notebook
         // loading, but keep it for now to keep the circus rolling 
-        return Promise.all([shell.init(), editor.load_everything()]).then(function() {
+        return Promise.all([shell.init(), discover.init()]).then(function() {
             RCloud.UI.advanced_menu.init();
             RCloud.UI.menus.load();
             return RCloud.UI.discovery_page.init();
