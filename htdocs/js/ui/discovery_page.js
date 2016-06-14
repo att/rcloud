@@ -10,6 +10,16 @@ RCloud.UI.discovery_page = (function() {
             return rcloud.config.get_notebooks_discover(current_metric).then(function(discover_data) {
                 data = discover_data;
 
+                // found that for popular, it's returning LOTS of items, so reduce to 20 (yuk):
+                // bug #2026
+                if(Object.keys(data.values).length > 20) {
+                    var keys_to_delete = Object.keys(data.values).slice(20);
+
+                    _.each(keys_to_delete, function(k) {
+                        delete data.values[k];
+                    });
+                }
+
                 // get the detailed notebook info;
                 return discover.get_notebooks(Object.keys(data.values));
 
@@ -32,8 +42,6 @@ RCloud.UI.discovery_page = (function() {
                         return kv[1] * -1;
                     });
                 }
-
-                notebook_pairs = notebook_pairs.first(20); // bug #2026
 
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
