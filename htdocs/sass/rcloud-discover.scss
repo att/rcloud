@@ -132,6 +132,10 @@ progress::-webkit-progress-value {
             right: 4px;
         }
     }
+
+    img { 
+        max-width: 100%;
+    }
 }
 
 @include grid-item(540, 799, 48);

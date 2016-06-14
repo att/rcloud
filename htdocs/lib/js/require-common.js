@@ -6,7 +6,7 @@ requirejs_config_obj = {
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
         editor_tab: "../../editor_tab",
-        discover_tab: "../../discover_tab",
+        discover_model: "../../discover_model",
         shell_tab: "../../shell_tab",
         "angular": "angular",
         "angular-selectize": "angular-selectize",
