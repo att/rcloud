@@ -31,6 +31,7 @@ var editor = function () {
         histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
+        fork_count_ = {},
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
