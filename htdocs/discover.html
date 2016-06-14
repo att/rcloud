@@ -12,18 +12,15 @@
 
     <div class="navbar navbar-inverse ">
       <div>
-        <div id="rcloud-navbar-header" class="navbar-header">
+        <div id="rcloud-navbar-header" class="navbar-header"></div>
+        <div class="btn-group pull-right" data-toggle="buttons" id="metric-type">
+          <label class="btn btn-primary active">
+            <input type="radio" name="metric" value="recently.modified" autocomplete="off" checked>Recent
+          </label>
+          <label class="btn btn-primary">
+            <input type="radio" name="metric" value="most.popular" autocomplete="off">Popular
+          </label>
         </div>
->
-          <div class="btn-group pull-right" data-toggle="buttons" id="metric-type">
-            <label class="btn btn-primary active">
-              <input type="radio" name="metric" value="recently.modified" autocomplete="off" checked>Recent
-            </label>
-            <label class="btn btn-primary">
-              <input type="radio" name="metric" value="most.popular" autocomplete="off">Popular
-            </label>
-          </div>
-
       </div>
     </div>
 

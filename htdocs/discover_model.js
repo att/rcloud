@@ -33,24 +33,18 @@ var discover = function () {
                     _.each(Object.keys(stars), function(notebook_id){ 
                         notebooks_[notebook_id].stars = stars[notebook_id];
                     });
+                   
+                    var fork_promises = ids.map(function(id) { return rcloud.get_fork_count(id); });
 
-                    // todo: get forks:
-                    return [];
-                    // /todo
+                    return Promise.all(fork_promises);
 
                 }).then(function(forks) {
 
-                    // temporary fork count:
-                    _.each(notebook_ids, function(notebook_id){ 
-                        if(notebooks_[notebook_id]) {
-                            notebooks_[notebook_id].forks = 1;
-                        }
-                    });
+                    // todo: fork data:
 
-                    // construct the notebooks to return:
-                    return Promise.resolve(get_(notebook_ids));
-
+                    return Promise.resolve(get_(notebook_ids));  
                 });
+
             } else {
                 return Promise.resolve(get_(notebook_ids));
             }
