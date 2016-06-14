@@ -186,7 +186,7 @@ Notebook.create_model = function()
             }
 
             RCloud.UI.selection_bar.update(this.cells);
-            
+
             return changes;
         },
         remove_selected_cells: function() {
@@ -284,7 +284,7 @@ Notebook.create_model = function()
                 })
                 .each(function(cell) {
                     cell.deselect_cell();
-                }); 
+                });
             };
 
             var select_range = function(lower, upper) {
@@ -309,10 +309,6 @@ Notebook.create_model = function()
 
                 select_range(Math.min(start, end), Math.max(start, end));
             }
-
-            _.each(this.cells, function(cell) {
-                cell.blur_cell();
-            });
 
             RCloud.UI.selection_bar.update(this.cells);
         },

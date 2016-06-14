@@ -1,6 +1,6 @@
 RCloud.UI.shortcut_dialog = (function() {
 
-    var content_, shortcuts_by_category_ = [], shortcut_dialog_;
+    var shortcuts_by_category_ = [];
 
     var result = {
 
@@ -8,64 +8,65 @@ RCloud.UI.shortcut_dialog = (function() {
 
             $('#loading-animation').hide();
 
-            if(!shortcut_dialog_) {
-                shortcut_dialog_ = $('<div id="shortcut-dialog" class="modal fade" />')
-                    .append($('<div class="modal-dialog" />')
-                            .append($('<div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)" />')
-                                    .append($('<div class="modal-header" style="padding-left:20px!important;padding-right:20px!important" />')
-                                        .append($('<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'))
-                                        .append($('<h4 class="modal-title" style="font-size: 20px">Keyboard shortcuts</h4>')))
-                                    .append($('<div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;" />'))
-                                    /*.append($('<div class="modal-footer" />')
-                                        .append($('<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>')))*/));
+            var template_data = [];
 
-                $("body").append(shortcut_dialog_);
-            }
-
-            shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
+            if(shortcuts_by_category_) {
+                shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
                 'Code Editor',
                 'Code Prompt',
                 'Cell Management',
                 'Notebook Management',
                 'General']);
-
-            content_ = '';
+            }
 
             _.each(shortcuts_by_category_, function(group) {
 
-                content_ += '<div class="category">';
-                content_ += '<h3>' + group.category + '</h3>';
-                content_ += '<table>';
+                var key_group = {
+                    name: group.category,
+                    shortcuts: []
+                };
 
                 _.each(group.shortcuts, function(shortcut) {
 
-                    // if(!shortcut.keys.hasOwnProperty('win') && !shortcut.keys.hasOwnProperty('mac') && !shortcut.keys.hasOwnProperty('win_mac')) {
-                    //     console.error('invalid shortcut: ', shortcut);
-                    // }
-
-                    var keys_markup = [];
+                    var current_shortcut = {
+                            description : shortcut.description,
+                            keys: []
+                        };
 
                     _.each(shortcut.bind_keys, function(keys) {
-                        keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
+
+                        keys = _.map(keys, function(key) { 
+                            
+                            var replacement =  _.findWhere([
+                                { initial: 'option', replace_with: 'opt' },
+                                { initial: 'command', replace_with: 'cmd' }
+                            ], { initial : key });
+                          
+                            return replacement ? replacement.replace_with : key;
+                        });
+
+                        current_shortcut.keys.push(keys.join(' '));
                     });
 
-                    content_ += '<tr>';
-                    content_ += '<td>';
-                    content_ += keys_markup.join(' / ');
-                    content_ += '</td>';
-                    content_ += '<td>';
-                    content_ += shortcut.description;
-                    content_ += '</td>';
-                    content_ += '</tr>';
+                    key_group.shortcuts.push(current_shortcut);
+
                 });
 
-                content_ += '</table>';
-                content_ += '</div>';
+                template_data.push(key_group);
             });
 
-            $('#shortcut-dialog .modal-body').html(content_);
+            // generate dynamic content:
+            var content_template = _.template(
+                $("#shortcut_dialog_content_template").html()
+            );
 
-            shortcut_dialog_.modal({
+            var dialog_content = content_template({
+                categories : template_data
+            });
+
+            $('#shortcut-content').html(dialog_content);
+       
+            $('#shortcut-dialog').modal({
                 keyboard: false
             });
         }
