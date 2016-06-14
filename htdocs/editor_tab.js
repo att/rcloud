@@ -37,7 +37,7 @@ var editor = function () {
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
         path_tips_ = false; // debugging tool: show path tips on tree
-        
+
     // view
     var $tree_ = null;
 
@@ -196,7 +196,7 @@ var editor = function () {
             do
                 copy_name = base + (++n);
             while(map[copy_name]);
-            
+
             return copy_name;
         });
     }
@@ -1327,6 +1327,9 @@ var editor = function () {
         num_stars: function(gistname) {
             return num_stars_[gistname] || 0;
         },
+        fork_count: function(gistname) {
+            return fork_count_[gistname] || 0;
+        },
         i_starred: function(gistname) {
             return my_stars_[gistname] || false;
         },
@@ -1567,7 +1570,7 @@ var editor = function () {
                 var promise_fork;
                 if(is_mine)
                     promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
-                        return desc.replace(match, replace);
+                        return Promise.resolve(desc.replace(match, replace));
                     });
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
@@ -1578,7 +1581,7 @@ var editor = function () {
                         return editor.star_and_show(notebook, false, false);
                 }));
             });
-            Promise.all(promises).then(function(results) {
+            return Promise.all(promises).then(function(results) {
                 var already = [], forked = [];
                 for(var i = 0; i < results.length; ++i) {
                     if(_.isString(results[i]))
@@ -1597,7 +1600,6 @@ var editor = function () {
                     alert(lines.join('\n'));
                 }
             });
-            return this;
         },
         revert_notebook: function(is_mine, gistname, version) {
             if(!is_mine)
@@ -1800,8 +1802,11 @@ var editor = function () {
                                     })).then(function() {
                                         update_notebook_from_gist(result, history, options.selroot);
                                     }));
-                                   
-                                    
+
+                     promises.push(rcloud.get_fork_count(result.id).then(function(count) {
+                                        fork_count_[result.id] = count;
+                                    }));
+
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
                      promises.push(RCloud.UI.comments_frame.display_comments());
                      promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
