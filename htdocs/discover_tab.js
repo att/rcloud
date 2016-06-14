@@ -12,9 +12,13 @@ var discover = function () {
         fork_count_ = {};
 
     function clean_r(obj) { 
-        delete obj.r_attributes; 
-        delete obj.r_type; 
-        return obj; 
+        if(!_.isUndefined(obj)) {
+            delete obj.r_attributes; 
+            delete obj.r_type; 
+            return obj; 
+        } else {
+            return {};
+        }
     };
 
     function load_everything(){
