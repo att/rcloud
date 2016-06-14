@@ -86,9 +86,6 @@ progress::-webkit-progress-value {
 
 .grid-item {
     color: black;
-    padding: 1px;
-    padding-top: 10px;
-    border-radius: 5px;
     border: 1px solid #ccc;
     background-color: #fff;
     margin-top: 0;
@@ -96,7 +93,7 @@ progress::-webkit-progress-value {
     margin: 1%;
 
     &:hover {
-        background-color: #F1F1F1;
+        border-color: #777;
     }
 
     a {
@@ -116,38 +113,33 @@ progress::-webkit-progress-value {
         margin: 0;
     }
 
-    .image-holder {
-        margin-top: 13px;
-        margin-bottom: 10px;
-        min-height: 100px;
-    }
+    .header {
+        padding: 10px 4px;
+        position: relative;
 
-    .header h2 {
-        margin-top: 2px;
-    }
+        .star, .fork {
+            color: black;
+            font-size: 18px;
+            text-decoration: none;
+            background: transparent;
+            border: none;
+            padding: 2px 4px;
+        }
 
-    .star-holder {
-        position: absolute;
-        top: -11px;
-        right: 0;
-    }
+        .buttons {
+            top: 6px;
+            position: absolute;
+            right: 4px;
+        }
+/*
+        .star {
+            right: 40px;
+        }
 
-    .star-holder button {
-        color: black;
-        font-size: 18px;
-        text-decoration: none;
-    }
-
-    .fork-holder {
-        position: absolute;
-        top: -11px;
-        right: 30;
-    }
-
-    .fork-holder button {
-        color: black;
-        font-size: 18px;
-        text-decoration: none;
+        .fork {
+            right: 30px;
+        }
+*/        
     }
 }
 

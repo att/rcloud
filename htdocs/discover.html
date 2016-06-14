@@ -46,7 +46,28 @@
 
     <script type="text/template" id="item_template">
       <% _.each(notebooks, function(notebook) { %>
-      <div class="grid-item">
+
+
+      <figure class="grid-item">
+        <a href="edit.html?notebook=<%=notebook.id%>">
+          <div class="header">
+            <h1><%=notebook.description%></h1>
+            <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
+            <div class="buttons">
+              <button class="star" title="Add to Interests" type="button" class="btn btn-link navbar-btn">
+                <i class="icon-star"></i><sub><%=discover.num_stars(notebook.id)%></sub>
+              </button>
+              <button class="fork" title="Fork" type="button" class="btn btn-link navbar-btn">
+                <i class="icon-code-fork"></i><sub><%=discover.fork_count(notebook.id)%></sub>
+              </button>
+            </div>
+          </div>
+          <img src="<%=notebook.image_src || './img/missing.png'%>" class="img-responsive" alt="Responsive image">
+        </a>
+
+
+
+<!--
         <a href="edit.html?notebook=<%=notebook.id%>">
 
           <div class="row" style="position:relative">
@@ -71,7 +92,8 @@
             </div>
           </div>
         </a>
-      </div>
+-->
+      </figure>
       <% }); %>
     </script>
 
