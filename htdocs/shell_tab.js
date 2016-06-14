@@ -158,20 +158,22 @@ var shell = (function() {
                                    id: notebook.id
                                   };
                     notebook = Notebook.sanitize(notebook);
-                    notebook.description = transform_description(notebook.description);
-                    var promise_create = open_it ? notebook_controller_.create_notebook(notebook) :
-                            rcloud.create_notebook(notebook, false);
-                    return promise_create
-                        .then(function(result) {
-                            result.fork_of = fork_of;
-                            return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
-                                .then(function() {
-                                    return cryptgroup ?
-                                        rcloud.protection.set_notebook_cryptgroup(result.id, cryptgroup.id, false) :
-                                        undefined;
-                                })
-                                .return(result);
-                        });
+                    return transform_description(notebook.description).then(function(desc) {
+                        notebook.description = desc;
+                        var promise_create = open_it ? notebook_controller_.create_notebook(notebook) :
+                                rcloud.create_notebook(notebook, false);
+                        return promise_create
+                            .then(function(result) {
+                                result.fork_of = fork_of;
+                                return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
+                                    .then(function() {
+                                        return cryptgroup ?
+                                            rcloud.protection.set_notebook_cryptgroup(result.id, cryptgroup.id, false) :
+                                            undefined;
+                                    })
+                                    .return(result);
+                            });
+                    });
                 });
         }, fork_notebook: function(is_mine, gistname, version) {
             var that = this;
@@ -189,10 +191,10 @@ var shell = (function() {
                          // it would be nice to choose a new name if we've forked someone
                          // else's notebook and we already have a notebook of that name
                          // but this slams into the github concurrency problem
-                        var new_desc = editor.find_next_copy_name(notebook.description);
-                        if(new_desc != notebook.description)
-                            return notebook_controller_.rename_notebook(new_desc);
-                        else
+                        editor.find_next_copy_name(notebook.description).then(function(new_desc) {
+                            if(new_desc != notebook.description)
+                                return notebook_controller_.rename_notebook(new_desc);
+                            else ...
                          */
                         return notebook;
                     });

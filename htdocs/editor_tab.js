@@ -1571,7 +1571,7 @@ var editor = function () {
                 var promise_fork;
                 if(is_mine)
                     promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
-                        return desc.replace(match, replace);
+                        return Promise.resolve(desc.replace(match, replace));
                     });
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
