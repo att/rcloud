@@ -2,10 +2,10 @@ RCloud.UI.discovery_page = (function() {
     var Masonry_;
     var discovery = {
 
-        load_current_metric: function() {
+        load_current_metric: function(current_metric) {
 
             var data,
-                current_metric = $('input[name=metric]:checked').val();
+                current_metric = current_metric || 'recently.modified';
 
             return rcloud.config.get_notebooks_discover(current_metric).then(function(discover_data) {
                 data = discover_data;
@@ -107,8 +107,8 @@ RCloud.UI.discovery_page = (function() {
 
                     Masonry_ = Masonry;
 
-                    $('input[name=metric]').on('change', function() {
-                        discovery.load_current_metric();
+                    $('#metric-type label').click(function() {
+                        discovery.load_current_metric($(this).find('input').val());
                     });
 
                     resolve(discovery.load_current_metric());
