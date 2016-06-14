@@ -53,9 +53,9 @@ RCloud.UI.discovery_page = (function() {
                                     description: current.description,
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     username: current.username,
-                                    num_stars: current.stars,
+                                    stars: current.stars,
                                     image_src: thumb_src || './img/missing.png',
-                                    fork_count: current.forks
+                                    forks: current.forks
                                 };
                             });
                         })
