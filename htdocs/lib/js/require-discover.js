@@ -6,7 +6,7 @@ deps.push(
     "../../discover", "rcloud_bundle",
 
     // rcloud's other files
-    "shell_tab", "editor_tab"
+    "shell_tab", "discover_tab"
 );
 
 start_require(deps);
