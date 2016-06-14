@@ -46,8 +46,6 @@
 
     <script type="text/template" id="item_template">
       <% _.each(notebooks, function(notebook) { %>
-
-
       <figure class="grid-item">
         <a href="edit.html?notebook=<%=notebook.id%>">
           <div class="header">
@@ -64,35 +62,6 @@
           </div>
           <img src="<%=notebook.image_src || './img/missing.png'%>" class="img-responsive" alt="Responsive image">
         </a>
-
-
-
-<!--
-        <a href="edit.html?notebook=<%=notebook.id%>">
-
-          <div class="row" style="position:relative">
-            <div class='header col-sm-10'>
-              <h1><%=notebook.description%></h1>
-              <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
-            </div>
-            <div class="star-holder">
-              <button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
-                <i class="icon-star"></i><sub><span id="curr-star-count"><%=discover.num_stars(notebook.id)%></span></sub>
-              </button>
-            </div>
-            <div class="fork-holder">
-              <button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
-                <i class="icon-code-fork"></i><sub><span id="curr-fork-count"><%=discover.fork_count(notebook.id)%></span></sub>
-              </button>
-            </div>
-          </div>
-          <div class="row">
-            <div class="image-holder col-sm-12">
-              <img src="<%=notebook.image_src || './img/missing.png'%>" class="img-responsive" alt="Responsive image">
-            </div>
-          </div>
-        </a>
--->
       </figure>
       <% }); %>
     </script>
