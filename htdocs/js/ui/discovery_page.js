@@ -19,7 +19,7 @@ RCloud.UI.discovery_page = (function() {
                         delete data.values[k];
                     });
                 }
-
+                
                 // get the detailed notebook info;
                 return discover.get_notebooks(Object.keys(data.values));
 
