@@ -1582,7 +1582,7 @@ var editor = function () {
                         return editor.star_and_show(notebook, false, false);
                 }));
             });
-            Promise.all(promises).then(function(results) {
+            return Promise.all(promises).then(function(results) {
                 var already = [], forked = [];
                 for(var i = 0; i < results.length; ++i) {
                     if(_.isString(results[i]))
@@ -1601,7 +1601,6 @@ var editor = function () {
                     alert(lines.join('\n'));
                 }
             });
-            return this;
         },
         revert_notebook: function(is_mine, gistname, version) {
             if(!is_mine)
