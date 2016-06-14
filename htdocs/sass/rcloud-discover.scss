@@ -18,8 +18,7 @@
 body {
     overflow: hidden;
 
-    .loaded {
-        display: block;
+    &.loaded {
         overflow: auto;
     }
 }
