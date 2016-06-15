@@ -10,31 +10,23 @@
   </head>
   <body>
 
-    <div class="navbar navbar-inverse ">
+    <div class="navbar navbar-inverse">
       <div>
         <div id="rcloud-navbar-header" class="navbar-header"></div>
+        <ul class="nav navbar-nav navbar-right" id="metric-type">
+          <li><a href="#" data-type="recently.modified">Recent</a></li>
+          <li><a href="#" data-type="most.popular">Popular</a></li>
+        </ul>
       </div>
     </div>
 
-    <!-- progress bar -->
     <div id="progress">
       <img src="img/logo_rcloud.png" />
-      <progress value="0" max="20"></progress>
+      <div class="loader">Loading...</div>
     </div>
 
     <div class="container" id="main-div">
-      <div id='discovery-app'>
-        <div style='position:relative'>
-          <div class="row" style="margin-bottom: 10px;">
-            <div class="btn-group pull-right" data-toggle="buttons">
-              <label class="btn btn-primary active">
-                <input type="radio" name="metric" value="recently.modified" autocomplete="off" checked>Recent
-              </label>
-              <label class="btn btn-primary">
-                <input type="radio" name="metric" value="most.popular" autocomplete="off">Popular
-              </label>
-            </div>
-          </div>
+      <div id="discovery-app">
           <div class="row">
             <div class="grid"></div>
           </div>
@@ -44,32 +36,23 @@
 
     <script type="text/template" id="item_template">
       <% _.each(notebooks, function(notebook) { %>
-      <div class="grid-item">
+      <figure class="grid-item">
         <a href="edit.html?notebook=<%=notebook.id%>">
-
-          <div class="row" style="position:relative">
-            <div class='header col-sm-10'>
-              <h1><%=notebook.description%></h1>
-              <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
-            </div>
-            <div class="star-holder">
-              <button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
-                <i class="icon-star"></i><sub><span id="curr-star-count"><%=editor.num_stars(notebook.id)%></span></sub>
-              </button>
-            </div>
-            <div class="fork-holder">
-              <button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
-                <i class="icon-code-fork"></i><sub><span id="curr-fork-count"><%=editor.fork_count(notebook.id)%></span></sub>
+          <div class="header">
+            <h1><%=notebook.description%></h1>
+            <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
+            <div class="buttons">
+              <button class="fork" title="Fork" type="button" class="btn btn-link navbar-btn">
+                <i class="icon-code-fork"></i><sub><%=notebook.forks%></sub>
+              </button>            
+              <button class="star" title="Add to Interests" type="button" class="btn btn-link navbar-btn">
+                <i class="<%=notebook.star_icon%>"></i><sub><%=notebook.stars%></sub>
               </button>
             </div>
           </div>
-          <div class="row">
-            <div class="image-holder col-sm-12">
-              <img src="<%=notebook.image_src%>" class="img-responsive" alt="Responsive image">
-            </div>
-          </div>
+          <img src="<%=notebook.image_src%>" alt="Notebook thumbnail">
         </a>
-      </div>
+      </figure>
       <% }); %>
     </script>
 

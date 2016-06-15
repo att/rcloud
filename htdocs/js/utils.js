@@ -19,3 +19,6 @@ RCloud.utils.promise_sequence = function(collection, operator) {
         0);
 };
 
+RCloud.utils.get_url_parameter = function(name) {
+    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+}

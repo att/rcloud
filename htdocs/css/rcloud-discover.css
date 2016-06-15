@@ -146,13 +146,17 @@ progress::-webkit-progress-value {
   top: -11px;
   right: 0; }
 
-.grid-item .fork-holder {
-    position: absolute;
-    top: -11px;
-    right: 5;
-}
-
 .grid-item .star-holder button {
+  color: black;
+  font-size: 18px;
+  text-decoration: none; }
+
+.grid-item .fork-holder {
+  position: absolute;
+  top: -11px;
+  right: 30; }
+
+.grid-item .fork-holder button {
   color: black;
   font-size: 18px;
   text-decoration: none; }

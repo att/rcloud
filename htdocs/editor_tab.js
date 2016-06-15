@@ -38,7 +38,7 @@ var editor = function () {
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
         path_tips_ = false; // debugging tool: show path tips on tree
-        
+
     // view
     var $tree_ = null;
 
@@ -164,31 +164,42 @@ var editor = function () {
 
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     function find_next_copy_name(username, description) {
+        var promise;
         var pid = node_id("alls", username);
         if(description.indexOf('/')!==-1)
             pid += '/' + description.replace(/\/[^\/]*$/,'');
         var parent = $tree_.tree('getNodeById', pid);
         if(parent === undefined)
             return description;
-        if(parent.delay_children)
-            load_children(parent);
-        var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
-        if(!map[description])
-            return description;
-        var match, base, n;
-        if((match = split_number(description))) {
-            base = match[0];
-            n = +match[1];
+
+        var promise_load = Promise.resolve();
+
+        if(parent.lazy_load) {
+            promise_load = load_lazy_children(parent, false);
+        } else {
+            promise_load = Promise.resolve();
         }
-        else {
-            base = description + ' ';
-            n = 1;
-        }
-        var copy_name;
-        do
-            copy_name = base + (++n);
-        while(map[copy_name]);
-        return copy_name;
+
+        return promise_load.then(function() {
+            var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
+            if(!map[description])
+                return description;
+            var match, base, n;
+            if((match = split_number(description))) {
+                base = match[0];
+                n = +match[1];
+            }
+            else {
+                base = description + ' ';
+                n = 1;
+            }
+            var copy_name;
+            do
+                copy_name = base + (++n);
+            while(map[copy_name]);
+
+            return copy_name;
+        });
     }
 
 
@@ -469,44 +480,6 @@ var editor = function () {
         });
     }
 
-
-/*
-    function populate_featured(alls_root) {
-        var featured_subtrees = alls_root.children.filter(function(subtree) {
-            return featured_.indexOf(alls_name(subtree))>=0;
-        });
-        featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
-        if(!featured_subtrees.length)
-            return null;
-        else {
-
-            return get_notebooks_by_user(featured_).then(function(notebooks) {
-
-                var notebook_nodes = convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
-                    notebook.id = '/featured/' + notebook.gistname;
-                    return notebook;
-                });
-
-                return {
-                    label: 'RCloud Sample Notebooks',
-                    id: '/featured',
-                    children: as_folder_hierarchy(notebook_nodes, node_id('featured', featured_[0])).sort(compare_nodes),
-                    //user: featured_[0]
-                }
-            });
-
-            // // load all of these items:
-            // return {
-            //     label: 'RCloud Sample Notebooks',
-            //     id: '/featured',
-            //     children: [{ label: 'loading...' }],
-            //     lazy_load: true,
-            //     user: featured_[0]
-            // };
-        }
-    }
-*/
-
     function load_tree(root_data) {
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
@@ -675,7 +648,6 @@ var editor = function () {
         }
         return -1;
     }
-
 
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
@@ -1119,6 +1091,66 @@ var editor = function () {
         }
         return false;
     }
+
+    function load_lazy_children(for_node, reselect_node) {
+
+        var promise = Promise.resolve();
+
+        promise = promise.then(function() {
+
+            return get_notebooks_by_user(for_node.user).then(function(notebooks) {
+
+                var initial_node;
+
+                var selected_node = get_selected_node();
+
+                var notebook_nodes = convert_notebook_set(for_node.root, for_node.user, notebooks);
+                $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
+
+                if(reselect_node) {
+                    // all children have been replaced, so if the selected node is
+                    // one of the children, reselect:
+                    function find_node(root_node, id_to_find) {
+                        var found;
+
+                        function recurse(node) {
+
+                            for (var i = 0; i < node.children.length; i++) {
+                                if ((node.children[i].id === id_to_find)) {
+                                    found = node.children[i];
+                                    break;
+                                } else {
+                                    if (node.children[i].children && node.children[i].children.length > 0) {
+                                        recurse(node.children[i]);
+                                        if(found){
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        recurse(root_node);
+                        return found;
+                    }
+
+                    var node_to_select = find_node(for_node, selected_node.id);
+
+                    if(reselect_node && node_to_select) {
+                        select_node(node_to_select);
+                    }
+                }
+
+                delete for_node.lazy_load;
+            });
+
+            promise = Promise.resolve();
+
+        });
+
+        return promise;
+    }
+
     function tree_open(event) {
         var n = event.node;
 
@@ -1145,61 +1177,19 @@ var editor = function () {
         }
 
         // go off and get data for the given user:
+        var p_load_children;
         if(n.lazy_load) {
-            get_notebooks_by_user(n.user).then(function(notebooks) {
-
-                var initial_node;
-
-                var selected_node = get_selected_node();
-
-                var notebook_nodes = convert_notebook_set(n.root, n.user, notebooks);
-                $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(n.root, n.user)).sort(compare_nodes), n);
-
-                // all children have been replaced, so if the selected node is
-                // one of the children, reselect:
-                function find_node(root_node, id_to_find) {
-                    var found;
-
-                    function recurse(node) {
-
-                        for (var i = 0; i < node.children.length; i++) {
-                            if ((node.children[i].id === id_to_find)) {
-                                found = node.children[i];
-                                break;
-                            } else {
-                                if (node.children[i].children && node.children[i].children.length > 0) {
-                                    recurse(node.children[i]);
-                                    if(found){
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    recurse(root_node);
-
-                    return found;
-                }
-
-                //var node_to_select = _.findWhere(n.children, { id : selected_node.id });
-                var node_to_select = find_node(n, selected_node.id);
-
-                if(node_to_select) {
-                    select_node(node_to_select);
-                }
-
-                delete n.lazy_load;
-            });
+            p_load_children = load_lazy_children(n, true);
+        } else {
+            p_load_children = Promise.resolve();
         }
 
-        if(n.delay_children)
-            load_children(n);
-
-        // notebook folder name only editable when open
-        if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
-            RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
-        $('#collapse-notebook-tree').trigger('size-changed');
+        p_load_children.then(function() {
+            // notebook folder name only editable when open
+            if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
+                RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
+            $('#collapse-notebook-tree').trigger('size-changed');
+        });
     }
     function tree_close(event) {
         // notebook folder name only editable when open
@@ -1340,7 +1330,7 @@ var editor = function () {
         },
         fork_count: function(gistname) {
             return fork_count_[gistname] || 0;
-        }, 
+        },
         i_starred: function(gistname) {
             return my_stars_[gistname] || false;
         },
@@ -1581,7 +1571,7 @@ var editor = function () {
                 var promise_fork;
                 if(is_mine)
                     promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
-                        return desc.replace(match, replace);
+                        return Promise.resolve(desc.replace(match, replace));
                     });
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
@@ -1592,7 +1582,7 @@ var editor = function () {
                         return editor.star_and_show(notebook, false, false);
                 }));
             });
-            Promise.all(promises).then(function(results) {
+            return Promise.all(promises).then(function(results) {
                 var already = [], forked = [];
                 for(var i = 0; i < results.length; ++i) {
                     if(_.isString(results[i]))
@@ -1611,7 +1601,6 @@ var editor = function () {
                     alert(lines.join('\n'));
                 }
             });
-            return this;
         },
         revert_notebook: function(is_mine, gistname, version) {
             if(!is_mine)
@@ -1818,8 +1807,7 @@ var editor = function () {
                      promises.push(rcloud.get_fork_count(result.id).then(function(count) {
                                         fork_count_[result.id] = count;
                                     }));
-                                   
-                                    
+
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
                      promises.push(RCloud.UI.comments_frame.display_comments());
                      promises.push(rcloud.is_notebook_published(result.id).then(function(p) {

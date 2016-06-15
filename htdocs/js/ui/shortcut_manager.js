@@ -22,7 +22,9 @@ RCloud.UI.shortcut_manager = (function() {
     };
 
     function is_active(shortcut) {
-        return shortcut.enabled && _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
+        return shortcut.enabled && 
+            _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable') &&
+            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit');
     }
 
     function convert_extension(shortcuts) {
@@ -42,6 +44,7 @@ RCloud.UI.shortcut_manager = (function() {
             var shortcut_to_add = _.defaults(shortcut, {
                 category: 'General',
                 modes: ['writeable', 'readonly'],
+                on_page: ['view', 'edit'],
                 ignore_clash: false,
                 enable_in_dialogs: false,
                 enabled: true

@@ -51,15 +51,9 @@ Notebook.Cell.create_model = function(content, language)
 
             this.notify_views(function(view) {
                 view.selected_updated();
-                view.blur_cell();
             });
 
-            return is_selected_;  
-        },
-        blur_cell: function() {
-            this.notify_views(function(view) {
-                view.blur_cell();
-            });
+            return is_selected_;
         },
         toggle_cell: function() {
             is_selected_ = !is_selected_;
@@ -68,7 +62,7 @@ Notebook.Cell.create_model = function(content, language)
                 view.selected_updated();
             });
 
-            return is_selected_;  
+            return is_selected_;
         },
         is_selected: function() {
             return is_selected_;
