@@ -137,9 +137,6 @@ RCloud.UI.discovery_page = (function() {
                         .value();
 
                 return Promise.all(notebook_data_promises).then(function(recent_notebooks) {
-                    $('progress').attr({
-                        max: recent_notebooks.length
-                    });
 
                     var template = _.template(
                         $("#item_template").html()
@@ -158,14 +155,6 @@ RCloud.UI.discovery_page = (function() {
                                     $('#discovery-app').css('visibility', 'visible');
                                     $('body').addClass('loaded');
                                 });
-                            });
-                        })
-                        .progress(function(imgLoad, image) {
-
-                            var new_value = +$('progress').attr('value') + 1;
-
-                            $('progress').attr({
-                                value: new_value
                             });
                         });
                 });
@@ -197,8 +186,6 @@ RCloud.UI.discovery_page = (function() {
             });
         }
     };
-
-
 
     return discovery;
 })();
