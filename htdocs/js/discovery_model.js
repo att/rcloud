@@ -1,5 +1,5 @@
-var discover = function () {
-    
+RCloud.discovery_model = function () {
+
     var notebooks_ = {};
 
     return {

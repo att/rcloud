@@ -95,7 +95,7 @@ RCloud.UI.discovery_page = (function() {
                 }
 
                 // get the detailed notebook info;
-                return discover.get_notebooks(Object.keys(data.values));
+                return RCloud.discovery_model.get_notebooks(Object.keys(data.values));
 
             }).then(function(notebooks) {
 
