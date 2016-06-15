@@ -128,7 +128,7 @@ RCloud.UI.discovery_page = (function() {
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     username: current.username,
                                     stars: current.stars,
-                                    star_icon: current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
+                                    star_icon: !_.isUndefined(current.is_starred_by_me) && current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
                                     image_src: thumb_src || './img/missing.png',
                                     forks: current.forks
                                 };

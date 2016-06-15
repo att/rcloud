@@ -32,8 +32,9 @@ var discover = function () {
 
                     return Promise.all([
                         rcloud.get_multiple_notebook_infos(ids),
-                        rcloud.stars.get_multiple_notebook_star_counts(ids)
-                    ]).spread(function(notebooks, stars) {
+                        rcloud.stars.get_multiple_notebook_star_counts(ids),
+                        rcloud.stars.get_my_starred_notebooks()
+                    ]).spread(function(notebooks, stars, my_starred_notebooks) {
                         
                         // notebooks:
                         _.extend(notebooks_, notebooks);
@@ -41,7 +42,13 @@ var discover = function () {
                         // stars:
                         _.each(Object.keys(stars), function(notebook_id){ 
                             notebooks_[notebook_id].stars = stars[notebook_id];
-                            notebooks_[notebook_id].is_starred_by_me = true;
+                        });
+
+                        // has the current user starred it?
+                        _.each(my_starred_notebooks, function(notebook_id) {
+                            if(notebooks_[notebook_id]) {
+                                notebooks_[notebook_id].is_starred_by_me = true;
+                            }
                         });
 
                         // fork count (temp):
