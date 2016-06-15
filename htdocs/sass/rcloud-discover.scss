@@ -1,26 +1,47 @@
 @mixin grid-item($viewport-min-width, $viewport-max-width, $item-width) {
-    @if $viewport-max-width == "nomax" {
+    @if $viewport-max-width=="nomax" {
         @media (min-width: #{$viewport-min-width}px) {
-            .grid-item { 
-              width: #{$item-width}%;
+            .grid-item {
+                width: #{$item-width}%;
             }
         }
-    } 
+    }
     @else {
         @media (min-width: #{$viewport-min-width}px) and (max-width: #{$viewport-max-width}px) {
-            .grid-item { 
-              width: #{$item-width}%;
+            .grid-item {
+                width: #{$item-width}%;
             }
         }
     }
 }
 
+@-webkit-keyframes loader {
+    0%,
+    80%,
+    100% {
+        box-shadow: 0 2.5em 0 -1.3em;
+    }
+    40% {
+        box-shadow: 0 2.5em 0 0;
+    }
+}
+
+@keyframes loader {
+    0%,
+    80%,
+    100% {
+        box-shadow: 0 2.5em 0 -1.3em;
+    }
+    40% {
+        box-shadow: 0 2.5em 0 0;
+    }
+}
+
 body {
     overflow: hidden;
-        
     &.loaded {
         overflow: auto;
-        background: #c7d6e2; 
+        background: #c7d6e2;
     }
 }
 
@@ -46,7 +67,7 @@ body {
 #progress {
     height: 180px;
     position: absolute;
-    top: 50%;
+    top: 48%;
     margin-top: -90px;
     text-align: center;
     width: 500px;
@@ -54,34 +75,47 @@ body {
     left: 50%;
 }
 
-progress {
-    height: 10px;
-    width: 390px;
-    margin: 40px auto;
-    display: block;
-    -webkit-appearance: none;
-    border: none;
+.loader:before,
+.loader:after,
+.loader {
+    border-radius: 50%;
+    width: 2.5em;
+    height: 2.5em;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    -webkit-animation: loader 1.8s infinite ease-in-out;
+    animation: loader 1.8s infinite ease-in-out;
 }
 
-progress::-webkit-progress-bar {
-    background: #ccc;
-    border-radius: 50px;
-    padding: 2px;
-    box-shadow: 0 1px 0px 0 rgba(255, 255, 255, 0.2);
-}
+.loader {
+    color: #A75E0F;
+    font-size: 10px;
+    margin: 20px auto 30px auto;
+    position: relative;
+    text-indent: -9999em;
+    -webkit-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-animation-delay: -0.08s;
+    animation-delay: -0.08s;
+    padding-bottom: 10px;
 
-/* Now the value part */
-progress::-webkit-progress-value {
-    border-radius: 50px;
-    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
-    background: #47c0ed;
-    background-size: 25px 14px, 100% 100%, 100% 100%;
-    -webkit-animation: move 5s linear 0 infinite;
-}
+    &:before {
+        left: -3.5em;
+        -webkit-animation-delay: -0.16s;
+        animation-delay: -0.16s;
+    }
 
-.logo-holder {
-    margin-left: 30px;
-    margin-top: 8px;
+    &:after {
+        left: 3.5em;
+    }
+
+    &:before,
+    &:after {
+        content: '';
+        position: absolute;
+        top: 0;
+    }
 }
 
 #metric-type {
@@ -94,34 +128,29 @@ progress::-webkit-progress-value {
     margin-top: 0;
     width: 100%;
     margin: 1%;
-
     &:hover {
         border-color: #777;
     }
-
     a {
         text-decoration: none;
         color: black;
     }
-
     h1 {
         font-size: 17px;
         margin: 0;
         white-space: pre-wrap;
         word-break: break-all;
     }
-
     h2 {
         font-size: 11px;
         margin: 0;
     }
-
     .header {
         padding: 10px 70px 10px 10px;
         position: relative;
-        background-color: #fff;        
-
-        .star, .fork {
+        background-color: #fff;
+        .star,
+        .fork {
             color: black;
             font-size: 15px;
             text-decoration: none;
@@ -129,15 +158,13 @@ progress::-webkit-progress-value {
             border: none;
             padding: 2px 4px;
         }
-
         .buttons {
             top: 6px;
             position: absolute;
             right: 4px;
         }
     }
-
-    img { 
+    img {
         max-width: 100%;
     }
 }
