@@ -13,26 +13,13 @@
     <div class="navbar navbar-inverse">
       <div>
         <div id="rcloud-navbar-header" class="navbar-header"></div>
-
         <ul class="nav navbar-nav navbar-right" id="metric-type">
           <li><a href="#" data-type="recently.modified">Recent</a></li>
           <li><a href="#" data-type="most.popular">Popular</a></li>
         </ul>
-
-
-<!--         <div class="btn-group pull-right" data-toggle="buttons" id="metric-type">
-          <label class="btn btn-primary active">
-            <input type="radio" name="metric" value="recently.modified" autocomplete="off" checked>Recent
-          </label>
-          <label class="btn btn-primary">
-            <input type="radio" name="metric" value="most.popular" autocomplete="off">Popular
-          </label>
-        </div> -->
-
       </div>
     </div>
 
-    <!-- progress bar -->
     <div id="progress">
       <img src="img/logo_rcloud.png" />
       <div class="loader">Loading...</div>
@@ -55,11 +42,11 @@
             <h1><%=notebook.description%></h1>
             <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
             <div class="buttons">
-              <button class="star" title="Add to Interests" type="button" class="btn btn-link navbar-btn">
-                <i class="<%=notebook.star_icon%>"></i><sub><%=notebook.stars%></sub>
-              </button>
               <button class="fork" title="Fork" type="button" class="btn btn-link navbar-btn">
                 <i class="icon-code-fork"></i><sub><%=notebook.forks%></sub>
+              </button>            
+              <button class="star" title="Add to Interests" type="button" class="btn btn-link navbar-btn">
+                <i class="<%=notebook.star_icon%>"></i><sub><%=notebook.stars%></sub>
               </button>
             </div>
           </div>
