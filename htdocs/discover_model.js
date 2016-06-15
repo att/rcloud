@@ -41,6 +41,7 @@ var discover = function () {
                         // stars:
                         _.each(Object.keys(stars), function(notebook_id){ 
                             notebooks_[notebook_id].stars = stars[notebook_id];
+                            notebooks_[notebook_id].is_starred_by_me = true;
                         });
 
                         // fork count (temp):
