@@ -48,7 +48,7 @@
             <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
             <div class="buttons">
               <button class="star" title="Add to Interests" type="button" class="btn btn-link navbar-btn">
-                <i class="icon-star"></i><sub><%=notebook.stars%></sub>
+                <i class="<%=notebook.star_icon%>"></i><sub><%=notebook.stars%></sub>
               </button>
               <button class="fork" title="Fork" type="button" class="btn btn-link navbar-btn">
                 <i class="icon-code-fork"></i><sub><%=notebook.forks%></sub>

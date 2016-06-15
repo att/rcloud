@@ -29,6 +29,7 @@ var discover = function () {
                 );
 
                 promise = promise.then(function(forks) {
+
                     return Promise.all([
                         rcloud.get_multiple_notebook_infos(ids),
                         rcloud.stars.get_multiple_notebook_star_counts(ids)
@@ -42,15 +43,18 @@ var discover = function () {
                             notebooks_[notebook_id].stars = stars[notebook_id];
                         });
 
+                        // fork count (temp):
+                        _.each(Object.keys(stars), function(notebook_id){ 
+                            notebooks_[notebook_id].forks = 1;
+                        });
+
                     }).then(function() {
-
                         return Promise.resolve(get_(notebook_ids));
-
                     });
                 });
 
             } else {
-                return Promise.resolve(get_(notebook_ids));
+                promise = Promise.resolve(get_(notebook_ids));
             }
            
             return promise;
