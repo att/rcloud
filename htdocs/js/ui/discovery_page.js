@@ -1,5 +1,80 @@
 RCloud.UI.discovery_page = (function() {
+
     var Masonry_;
+
+    var metric_handler = function() {
+
+        var $el_ = $('#metric-type');
+        var types_ = ['recently.modified', 'most.popular'];
+        var default_type_ = types_[0];
+
+        function set_active_link(metric_type) {
+            $el_.find('li').removeClass('active');
+            $el_.find('a[data-type="' + metric_type + '"]').parent().addClass('active');
+        }
+
+        function get_links() {
+            return $el_.find('a');
+        }
+
+        function initialise_links() {
+            _.each(get_links(), function(link) {
+                // give the links proper URLs
+                $(link).attr('href', '?metric=' + $(link).attr('data-type'));
+            });
+        }
+
+        var updateQueryStringParam = function (key, value) {
+            var baseUrl = [location.protocol, '//', location.host, location.pathname].join(''),
+                param = '?' + key + '=' + value;
+
+            window.history.pushState({ path : baseUrl + param  }, '', baseUrl + param);
+        };
+
+        var get_qs_metric = function() {
+            var qs_metric = RCloud.utils.get_url_parameter('metric');
+
+            return types_.indexOf(qs_metric) > -1 ? qs_metric : default_type_;
+        };
+
+        return {
+            init: function(opts) {
+
+                initialise_links();
+
+                get_links().click(function(e) {
+
+                    e.preventDefault();
+
+                    var metric_type = $(this).attr('data-type');
+
+                    set_active_link(metric_type);
+
+                    updateQueryStringParam('metric', metric_type);
+
+                    if(_.isFunction(opts.change)) {
+                        opts.change(metric_type);
+                    };
+                });
+
+                window.addEventListener('popstate', function(e) {
+                    if(_.isFunction(opts.change)) {
+                        var metric_type = get_qs_metric();
+                        set_active_link(metric_type);
+                        opts.change(metric_type);
+                    };
+                });
+
+                var qs_metric = get_qs_metric();
+                set_active_link(qs_metric);
+
+                if(_.isFunction(opts.oncomplete)) {
+                    opts.oncomplete(qs_metric);
+                }
+            }
+        };
+    };
+
     var discovery = {
 
         load_current_metric: function(current_metric) {
@@ -10,7 +85,7 @@ RCloud.UI.discovery_page = (function() {
             return rcloud.config.get_notebooks_discover(current_metric).then(function(discover_data) {
                 data = discover_data;
 
-                // temporary ()
+                // temporary
                 if(Object.keys(data.values).length > 100) {
                     var keys_to_delete = Object.keys(data.values).slice(100);
 
@@ -107,16 +182,23 @@ RCloud.UI.discovery_page = (function() {
 
                     Masonry_ = Masonry;
 
-                    $('#metric-type label').click(function() {
-                        discovery.load_current_metric($(this).find('input').val());
-                    });
+                    var metric = new metric_handler();
 
-                    resolve(discovery.load_current_metric());
+                    metric.init({
+                        change: function(metric) {
+                            discovery.load_current_metric(metric);
+                        },
+                        oncomplete: function(metric) {
+                            resolve(discovery.load_current_metric(metric));
+                        }
+                    });
 
                 }, reject);
             });
         }
-
     };
+
+
+
     return discovery;
 })();
