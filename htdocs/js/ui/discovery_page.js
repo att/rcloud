@@ -10,10 +10,9 @@ RCloud.UI.discovery_page = (function() {
             return rcloud.config.get_notebooks_discover(current_metric).then(function(discover_data) {
                 data = discover_data;
 
-                // found that for 'popular', it's returning LOTS of items, so reduce to 20 (yuk):
-                // bug #2026
-                if(Object.keys(data.values).length > 20) {
-                    var keys_to_delete = Object.keys(data.values).slice(20);
+                // temporary ()
+                if(Object.keys(data.values).length > 100) {
+                    var keys_to_delete = Object.keys(data.values).slice(100);
 
                     _.each(keys_to_delete, function(k) {
                         delete data.values[k];
@@ -54,6 +53,7 @@ RCloud.UI.discovery_page = (function() {
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     username: current.username,
                                     stars: current.stars,
+                                    star_icon: current.stars === 0 ? 'icon-star-empty' : 'icon-star',
                                     image_src: thumb_src || './img/missing.png',
                                     forks: current.forks
                                 };
