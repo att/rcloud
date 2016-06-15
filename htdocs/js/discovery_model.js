@@ -5,8 +5,8 @@ var discover = function () {
     return {
         get_notebooks : function(notebook_ids) {
 
-            var promise = Promise.resolve(),
-                notebook_ids = _.filter(notebook_ids, function(id) { return id.length && id[0] !== 'r' });
+            var promise = Promise.resolve();
+            notebook_ids = _.filter(notebook_ids, function(id) { return id.length && id[0] !== 'r'; });
 
             var get_ = function(notebook_ids) {
                 var notebooks = {};
@@ -35,12 +35,12 @@ var discover = function () {
                         rcloud.stars.get_multiple_notebook_star_counts(ids),
                         rcloud.stars.get_my_starred_notebooks()
                     ]).spread(function(notebooks, stars, my_starred_notebooks) {
-                        
+
                         // notebooks:
                         _.extend(notebooks_, notebooks);
 
                         // stars:
-                        _.each(Object.keys(stars), function(notebook_id){ 
+                        _.each(Object.keys(stars), function(notebook_id){
                             notebooks_[notebook_id].stars = stars[notebook_id];
                         });
 
@@ -52,7 +52,7 @@ var discover = function () {
                         });
 
                         // fork count (temp):
-                        _.each(Object.keys(stars), function(notebook_id){ 
+                        _.each(Object.keys(stars), function(notebook_id){
                             notebooks_[notebook_id].forks = 1;
                         });
 
@@ -64,7 +64,7 @@ var discover = function () {
             } else {
                 promise = Promise.resolve(get_(notebook_ids));
             }
-           
+
             return promise;
         }
     };

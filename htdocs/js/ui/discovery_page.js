@@ -54,7 +54,7 @@ RCloud.UI.discovery_page = (function() {
 
                     if(_.isFunction(opts.change)) {
                         opts.change(metric_type);
-                    };
+                    }
                 });
 
                 window.addEventListener('popstate', function(e) {
@@ -62,7 +62,7 @@ RCloud.UI.discovery_page = (function() {
                         var metric_type = get_qs_metric();
                         set_active_link(metric_type);
                         opts.change(metric_type);
-                    };
+                    }
                 });
 
                 var qs_metric = get_qs_metric();
@@ -79,8 +79,8 @@ RCloud.UI.discovery_page = (function() {
 
         load_current_metric: function(current_metric) {
 
-            var data,
-                current_metric = current_metric || 'recently.modified';
+            var data;
+            current_metric = current_metric || 'recently.modified';
 
             return rcloud.config.get_notebooks_discover(current_metric).then(function(discover_data) {
                 data = discover_data;
@@ -93,7 +93,7 @@ RCloud.UI.discovery_page = (function() {
                         delete data.values[k];
                     });
                 }
-              
+
                 // get the detailed notebook info;
                 return discover.get_notebooks(Object.keys(data.values));
 
