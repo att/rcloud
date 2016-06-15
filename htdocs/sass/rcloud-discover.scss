@@ -17,9 +17,10 @@
 
 body {
     overflow: hidden;
-
+        
     &.loaded {
         overflow: auto;
+        background: #c7d6e2; 
     }
 }
 
@@ -90,8 +91,6 @@ progress::-webkit-progress-value {
 
 .grid-item {
     color: black;
-    border: 1px solid #ccc;
-    background-color: #fff;
     margin-top: 0;
     width: 100%;
     margin: 1%;
@@ -118,12 +117,13 @@ progress::-webkit-progress-value {
     }
 
     .header {
-        padding: 10px 70px 10px 4px;
+        padding: 10px 70px 10px 10px;
         position: relative;
+        background-color: #fff;        
 
         .star, .fork {
             color: black;
-            font-size: 18px;
+            font-size: 15px;
             text-decoration: none;
             background: transparent;
             border: none;
