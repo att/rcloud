@@ -75,7 +75,6 @@ compute.ocaps <- function(mode, authenticated) {
         render_plot = make.oc(rcloud.render.plot),
         render_formats = make.oc(rcloud.available.render.formats),
         help = make.oc(rcloud.help),
-        get_thumb = make.oc(rcloud.get.thumb),
         get_fork_count = make.oc(rcloud.get.fork.count)
         )
     if (authenticated) c(caps, list(
@@ -137,7 +136,6 @@ unauthenticated.ocaps <- function(mode, compute)
       is_notebook_visible = make.oc(rcloud.is.notebook.visible),
       signal_to_compute = make.oc(.signal.to.compute),
       help = compute$help,
-      get_thumb = compute$get_thumb,
       get_fork_count = compute$get_fork_count,
       get_users = make.oc(rcloud.get.users),
 
@@ -172,7 +170,8 @@ unauthenticated.ocaps <- function(mode, compute)
 
       # discovery
       discovery=list(
-        get_notebooks = make.oc(rcloud.config.unauthenticated.get.notebooks.discover)
+        get_notebooks = make.oc(rcloud.discovery.unauthenticated.get.notebooks),
+        get_thumb = make.oc(rcloud.discovery.unauthenticated.get.thumb)
       ),
 
       session_cell_eval = compute$unauthenticated_session_cell_eval,
@@ -228,7 +227,6 @@ authenticated.ocaps <- function(mode)
       fork_notebook = make.oc(rcloud.fork.notebook),
       port_notebooks = make.oc(rcloud.port.notebooks),
       notebook_cells = make.oc(rcloud.notebook.cells),
-      get_thumb = make.oc(rcloud.get.thumb),
       get_fork_count = make.oc(rcloud.get.fork.count),
       call_notebook = compute$call_notebook,
       get_completions = compute$get_completions,
@@ -277,7 +275,8 @@ authenticated.ocaps <- function(mode)
 
       # discovery
       discovery=list(
-        get_notebooks = make.oc(rcloud.config.get.notebooks.discover)
+        get_notebooks = make.oc(rcloud.discovery.get.notebooks),
+        get_thumb = make.oc(rcloud.discovery.get.thumb)
       ),
 
 

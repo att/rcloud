@@ -114,6 +114,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","get_multiple_notebook_star_counts"],
             ["stars","get_my_starred_notebooks"],
             ["discovery", "get_notebooks"],
+            ["discovery", "get_thumb"],
             ["session_cell_eval"],
             ["reset_session"],
             ["set_device_pixel_ratio"],
@@ -127,12 +128,10 @@ RCloud.create = function(rcloud_ocaps) {
             ["languages", "get_list"],
             ["plots", "render"],
             ["plots", "get_formats"],
-            ["get_thumb"],
             ["get_fork_count"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
-        rcloud.get_thumb = rcloud_ocaps.get_thumbAsync;
         rcloud.get_fork_count = rcloud_ocaps.get_fork_countAsync;
         rcloud.username = function() {
             return $.cookies.get('user');
@@ -302,7 +301,8 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.discovery = {
-            get_notebooks: rcloud_ocaps.discovery.get_notebooksAsync
+            get_notebooks: rcloud_ocaps.discovery.get_notebooksAsync,
+            get_thumb: rcloud_ocaps.discovery.get_thumbAsync
         };
 
         rcloud.session_cell_eval = function(context_id, filename, language, version, silent) {

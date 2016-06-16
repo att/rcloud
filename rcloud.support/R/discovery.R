@@ -1,13 +1,13 @@
-rcloud.config.get.notebooks.discover <- function(order = "recently.modified") {
+rcloud.discovery.get.notebooks <- function(order = "recently.modified") {
   switch(order,
-         recently.modified = rcloud.config.get.recently.modified.notebooks(),
-         most.popular = rcloud.config.get.most.popular.notebooks(),
+         recently.modified = rcloud.discovery.get.recently.modified.notebooks(),
+         most.popular = rcloud.discovery.get.most.popular.notebooks(),
          none = list(sort='none', values=list())
          )
 }
 
-rcloud.config.unauthenticated.get.notebooks.discover <- function(order = "recently.modified") {
-  notebooks <- rcloud.config.get.notebooks.discover(order)
+rcloud.discovery.unauthenticated.get.notebooks <- function(order = "recently.modified") {
+  notebooks <- rcloud.discovery.get.notebooks(order)
   if(length(notebooks$values) > 0) {
     list(
       sort = notebooks$sort,
@@ -17,7 +17,7 @@ rcloud.config.unauthenticated.get.notebooks.discover <- function(order = "recent
   else notebooks
 }
 
-rcloud.config.get.recently.modified.notebooks <- function() {
+rcloud.discovery.get.recently.modified.notebooks <- function() {
   keys <- unlist(lapply(usr.key(user = ".allusers", notebook = "system",
                                "config", "recently-modified", "*"), rcs.list))
   if(length(keys) == 0) {
@@ -29,7 +29,7 @@ rcloud.config.get.recently.modified.notebooks <- function() {
   list(sort='date', values=vals)
 }
 
-rcloud.config.set.recently.modified.notebook <- function(id, date) {
+rcloud.discovery.set.recently.modified.notebook <- function(id, date) {
   rcs.set(usr.key(user=".allusers", notebook="system", "config", "recently-modified", id), date)
 }
 
@@ -47,7 +47,7 @@ sum.lists <- function(a, b) {
     })
 }
 
-rcloud.config.get.most.popular.notebooks <- function() {
+rcloud.discovery.get.most.popular.notebooks <- function() {
   starkeys <- rcs.list(rcs.key(".notebook", '*', "starcount"))
   starvals <- if(length(starkeys) == 0) list() else rcs.get(starkeys, list=TRUE)
   forkeys <- rcs.list(rcs.key(".notebook", '*', "forkcount"))
@@ -57,13 +57,16 @@ rcloud.config.get.most.popular.notebooks <- function() {
   list(sort='number', values=sum.lists(starvals, forkvals))
 }
 
-rcloud.get.thumb <- function(id) {
+rcloud.discovery.get.thumb <- function(id) {
   base <- usr.key(user=".notebook", notebook=id)
   rcs.get(rcs.key(base, "thumb"))
 }
 
+rcloud.discovery.unauthenticated.get.thumb <- function(id)
+  rcloud.fail.if.unpublished(rcloud.discovery.get.thumb)
+
 # thumb_png is a location
-rcloud.set.thumb <- function(id, thumb_png){
+rcloud.discovery.set.thumb <- function(id, thumb_png){
   base <- usr.key(user=".notebook", notebook=id)
   thumb_png <- paste0("data:image/png;base64,", thumb_png)
   rcs.set(rcs.key(base, "thumb"), thumb_png)

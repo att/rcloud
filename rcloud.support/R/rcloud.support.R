@@ -343,7 +343,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
     # save thumbnail to key-value database
     if ("thumb.png.b64" %in% names(content$files))
-      rcloud.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
+      rcloud.discovery.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
 
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     aug.res <- rcloud.augment.notebook(res)
@@ -351,7 +351,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     if(is.current)
       .session$current.notebook <- aug.res
 
-    rcloud.config.set.recently.modified.notebook(id, res$content$updated_at)
+    rcloud.discovery.set.recently.modified.notebook(id, res$content$updated_at)
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
@@ -369,7 +369,7 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
         .session$current.notebook <- res
         rcloud.reset.session()
     }
-    rcloud.config.set.recently.modified.notebook(res$content$id,
+    rcloud.discovery.set.recently.modified.notebook(res$content$id,
         res$content$updated_at)
     rcloud.augment.notebook(res)
 }
@@ -408,7 +408,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                           id=src.nb$content$id))
     } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
-        rcloud.config.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
+        rcloud.discovery.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
     }
     ## inform the UI as well
     if (!is.null(group))

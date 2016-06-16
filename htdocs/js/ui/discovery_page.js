@@ -120,7 +120,7 @@ RCloud.UI.discovery_page = (function() {
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
                             var current = notebooks[notebook[0]];
-                            return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
+                            return rcloud.discovery.get_thumb(notebook[0]).then(function(thumb_src){
                                 return {
                                     id: notebook[0],
                                     time: notebook[1],
