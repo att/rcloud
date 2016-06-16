@@ -428,9 +428,22 @@ rcloud.update.fork.count <- function(id) {
   rcs.set(rcs.key('.notebook', id, 'forkcount'), count)
 }
 
-rcloud.get.fork.count <- function(id) {
+rcloud.get.fork.count <- function(id)
   rcs.get(rcs.key('.notebook', id, 'forkcount'))
+
+rcloud.unauthenticated.get.fork.count <- function(id)
+  rcloud.fail.if.unpublished(rcloud.get.fork.count)
+
+rcloud.multiple.notebook.fork.counts <- function(notebooks) {
+  if (!length(notebooks)) return(list())
+  counts <- lapply(rcs.get(rcs.key('.notebook', notebooks, 'forkcount'), list=TRUE),
+                   function(o) if(is.null(o)) 0L else as.integer(o))
+  names(counts) <- notebooks
+  counts
 }
+
+rcloud.unauthenticated.multiple.notebook.fork.counts <- function(notebooks)
+  rcloud.filter.published(rcloud.multiple.notebook.fork.counts(notebooks))
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...

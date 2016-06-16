@@ -2,6 +2,12 @@ RCloud.discovery_model = function () {
 
     var notebooks_ = {};
 
+    function clean_r(obj) {
+        delete obj.r_attributes;
+        delete obj.r_type;
+        return obj;
+    }
+
     return {
         get_notebooks : function(notebook_ids) {
 
@@ -13,38 +19,26 @@ RCloud.discovery_model = function () {
 
             if(ids.length) {
 
-                // temp code for forks:
-                promise = Promise.all(
-                    ids.map(function(id) { return rcloud.get_fork_count(id); })
-                ).then(function(forks) {
-                    forks = _.object(ids, forks);
+                promise = Promise.all([
+                    rcloud.get_multiple_notebook_infos(ids),
+                    rcloud.stars.get_multiple_notebook_star_counts(ids),
+                    rcloud.stars.get_my_starred_notebooks(),
+                    rcloud.get_multiple_fork_counts(ids)
+                ]).spread(function(notebooks, stars, my_starred_notebooks, forks) {
+                    notebooks = clean_r(notebooks);
 
-                    return Promise.all([
-                        rcloud.get_multiple_notebook_infos(ids),
-                        rcloud.stars.get_multiple_notebook_star_counts(ids),
-                        rcloud.stars.get_my_starred_notebooks()
-                    ]).spread(function(notebooks, stars, my_starred_notebooks) {
+                    // populate #stars/forks whether or not we got results
+                    Object.keys(notebooks).forEach(function(id) {
+                        notebooks[id].stars = stars[id] || 0;
+                        notebooks[id].forks = forks[id] || 0;
+                    });
 
-                        // notebooks:
-                        _.extend(notebooks_, notebooks);
+                    _.extend(notebooks_, notebooks);
 
-                        // stars:
-                        _.each(Object.keys(stars), function(notebook_id){
-                            notebooks_[notebook_id].stars = stars[notebook_id];
-                        });
-
-                        // has the current user starred it?
-                        _.each(my_starred_notebooks, function(notebook_id) {
-                            if(notebooks_[notebook_id]) {
-                                notebooks_[notebook_id].is_starred_by_me = true;
-                            }
-                        });
-
-                        // fork count (temp):
-                        _.each(Object.keys(forks), function(notebook_id){
-                            notebooks_[notebook_id].forks = forks[notebook_id] || 0;
-                        });
-
+                    // has the current user starred it?
+                    _.each(my_starred_notebooks, function(id) {
+                        if(notebooks_[id])
+                            notebooks_[id].is_starred_by_me = true;
                     });
                 });
 

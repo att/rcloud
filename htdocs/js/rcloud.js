@@ -128,11 +128,13 @@ RCloud.create = function(rcloud_ocaps) {
             ["languages", "get_list"],
             ["plots", "render"],
             ["plots", "get_formats"],
-            ["get_fork_count"]
+            ["get_fork_count"],
+            ["get_multiple_fork_counts"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
         rcloud.get_fork_count = rcloud_ocaps.get_fork_countAsync;
+        rcloud.get_multiple_fork_counts = rcloud_ocaps.get_multiple_fork_countsAsync;
         rcloud.username = function() {
             return $.cookies.get('user');
         };
