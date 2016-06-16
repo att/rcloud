@@ -280,12 +280,14 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
-
 rcloud.filter.published <- function(ids) {
-  pub <- sapply(ids, rcloud.is.notebook.published)
-  ids[pub]
+  if(is.list(ids)) {
+    ids[rcloud.filter.published(names(ids))]
+  } else {
+    pub <- sapply(ids, rcloud.is.notebook.published)
+    ids[pub]
+  }
 }
-
 
 ## this should go away antirely *and* be removed from OCAPs
 .rcloud.upload.to.notebook <- function(content, name) rcloud.upload.asset(name, content)

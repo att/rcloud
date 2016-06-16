@@ -8,13 +8,10 @@ rcloud.discovery.get.notebooks <- function(order = "recently.modified") {
 
 rcloud.discovery.unauthenticated.get.notebooks <- function(order = "recently.modified") {
   notebooks <- rcloud.discovery.get.notebooks(order)
-  if(length(notebooks$values) > 0) {
-    list(
-      sort = notebooks$sort,
-      values = notebooks$values[rcloud.filter.published(names(notebooks$values))]
-    )
-  }
-  else notebooks
+  list(
+    sort = notebooks$sort,
+    values = rcloud.filter.published(notebooks$values)
+  )
 }
 
 rcloud.discovery.get.recently.modified.notebooks <- function() {
