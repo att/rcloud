@@ -17,6 +17,7 @@ RCloud.discovery_model = function () {
                 promise = Promise.all(
                     ids.map(function(id) { return rcloud.get_fork_count(id); })
                 ).then(function(forks) {
+                    forks = _.object(ids, forks);
 
                     return Promise.all([
                         rcloud.get_multiple_notebook_infos(ids),
@@ -40,8 +41,8 @@ RCloud.discovery_model = function () {
                         });
 
                         // fork count (temp):
-                        _.each(Object.keys(stars), function(notebook_id){
-                            notebooks_[notebook_id].forks = 1;
+                        _.each(Object.keys(forks), function(notebook_id){
+                            notebooks_[notebook_id].forks = forks[notebook_id] || 0;
                         });
 
                     });
