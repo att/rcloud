@@ -91,10 +91,14 @@ RCloud.UI.session_pane = {
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
-        // bluebird will print the message for Chrome/Opera but no other browser
-        if(!window.chrome && e.message)
-            msg += "Error: " + e.message + "\n";
-        msg += e.stack;
+        if(RCloud.is_exception(e))
+            msg = RCloud.exception_message(e);
+        else {
+            // bluebird will print the message for Chrome/Opera but no other browser
+            if(!window.chrome && e.message)
+                msg += "Error: " + e.message + "\n";
+            msg += e.stack;
+        }
         console.log(msg);
         this.post_error(msg, undefined, true);
     }

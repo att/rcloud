@@ -1,6 +1,7 @@
 RCloud = {};
 
-// FIXME: what is considered an execption - and API error or also cell eval error? We can tell them apart now ...
+// FIXME: what is considered an exception - an API error or also cell eval error?
+// We can tell them apart now ...
 RCloud.is_exception = function(v) {
     // consider only OCAP errors an exception -- eventually both should use the exception mechanism, though
     return _.isObject(v) && v.r_attributes && v.r_attributes['class'] === 'OCAP-eval-error';
@@ -14,7 +15,9 @@ RCloud.is_exception = function(v) {
 RCloud.exception_message = function(v) {
     if (!RCloud.is_exception(v))
         throw new Error("Not an R exception value");
-    return v['error'];
+    var tb = v['traceback'] ? v['traceback'] : "";
+    if (tb.join) tb = tb.join("\n");
+    return v.error + "R trace:\n" + tb;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -24,9 +27,7 @@ RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join("\n");
-                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
+                throw new Error(command + ": " + RCloud.exception_message(result));
             }
             return result;
         }
