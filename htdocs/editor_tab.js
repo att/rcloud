@@ -502,7 +502,7 @@ var editor = function () {
             .spread(function(all_the_users, starred_info, gist_sources, path_tips) {
                 path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
-                notebook_info_ = starred_info.notebooks;
+                _.extend(notebook_info_, starred_info.notebooks);
                 var root_data = [];
                 var featured_tree;
 
