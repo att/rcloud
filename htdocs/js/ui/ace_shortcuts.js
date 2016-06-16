@@ -50,18 +50,6 @@ RCloud.UI.ace_shortcuts = (function() {
                 }
             }, {
                 category: 'Code Editor',
-                id: 'code_editor_disable_gotoline',
-                description: 'Disable goto line',
-                keys: { 
-                    mac: [
-                        ['command', 'l'] 
-                    ],
-                    win: [
-                        ['ctrl', 'l']
-                    ]
-                }
-            }, {
-                category: 'Code Editor',
                 id: 'code_editor_execute_selection_or_line',
                 description: 'Execute selection or line',
                 keys: { 
@@ -585,19 +573,6 @@ RCloud.UI.ace_shortcuts = (function() {
                     ],
                     win: [
                         ['ctrl', 'end']
-                    ]
-                }
-            },
-            {
-                category: 'Code Editor',
-                id: 'ace_go_to_line',
-                description: 'Go to line',
-                keys: { 
-                    mac: [
-                        ['command', 'l']
-                    ],
-                    win: [
-                        ['ctrl', 'l']
                     ]
                 }
             },
