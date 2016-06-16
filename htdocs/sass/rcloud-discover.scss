@@ -46,6 +46,12 @@ body {
     }
 }
 
+@media (max-width: 767px) {
+    body.loaded {
+        padding-top: 95px;
+    }
+}
+
 #main-div {
     margin-top: 30px;
 }
