@@ -197,7 +197,8 @@ RCloud.UI.panel_loader = (function() {
             }
 
             // alternative layout?
-            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {                if(!layoutBySize) {
+            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {                
+                if(!layoutBySize) {
 
                     var update_panel = function update_panel(panel, side, sort) {
                         panel_data_[panel].side = side;

@@ -32,7 +32,15 @@ RCloud.UI.help_frame = {
         $("#help-body").css('display', 'table-row');
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
-        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+
+        var my_selector = $("#collapse-help");
+
+        // where am I?
+        var left_or_right = my_selector.closest('.panel-group').attr('id').includes('left')
+            ? 'left' : 'right';
+
+        RCloud.UI[left_or_right + '_panel'].collapse($("#collapse-help"), false);
+        
         ui_utils.prevent_backspace($("#help-frame").contents());
     },
     display_content: function(content) {
