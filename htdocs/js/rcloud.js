@@ -125,6 +125,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "set_url"],
             ["api", "get_url"],
             ["get_notebook_by_name"],
+            ["get_multiple_notebook_infos"],
             ["languages", "get_list"],
             ["plots", "render"],
             ["plots", "get_formats"],
@@ -329,6 +330,8 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
         };
 
+        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
+
         ////////////////////////////////////////////////////////////////////////////////
         // access the runtime API in javascript as well
 
@@ -429,7 +432,6 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "set_user_option"],
             ["config", "get_alluser_option"],
             ["get_notebook_info"],
-            ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
             ["get_notebook_property"],
             ["set_notebook_property"],
@@ -618,7 +620,6 @@ RCloud.create = function(rcloud_ocaps) {
 
         // notebook cache
         rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
-        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
         rcloud.set_notebook_info = function(id, info) {
             if(!info.username) return Promise.reject(new Error("attempt to set info no username"));
             if(!info.description) return Promise.reject(new Error("attempt to set info no description"));

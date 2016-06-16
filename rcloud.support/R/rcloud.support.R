@@ -697,7 +697,10 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
 }
 
 rcloud.get.multiple.notebook.infos <- function(ids)
-    rcloud.get.notebook.info(ids, FALSE)
+  rcloud.get.notebook.info(ids, FALSE)
+
+rcloud.unauthenticated.get.multiple.notebook.infos <- function(ids)
+  rcloud.filter.published(rcloud.get.multiple.notebook.infos(ids))
 
 # notebook properties settable by non-owners
 .anyone.settable = c('source', 'username', 'description', 'last_commit');
