@@ -222,10 +222,10 @@ RCloud.UI.init = function() {
         description: 'Invert selected cells',
         keys: { 
             mac: [
-                ['ctrl', 'shift', 'i']
+                ['command', 'shift', 'i']
             ],
             win: [
-                ['command', 'shift', 'i']
+                ['ctrl', 'shift', 'i']                
             ]
         },
         modes: ['writeable'],
