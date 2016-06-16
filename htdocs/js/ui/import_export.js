@@ -133,6 +133,7 @@ RCloud.UI.import_export = (function() {
                                 fr.readAsText(file);
                             }
                             function do_import() {
+
                                 var desc = notebook_desc_content.val();
 
                                 if(notebook && desc.length > 0) {
@@ -147,6 +148,7 @@ RCloud.UI.import_export = (function() {
                                     dialog.modal('hide');
                                 }
                             }
+
                             var body = $('<div class="container"/>');
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
 
@@ -162,15 +164,27 @@ RCloud.UI.import_export = (function() {
 
                             notebook_status = $('<span />');
                             notebook_status.append(notebook_status);
+
                             var notebook_desc = $('<span>Notebook description: </span>');
                             notebook_desc_content = $('<input type="text" class="form-control-ext" size="50" id="import-notebook-description"></input>')
-                                .keypress(function(e) {
-                                    if (e.which === $.ui.keyCode.ENTER) {
+                                .on('change paste keyup', function(e) {
+
+                                    var desc_length = $(this).val().length;
+
+                                    if(desc_length) {
+                                        ui_utils.enable_bs_button(import_button);
+                                    } else {
+                                        ui_utils.disable_bs_button(import_button);
+                                    }
+
+                                    if (e.which === $.ui.keyCode.ENTER && desc_length) {
                                         do_import();
                                         return false;
                                     } 
+
                                     return true;
                                 });
+
                             notebook_desc.append(notebook_desc_content);
                             body.append($('<p/>').append(file_select))
                                 .append($('<p/>').append(notebook_status.hide()))
@@ -179,6 +193,7 @@ RCloud.UI.import_export = (function() {
                                     .on('click', function() { $(dialog).modal('hide'); });
                             import_button = $('<span class="btn btn-primary">Import</span>')
                                 .on('click', do_import);
+
                             ui_utils.disable_bs_button(import_button);
 
                             var footer = $('<div class="modal-footer"></div>')
