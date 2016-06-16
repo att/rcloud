@@ -172,7 +172,6 @@ RCloud.UI.scratchpad = (function() {
                 that.change_content("");
                 that.widget.resize();
                 that.widget.setReadOnly(true);
-                that.widget.textInput.getElement().disabled = true;
                 $('#scratchpad-editor > *').hide();
                 $('#asset-link').hide();
                 return;
@@ -196,7 +195,6 @@ RCloud.UI.scratchpad = (function() {
                 // text content: show editor
                 binary_mode_ = false;
                 that.widget.setReadOnly(false);
-                that.widget.textInput.getElement().disabled = false;
                 $('#scratchpad-binary').hide();
                 $('#scratchpad-editor').show();
                 $('#scratchpad-editor > *').show();
