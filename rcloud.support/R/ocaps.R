@@ -168,7 +168,12 @@ unauthenticated.ocaps <- function(mode, compute)
         get_notebook_starrer_list = make.oc(rcloud.notebook.starrer.list),
         get_multiple_notebook_star_counts = make.oc(rcloud.multiple.notebook.star.counts),
         get_my_starred_notebooks = make.oc(rcloud.get.my.starred.notebooks)
-        ),
+      ),
+
+      # discovery
+      discovery=list(
+        get_notebooks = make.oc(rcloud.config.unauthenticated.get.notebooks.discover)
+      ),
 
       session_cell_eval = compute$unauthenticated_session_cell_eval,
 
@@ -270,6 +275,12 @@ authenticated.ocaps <- function(mode)
         delete = make.oc(rcloud.delete.comment)
         ),
 
+      # discovery
+      discovery=list(
+        get_notebooks = make.oc(rcloud.config.get.notebooks.discover)
+      ),
+
+
       config = list(
         all_notebooks = make.oc(rcloud.config.all.notebooks),
         all_user_notebooks = make.oc(user.all.notebooks),
@@ -281,7 +292,6 @@ authenticated.ocaps <- function(mode)
         set_current_notebook = make.oc(rcloud.config.set.current.notebook),
         new_notebook_number = make.oc(rcloud.config.new.notebook.number),
         get_recent_notebooks = make.oc(rcloud.config.get.recent.notebooks),
-        get_notebooks_discover = make.oc(rcloud.config.get.notebooks.discover),
         set_recent_notebook = make.oc(rcloud.config.set.recent.notebook),
         clear_recent_notebook = make.oc(rcloud.config.clear.recent.notebook),
         get_user_option = make.oc(rcloud.config.get.user.option),

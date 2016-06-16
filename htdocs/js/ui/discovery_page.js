@@ -82,7 +82,7 @@ RCloud.UI.discovery_page = (function() {
             var data;
             current_metric = current_metric || 'recently.modified';
 
-            return rcloud.config.get_notebooks_discover(current_metric).then(function(discover_data) {
+            return rcloud.discovery.get_notebooks(current_metric).then(function(discover_data) {
                 data = discover_data;
 
                 // temporary

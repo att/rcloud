@@ -1,8 +1,20 @@
 rcloud.config.get.notebooks.discover <- function(order = "recently.modified") {
   switch(order,
          recently.modified = rcloud.config.get.recently.modified.notebooks(),
-         most.popular = rcloud.config.get.most.popular.notebooks()
+         most.popular = rcloud.config.get.most.popular.notebooks(),
+         none = list(sort='none', values=list())
          )
+}
+
+rcloud.config.unauthenticated.get.notebooks.discover <- function(order = "recently.modified") {
+  notebooks <- rcloud.config.get.notebooks.discover(order)
+  if(length(notebooks$values) > 0) {
+    list(
+      sort = notebooks$sort,
+      values = notebooks$values[rcloud.filter.published(names(notebooks$values))]
+    )
+  }
+  else notebooks
 }
 
 rcloud.config.get.recently.modified.notebooks <- function() {
