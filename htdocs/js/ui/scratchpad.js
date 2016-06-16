@@ -172,6 +172,7 @@ RCloud.UI.scratchpad = (function() {
                 that.change_content("");
                 that.widget.resize();
                 that.widget.setReadOnly(true);
+                that.widget.textInput.getElement().disabled = true;
                 $('#scratchpad-editor > *').hide();
                 $('#asset-link').hide();
                 return;
@@ -183,7 +184,7 @@ RCloud.UI.scratchpad = (function() {
                 binary_mode_ = true;
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
-                // PDF seems not to be supported properly by browers
+                // PDF seems not to be supported properly by browsers
                 var sbin = $('#scratchpad-binary');
                 if(/\.pdf$/i.test(this.current_model.filename()))
                     sbin.html('<p>PDF preview not supported</p>');
@@ -195,6 +196,7 @@ RCloud.UI.scratchpad = (function() {
                 // text content: show editor
                 binary_mode_ = false;
                 that.widget.setReadOnly(false);
+                that.widget.textInput.getElement().disabled = false;
                 $('#scratchpad-binary').hide();
                 $('#scratchpad-editor').show();
                 $('#scratchpad-editor > *').show();
@@ -212,6 +214,11 @@ RCloud.UI.scratchpad = (function() {
                 that.language_updated();
                 that.widget.resize();
                 that.widget.focus();
+            }
+
+            // if it's readonly, 
+            if(shell.notebook.model.read_only()) {
+                ui_utils.set_ace_readonly(this.widget, true);
             }
         },
         // this behaves like cell_view's update_model
