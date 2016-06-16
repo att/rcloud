@@ -1364,8 +1364,6 @@ var editor = function () {
         find_next_copy_name: function(name) {
             return find_next_copy_name(username_, name);
         },
-
-        load_everything: load_everything,
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
             version = version || null;
             var that = this;
