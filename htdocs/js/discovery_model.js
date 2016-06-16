@@ -5,18 +5,8 @@ RCloud.discovery_model = function () {
     return {
         get_notebooks : function(notebook_ids) {
 
-            var promise = Promise.resolve();
+            var promise;
             notebook_ids = _.filter(notebook_ids, function(id) { return id.length && id[0] !== 'r'; });
-
-            var get_ = function(notebook_ids) {
-                var notebooks = {};
-
-                _.each(notebook_ids, function(id) {
-                    notebooks[id] = notebooks_[id];
-                });
-
-                return notebooks;
-            };
 
             // get only the items that we don't currently have:
             var ids = _.difference(notebook_ids, Object.keys(notebooks_));
@@ -26,9 +16,7 @@ RCloud.discovery_model = function () {
                 // temp code for forks:
                 promise = Promise.all(
                     ids.map(function(id) { return rcloud.get_fork_count(id); })
-                );
-
-                promise = promise.then(function(forks) {
+                ).then(function(forks) {
 
                     return Promise.all([
                         rcloud.get_multiple_notebook_infos(ids),
@@ -56,16 +44,16 @@ RCloud.discovery_model = function () {
                             notebooks_[notebook_id].forks = 1;
                         });
 
-                    }).then(function() {
-                        return Promise.resolve(get_(notebook_ids));
                     });
                 });
 
             } else {
-                promise = Promise.resolve(get_(notebook_ids));
+                promise = Promise.resolve();
             }
 
-            return promise;
+            return promise.then(function() {
+                return _.pick(notebooks_, notebook_ids);
+            });
         }
     };
 }();
