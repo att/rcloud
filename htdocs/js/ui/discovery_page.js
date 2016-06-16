@@ -120,6 +120,14 @@ RCloud.UI.discovery_page = (function() {
                     });
                 }
 
+                var tidy_path = function(notebook_description) {
+                    if(notebook_description.lastIndexOf('/') == -1) {
+                        return notebook_description;
+                    } else {
+                        return notebook_description.substring(notebook_description.lastIndexOf('/') + 1)
+                    }
+                };
+
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
                             var current = notebooks[notebook[0]];
@@ -127,14 +135,14 @@ RCloud.UI.discovery_page = (function() {
                                 return {
                                     id: notebook[0],
                                     time: notebook[1],
-                                    description: current.description,
+                                    description: tidy_path(current.description),
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     page: anonymous ? 'view.html' : 'edit.html',
                                     username: current.username,
                                     stars: current.stars,
                                     star_icon: !_.isUndefined(current.is_starred_by_me) && current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
-                                    image_src: thumb_src || missing_img,
-                                    forks: current.forks
+                                    forks: current.forks,                                    
+                                    image_src: thumb_src || missing_img
                                 };
                             });
                         })
