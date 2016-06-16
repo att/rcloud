@@ -9,7 +9,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Create cell and execute code',
                 keys: { 
                     win_mac: [
-                        ['enter'], ['alt', 'return']
+                        ['enter'], ['alt', 'enter']
                     ]
                 }
             }, {
@@ -36,7 +36,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Execute code',
                 keys: { 
                     win_mac: [
-                        ['alt', 'return']
+                        ['alt', 'enter']
                     ]
                 }
             }, {
@@ -54,10 +54,10 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Execute selection or line',
                 keys: { 
                     mac: [
-                        ['command', 'return'] 
+                        ['command', 'enter'] 
                     ],
                     win: [
-                        ['ctrl', 'return']
+                        ['ctrl', 'enter']
                     ]
                 }
             }, {                                                        // !
