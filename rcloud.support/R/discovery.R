@@ -54,16 +54,14 @@ rcloud.discovery.get.most.popular.notebooks <- function() {
   list(sort='number', values=sum.lists(starvals, forkvals))
 }
 
-rcloud.discovery.get.thumb <- function(id) {
-  base <- usr.key(user=".notebook", notebook=id)
-  rcs.get(rcs.key(base, "thumb"))
-}
+rcloud.discovery.get.thumb <- function(id)
+  rcs.get(usr.key(user=".notebook", notebook=id, 'thumb'))
 
 rcloud.discovery.unauthenticated.get.thumb <- function(id)
-  rcloud.fail.if.unpublished(rcloud.discovery.get.thumb)
+  rcloud.fail.if.unpublished(rcloud.discovery.get.thumb)(id)
 
 # thumb_png is a location
-rcloud.discovery.set.thumb <- function(id, thumb_png){
+rcloud.discovery.set.thumb <- function(id, thumb_png) {
   base <- usr.key(user=".notebook", notebook=id)
   thumb_png <- paste0("data:image/png;base64,", thumb_png)
   rcs.set(rcs.key(base, "thumb"), thumb_png)

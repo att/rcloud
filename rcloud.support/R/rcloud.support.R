@@ -431,7 +431,7 @@ rcloud.update.fork.count <- function(id) {
 rcloud.get.fork.count <- function(id)
   rcs.get(rcs.key('.notebook', id, 'forkcount'))
 
-rcloud.unauthenticated.get.fork.count <- function(id)
+rcloud.unauthenticated.get.fork.count <-
   rcloud.fail.if.unpublished(rcloud.get.fork.count)
 
 rcloud.multiple.notebook.fork.counts <- function(notebooks) {

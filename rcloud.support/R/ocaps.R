@@ -159,6 +159,7 @@ unauthenticated.ocaps <- function(mode, compute)
         ),
 
       # stars
+      # FIXME: these need unauthenticated versions
       stars=list(
         star_notebook = make.oc(rcloud.star.notebook),
         unstar_notebook = make.oc(rcloud.unstar.notebook),

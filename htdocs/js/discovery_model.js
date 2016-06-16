@@ -9,7 +9,7 @@ RCloud.discovery_model = function () {
     }
 
     return {
-        get_notebooks : function(notebook_ids) {
+        get_notebooks : function(anonymous, notebook_ids) {
 
             var promise;
             notebook_ids = _.filter(notebook_ids, function(id) { return id.length && id[0] !== 'r'; });
@@ -22,7 +22,7 @@ RCloud.discovery_model = function () {
                 promise = Promise.all([
                     rcloud.get_multiple_notebook_infos(ids),
                     rcloud.stars.get_multiple_notebook_star_counts(ids),
-                    rcloud.stars.get_my_starred_notebooks(),
+                    anonymous ? Promise.resolve([]) : rcloud.stars.get_my_starred_notebooks(),
                     rcloud.get_multiple_fork_counts(ids)
                 ]).spread(function(notebooks, stars, my_starred_notebooks, forks) {
                     notebooks = clean_r(notebooks);

@@ -82,6 +82,8 @@ RCloud.UI.discovery_page = (function() {
             var data;
             current_metric = current_metric || 'recently.modified';
 
+            var anonymous = !rcloud.username();
+
             return rcloud.discovery.get_notebooks(current_metric).then(function(discover_data) {
                 data = discover_data;
 
@@ -95,7 +97,7 @@ RCloud.UI.discovery_page = (function() {
                 }
 
                 // get the detailed notebook info;
-                return RCloud.discovery_model.get_notebooks(Object.keys(data.values));
+                return RCloud.discovery_model.get_notebooks(anonymous, Object.keys(data.values));
 
             }).then(function(notebooks) {
 
@@ -126,6 +128,7 @@ RCloud.UI.discovery_page = (function() {
                                     time: notebook[1],
                                     description: current.description,
                                     last_commit: new Date(current.last_commit).toDateString(),
+                                    page: anonymous ? 'view.html' : 'edit.html',
                                     username: current.username,
                                     stars: current.stars,
                                     star_icon: !_.isUndefined(current.is_starred_by_me) && current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
