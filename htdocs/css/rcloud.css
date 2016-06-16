@@ -9586,41 +9586,39 @@ body .modal-dialog.full {
   background-color: #f2dede; }
 
 #shortcut-dialog .modal-dialog {
-  width: 60%;
-  max-width: 800px; }
-
-#shortcut-dialog .modal-body {
-  padding-bottom: 40px; }
-
-#shortcut-dialog .category {
-  width: 360px;
-  float: left; }
-
-.category kbd {
-  display: inline-block;
-  padding: 3px 5px;
-  font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
-  line-height: 10px;
-  color: #555;
-  vertical-align: middle;
-  background-color: #fcfcfc;
-  border: solid 1px #ccc;
-  border-bottom-color: #bbb;
-  border-radius: 3px;
-  box-shadow: inset 0 -1px 0 #bbb; }
-
-.category table {
-  width: 100%; }
-
-.category td {
-  padding: 3px 0; }
-
-.shortcut {
-  font-family: monospace;
-  padding: 5px 8px;
-  border-radius: 5px;
-  background: #666;
-  color: white; }
+  width: 95%;
+  max-width: 1040px; }
+  #shortcut-dialog .modal-dialog .modal-body {
+    padding-bottom: 40px; }
+    #shortcut-dialog .modal-dialog .modal-body::-webkit-scrollbar {
+      -webkit-appearance: none;
+      width: 7px; }
+    #shortcut-dialog .modal-dialog .modal-body::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background-color: rgba(0, 0, 0, 0.5);
+      -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, 0.5); }
+  #shortcut-dialog .modal-dialog .category {
+    width: 450px;
+    float: left;
+    margin-right: 20px; }
+    #shortcut-dialog .modal-dialog .category kbd {
+      display: inline-block;
+      padding: 3px 5px;
+      font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      line-height: 10px;
+      color: #555;
+      vertical-align: middle;
+      background-color: #fcfcfc;
+      border: solid 1px #ccc;
+      border-bottom-color: #bbb;
+      border-radius: 3px;
+      box-shadow: inset 0 -1px 0 #bbb; }
+    #shortcut-dialog .modal-dialog .category table {
+      width: 100%; }
+      #shortcut-dialog .modal-dialog .category table td {
+        padding: 3px 0; }
+        #shortcut-dialog .modal-dialog .category table td:first-child {
+          width: 45%; }
 
 @media print {
   * {

@@ -109,7 +109,8 @@ RClient = {
 
 RCloud = {};
 
-// FIXME: what is considered an execption - and API error or also cell eval error? We can tell them apart now ...
+// FIXME: what is considered an exception - an API error or also cell eval error?
+// We can tell them apart now ...
 RCloud.is_exception = function(v) {
     // consider only OCAP errors an exception -- eventually both should use the exception mechanism, though
     return _.isObject(v) && v.r_attributes && v.r_attributes['class'] === 'OCAP-eval-error';
@@ -123,7 +124,9 @@ RCloud.is_exception = function(v) {
 RCloud.exception_message = function(v) {
     if (!RCloud.is_exception(v))
         throw new Error("Not an R exception value");
-    return v['error'];
+    var tb = v['traceback'] ? v['traceback'] : "";
+    if (tb.join) tb = tb.join("\n");
+    return v.error + "R trace:\n" + tb;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -133,9 +136,7 @@ RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join("\n");
-                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
+                throw new Error(command + ": " + RCloud.exception_message(result));
             }
             return result;
         }
@@ -221,6 +222,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","get_notebook_starrer_list"],
             ["stars","get_multiple_notebook_star_counts"],
             ["stars","get_my_starred_notebooks"],
+            ["discovery", "get_notebooks"],
+            ["discovery", "get_thumb"],
             ["session_cell_eval"],
             ["reset_session"],
             ["set_device_pixel_ratio"],
@@ -231,16 +234,17 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "set_url"],
             ["api", "get_url"],
             ["get_notebook_by_name"],
+            ["get_multiple_notebook_infos"],
             ["languages", "get_list"],
             ["plots", "render"],
             ["plots", "get_formats"],
-            ["get_thumb"],
-            ["get_fork_count"]
+            ["get_fork_count"],
+            ["get_multiple_fork_counts"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
-        rcloud.get_thumb = rcloud_ocaps.get_thumbAsync;
         rcloud.get_fork_count = rcloud_ocaps.get_fork_countAsync;
+        rcloud.get_multiple_fork_counts = rcloud_ocaps.get_multiple_fork_countsAsync;
         rcloud.username = function() {
             return $.cookies.get('user');
         };
@@ -408,6 +412,11 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
         };
 
+        rcloud.discovery = {
+            get_notebooks: rcloud_ocaps.discovery.get_notebooksAsync,
+            get_thumb: rcloud_ocaps.discovery.get_thumbAsync
+        };
+
         rcloud.session_cell_eval = function(context_id, filename, language, version, silent) {
             return rcloud_ocaps.session_cell_evalAsync(context_id, filename, language, version, silent);
         };
@@ -429,6 +438,8 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.get_notebook_by_name = function(user, path) {
             return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
         };
+
+        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
 
         ////////////////////////////////////////////////////////////////////////////////
         // access the runtime API in javascript as well
@@ -524,14 +535,12 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "set_current_notebook"],
             ["config", "new_notebook_number"],
             ["config", "get_recent_notebooks"],
-            ["config", "get_notebooks_discover"],
             ["config", "set_recent_notebook"],
             ["config", "clear_recent_notebook"],
             ["config", "get_user_option"],
             ["config", "set_user_option"],
             ["config", "get_alluser_option"],
             ["get_notebook_info"],
-            ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
             ["get_notebook_property"],
             ["set_notebook_property"],
@@ -711,7 +720,6 @@ RCloud.create = function(rcloud_ocaps) {
             set_current_notebook: rcloud_ocaps.config.set_current_notebookAsync,
             new_notebook_number: rcloud_ocaps.config.new_notebook_numberAsync,
             get_recent_notebooks: rcloud_ocaps.config.get_recent_notebooksAsync,
-            get_notebooks_discover: rcloud_ocaps.config.get_notebooks_discoverAsync,
             set_recent_notebook: rcloud_ocaps.config.set_recent_notebookAsync,
             clear_recent_notebook: rcloud_ocaps.config.clear_recent_notebookAsync,
             get_user_option: rcloud_ocaps.config.get_user_optionAsync,
@@ -721,7 +729,6 @@ RCloud.create = function(rcloud_ocaps) {
 
         // notebook cache
         rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
-        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
         rcloud.set_notebook_info = function(id, info) {
             if(!info.username) return Promise.reject(new Error("attempt to set info no username"));
             if(!info.description) return Promise.reject(new Error("attempt to set info no description"));
@@ -1454,6 +1461,9 @@ RCloud.utils.promise_sequence = function(collection, operator) {
         0);
 };
 
+RCloud.utils.get_url_parameter = function(name) {
+    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+}
 
 /*
  RCloud.extension is the root of all extension mechanisms in RCloud.
@@ -1975,6 +1985,8 @@ function create_cell_html_view(language, cell_model) {
                 is_range : e.shiftKey,
                 is_exclusive: !e.ctrlKey && !e.shiftKey
             });
+
+            $(':focus').blur();
 
         }).children().click(function(e) {
             var target = $(e.target);
@@ -2846,11 +2858,6 @@ function create_cell_html_view(language, cell_model) {
 
             }
             return this;
-        },
-        blur_cell: function() {
-            if(ace_widget_) {
-                ace_widget_.blur();
-            }
         }
     });
 
@@ -2917,15 +2924,9 @@ Notebook.Cell.create_model = function(content, language)
 
             this.notify_views(function(view) {
                 view.selected_updated();
-                view.blur_cell();
             });
 
-            return is_selected_;  
-        },
-        blur_cell: function() {
-            this.notify_views(function(view) {
-                view.blur_cell();
-            });
+            return is_selected_;
         },
         toggle_cell: function() {
             is_selected_ = !is_selected_;
@@ -2934,7 +2935,7 @@ Notebook.Cell.create_model = function(content, language)
                 view.selected_updated();
             });
 
-            return is_selected_;  
+            return is_selected_;
         },
         is_selected: function() {
             return is_selected_;
@@ -3451,7 +3452,7 @@ Notebook.create_model = function()
             }
 
             RCloud.UI.selection_bar.update(this.cells);
-            
+
             return changes;
         },
         remove_selected_cells: function() {
@@ -3549,7 +3550,7 @@ Notebook.create_model = function()
                 })
                 .each(function(cell) {
                     cell.deselect_cell();
-                }); 
+                });
             };
 
             var select_range = function(lower, upper) {
@@ -3574,10 +3575,6 @@ Notebook.create_model = function()
 
                 select_range(Math.min(start, end), Math.max(start, end));
             }
-
-            _.each(this.cells, function(cell) {
-                cell.blur_cell();
-            });
 
             RCloud.UI.selection_bar.update(this.cells);
         },
@@ -4227,6 +4224,61 @@ Notebook.show_r_source = function(selection)
 Notebook.is_binary_content = function(content) {
     return !_.isUndefined(content.byteLength) && !_.isUndefined(content.slice);
 };
+
+RCloud.discovery_model = function () {
+
+    var notebooks_ = {};
+
+    function clean_r(obj) {
+        delete obj.r_attributes;
+        delete obj.r_type;
+        return obj;
+    }
+
+    return {
+        get_notebooks : function(anonymous, notebook_ids) {
+
+            var promise;
+            notebook_ids = _.filter(notebook_ids, function(id) { return id.length && id[0] !== 'r'; });
+
+            // get only the items that we don't currently have:
+            var ids = _.difference(notebook_ids, Object.keys(notebooks_));
+
+            if(ids.length) {
+
+                promise = Promise.all([
+                    rcloud.get_multiple_notebook_infos(ids),
+                    rcloud.stars.get_multiple_notebook_star_counts(ids),
+                    anonymous ? Promise.resolve([]) : rcloud.stars.get_my_starred_notebooks(),
+                    rcloud.get_multiple_fork_counts(ids)
+                ]).spread(function(notebooks, stars, my_starred_notebooks, forks) {
+                    notebooks = clean_r(notebooks);
+
+                    // populate #stars/forks whether or not we got results
+                    Object.keys(notebooks).forEach(function(id) {
+                        notebooks[id].stars = stars[id] || 0;
+                        notebooks[id].forks = forks[id] || 0;
+                    });
+
+                    _.extend(notebooks_, notebooks);
+
+                    // has the current user starred it?
+                    _.each(my_starred_notebooks, function(id) {
+                        if(notebooks_[id])
+                            notebooks_[id].is_starred_by_me = true;
+                    });
+                });
+
+            } else {
+                promise = Promise.resolve();
+            }
+
+            return promise.then(function() {
+                return _.pick(notebooks_, notebook_ids);
+            });
+        }
+    };
+}();
 
 Notebook.part_name = function(id, language) {
     // yuk
@@ -6062,13 +6114,19 @@ RCloud.UI.find_replace = (function() {
                 generate_matches();
             });
 
-            find_form_.on('focusout', function() {
-                has_focus_ = false;
-                clear_highlights();
+            find_form_.on('focusout', function(e) {
+                setTimeout(function() {
+                    if($(document.activeElement).closest(find_form_).length === 0) {
+                        has_focus_ = false;
+                        clear_highlights();
+                    }
+                }, 0);
             });
 
             find_form_.on('focusin', function(e) {
                 if(!has_focus_) {
+                    // save so that any new content since last save is matched:
+                    shell.save_notebook();
                     generate_matches(); 
                 }
 
@@ -6412,7 +6470,9 @@ RCloud.UI.shortcut_manager = (function() {
     };
 
     function is_active(shortcut) {
-        return shortcut.enabled && _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable');
+        return shortcut.enabled && 
+            _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable') &&
+            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit');
     }
 
     function convert_extension(shortcuts) {
@@ -6432,6 +6492,7 @@ RCloud.UI.shortcut_manager = (function() {
             var shortcut_to_add = _.defaults(shortcut, {
                 category: 'General',
                 modes: ['writeable', 'readonly'],
+                on_page: ['view', 'edit'],
                 ignore_clash: false,
                 enable_in_dialogs: false,
                 enabled: true
@@ -6615,7 +6676,7 @@ RCloud.UI.shortcut_manager = (function() {
 
 RCloud.UI.shortcut_dialog = (function() {
 
-    var content_, shortcuts_by_category_ = [], shortcut_dialog_;
+    var shortcuts_by_category_ = [];
 
     var result = {
 
@@ -6623,64 +6684,65 @@ RCloud.UI.shortcut_dialog = (function() {
 
             $('#loading-animation').hide();
 
-            if(!shortcut_dialog_) {
-                shortcut_dialog_ = $('<div id="shortcut-dialog" class="modal fade" />')
-                    .append($('<div class="modal-dialog" />')
-                            .append($('<div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)" />')
-                                    .append($('<div class="modal-header" style="padding-left:20px!important;padding-right:20px!important" />')
-                                        .append($('<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'))
-                                        .append($('<h4 class="modal-title" style="font-size: 20px">Keyboard shortcuts</h4>')))
-                                    .append($('<div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;" />'))
-                                    /*.append($('<div class="modal-footer" />')
-                                        .append($('<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>')))*/));
+            var template_data = [];
 
-                $("body").append(shortcut_dialog_);
-            }
-
-            shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
+            if(shortcuts_by_category_) {
+                shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
                 'Code Editor',
                 'Code Prompt',
                 'Cell Management',
                 'Notebook Management',
                 'General']);
-
-            content_ = '';
+            }
 
             _.each(shortcuts_by_category_, function(group) {
 
-                content_ += '<div class="category">';
-                content_ += '<h3>' + group.category + '</h3>';
-                content_ += '<table>';
+                var key_group = {
+                    name: group.category,
+                    shortcuts: []
+                };
 
                 _.each(group.shortcuts, function(shortcut) {
 
-                    // if(!shortcut.keys.hasOwnProperty('win') && !shortcut.keys.hasOwnProperty('mac') && !shortcut.keys.hasOwnProperty('win_mac')) {
-                    //     console.error('invalid shortcut: ', shortcut);
-                    // }
-
-                    var keys_markup = [];
+                    var current_shortcut = {
+                            description : shortcut.description,
+                            keys: []
+                        };
 
                     _.each(shortcut.bind_keys, function(keys) {
-                        keys_markup.push('<kbd>' + keys.join(' ') + '</kbd>');
+
+                        keys = _.map(keys, function(key) { 
+                            
+                            var replacement =  _.findWhere([
+                                { initial: 'option', replace_with: 'opt' },
+                                { initial: 'command', replace_with: 'cmd' }
+                            ], { initial : key });
+                          
+                            return replacement ? replacement.replace_with : key;
+                        });
+
+                        current_shortcut.keys.push(keys.join(' '));
                     });
 
-                    content_ += '<tr>';
-                    content_ += '<td>';
-                    content_ += keys_markup.join(' / ');
-                    content_ += '</td>';
-                    content_ += '<td>';
-                    content_ += shortcut.description;
-                    content_ += '</td>';
-                    content_ += '</tr>';
+                    key_group.shortcuts.push(current_shortcut);
+
                 });
 
-                content_ += '</table>';
-                content_ += '</div>';
+                template_data.push(key_group);
             });
 
-            $('#shortcut-dialog .modal-body').html(content_);
+            // generate dynamic content:
+            var content_template = _.template(
+                $("#shortcut_dialog_content_template").html()
+            );
 
-            shortcut_dialog_.modal({
+            var dialog_content = content_template({
+                categories : template_data
+            });
+
+            $('#shortcut-content').html(dialog_content);
+       
+            $('#shortcut-dialog').modal({
                 keyboard: false
             });
         }
@@ -8130,7 +8192,7 @@ RCloud.UI.init = function() {
                 ['ctrl', 'z']
             ]
         },
-        modes: ['writeable'],
+        on_page: ['edit'],
         action: function() { editor.step_history_undo(); }
     }, {
         category: 'Notebook Management',
@@ -8144,7 +8206,7 @@ RCloud.UI.init = function() {
                 ['ctrl', 'y']
             ]
         },        
-        modes: ['writeable'],
+        on_page: ['edit'],
         action: function() { editor.step_history_redo(); }
     }, {
         category: 'Notebook Management',
@@ -8158,8 +8220,9 @@ RCloud.UI.init = function() {
                 ['ctrl', 'e']
             ]
         },
+        on_page: ['edit'],
         action: function() { 
-            if(shell.notebook.controller.is_mine() && !shell.is_view_mode()) {
+            if(shell.notebook.controller.is_mine()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
@@ -9074,10 +9137,11 @@ RCloud.UI.notebook_commands = (function() {
                     },
                     create: function(node) {
                         var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
-                        var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
-                        var orig_name_regex = new RegExp('^' + orig_name);
                         fork.click(function(e) {
-                            editor.fork_folder(node, orig_name_regex, folder_name);
+                            var orig_name = node.full_name, orig_name_regex = new RegExp('^' + orig_name);
+                            editor.find_next_copy_name(orig_name).then(function(folder_name) {
+                                editor.fork_folder(node, orig_name_regex, folder_name);
+                            });
                         });
                         return fork;
                     }
@@ -10606,10 +10670,14 @@ RCloud.UI.session_pane = {
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
-        // bluebird will print the message for Chrome/Opera but no other browser
-        if(!window.chrome && e.message)
-            msg += "Error: " + e.message + "\n";
-        msg += e.stack;
+        if(RCloud.is_exception(e))
+            msg = RCloud.exception_message(e);
+        else {
+            // bluebird will print the message for Chrome/Opera but no other browser
+            if(!window.chrome && e.message)
+                msg += "Error: " + e.message + "\n";
+            msg += e.stack;
+        }
         console.log(msg);
         this.post_error(msg, undefined, true);
     }
@@ -11267,53 +11335,147 @@ RCloud.UI.notebook_protection = (function() {
 })();
 
 RCloud.UI.discovery_page = (function() {
+
     var Masonry_;
+
+    var metric_handler = function() {
+
+        var $el_ = $('#metric-type');
+        var types_ = ['recently.modified', 'most.popular'];
+        var default_type_ = types_[0];
+
+        function set_active_link(metric_type) {
+            $el_.find('li').removeClass('active');
+            $el_.find('a[data-type="' + metric_type + '"]').parent().addClass('active');
+        }
+
+        function get_links() {
+            return $el_.find('a');
+        }
+
+        function initialise_links() {
+            _.each(get_links(), function(link) {
+                // give the links proper URLs
+                $(link).attr('href', '?metric=' + $(link).attr('data-type'));
+            });
+        }
+
+        var updateQueryStringParam = function (key, value) {
+            var baseUrl = [location.protocol, '//', location.host, location.pathname].join(''),
+                param = '?' + key + '=' + value;
+
+            window.history.pushState({ path : baseUrl + param  }, '', baseUrl + param);
+        };
+
+        var get_qs_metric = function() {
+            var qs_metric = RCloud.utils.get_url_parameter('metric');
+
+            return types_.indexOf(qs_metric) > -1 ? qs_metric : default_type_;
+        };
+
+        return {
+            init: function(opts) {
+
+                initialise_links();
+
+                get_links().click(function(e) {
+
+                    e.preventDefault();
+
+                    var metric_type = $(this).attr('data-type');
+
+                    set_active_link(metric_type);
+
+                    updateQueryStringParam('metric', metric_type);
+
+                    if(_.isFunction(opts.change)) {
+                        opts.change(metric_type);
+                    }
+                });
+
+                window.addEventListener('popstate', function(e) {
+                    if(_.isFunction(opts.change)) {
+                        var metric_type = get_qs_metric();
+                        set_active_link(metric_type);
+                        opts.change(metric_type);
+                    }
+                });
+
+                var qs_metric = get_qs_metric();
+                set_active_link(qs_metric);
+
+                if(_.isFunction(opts.oncomplete)) {
+                    opts.oncomplete(qs_metric);
+                }
+            }
+        };
+    };
+
     var discovery = {
-        load_current_metric: function() {
-            var current_metric = $('input[name=metric]:checked').val();
-            return rcloud.config.get_notebooks_discover(current_metric).then(function(data) {
+
+        load_current_metric: function(current_metric) {
+
+            var data;
+            current_metric = current_metric || 'recently.modified';
+
+            var anonymous = !rcloud.username();
+
+            return rcloud.discovery.get_notebooks(current_metric).then(function(discover_data) {
+                data = discover_data;
+
+                // temporary
+                if(Object.keys(data.values).length > 100) {
+                    var keys_to_delete = Object.keys(data.values).slice(100);
+
+                    _.each(keys_to_delete, function(k) {
+                        delete data.values[k];
+                    });
+                }
+
+                // get the detailed notebook info;
+                return RCloud.discovery_model.get_notebooks(anonymous, Object.keys(data.values));
+
+            }).then(function(notebooks) {
+
                 var notebook_pairs = _.chain(data.values)
                         .pairs()
                         .filter(function(kv) {
                             return kv[0] != 'r_attributes' && kv[0] != 'r_type' &&
-                                !_.isEmpty(editor.get_notebook_info(kv[0]));
+                                !_.isEmpty(notebooks[kv[0]]);
                         });
+
                 // assumes we always want descending, among other things
-                switch(data.sort) {
-                case 'date':
+                if(data.sort === 'date') {
                     notebook_pairs = notebook_pairs
                         .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                         .sortBy(function(kv) { return kv[1] * -1; });
-                    break;
-                case 'number':
+                } else if(data.sort === 'number') {
                     notebook_pairs = notebook_pairs.sortBy(function(kv) {
                         return kv[1] * -1;
                     });
-                    break;
                 }
-                notebook_pairs = notebook_pairs.first(20); // bug #2026
+
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
-                            var current = editor.get_notebook_info(notebook[0]);
-                            return rcloud.get_thumb(notebook[0]).then(function(thumb_src){
+                            var current = notebooks[notebook[0]];
+                            return rcloud.discovery.get_thumb(notebook[0]).then(function(thumb_src){
                                 return {
                                     id: notebook[0],
                                     time: notebook[1],
                                     description: current.description,
                                     last_commit: new Date(current.last_commit).toDateString(),
+                                    page: anonymous ? 'view.html' : 'edit.html',
                                     username: current.username,
-                                    num_stars: editor.num_stars(current[0]),
-                                    image_src: "data:image/png;base64," + thumb_src,
-                                    fork_count: editor.fork_count(current[0])
+                                    stars: current.stars,
+                                    star_icon: !_.isUndefined(current.is_starred_by_me) && current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
+                                    image_src: thumb_src || './img/missing.png',
+                                    forks: current.forks
                                 };
                             });
                         })
                         .value();
 
-                Promise.all(notebook_data_promises).then(function(recent_notebooks) {
-                    $('progress').attr({
-                        max: recent_notebooks.length
-                    });
+                return Promise.all(notebook_data_promises).then(function(recent_notebooks) {
 
                     var template = _.template(
                         $("#item_template").html()
@@ -11333,18 +11495,11 @@ RCloud.UI.discovery_page = (function() {
                                     $('body').addClass('loaded');
                                 });
                             });
-                        })
-                        .progress(function(imgLoad, image) {
-
-                            var new_value = +$('progress').attr('value') + 1;
-
-                            $('progress').attr({
-                                value: new_value
-                            });
                         });
                 });
             });
         },
+
         init: function() {
             return new Promise(function(resolve, reject) {
                 require([
@@ -11355,15 +11510,22 @@ RCloud.UI.discovery_page = (function() {
 
                     Masonry_ = Masonry;
 
-                    $('input[name=metric]').on('change', function() {
-                        discovery.load_current_metric();
+                    var metric = new metric_handler();
+
+                    metric.init({
+                        change: function(metric) {
+                            discovery.load_current_metric(metric);
+                        },
+                        oncomplete: function(metric) {
+                            resolve(discovery.load_current_metric(metric));
+                        }
                     });
 
-                    resolve(discovery.load_current_metric());
                 }, reject);
             });
         }
     };
+
     return discovery;
 })();
 
