@@ -229,7 +229,10 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable'],
-        action: function() { shell.notebook.controller.invert_selected_cells(); }
+        action: function() {
+            shell.notebook.controller.invert_selected_cells();
+            $(':focus').blur();
+        }
     }, {
         category: 'Cell Management',
         id: 'crop_cells',
