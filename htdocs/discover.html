@@ -40,7 +40,10 @@
         <a href="<%=notebook.page%>?notebook=<%=notebook.id%>">
           <div class="header">
             <h1><%=notebook.description%></h1>
-            <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
+            <% if(notebook.folder_path) { %>
+                <h3><%=notebook.folder_path%></span>
+            <% } %>
+            <h2><%=notebook.last_commit%> by <%=notebook.username%></h2>
             <div class="buttons">
               <button class="fork" title="Fork" type="button" class="btn btn-link navbar-btn">
                 <i class="icon-code-fork"></i><sub><%=notebook.forks%></sub>
