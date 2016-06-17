@@ -48,7 +48,7 @@ RCloud.UI.navbar = (function() {
             result.highlight = function(whether) {
                 $(result.control)
                     .find('.button-highlight')
-                    .animate({opacity: whether ? 1 : 0}, 250);
+                    .animate({opacity: whether ? 1 : 0}, {duration: 250, queue: false});
                 return this;
             };
             return result;
