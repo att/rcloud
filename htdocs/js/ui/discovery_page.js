@@ -119,22 +119,30 @@ RCloud.UI.discovery_page = (function() {
                     });
                 }
 
-                var tidy_path = function(notebook_description) {
-                    if(notebook_description.lastIndexOf('/') == -1) {
-                        return notebook_description;
+                var get_path_and_name = function(notebook_description) {
+                    if(!notebook_description || notebook_description.lastIndexOf('/') == -1) {
+                        return {
+                            path: undefined,
+                            name: notebook_description
+                        };
                     } else {
-                        return notebook_description.substring(notebook_description.lastIndexOf('/') + 1)
+                        return {
+                            path: notebook_description.substring(0, notebook_description.lastIndexOf('/')),
+                            name: notebook_description.substring(notebook_description.lastIndexOf('/') + 1)
+                        }
                     }
-                };
+                }
 
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
                             var current = notebooks[notebook[0]];
+                            var desc = get_path_and_name(current.description);
                             return rcloud.discovery.get_thumb(notebook[0]).then(function(thumb_src){
                                 return {
                                     id: notebook[0],
                                     time: notebook[1],
-                                    description: tidy_path(current.description),
+                                    description: desc.name,
+                                    folder_path: desc.path,
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     page: anonymous ? 'view.html' : 'edit.html',
                                     username: current.username,
