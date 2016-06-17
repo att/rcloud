@@ -101,9 +101,9 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'notebook_cell',
         description: 'Saves the current notebook',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 's'] 
+                ['command', 's']
             ],
             win: [
                 ['ctrl', 's']
@@ -115,9 +115,9 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'select_all',
         description: 'Select all',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 'a'] 
+                ['command', 'a']
             ],
             win: [
                 ['ctrl', 'a']
@@ -136,15 +136,15 @@ RCloud.UI.init = function() {
             } else {
                 $(e.target).select();
             }
-            
+
         }
     }, {
         category: 'Notebook Management',
         id: 'history_undo',
         description: 'Steps back through the notebook\'s history',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 'z'] 
+                ['command', 'z']
             ],
             win: [
                 ['ctrl', 'z']
@@ -156,14 +156,14 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'history_redo',
         description: 'Steps forwards through the notebook\'s history',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 'shift', 'z'] 
+                ['command', 'shift', 'z']
             ],
             win: [
                 ['ctrl', 'y']
             ]
-        },        
+        },
         on_page: ['edit'],
         action: function() { editor.step_history_redo(); }
     }, {
@@ -179,7 +179,7 @@ RCloud.UI.init = function() {
             ]
         },
         on_page: ['edit'],
-        action: function() { 
+        action: function() {
             if(shell.notebook.controller.is_mine() && shell.version()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
@@ -190,7 +190,7 @@ RCloud.UI.init = function() {
         keys: {
             mac: [
                 ['command', 'u']
-            ],     
+            ],
             win: [
                 ['ctrl', 'u']
             ]
@@ -203,7 +203,7 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'remove_cells',
         description: 'Removes selected cells',
-        keys: { 
+        keys: {
             mac: [
                 ['del'],
                 ['backspace'],
@@ -220,12 +220,12 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'invert_cells',
         description: 'Invert selected cells',
-        keys: { 
+        keys: {
             mac: [
                 ['command', 'shift', 'i']
             ],
             win: [
-                ['ctrl', 'shift', 'i']                
+                ['ctrl', 'shift', 'i']
             ]
         },
         modes: ['writeable'],
@@ -234,14 +234,14 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'crop_cells',
         description: 'Crop cells',
-        keys: { 
+        keys: {
             mac: [
                 ['command', 'k']
             ],
             win: [
                 ['ctrl', 'k']
             ]
-        },        
+        },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }/*, {
@@ -335,11 +335,11 @@ RCloud.UI.init = function() {
         category: 'General',
         id: 'show_help',
         description: 'Show shortcuts help',
-        keys: { 
+        keys: {
             win_mac: [
                 ['?']
             ]
-        },  
+        },
         modes: ['writeable', 'readonly'],
         action: function(e) {
             RCloud.UI.shortcut_dialog.show();
