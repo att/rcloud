@@ -180,7 +180,7 @@ RCloud.UI.init = function() {
         },
         on_page: ['edit'],
         action: function() { 
-            if(shell.notebook.controller.is_mine()) {
+            if(shell.notebook.controller.is_mine() && shell.version()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
@@ -222,10 +222,10 @@ RCloud.UI.init = function() {
         description: 'Invert selected cells',
         keys: { 
             mac: [
-                ['ctrl', 'shift', 'i']
+                ['command', 'shift', 'i']
             ],
             win: [
-                ['command', 'shift', 'i']
+                ['ctrl', 'shift', 'i']                
             ]
         },
         modes: ['writeable'],

@@ -9,7 +9,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Create cell and execute code',
                 keys: { 
                     win_mac: [
-                        ['enter'], ['alt', 'return']
+                        ['enter'], ['alt', 'enter']
                     ]
                 }
             }, {
@@ -36,7 +36,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Execute code',
                 keys: { 
                     win_mac: [
-                        ['alt', 'return']
+                        ['alt', 'enter']
                     ]
                 }
             }, {
@@ -50,26 +50,14 @@ RCloud.UI.ace_shortcuts = (function() {
                 }
             }, {
                 category: 'Code Editor',
-                id: 'code_editor_disable_gotoline',
-                description: 'Disable goto line',
-                keys: { 
-                    mac: [
-                        ['command', 'l'] 
-                    ],
-                    win: [
-                        ['ctrl', 'l']
-                    ]
-                }
-            }, {
-                category: 'Code Editor',
                 id: 'code_editor_execute_selection_or_line',
                 description: 'Execute selection or line',
                 keys: { 
                     mac: [
-                        ['command', 'return'] 
+                        ['command', 'enter'] 
                     ],
                     win: [
-                        ['ctrl', 'return']
+                        ['ctrl', 'enter']
                     ]
                 }
             }, {                                                        // !
@@ -585,19 +573,6 @@ RCloud.UI.ace_shortcuts = (function() {
                     ],
                     win: [
                         ['ctrl', 'end']
-                    ]
-                }
-            },
-            {
-                category: 'Code Editor',
-                id: 'ace_go_to_line',
-                description: 'Go to line',
-                keys: { 
-                    mac: [
-                        ['command', 'l']
-                    ],
-                    win: [
-                        ['ctrl', 'l']
                     ]
                 }
             },
