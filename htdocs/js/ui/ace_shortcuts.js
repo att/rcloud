@@ -578,29 +578,6 @@ RCloud.UI.ace_shortcuts = (function() {
             },
             {
                 category: 'Code Editor',
-                id: 'ace_scroll_line_down',
-                description: 'Scroll line down',
-                keys: { 
-                    mac: [
-                        ['command', 'down']
-                    ],
-                    win: [
-                        ['ctrl', 'down']
-                    ]
-                }
-            },
-            {
-                category: 'Code Editor',
-                id: 'ace_scroll_line_up',
-                description: 'Scroll line up',
-                keys: { 
-                    win: [
-                        ['ctrl', 'up']
-                    ]
-                }
-            },
-            {
-                category: 'Code Editor',
                 id: 'ace_go_to_matching_bracket',
                 description: 'Go to matching bracket',
                 keys: { 
