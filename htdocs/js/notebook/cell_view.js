@@ -437,8 +437,8 @@ function create_cell_html_view(language, cell_model) {
         }, {
             name: 'executeAll',
             bindKey: {
-                win: 'Ctrl-u',
-                mac: 'Command-u',
+                win: 'Ctrl-Shift-Enter',
+                mac: 'Ctrl-Shift-Enter',
                 sender: 'editor'
             },
             exec: function() {
