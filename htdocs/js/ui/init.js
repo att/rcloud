@@ -266,7 +266,7 @@ RCloud.UI.init = function() {
         description: 'Go to previous cell',
         keys: {
             win_mac: [
-                ['alt', 'up']
+                ['ctrl', 'shift', '<']
             ]
         },
         modes: ['writeable']
@@ -276,7 +276,7 @@ RCloud.UI.init = function() {
         description: 'Go to next cell',
         keys: {
             win_mac: [
-                ['alt', 'down']
+                ['ctrl', 'shift', '>']
             ]
         },
         modes: ['writeable']

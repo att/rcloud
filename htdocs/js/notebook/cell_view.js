@@ -373,8 +373,8 @@ function create_cell_html_view(language, cell_model) {
         }, {
             name: 'navigateToPreviousCell',
             bindKey: {
-                win: 'Alt-Up',
-                mac: 'Alt-Up',
+                win: 'Ctrl-Shift-,',
+                mac: 'Ctrl-Shift-,',
                 sender: 'editor'
             },
             exec: function() {
@@ -387,8 +387,8 @@ function create_cell_html_view(language, cell_model) {
         }, {
             name: 'navigateToNextCell',
             bindKey: {
-                win: 'Alt-Down',
-                mac: 'Alt-Down',
+                win: 'Ctrl-Shift-.',
+                mac: 'Ctrl-Shift-.',
                 sender: 'editor'
             },
             exec: function() {
