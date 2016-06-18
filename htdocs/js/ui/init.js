@@ -188,11 +188,8 @@ RCloud.UI.init = function() {
         id: 'notebook_run_all',
         description: 'Run all',
         keys: {
-            mac: [
-                ['command', 'u']
-            ],
-            win: [
-                ['ctrl', 'u']
+            win_mac: [
+                ['ctrl', 'shift', 'enter']
             ]
         },
         action: function() { RCloud.UI.run_button.run(); }
