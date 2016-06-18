@@ -21,6 +21,10 @@ body {
     background: #c7d6e2;
     padding-top: 40px; }
 
+@media (max-width: 767px) {
+  body.loaded {
+    padding-top: 95px; } }
+
 #main-div {
   margin-top: 30px; }
 
@@ -101,12 +105,19 @@ body {
     font-size: 17px;
     margin: 0;
     white-space: pre-wrap;
-    word-break: break-all; }
+    word-break: break-all;
+    font-weight: bold;
+    padding-right: 70px; }
   .grid-item h2 {
+    font-size: 13px;
+    margin: 0;
+    padding-top: 4px; }
+  .grid-item h3 {
     font-size: 11px;
-    margin: 0; }
+    margin: 2px 0;
+    color: #666; }
   .grid-item .header {
-    padding: 10px 70px 10px 10px;
+    padding: 10px 10px 10px 10px;
     position: relative;
     background-color: #fff; }
     .grid-item .header .star,

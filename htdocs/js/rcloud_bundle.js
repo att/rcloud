@@ -6763,7 +6763,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Create cell and execute code',
                 keys: { 
                     win_mac: [
-                        ['enter'], ['alt', 'return']
+                        ['enter'], ['alt', 'enter']
                     ]
                 }
             }, {
@@ -6790,7 +6790,7 @@ RCloud.UI.ace_shortcuts = (function() {
                 description: 'Execute code',
                 keys: { 
                     win_mac: [
-                        ['alt', 'return']
+                        ['alt', 'enter']
                     ]
                 }
             }, {
@@ -6804,26 +6804,14 @@ RCloud.UI.ace_shortcuts = (function() {
                 }
             }, {
                 category: 'Code Editor',
-                id: 'code_editor_disable_gotoline',
-                description: 'Disable goto line',
-                keys: { 
-                    mac: [
-                        ['command', 'l'] 
-                    ],
-                    win: [
-                        ['ctrl', 'l']
-                    ]
-                }
-            }, {
-                category: 'Code Editor',
                 id: 'code_editor_execute_selection_or_line',
                 description: 'Execute selection or line',
                 keys: { 
                     mac: [
-                        ['command', 'return'] 
+                        ['command', 'enter'] 
                     ],
                     win: [
-                        ['ctrl', 'return']
+                        ['ctrl', 'enter']
                     ]
                 }
             }, {                                                        // !
@@ -7344,19 +7332,6 @@ RCloud.UI.ace_shortcuts = (function() {
             },
             {
                 category: 'Code Editor',
-                id: 'ace_go_to_line',
-                description: 'Go to line',
-                keys: { 
-                    mac: [
-                        ['command', 'l']
-                    ],
-                    win: [
-                        ['ctrl', 'l']
-                    ]
-                }
-            },
-            {
-                category: 'Code Editor',
                 id: 'ace_scroll_line_down',
                 description: 'Scroll line down',
                 keys: { 
@@ -7560,7 +7535,15 @@ RCloud.UI.help_frame = {
         $("#help-body").css('display', 'table-row');
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
-        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+
+        var my_selector = $("#collapse-help");
+
+        // where am I?
+        var left_or_right = my_selector.closest('.panel-group').attr('id').includes('left')
+            ? 'left' : 'right';
+
+        RCloud.UI[left_or_right + '_panel'].collapse($("#collapse-help"), false);
+        
         ui_utils.prevent_backspace($("#help-frame").contents());
     },
     display_content: function(content) {
@@ -7922,16 +7905,22 @@ RCloud.UI.import_export = (function() {
                                 fr.readAsText(file);
                             }
                             function do_import() {
-                                if(notebook) {
-                                    notebook.description = notebook_desc_content.val();
+
+                                var desc = notebook_desc_content.val();
+
+                                if(notebook && desc.length > 0) {
+                                    notebook.description = desc;
+
                                     rcloud.create_notebook(notebook, false).then(function(notebook) {
                                         editor.star_notebook(true, {notebook: notebook}).then(function() {
                                             editor.set_notebook_visibility(notebook.id, true);
                                         });
                                     });
+
+                                    dialog.modal('hide');
                                 }
-                                dialog.modal('hide');
                             }
+
                             var body = $('<div class="container"/>');
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
 
@@ -7947,15 +7936,27 @@ RCloud.UI.import_export = (function() {
 
                             notebook_status = $('<span />');
                             notebook_status.append(notebook_status);
+
                             var notebook_desc = $('<span>Notebook description: </span>');
-                            notebook_desc_content = $('<input type="text" class="form-control-ext" size="50"></input>')
-                                .keypress(function(e) {
-                                    if (e.which === $.ui.keyCode.ENTER) {
+                            notebook_desc_content = $('<input type="text" class="form-control-ext" size="50" id="import-notebook-description"></input>')
+                                .on('change paste keyup', function(e) {
+
+                                    var desc_length = $(this).val().length;
+
+                                    if(desc_length) {
+                                        ui_utils.enable_bs_button(import_button);
+                                    } else {
+                                        ui_utils.disable_bs_button(import_button);
+                                    }
+
+                                    if (e.which === $.ui.keyCode.ENTER && desc_length) {
                                         do_import();
                                         return false;
-                                    }
+                                    } 
+
                                     return true;
                                 });
+
                             notebook_desc.append(notebook_desc_content);
                             body.append($('<p/>').append(file_select))
                                 .append($('<p/>').append(notebook_status.hide()))
@@ -7964,7 +7965,9 @@ RCloud.UI.import_export = (function() {
                                     .on('click', function() { $(dialog).modal('hide'); });
                             import_button = $('<span class="btn btn-primary">Import</span>')
                                 .on('click', do_import);
+
                             ui_utils.disable_bs_button(import_button);
+
                             var footer = $('<div class="modal-footer"></div>')
                                     .append(cancel).append(import_button);
                             var header = $(['<div class="modal-header">',
@@ -8143,9 +8146,9 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'notebook_cell',
         description: 'Saves the current notebook',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 's'] 
+                ['command', 's']
             ],
             win: [
                 ['ctrl', 's']
@@ -8157,9 +8160,9 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'select_all',
         description: 'Select all',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 'a'] 
+                ['command', 'a']
             ],
             win: [
                 ['ctrl', 'a']
@@ -8178,15 +8181,15 @@ RCloud.UI.init = function() {
             } else {
                 $(e.target).select();
             }
-            
+
         }
     }, {
         category: 'Notebook Management',
         id: 'history_undo',
         description: 'Steps back through the notebook\'s history',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 'z'] 
+                ['command', 'z']
             ],
             win: [
                 ['ctrl', 'z']
@@ -8198,14 +8201,14 @@ RCloud.UI.init = function() {
         category: 'Notebook Management',
         id: 'history_redo',
         description: 'Steps forwards through the notebook\'s history',
-        keys: { 
+        keys: {
             mac: [
-                ['command', 'shift', 'z'] 
+                ['command', 'shift', 'z']
             ],
             win: [
                 ['ctrl', 'y']
             ]
-        },        
+        },
         on_page: ['edit'],
         action: function() { editor.step_history_redo(); }
     }, {
@@ -8221,8 +8224,8 @@ RCloud.UI.init = function() {
             ]
         },
         on_page: ['edit'],
-        action: function() { 
-            if(shell.notebook.controller.is_mine()) {
+        action: function() {
+            if(shell.notebook.controller.is_mine() && shell.version()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
@@ -8232,7 +8235,7 @@ RCloud.UI.init = function() {
         keys: {
             mac: [
                 ['command', 'u']
-            ],     
+            ],
             win: [
                 ['ctrl', 'u']
             ]
@@ -8245,7 +8248,7 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'remove_cells',
         description: 'Removes selected cells',
-        keys: { 
+        keys: {
             mac: [
                 ['del'],
                 ['backspace'],
@@ -8262,28 +8265,31 @@ RCloud.UI.init = function() {
         category: 'Cell Management',
         id: 'invert_cells',
         description: 'Invert selected cells',
-        keys: { 
+        keys: {
             mac: [
-                ['ctrl', 'shift', 'i']
+                ['command', 'shift', 'i']
             ],
             win: [
-                ['command', 'shift', 'i']
+                ['ctrl', 'shift', 'i']
             ]
         },
         modes: ['writeable'],
-        action: function() { shell.notebook.controller.invert_selected_cells(); }
+        action: function() {
+            shell.notebook.controller.invert_selected_cells();
+            $(':focus').blur();
+        }
     }, {
         category: 'Cell Management',
         id: 'crop_cells',
         description: 'Crop cells',
-        keys: { 
+        keys: {
             mac: [
                 ['command', 'k']
             ],
             win: [
                 ['ctrl', 'k']
             ]
-        },        
+        },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
     }/*, {
@@ -8377,11 +8383,11 @@ RCloud.UI.init = function() {
         category: 'General',
         id: 'show_help',
         description: 'Show shortcuts help',
-        keys: { 
+        keys: {
             win_mac: [
                 ['?']
             ]
-        },  
+        },
         modes: ['writeable', 'readonly'],
         action: function(e) {
             RCloud.UI.shortcut_dialog.show();
@@ -9763,7 +9769,8 @@ RCloud.UI.panel_loader = (function() {
             }
 
             // alternative layout?
-            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {                if(!layoutBySize) {
+            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {                
+                if(!layoutBySize) {
 
                     var update_panel = function update_panel(panel, side, sort) {
                         panel_data_[panel].side = side;
@@ -10168,7 +10175,7 @@ RCloud.UI.scratchpad = (function() {
                 binary_mode_ = true;
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
-                // PDF seems not to be supported properly by browers
+                // PDF seems not to be supported properly by browsers
                 var sbin = $('#scratchpad-binary');
                 if(/\.pdf$/i.test(this.current_model.filename()))
                     sbin.html('<p>PDF preview not supported</p>');
@@ -10197,6 +10204,11 @@ RCloud.UI.scratchpad = (function() {
                 that.language_updated();
                 that.widget.resize();
                 that.widget.focus();
+            }
+
+            // if it's readonly, 
+            if(shell.notebook.model.read_only()) {
+                ui_utils.set_ace_readonly(this.widget, true);
             }
         },
         // this behaves like cell_view's update_model
@@ -11415,8 +11427,9 @@ RCloud.UI.discovery_page = (function() {
 
         load_current_metric: function(current_metric) {
 
-            var data;
+            var data, missing_img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAMAAAC3Ycb+AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAURQTFRF6PH06fH0+fv8w9fd+vz94+3xxtne5O7xwNXbx9nf9fn64u3w5/Dzwtbc5u/yxdjeydvgz9/k4ezv1eTo9vr73+vu3Ons8vf4+vz84+7x6/P13entx9rf5vDy7/X32efr9vn6wdbb3ert8vf5zd7jzN3i8/j59Pj51uTo8Pb48fb4zt/k0ODlytzh9/r7w9fc1+Xp0+LnwdXb1OPn2+js4ezw4Ozv7vT2yNrg2ebq6PHz6vL0xNjdy9zh2Obq2OXq2ufr0+Lm7fT20uLm6vL17PT25vDzyNvg+Pr73urt5/Hz8/f57vX36fL0+fz8xtnf8ff4zN7i1uXp9Pj6xNfd3Ojs3uru+Pv77PP1+Pv84Ovv1OPo0uHm0eHlzt7jy93i8Pb30ODk6/L17PP21ePo5O7yydvh5O/y0eHm4+3wv9Ta5e/yk3jLJAAACxdJREFUeNrs3f1bFNcVwPGjKLvruu4CAlKwCAFFgfAiWrWAUNpQkzZGY22jpmn63nv//9+rxii7DLszc8/MnNn5nufJ88TnYYZzzsfx7p25c1emxROGQuQ8IoY43l4fiBjyOC/iEbHk4cUjYsnjPQgidjx+AkHEjMcHEESsePwMgogRj48giNjw+ASCiAmPEyCIWPA4CYKIAY8uEESK9+gGQaRwjx4QRIr26AVBpGCPUyCIFOtxGgSRQj0iQBAp0iMKBJECPSJBECnOIxoEkcI8zgBBpCiPs0AQKcjjTBBEivE4GwSRQjz6gCBShEc/EEQK8OgLgkj+Hv1BEMndYwAIInl7DAJBJGePgSCI5OsxGASRXD1igCCSp0ccEERy9IgFgkh+HvFAEMnNIyYIInl5xAVBJCeP2CCI5OMRHwSRXDwSgCCSh0cSEERy8EgEgkj2HslAEMncIyEIIll7JAVBJOt+iUfEkkdyEESy7ZV4RCx5pAFBJMs+iUfEkkc6EESy65F4RCx5pAVBJKv+iEfEkkd6EESy6Y14RCx5hIAgkkVfxCNiySMMBBH9nohHxJJHKAgi2v0Qj4glj3AQRHR7IR4RSx4aIIho9kE8IpY8dEAQ0euBeERMdUA8IqbqF4+IqerFI2KqdvGImKpcPCKm6haPiKmqxSNiqmbxiJiqWDwipuoVj4ipasUjYqpW8YiYqlQ8IqbqFI+IqSrFI2KqRvGImKpQPCKm6hOPiKnqxCNiqjbxiJiqTDwipuoSj4ipqsQjYqom8YiYqkg8IqbqEY+IqWrEI2KqFvGImKpEPCKm6hCPiKkqxCNiqgbxiJiqQDwipvIXj4ip7MUjYip38YiYylw8IqbyFo+Iqax5v9waPy0AhAAEEAIQQAhAACEAAYQAhBhqkCdjoy5VtJcXAVGP2poLiLuAKMfFOeeGSKT0ILVAD+dmAdGMv4Z6uAeAKMa8C48/AaIWMyMKIMuAqMWWgoer1wDRGtE3+ne68S7aA0UeA6IUryMZlv95MPuq+a/uH202m5OTs1Pzb+qnjxgDROkCiRpB5u4PnNf3HrILiE48jLob8p/Bx021eg66B4hKLEeAvIpz4GbPQQ8B0YhmxHAwEu/fup6j1gDRiJWIC+Tf8Q7tGXzmANGI9QiQmOPzgtmZSIlBavWoD73/i3Pofbt3T0oMshM5yYs1p5joPep7QMLjv9HT7jifmObSfRYApG90IjQ2Go2lycHzEMN3T4oEqc0vNV44ozHSWN5vVgtkZcMZj4WtWnVAmh1Xgng6XhWQi21Xiti4XxGQjitJjM5UAmTFlSa+rwJIbaQ8INv3KgCy70oUExUAWSoTyHoFQBplAmlVAGSkTCAOkPd/L8c2n48tRI6yP0zsrxw+yA/kIiDO7b2/jzQeMV1Z+nCHabYBSH4gox9uIp1eKvr802fnPUByA/n4isDDPssRaqMD1i0uHW4uLi5Ovv1vZ2Ws8wKQ1CCfPtj0PKcdmRnwXOPn6Bydfio7/vjZCCCpQEY//ehGv/sYZ1wijYkzn2TsLG0DEgTS/aM73ecZizp4wCPDmZUXgKiB9PT68PTAsRrjfvlmGxAlkJ63mN+cGjomY/3+2t1tQFRANrvP07O4dyP+UoXxPUA0QH7oHg66P4J1mkly2KwDEg7i5k+epvsN3KOESUy2AQkHaZ24CromjfWDxFnMdAAJBnHtj5P4iZMDcyvN6/+1Z4AEgzj34/ulOVPHXTP4yXSJjAESDuLcbqPR/VJa62XaTJ4BogByajYYsF3JHiD6IPMBqdQagGiDhL0heH8BEF2QucAV0fuAqIJsB6+HXgVEEyR8HdugLYUASQLyVCGdx4DogUxp5PMAEC2QPZV8pgDRAlHawbIDiA5IRymhHUB0QA60MhoFRANkQy2ju4BogOhtq3QPEA2QJ3oprQMSDqK5Q8kEIOEgmruJjgMSDrKvmdMuIMEgqi8sLwESCrKhmtNrQEJBOqo57QASCqK7Q/g4IKEgyl9WVAckEGRTN6kNQAJBDnSTagMSCDKlm9QDQAABBJAMQXZ0k5oDJBBE+Vs/GNRDQZ7rJtUCJBDkSDWnGjP1UJAl1ZwmAQkF0f1enHlAQkG2VXM6AiT4AdVLzZzWAQkGUb3dWwckGERzR90pFjmEgywopnQIiMJCuXm9lNqAKIDofTX9IktJNUDqTa2MfgRE5XUErW8uqLUAUQHRWt37mhd2lF5p01no0P8LZgBJANJWyec5L32qvRatMYoM2DkAkCQgLYUV12tsHKC4tcaz4GyesNeJ6m5AodP1gTtmAZIMpBW4HdDAfRcBSbiB2YOgXObZUU59i7+Q9xJeLgCiDuIOU2cyHuP8gCQGST0bae46QLIASSkyHmv7d0BSgKRaNTcZ7+SApAFxq4k3J51qOUCyA3GN+8mS2Ip7YkDSgbiFJMvhm+sOkIxBnNuLPWmfWHCAZA/i6luxRpLFRN+jC0h6EOdad2cG/fbZ9WSnBOTko/K6SxqtN/1G99r+cdITAuLcx7HgiUsTxyvN6F+8s9pKfjZATtwuXHYpo702/6r70pi9u76d6lSAfLoVcuSCorG8unq4srK6unrcTn8WQN5F52Dm4sGcsxCAGAtAAAEEkBKFH36Qp2XyaFUAZKlMIMcVAHlcJpCtCoDUWuXxqI9XACT+07riY81XAaQ2VxaP3WYlQHyzJJ98FyZ9NUD8vVJcI7t5exQH4mtbC+bH87WLvjogb//Zmlg3PENsd7buFdCUIkEIQAAhAAGEAAQQAhBACEAIQAAhAAGEAAQQAhBACEAIQAAhAAGEAAQQYqhBbn9+xWRPzl04V0mQ21evGP1bWqSI4GFLRPCwJVIUyJ2rtsfWwkQED1sigoctEcHDlkgRIHdulGOOVohIASDflMSjGBHBw5ZI7iDTJfIoQkTwsCWSM8j0Je8RsQNSPo/cRXIF+ayEHnmLCB62RAQPWyKChy0RwcOWSF4gX5XaI0cRwcOWSD4gN7/1HhE7IMPgkZdIHiA3b3mPiB2QYfHIR0TwsCWSOcitIfLIQ0TwsCWSMcitm94jYgdk+DwyF8kU5Nsh9MhaRPCwJZIhyKWvvEfEDsjwemQqkhnIpc+8R8QOyHB7ZCgieNgSETxsiQgetkSyALk07T0idkCq4pGNiOBhS0Qd5EaFPLIQETxsiSiD3PjGe0TsgFTPQ11EFeTGHe8RsQNytZIeyiKChy0RwcOWiBbIlau3vUfEDEjFPRRFBA9bIiogVz6vvIeaiOBhS0Q0PP6GhpqI4GFLRMI9fomEoojgYUtE8LAlEgZy5fd4KIsIHrZEQkCu46EvInjYEkkPcp3xPAsR4fqwJZIW5Pqf8chERNJ6/IGuZyIieNgSSQVy/Ts8shIRPGyJpAC5fv5XdDszEcHDlkhikC/wyFRE8LAlkhDki+/wyFZEuD5siQgetkSSgFw+/xv6m7WI4GFLRPCwJSJ42BIRPGyJCB62RCSmx+/oaT4igoctEcHDlojgYUtE8LAlIoM9/kEncxQRPGyJyCCPv9DFXEX6g1z+Go+cRQQPWyL9QC5f+wX9y1tE8LAlcjbIl3gUISJ42BI5C+TLr/EoRES4PmyJRIM8wqMoEcHDlkgUyCPGj+JEhOvDlojgYUvkFMijC3+nUwWKCB62RHpA5MJv6VKhIoKHLZEuELmGR9EiwvVhS0TwsCUiJzx+TW+KFxE8bInIx/EcDxMiwvVhS0TwsCUiP/0BDysigoctEXn3P3+kG2ZExJ+7hochEeH6sCUieJgSmf6/AAMAF4/8wMtS1yoAAAAASUVORK5CYII=';
             current_metric = current_metric || 'recently.modified';
+
 
             var anonymous = !rcloud.username();
 
@@ -11455,21 +11468,37 @@ RCloud.UI.discovery_page = (function() {
                     });
                 }
 
+                var get_path_and_name = function(notebook_description) {
+                    if(!notebook_description || notebook_description.lastIndexOf('/') == -1) {
+                        return {
+                            path: undefined,
+                            name: notebook_description
+                        };
+                    } else {
+                        return {
+                            path: notebook_description.substring(0, notebook_description.lastIndexOf('/')),
+                            name: notebook_description.substring(notebook_description.lastIndexOf('/') + 1)
+                        }
+                    }
+                }
+
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
                             var current = notebooks[notebook[0]];
+                            var desc = get_path_and_name(current.description);
                             return rcloud.discovery.get_thumb(notebook[0]).then(function(thumb_src){
                                 return {
                                     id: notebook[0],
                                     time: notebook[1],
-                                    description: current.description,
+                                    description: desc.name,
+                                    folder_path: desc.path,
                                     last_commit: new Date(current.last_commit).toDateString(),
                                     page: anonymous ? 'view.html' : 'edit.html',
                                     username: current.username,
                                     stars: current.stars,
                                     star_icon: !_.isUndefined(current.is_starred_by_me) && current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
-                                    image_src: thumb_src || './img/missing.png',
-                                    forks: current.forks
+                                    forks: current.forks,                                    
+                                    image_src: thumb_src || missing_img
                                 };
                             });
                         })
@@ -11483,18 +11512,21 @@ RCloud.UI.discovery_page = (function() {
 
                     $('.grid').html(template({
                         notebooks: recent_notebooks
-                    })).imagesLoaded()
-                        .always(function() {
+                    })).imagesLoaded(function() {
+
                             new Masonry_( '.grid', {
-                                itemSelector: '.grid-item'
+                                itemSelector: '.grid-item',
+                                transitionDuration: 0
                             });
 
-                            $('#progress').fadeOut(200, function() {
-                                $('.navbar').fadeIn(200, function() {
-                                    $('#discovery-app').css('visibility', 'visible');
-                                    $('body').addClass('loaded');
+                            if($('#progress').is(':visible')) {
+                                $('#progress').fadeOut(200, function() {
+                                    $('.navbar').fadeIn(200, function() {
+                                        $('#discovery-app').css('visibility', 'visible');
+                                        $('body').addClass('loaded');
+                                    });
                                 });
-                            });
+                            }
                         });
                 });
             });
@@ -11503,7 +11535,7 @@ RCloud.UI.discovery_page = (function() {
         init: function() {
             return new Promise(function(resolve, reject) {
                 require([
-                    'imagesloaded',
+                    'imagesloaded.pkgd.min',
                     'masonry.pkgd.min'
                 ], function(imagesLoaded, Masonry) {
                     'use strict';
