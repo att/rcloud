@@ -27,7 +27,7 @@ define(['angular'], function(angular) {
         $scope.initialSharedStatus = '';
         $scope.initialGroupId = '';
 
-        $scope.allUsers = editor.allTheUsers;
+        $scope.allUsers = [];
         $scope.myConfig = { openOnFocus: false, closeAfterSelect: true };
 
         $scope.currentTab = null;
