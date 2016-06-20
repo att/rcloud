@@ -52,6 +52,9 @@ define(['angular'], function(angular) {
             //general logic
             $scope.evalData()
             .then(function() {
+                return $scope.getUsers();
+            })
+            .then(function() {
                 return $scope.getGroups();
             })
             .then(function() {
@@ -94,6 +97,24 @@ define(['angular'], function(angular) {
 
         //NOTEBOOK TAB METHODS
         /////////////////////////////////////////
+        $scope.getUsers = function() {
+            return $q(function(resolve, reject) {
+                rcloud.get_users()
+                .then(function(data) {
+
+                    $scope.$evalAsync(function() {
+                        $scope.allUsers = _.map(data, function(user) { return { text : user, value : user }; });
+                    });
+
+                    //timeout to ensure evalAsync has finished
+                    $timeout(function() {
+                        logger.clear();
+                        resolve();
+                    }, 50);
+                });
+            });
+        };
+
         $scope.getGroups = function() {
             return $q(function(resolve, reject) {
                 GroupsService.getUsersGroups($scope.userName)
