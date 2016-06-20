@@ -44,9 +44,17 @@
         <form id="find-form">
           <i class="icon-search"></i>
           <div class="find">
-            <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+            <span id="find-details">
+              <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+              <span id="match-status"><span id="match-index"></span> of <span id="match-total"></span></span>  
+            </span>    
             <button id="find-last" class="btn"><i class="icon-arrow-left"></i></button>
-            <button id="find-next" class="btn btn-primary"><i class="icon-arrow-right"></i></button>
+            <button id="find-next" class="btn btn-primary"><i class="icon-arrow-right"></i></button>        
+          </div>
+          <div class="replace" style="display:none">
+            <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
+            <button id="replace" class="btn">Replace</button>
+            <button id="replace-all" class="btn">Replace All</button>
           </div>
           <a id="find-close" href="javascript:void(0)"><i class="icon-remove"></i></a>
         </form>

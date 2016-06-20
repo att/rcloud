@@ -332,6 +332,26 @@ td {
 
     input {
         width: 160px;
+        padding-right: 4px;
+        background-color: white!important;
+
+        &:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+
+            &:hover,&:focus {
+                -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+            }
+        }        
+    }
+
+    #find-input {
+        outline: none;
+        border: 0;
+    }
+
+    #replace-input {
+        border-radius: 0;
+        padding: 12px 5px;
     }
 
     #find-close {
@@ -349,6 +369,12 @@ td {
         }
     }
 
+    #find-details {
+        display: inline-block;
+        border: 1px solid rgb(169, 169, 169);
+        padding: 1px;
+    }
+
     .find, .replace {
         display: inline-block;
         padding: 6px 6px 0 6px;
@@ -362,6 +388,19 @@ td {
             padding: 3px 10px;
         }
     }
+}
+
+#match-status {
+    display: inline-block;
+    padding: 2px 5px;
+    visibility: hidden;
+    color: #535353;
+    @include no-select();
+}
+
+#match-status.no-matches {
+    background-color: #f66;
+    color: black;
 }
 
 .find-highlight {
