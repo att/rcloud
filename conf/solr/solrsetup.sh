@@ -41,7 +41,13 @@ if [ ! -e "solr-$VER" ]; then
     exit 1
 fi
 ln -s solr-$VER solr
-cp -R solr/example/solr/collection1/ solr/example/solr/rcloudnotebooks 
+
+
+# Start apache Solr on default port
+echo "starting Apache Solr or default port - 8983 ... "
+bin/solr start
+
+cp -R solr/example/solr/collection1/ solr/example/solr/rcloudnotebooks
 mkdir solr/example/solr/rcloudnotebooks/data 
 rm solr/example/solr/rcloudnotebooks/core.properties 
 cp "$WD/schema.xml" solr/example/solr/rcloudnotebooks/conf/
@@ -49,13 +55,7 @@ cp "$WD/solrconfig.xml" solr/example/solr/rcloudnotebooks/conf/
 cp "$WD/word-delim-types.txt" solr/example/solr/rcloudnotebooks/conf/
 cd solr/example/
 
-# Start apache Solr on default port
-echo "starting Apache Solr or default port - 8983 ... "  
-nohup java -jar start.jar > solr.out 2>&1 & 
-# wait for Solr to boot up 
-sleep 14
-
-# Create a collection for the RCloud Notebooks 
+# Create a collection for the RCloud Notebooks
 INSTANCEDIR="$DEST/solr/example/solr/rcloudnotebooks"
 DATADIR="${INSTANCEDIR}/data" 
 QUERY="http://localhost:8983/solr/admin/cores?action=CREATE&name=rcloudnotebooks&instanceDir=$INSTANCEDIR&config=solrconfig.xml&schema=schema.xml&dataDir=$DATADIR"
