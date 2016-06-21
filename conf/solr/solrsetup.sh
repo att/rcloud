@@ -32,11 +32,10 @@ cd "$DEST"
 DEST="`pwd`"
 
 VER=5.5.1
-#curl -L -O http://archive.apache.org/dist/lucene/solr/$VER/solr-$VER.tgz
+curl -L  http://archive.apache.org/dist/lucene/solr/$VER/solr-$VER.tgz | tar xz
 ## Apache servers are *extremely* slow (<3Mbit!), so use our server instead
-curl -L -O http://r.research.att.com/solr/solr-$VER.tgz
+# curl -L -O http://r.research.att.com/solr/solr-$VER.tgz
 
-tar fxz solr-$VER.tgz
 if [ ! -e "solr-$VER" ]; then
     echo "ERROR: failed to extract solr-$VER"
     exit 1
