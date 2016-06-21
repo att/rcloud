@@ -173,23 +173,8 @@ RCloud.UI.discovery_page = (function() {
                             });
 
                             if(!$('.body').hasClass('loaded')) {
-                                // $('#progress').fadeOut(200, function() {
-                                //     $('.navbar').fadeIn(200, function() {
-                                //         //$('.container').css({'opacity' : '1' });
-                                //         //$('#discovery-app').css('visibility', 'visible');
-                                //         $('body').addClass('loaded');
-                                //     });
-                                // });
-
                                 $('body').addClass('loaded');
-
-
-                            } else {
-                                // post initial load:
-                                // $('body').removeClass('loading');
-                                // $('#progress').hide();
-                                // $('.container').css({'opacity' : '1' });
-                            }
+                            } 
 
                             $('body').removeClass('loading');
                         });
