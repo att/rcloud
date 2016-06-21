@@ -31,7 +31,7 @@ cd "$DEST"
 # get the absolute path
 DEST="`pwd`"
 
-VER=4.5.1
+VER=5.5.1
 #curl -L -O http://archive.apache.org/dist/lucene/solr/$VER/solr-$VER.tgz
 ## Apache servers are *extremely* slow (<3Mbit!), so use our server instead
 curl -L -O http://r.research.att.com/solr/solr-$VER.tgz
