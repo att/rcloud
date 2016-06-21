@@ -18,8 +18,10 @@ RCloud.UI.notebook_title = (function() {
     function rename_notebook_folder(node) {
         return function(name) {
             editor.for_each_notebook(node, name, function(node, name) {
-                if(node.gistname === shell.gistname())
+                if(node.gistname === shell.gistname()){
                     shell.rename_notebook(name);
+                    result.set(name);
+                }
                 else {
                     rcloud.update_notebook(node.gistname, {description: name}, false)
                         .then(function(notebook) {
