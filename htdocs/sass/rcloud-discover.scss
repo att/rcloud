@@ -80,14 +80,17 @@ body {
 }
 
 #progress {
-    height: 180px;
+    height: 230px;
     position: absolute;
     top: 48%;
     margin-top: -90px;
     text-align: center;
-    width: 500px;
-    margin-left: -250px;
+    width: 550px;
+    margin-left: -275px;
     left: 50%;
+    padding-top: 25px;
+    background: white;
+    z-index: 1000;
 }
 
 .loader:before,

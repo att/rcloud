@@ -8,6 +8,14 @@ RCloud.discovery_model = function () {
         return obj;
     }
 
+    function temp() {
+        var deferred = Promise.pending();
+        setTimeout(function(){
+            deferred.resolve();
+        }, 5000);
+        return deferred.promise;
+    }
+
     return {
         get_notebooks : function(anonymous, notebook_ids) {
 
@@ -23,7 +31,8 @@ RCloud.discovery_model = function () {
                     rcloud.get_multiple_notebook_infos(ids),
                     rcloud.stars.get_multiple_notebook_star_counts(ids),
                     anonymous ? Promise.resolve([]) : rcloud.stars.get_my_starred_notebooks(),
-                    rcloud.get_multiple_fork_counts(ids)
+                    rcloud.get_multiple_fork_counts(ids),
+                    temp()
                 ]).spread(function(notebooks, stars, my_starred_notebooks, forks) {
                     notebooks = clean_r(notebooks);
 
