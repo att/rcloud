@@ -2269,8 +2269,8 @@ function create_cell_html_view(language, cell_model) {
         }, {
             name: 'navigateToPreviousCell',
             bindKey: {
-                win: 'Alt-Up',
-                mac: 'Alt-Up',
+                win: 'Ctrl-Shift-,',
+                mac: 'Ctrl-Shift-,',
                 sender: 'editor'
             },
             exec: function() {
@@ -2283,8 +2283,8 @@ function create_cell_html_view(language, cell_model) {
         }, {
             name: 'navigateToNextCell',
             bindKey: {
-                win: 'Alt-Down',
-                mac: 'Alt-Down',
+                win: 'Ctrl-Shift-.',
+                mac: 'Ctrl-Shift-.',
                 sender: 'editor'
             },
             exec: function() {
@@ -2333,8 +2333,8 @@ function create_cell_html_view(language, cell_model) {
         }, {
             name: 'executeAll',
             bindKey: {
-                win: 'Ctrl-u',
-                mac: 'Command-u',
+                win: 'Ctrl-Shift-Enter',
+                mac: 'Ctrl-Shift-Enter',
                 sender: 'editor'
             },
             exec: function() {
@@ -7332,29 +7332,6 @@ RCloud.UI.ace_shortcuts = (function() {
             },
             {
                 category: 'Code Editor',
-                id: 'ace_scroll_line_down',
-                description: 'Scroll line down',
-                keys: { 
-                    mac: [
-                        ['command', 'down']
-                    ],
-                    win: [
-                        ['ctrl', 'down']
-                    ]
-                }
-            },
-            {
-                category: 'Code Editor',
-                id: 'ace_scroll_line_up',
-                description: 'Scroll line up',
-                keys: { 
-                    win: [
-                        ['ctrl', 'up']
-                    ]
-                }
-            },
-            {
-                category: 'Code Editor',
                 id: 'ace_go_to_matching_bracket',
                 description: 'Go to matching bracket',
                 keys: { 
@@ -8233,11 +8210,8 @@ RCloud.UI.init = function() {
         id: 'notebook_run_all',
         description: 'Run all',
         keys: {
-            mac: [
-                ['command', 'u']
-            ],
-            win: [
-                ['ctrl', 'u']
+            win_mac: [
+                ['ctrl', 'shift', 'enter']
             ]
         },
         action: function() { RCloud.UI.run_button.run(); }
@@ -8314,7 +8288,7 @@ RCloud.UI.init = function() {
         description: 'Go to previous cell',
         keys: {
             win_mac: [
-                ['alt', 'up']
+                ['ctrl', 'shift', '<']
             ]
         },
         modes: ['writeable']
@@ -8324,7 +8298,7 @@ RCloud.UI.init = function() {
         description: 'Go to next cell',
         keys: {
             win_mac: [
-                ['alt', 'down']
+                ['ctrl', 'shift', '>']
             ]
         },
         modes: ['writeable']
@@ -8781,7 +8755,7 @@ RCloud.UI.navbar = (function() {
             result.highlight = function(whether) {
                 $(result.control)
                     .find('.button-highlight')
-                    .animate({opacity: whether ? 1 : 0}, 250);
+                    .animate({opacity: whether ? 1 : 0}, {duration: 250, queue: false});
                 return this;
             };
             return result;
