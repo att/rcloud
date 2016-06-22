@@ -32,7 +32,7 @@ as.character.htmlwidget <- function(x, ...) {
   tmp <- tempfile(fileext=".html")
   on.exit(unlink(tmp), add = TRUE)
   htmlwidgets::saveWidget(x, file = tmp, selfcontained = FALSE)
-  pandoc_self_contained_html(tmp, tmp)
+  htmlwidgets:::pandoc_self_contained_html(tmp, tmp)
 
   widget <- paste(readLines(tmp), collapse = "\n")
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
