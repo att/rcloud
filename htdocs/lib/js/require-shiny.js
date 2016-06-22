@@ -13,15 +13,17 @@ requirejs_config_obj = {
             deps: ['jquery'],
             exports: "jQuery.fn.dataTable"
         },
+        "jquery-ui": ["jquery"],
         "jquery.cookies.2.2.0": ["jquery"],
         "rserve": ["underscore"],
         "mini": ["rcloud_bundle"],
+        "bootstrap": ["jquery-ui", "jquery"],
         "rcloud_bundle": ["jquery.cookies.2.2.0"]
     }
 };
 
 var deps = [
-    "bluebird", "underscore", "d3", "rserve", "mini", "rcloud_bundle", "datatables", "selectize"
+    "bluebird", "underscore", "d3", "jquery", "jquery-ui", "bootstrap", "rserve", "mini", "rcloud_bundle", "datatables", "selectize"
 ];
 
 function start_require(deps) {
