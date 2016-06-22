@@ -381,6 +381,8 @@ var editor = function () {
     }
 
     function populate_all_notebooks(all_the_users) {
+        if(_.isString(all_the_users))
+            all_the_users = [all_the_users];
         return {
             label: 'All Notebooks',
             id: '/alls',
