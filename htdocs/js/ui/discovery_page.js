@@ -175,8 +175,8 @@ RCloud.UI.discovery_page = (function() {
                             if(!$('.body').hasClass('loaded')) {
                                 $('body').addClass('loaded');
                             }
-
-                            $('body').removeClass('loading');
+                        
+                            $('body').scrollTop(0).removeClass('loading');
 
                         });
                 });
@@ -197,11 +197,7 @@ RCloud.UI.discovery_page = (function() {
 
                     metric.init({
                         change: function(metric) {
-                            $("html, body").animate({
-                                scrollTop: 0
-                            }, 250, function() {
-                                discovery.load_current_metric(metric);
-                            });
+                            discovery.load_current_metric(metric);
                         },
                         oncomplete: function(metric) {
                             resolve(discovery.load_current_metric(metric));
