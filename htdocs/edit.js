@@ -46,6 +46,9 @@ function main() {
         }).then(shell.init.bind(shell))
             .then(editor.init.bind(editor, opts));
     }).catch(function(error) {
+
+        RCloud.UI.shortcut_manager.disable_all();
+
         if (error.message === "Authentication required") {
             RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Please login first!"));
         } else

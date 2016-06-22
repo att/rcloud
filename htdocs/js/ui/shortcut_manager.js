@@ -197,6 +197,9 @@ RCloud.UI.shortcut_manager = (function() {
                 s.enabled = false;
             });
         },
+        disable_all: function() {
+            this.disable(_.pluck(extension_.sections.all.entries, 'id'));
+        },
         enable: function(ids) {
             modify(ids, function(s) {
                 s.enabled = true;

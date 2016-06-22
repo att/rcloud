@@ -73,7 +73,11 @@ function main() {
         });
         return promise;
     }).catch(function(err) {
+
+        RCloud.UI.shortcut_manager.disable_all();
+
         console.log(err.stack);
+        
         shell.improve_load_error(err, notebook, version).then(function(msg) {
             if(/Notebook does not exist or has not been published/.test(msg))
                 msg = ui_utils.disconnection_error("Could not load notebook. You may need to login to see it.", "Login");
