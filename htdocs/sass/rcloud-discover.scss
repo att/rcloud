@@ -2,14 +2,14 @@
     @if $viewport-max-width=="nomax" {
         @media (min-width: #{$viewport-min-width}px) {
             .grid-item {
-                width: #{$item-width}%;
+                width: #{$item-width}#{%};
             }
         }
     }
     @else {
         @media (min-width: #{$viewport-min-width}px) and (max-width: #{$viewport-max-width}px) {
             .grid-item {
-                width: #{$item-width}%;
+                width: #{$item-width}#{%};
             }
         }
     }
