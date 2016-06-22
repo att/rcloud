@@ -7,7 +7,6 @@ RCloud.UI.notebook_title = (function() {
                     return editor.show_history(node.parent, {update: true});
                 });
         };
-        
     }
     function rename_current_notebook(name) {
         return editor.rename_notebook(name)
@@ -19,7 +18,7 @@ RCloud.UI.notebook_title = (function() {
         return function(name) {
             editor.for_each_notebook(node, name, function(node, name) {
                 if(node.gistname === shell.gistname())
-                    shell.rename_notebook(name);
+                    rename_current_notebook(name);
                 else {
                     rcloud.update_notebook(node.gistname, {description: name}, false)
                         .then(function(notebook) {
