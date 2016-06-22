@@ -677,6 +677,8 @@ rcloud.config.get.alluser.option <- function(key)
 
 # single just changes the format for querying a single notebook (essentially acting as [[1]])
 rcloud.get.notebook.info <- function(id, single=TRUE) {
+  if(length(id) == 0)
+    return(list())
   base <- usr.key(user=".notebook", notebook=id)
   fields <- c("source", "username", "description", "last_commit", "visible")
   keys <- rcs.key(rep(base, each=length(fields)), fields)
