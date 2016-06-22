@@ -48,6 +48,7 @@ define(['angular'], function(angular) {
 
         //init
         ////////////////////////////////////////////
+        // FIXME: shouldn't this call initGroups, for maintainability?
         $scope.initBoth = function() {
             //general logic
             $scope.evalData()
@@ -80,6 +81,9 @@ define(['angular'], function(angular) {
                 $scope.currentTab = 2;
             });
             $scope.getGroups()
+            .then(function() {
+                return $scope.getUsers();
+            })
             .then(function() {
                 if($scope.allAdminGroups.length)
                     $scope.setSecondSelectoToId($scope.allAdminGroups[0].id);
