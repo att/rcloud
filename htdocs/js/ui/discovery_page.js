@@ -131,9 +131,9 @@ RCloud.UI.discovery_page = (function() {
                         return {
                             path: notebook_description.substring(0, notebook_description.lastIndexOf('/')),
                             name: notebook_description.substring(notebook_description.lastIndexOf('/') + 1)
-                        }
+                        };
                     }
-                }
+                };
 
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
@@ -150,7 +150,7 @@ RCloud.UI.discovery_page = (function() {
                                     username: current.username,
                                     stars: current.stars,
                                     star_icon: !_.isUndefined(current.is_starred_by_me) && current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
-                                    forks: current.forks,                                    
+                                    forks: current.forks,
                                     image_src: thumb_src || missing_img
                                 };
                             });
@@ -174,7 +174,7 @@ RCloud.UI.discovery_page = (function() {
 
                             if(!$('.body').hasClass('loaded')) {
                                 $('body').addClass('loaded');
-                            } 
+                            }
 
                             $('body').removeClass('loading');
 
@@ -200,7 +200,7 @@ RCloud.UI.discovery_page = (function() {
                             $("html, body").animate({
                                 scrollTop: 0
                             }, 250, function() {
-                                discovery.load_current_metric(metric);    
+                                discovery.load_current_metric(metric);
                             });
                         },
                         oncomplete: function(metric) {
