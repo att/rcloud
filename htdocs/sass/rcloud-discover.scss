@@ -37,15 +37,6 @@
     }
 }
 
-body {
-    overflow: hidden;
-    &.loaded {
-        overflow: auto;
-        background: #c7d6e2;
-        padding-top: 40px;
-    }
-}
-
 @media (max-width: 767px) {
     body.loaded {
         padding-top: 95px;
@@ -80,14 +71,52 @@ body {
 }
 
 #progress {
-    height: 180px;
+    height: 100%;
     position: absolute;
-    top: 48%;
-    margin-top: -90px;
     text-align: center;
-    width: 500px;
-    margin-left: -250px;
-    left: 50%;
+    background: white;
+    z-index: 1000;
+    top: 0;
+    width: 100%;
+    opacity: 0.9;
+
+    > div {
+        top: 50%;
+        position: absolute;
+        margin-top: -90px;
+        margin-left: -229px;
+        left: 50%;
+        //opacity: 1;
+    }
+}
+
+body {
+    &.loaded {
+        overflow: auto;
+        background: #c7d6e2;
+        padding-top: 40px;
+
+        .navbar {
+            display: block;
+        }
+
+        #discovery-app {
+            visibility: visible;
+        }
+
+        #progress {
+            display: none;
+        }
+
+        &.loading {
+            overflow: hidden;
+
+            #progress {
+                display: block;
+                //opacity: 0.7;
+            }
+        }
+    }
 }
 
 .loader:before,
