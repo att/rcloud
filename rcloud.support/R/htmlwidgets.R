@@ -40,6 +40,9 @@ as.character.htmlwidget <- function(x, ...) {
   htmlwidgets::saveWidget(x, file = tmp, selfcontained = FALSE)
   htmlwidgets:::pandoc_self_contained_html(tmp, tmp)
 
+  ## Only in mini, not in the notebook
+  if (!isEditMode()) htmlwidgets.install.ocap()
+
   widget <- paste(readLines(tmp), collapse = "\n")
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
   res <- paste0(
@@ -59,4 +62,8 @@ add.iframe.htmlwidget <- function(widget) {
     gsub("\"", "&quot;", widget),
     "\"></iframe>"
   )
+}
+
+isEditMode <- function() {
+  identical(.session$mode, "IDE")
 }
