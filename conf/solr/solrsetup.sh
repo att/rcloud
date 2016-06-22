@@ -40,21 +40,24 @@ if [ ! -e "solr-$VER" ]; then
     echo "ERROR: failed to extract solr-$VER"
     exit 1
 fi
-ln -s solr-$VER solr
+ln -s -f solr-$VER solr
 
 
 # Start apache Solr on default port
 echo "starting Apache Solr or default port - 8983 ... "
-bin/solr start
+"$DEST"/solr/bin/solr start
 
-cp -R solr/example/solr/collection1/ solr/example/solr/rcloudnotebooks
-mkdir solr/example/solr/rcloudnotebooks/data 
-rm solr/example/solr/rcloudnotebooks/core.properties 
+#cp -R solr/example/solr/collection1/ solr/example/solr/rcloudnotebooks
+mkdir -p solr/example/solr/rcloudnotebooks/data
+mkdir -p solr/example/solr/rcloudnotebooks/conf
+#rm solr/example/solr/rcloudnotebooks/core.properties
 cp "$WD/schema.xml" solr/example/solr/rcloudnotebooks/conf/
 cp "$WD/solrconfig.xml" solr/example/solr/rcloudnotebooks/conf/
 cp "$WD/word-delim-types.txt" solr/example/solr/rcloudnotebooks/conf/
-cd solr/example/
-
+cp  "$WD/synonyms.txt" solr/example/solr/rcloudnotebooks/conf/
+cp  "$WD/elevate.xml" solr/example/solr/rcloudnotebooks/conf/
+cp  "$WD/stopwords.txt" solr/example/solr/rcloudnotebooks/conf/
+cp -r "$WD/lang" solr/example/solr/rcloudnotebooks/conf/
 # Create a collection for the RCloud Notebooks
 INSTANCEDIR="$DEST/solr/example/solr/rcloudnotebooks"
 DATADIR="${INSTANCEDIR}/data" 
