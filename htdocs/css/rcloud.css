@@ -9407,7 +9407,19 @@ td {
     font-size: 16px;
     vertical-align: middle; }
   #find-dialog input {
-    width: 160px; }
+    width: 160px;
+    padding-right: 4px;
+    background-color: white !important; }
+    #find-dialog input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0px 1000px #fff inset; }
+      #find-dialog input:-webkit-autofill:hover, #find-dialog input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0px 1000px #fff inset; }
+  #find-dialog #find-input {
+    outline: none;
+    border: 0; }
+  #find-dialog #replace-input {
+    border-radius: 0;
+    padding: 12px 5px; }
   #find-dialog #find-close {
     position: absolute;
     cursor: pointer;
@@ -9419,6 +9431,10 @@ td {
     #find-dialog #find-close:hover {
       text-decoration: none;
       color: #000; }
+  #find-dialog #find-details {
+    display: inline-block;
+    border: 1px solid darkgray;
+    padding: 1px; }
   #find-dialog .find, #find-dialog .replace {
     display: inline-block;
     padding: 6px 6px 0 6px; }
@@ -9426,6 +9442,22 @@ td {
     margin-left: 18px; }
     #find-dialog .replace .btn {
       padding: 3px 10px; }
+
+#match-status {
+  display: inline-block;
+  padding: 2px 5px;
+  visibility: hidden;
+  color: #535353;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; }
+
+#match-status.no-matches {
+  background-color: #f66;
+  color: black; }
 
 .find-highlight {
   background-color: yellow; }
