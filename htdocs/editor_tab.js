@@ -166,8 +166,8 @@ var editor = function () {
     function find_next_copy_name(username, description) {
         var promise;
         var pid = node_id("alls", username);
-        if(description.indexOf('/')!==-1)
-            pid += '/' + description.replace(/\/[^\/]*$/,'');
+
+        // load all 'alls' for given username:
         var parent = $tree_.tree('getNodeById', pid);
         if(parent === undefined)
             return description;
@@ -181,6 +181,13 @@ var editor = function () {
         }
 
         return promise_load.then(function() {
+
+            // if this is folder level, get the actual parent for comparison:
+            if(description.indexOf('/')!==-1) {
+                pid += '/' + description.replace(/\/[^\/]*$/,'');
+                parent = $tree_.tree('getNodeById', pid);
+            }
+
             var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
             if(!map[description])
                 return description;
