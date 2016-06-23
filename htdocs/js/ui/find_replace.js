@@ -2,12 +2,32 @@ RCloud.UI.find_replace = (function() {
     
     var find_dialog_ = null, regex_,
         find_form_,
-        find_input_, replace_input_, replace_stuff_,
+        find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
-        matches_ = [], active_match_;
+        matches_ = [], active_match_,
+        change_interval;
+
+    function generate_matches() {
+        active_match_ = undefined;
+        build_regex(find_input_.val());
+        highlight_all();
+
+        // matches_
+        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
+        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
+
+        if(find_input_.val().length) {
+            active_match_ = 0;
+            show_matches();
+            active_transition('activate');
+        } else {
+            active_match_ = undefined;
+            hide_matches();
+        }
+    };
 
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
@@ -21,6 +41,9 @@ RCloud.UI.find_replace = (function() {
             find_dialog_ = $(markup.get(0));
             find_form_ = markup.find('#find-form');
             find_input_ = markup.find('#find-input');
+            find_match_ = markup.find('#match-status');
+            match_index_ = markup.find('#match-index');
+            match_total_ = markup.find('#match-total');
             find_next_ = markup.find('#find-next');
             find_last_ = markup.find('#find-last');
             replace_input_ = markup.find('#replace-input');
@@ -28,14 +51,8 @@ RCloud.UI.find_replace = (function() {
             replace_all_ = markup.find('#replace-all');
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
-
-            var generate_matches = function() {
-                active_match_ = undefined;
-                build_regex(find_input_.val());
-                highlight_all();
-            };
-
-            find_input_.on('input', function(e) {
+            
+            find_input_.on('change keyup paste click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 generate_matches();
@@ -62,10 +79,15 @@ RCloud.UI.find_replace = (function() {
 
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
-                if(active_match_ !== undefined)
-                    active_match_ = (active_match_ + 1) % matches_.length;
-                else
-                    active_match_ = 0;
+                
+                if(active_match_ !== undefined){
+                     active_match_ = (active_match_ + matches_.length + 1) % matches_.length;                            
+                } else{
+                     active_match_ = 0;
+                }
+
+                show_match_details(active_match_ + 1, matches_.length);
+
                 active_transition('activate');
             }
 
@@ -84,6 +106,9 @@ RCloud.UI.find_replace = (function() {
                     active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
                 else
                     active_match_ = 0;
+
+                show_match_details(active_match_ + 1, matches_.length);
+
                 active_transition('activate');
                 return false;
             });
@@ -133,7 +158,7 @@ RCloud.UI.find_replace = (function() {
                 return undefined;
             }
 
-            find_input_.keydown(click_find_next);
+            //find_input_.keydown(click_find_next);
             replace_input_.keydown(click_find_next);
 
             find_form_.keydown(function(e) {
@@ -168,7 +193,7 @@ RCloud.UI.find_replace = (function() {
         }
 
         find_dialog_.show();
-
+ 
         var active_cell_selection = get_active_cell_selection();
 
         if(active_cell_selection) {
@@ -181,23 +206,67 @@ RCloud.UI.find_replace = (function() {
             }
         }
 
-        find_input_.focus();
         if(replace)
             replace_stuff_.show();
         else
             replace_stuff_.hide();
 
-        build_regex(find_input_.val());
-        highlight_all();
+        if(!shown_) {
+
+            change_interval_ = setInterval(function() {
+                
+                // get the value:
+                var old_value = find_input_.data('value'),
+                    new_value = find_input_.val();
+
+                if(new_value !== old_value) {
+
+                    generate_matches();    
+
+                    find_input_.data('value', new_value);
+                }
+
+            }, 250);  
+
+            build_regex(find_input_.val());
+
+            highlight_all();
+
+            find_input_.focus();
+
+        } else {
+            if(replace) {
+                replace_input_.focus();
+            } else {
+                find_input_.focus();
+            }
+        }
+
         shown_ = true;
         replace_mode_ = replace;
     }
+
+    function hide_matches() {
+        find_match_.css('visibility', 'hidden');
+    }
+    
+    function show_matches() {
+        find_match_.css('visibility', 'visible');
+    }
+
+    function show_match_details(match_index, match_total) {
+        match_index_.text(match_index);         
+        match_total_.text(match_total);
+    }
+
     function clear_highlights() {
+        hide_matches();
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
     }
     function hide_dialog() {
+        clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
         shown_ = false;
