@@ -130,7 +130,16 @@ RCloud.UI.command_prompt = (function() {
                         }
                     }
                 }
-            }
+            }, {
+            name: 'blurCell',
+                bindKey: {
+                    win: 'Escape',
+                    mac: 'Escape'
+                },
+                exec: function() {
+                    ace_widget_.blur();
+                }
+            }                
         ]);
         widget.commands.removeCommands(['find', 'replace']);
         ui_utils.customize_ace_gutter(widget, function(i) {
