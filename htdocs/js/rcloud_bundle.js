@@ -5657,7 +5657,16 @@ RCloud.UI.command_prompt = (function() {
                         }
                     }
                 }
-            }
+            }, {
+            name: 'blurCell',
+                bindKey: {
+                    win: 'Escape',
+                    mac: 'Escape'
+                },
+                exec: function() {
+                    ace_widget_.blur();
+                }
+            }                
         ]);
         widget.commands.removeCommands(['find', 'replace']);
         ui_utils.customize_ace_gutter(widget, function(i) {
@@ -8415,7 +8424,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
-        description: 'Blur Cell',
+        description: 'Blur Cell/Command Prompt',
         keys: {
             win_mac: [
                 ['esc']
