@@ -321,7 +321,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
-        description: 'Blur Cell',
+        description: 'Blur Cell/Command Prompt',
         keys: {
             win_mac: [
                 ['esc']
