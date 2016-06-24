@@ -1113,33 +1113,7 @@ var editor = function () {
                 $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
 
                 if(reselect_node) {
-                    // all children have been replaced, so if the selected node is
-                    // one of the children, reselect:
-                    function find_node(root_node, id_to_find) {
-                        var found;
-
-                        function recurse(node) {
-
-                            for (var i = 0; i < node.children.length; i++) {
-                                if ((node.children[i].id === id_to_find)) {
-                                    found = node.children[i];
-                                    break;
-                                } else {
-                                    if (node.children[i].children && node.children[i].children.length > 0) {
-                                        recurse(node.children[i]);
-                                        if(found){
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        recurse(root_node);
-                        return found;
-                    }
-
-                    var node_to_select = find_node(for_node, selected_node.id);
+                    var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
                     if(reselect_node && node_to_select) {
                         select_node(node_to_select);
