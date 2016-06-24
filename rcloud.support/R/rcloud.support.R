@@ -638,8 +638,11 @@ rcloud.config.get.all.notebook.info <- function() {
 rcloud.config.add.notebook <- function(id)
   rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), TRUE)
 
-rcloud.config.remove.notebook <- function(id)
+rcloud.config.remove.notebook <- function(id) {
+  # also set visibility for easy filtering
+  rcloud.set.notebook.visibility(id, FALSE)
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
+}
 
 rcloud.config.get.current.notebook <- function() {
   base <- usr.key(user=.session$username, notebook="system", "config", "current")
