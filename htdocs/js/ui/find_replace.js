@@ -196,7 +196,7 @@ RCloud.UI.find_replace = (function() {
 
         var active_cell_selection = get_active_cell_selection();
 
-        if(active_cell_selection) {
+        if(active_cell_selection !== null) {
             find_input_.val(active_cell_selection);
         } else {
             ui_utils.select_allowed_elements();
@@ -287,19 +287,17 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function get_active_cell_selection() {
-        var selection;
-
         var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
 
-        if(focussed_cell) {
-            selection = focussed_cell.views[0].get_selection();
-        } else {
-            selection = RCloud.UI.command_prompt.get_selection();
-        }
+        if(focussed_cell)
+            return focussed_cell.views[0].get_selection();
 
-        return selection;
+        if(RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
+            return RCloud.UI.command_prompt.get_selection();
+
+        return null;
     }
     function active_transition(transition) {
         if(active_match_ !== undefined) {
