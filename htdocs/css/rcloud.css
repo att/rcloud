@@ -9418,8 +9418,7 @@ td {
     outline: none;
     border: 0; }
   #find-dialog #replace-input {
-    border-radius: 0;
-    padding: 12px 5px; }
+    border-radius: 0; }
   #find-dialog #find-close {
     position: absolute;
     cursor: pointer;

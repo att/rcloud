@@ -917,7 +917,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
-        }, 
+        },
         {
             name: 'execute-selection-or-line',
             bindKey: {
@@ -1415,11 +1415,15 @@ ui_utils.kill_popovers = function() {
 ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
-    
+
     //$('div.selectize-input > input').blur();
 };
 
-ui_utils.copy_document_selection = function(callback) {
+
+// copy elements from the notebook, but skip anything .nonselectable
+// we have to do this by copying them to an offscreen "buffer" in the DOM
+// in order to remove the .nonselectables
+ui_utils.select_allowed_elements = function(callback) {
     var sel = window.getSelection();
     var offscreen = $('<pre class="offscreen"></pre>');
 
@@ -1431,13 +1435,15 @@ ui_utils.copy_document_selection = function(callback) {
     }
 
     offscreen.find('.nonselectable').remove();
-    sel.selectAllChildren(offscreen[0]);
+    // Firefox throws an exception if you try to select children and there are none(!)
+    if(offscreen.is(':empty'))
+        sel.removeAllRanges();
+    else
+        sel.selectAllChildren(offscreen[0]);
 
     window.setTimeout(function() {
         offscreen.remove();
     }, 1000);
-
-    return $(offscreen).text();
 };
 
 RCloud.utils = {};
@@ -4509,7 +4515,10 @@ function rclient_promise(allow_anonymous) {
         if(window.rclient)
             rclient.close();
         if (error.message === "Authentication required") {
-            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
+            if(RCloud.session.first_session_)
+                window.location = ui_utils.relogin_uri();
+            else
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
         } else {
             var msg = error.message || error.error || error;
             RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
@@ -5825,6 +5834,9 @@ RCloud.UI.command_prompt = (function() {
             entry_.widget.focus();
             entry_.restore();
         },
+        ace_widget: function() {
+            return ace_widget_;
+        },
         get_selection: function() {
             if(!show_prompt_) {
                 return undefined;
@@ -6081,7 +6093,7 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
 })();
 
 RCloud.UI.find_replace = (function() {
-    
+
     var find_dialog_ = null, regex_,
         find_form_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
@@ -6133,40 +6145,57 @@ RCloud.UI.find_replace = (function() {
             replace_all_ = markup.find('#replace-all');
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
-            
-            find_input_.on('change keyup paste click', function(e) {
+
+            find_input_.on('change paste', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 generate_matches();
             });
 
-            find_form_.on('focusout', function(e) {
-                setTimeout(function() {
-                    if($(document.activeElement).closest(find_form_).length === 0) {
-                        has_focus_ = false;
-                        clear_highlights();
+            // disabling clear results on blur for firefox, since its implementation
+            // is either the only unbroken one or the only broken one (unclear)
+            if(navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
+                find_form_.on('focusout', function(e) {
+                    setTimeout(function() {
+                        console.log('focusout on ', e);
+                        if($(document.activeElement).closest(find_form_).length === 0) {
+                            has_focus_ = false;
+                            clear_highlights();
+                        }
+                    }, 100);
+                });
+
+                find_form_.on('focusin', function(e) {
+                    if(!has_focus_) {
+                        // save so that any new content since last save is matched:
+                        shell.save_notebook();
+                        generate_matches();
                     }
-                }, 0);
-            });
 
-            find_form_.on('focusin', function(e) {
-                if(!has_focus_) {
-                    // save so that any new content since last save is matched:
-                    shell.save_notebook();
-                    generate_matches(); 
-                }
-
-                has_focus_ = true;
-            });
+                    has_focus_ = true;
+                });
+            }
 
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
-                
-                if(active_match_ !== undefined){
-                     active_match_ = (active_match_ + matches_.length + 1) % matches_.length;                            
-                } else{
+
+                if(active_match_ !== undefined) {
+                     active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
+                } else {
                      active_match_ = 0;
                 }
+
+                show_match_details(active_match_ + 1, matches_.length);
+
+                active_transition('activate');
+            }
+
+            function find_previous() {
+                active_transition('deactivate');
+                if(active_match_ !== undefined)
+                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
+                else
+                    active_match_ = 0;
 
                 show_match_details(active_match_ + 1, matches_.length);
 
@@ -6183,15 +6212,7 @@ RCloud.UI.find_replace = (function() {
             find_last_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                active_transition('deactivate');
-                if(active_match_ !== undefined)
-                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
-                else
-                    active_match_ = 0;
-
-                show_match_details(active_match_ + 1, matches_.length);
-
-                active_transition('activate');
+                find_previous();
                 return false;
             });
 
@@ -6230,18 +6251,21 @@ RCloud.UI.find_replace = (function() {
             find_cycle_.push('find-close');
             replace_cycle_.push('find-close');
 
-            function click_find_next(e) {
+            function find_next_on_enter(e) {
                 if(e.keyCode===$.ui.keyCode.ENTER) {
                     e.preventDefault();
                     e.stopPropagation();
-                    find_next_.click();
+                    if(e.shiftKey)
+                        find_previous();
+                    else
+                        find_next();
                     return false;
                 }
                 return undefined;
             }
 
-            //find_input_.keydown(click_find_next);
-            replace_input_.keydown(click_find_next);
+            find_input_.keydown(find_next_on_enter);
+            replace_input_.keydown(find_next_on_enter);
 
             find_form_.keydown(function(e) {
                 switch(e.keyCode) {
@@ -6275,13 +6299,14 @@ RCloud.UI.find_replace = (function() {
         }
 
         find_dialog_.show();
- 
+
         var active_cell_selection = get_active_cell_selection();
 
-        if(active_cell_selection) {
+        if(active_cell_selection !== null) {
             find_input_.val(active_cell_selection);
         } else {
-            var text = ui_utils.copy_document_selection();
+            ui_utils.select_allowed_elements();
+            var text = window.getSelection().toString();
 
             if(text) {
                 find_input_.val(text);
@@ -6296,19 +6321,19 @@ RCloud.UI.find_replace = (function() {
         if(!shown_) {
 
             change_interval_ = setInterval(function() {
-                
+
                 // get the value:
                 var old_value = find_input_.data('value'),
                     new_value = find_input_.val();
 
                 if(new_value !== old_value) {
 
-                    generate_matches();    
+                    generate_matches();
 
                     find_input_.data('value', new_value);
                 }
 
-            }, 250);  
+            }, 250);
 
             build_regex(find_input_.val());
 
@@ -6331,13 +6356,13 @@ RCloud.UI.find_replace = (function() {
     function hide_matches() {
         find_match_.css('visibility', 'hidden');
     }
-    
+
     function show_matches() {
         find_match_.css('visibility', 'visible');
     }
 
     function show_match_details(match_index, match_total) {
-        match_index_.text(match_index);         
+        match_index_.text(match_index);
         match_total_.text(match_total);
     }
 
@@ -6368,19 +6393,17 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function get_active_cell_selection() {
-        var selection;
-
         var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
-        
-        if(focussed_cell) {
-            selection = focussed_cell.views[0].get_selection();
-        } else {
-            selection = RCloud.UI.command_prompt.get_selection();
-        }
 
-        return selection;
+        if(focussed_cell)
+            return focussed_cell.views[0].get_selection();
+
+        if(RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
+            return RCloud.UI.command_prompt.get_selection();
+
+        return null;
     }
     function active_transition(transition) {
         if(active_match_ !== undefined) {
@@ -6485,24 +6508,24 @@ RCloud.UI.find_replace = (function() {
                 category: 'Notebook Management',
                 id: 'notebook_find',
                 description: 'Find text',
-                keys: { 
+                keys: {
                     mac: [
-                        ['command', 'f'] 
+                        ['command', 'f']
                     ],
                     win: [
                         ['ctrl', 'f']
                     ]
                 },
-                action: function() { 
-                    toggle_find_replace(false); 
+                action: function() {
+                    toggle_find_replace(false);
                 }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
                 description: 'Replace text',
-                keys: { 
+                keys: {
                     mac: [
-                        ['command', 'option', 'f'] 
+                        ['command', 'option', 'f']
                     ],
                     win: [
                         ['ctrl', 'h']
@@ -8178,7 +8201,7 @@ RCloud.UI.init = function() {
            !$(arguments[0].target).closest($("#output")).size())
             return;
 
-        ui_utils.copy_document_selection();
+        ui_utils.select_allowed_elements();
     });
 
     // prevent unwanted document scrolling e.g. by dragging
