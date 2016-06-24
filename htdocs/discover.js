@@ -5,5 +5,7 @@ function main() {
     RCloud.UI.session_pane.init(); // really should be error logger which detects if there is a pane
     RCloud.UI.init();
 
-    return RCloud.session.init(true).then(RCloud.UI.discovery_page.init);
+    return RCloud.session.init(true)
+        .then(RCloud.UI.navbar.load)
+        .then(RCloud.UI.discovery_page.init);
 }
