@@ -162,25 +162,29 @@ var editor = function () {
         }
     }
 
+    function load_user_root(username) {
+        var pid = node_id("alls", username);
+        // load all 'alls' for given username:
+        var root = $tree_.tree('getNodeById', pid);
+
+        return (root.lazy_load ?
+                load_lazy_children(root, false) :
+                Promise.resolve()).return(root);
+    }
+
+
+
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     function find_next_copy_name(username, description) {
         var promise;
-        var pid = node_id("alls", username);
-
-        // load all 'alls' for given username:
-        var root = $tree_.tree('getNodeById', pid);
         if(root === undefined)
             return description;
-
-        var promise_load = root.lazy_load ?
-                load_lazy_children(root, false) :
-                Promise.resolve();
 
         return promise_load.then(function() {
             var parent = root;
             // if this is folder level, get the actual parent for comparison:
             if(description.indexOf('/')!==-1) {
-                pid += '/' + description.replace(/\/[^\/]*$/,'');
+                var pid = node_id("alls", username, description.replace(/\/[^\/]*$/,''));
                 parent = $tree_.tree('getNodeById', pid);
             }
 
@@ -920,20 +924,22 @@ var editor = function () {
                 starn.set_count(result.num_stars(gistname));
             }
         }
-        if(my_friends_[user]) {
-            p = update_tree_entry('friends', user, gistname, entry, true);
-            if(selroot==='friends')
-                p.then(open_and_select);
-        }
-        if(featured_.indexOf(user)>=0) {
-            p = update_tree_entry('featured', user, gistname, entry, true);
-            if(selroot==='featured')
-                p.then(open_and_select);
-        }
+        load_user_root(user).then(function() {
+            if(my_friends_[user]) {
+                p = update_tree_entry('friends', user, gistname, entry, true);
+                if(selroot==='friends')
+                    p.then(open_and_select);
+            }
+            if(featured_.indexOf(user)>=0) {
+                p = update_tree_entry('featured', user, gistname, entry, true);
+                if(selroot==='featured')
+                    p.then(open_and_select);
+            }
 
-        p = update_tree_entry('alls', user, gistname, entry, true);
-        if(selroot==='alls')
-            p.then(open_and_select);
+            p = update_tree_entry('alls', user, gistname, entry, true);
+            if(selroot==='alls')
+                p.then(open_and_select);
+        });
     }
 
     function remove_node(node) {
@@ -1115,9 +1121,9 @@ var editor = function () {
                 if(reselect_node) {
                     var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
-                    if(reselect_node && node_to_select) {
+                    if(node_to_select)
                         select_node(node_to_select);
-                    }
+                    else console.log('sorry, neglected to highlight ' + selected_node.id);
                 }
 
                 delete for_node.lazy_load;
