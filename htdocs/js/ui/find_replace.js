@@ -58,24 +58,29 @@ RCloud.UI.find_replace = (function() {
                 generate_matches();
             });
 
-            find_form_.on('focusout', function(e) {
-                setTimeout(function() {
-                    if($(document.activeElement).closest(find_form_).length === 0) {
-                        has_focus_ = false;
-                        clear_highlights();
+            // disabling clear results on blur for firefox, since its implementation
+            // is either the only unbroken one or the only broken one (unclear)
+            if(navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
+                find_form_.on('focusout', function(e) {
+                    setTimeout(function() {
+                        console.log('focusout on ', e);
+                        if($(document.activeElement).closest(find_form_).length === 0) {
+                            has_focus_ = false;
+                            clear_highlights();
+                        }
+                    }, 100);
+                });
+
+                find_form_.on('focusin', function(e) {
+                    if(!has_focus_) {
+                        // save so that any new content since last save is matched:
+                        shell.save_notebook();
+                        generate_matches();
                     }
-                }, 0);
-            });
 
-            find_form_.on('focusin', function(e) {
-                if(!has_focus_) {
-                    // save so that any new content since last save is matched:
-                    shell.save_notebook();
-                    generate_matches();
-                }
-
-                has_focus_ = true;
-            });
+                    has_focus_ = true;
+                });
+            }
 
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
