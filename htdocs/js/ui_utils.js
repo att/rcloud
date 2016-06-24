@@ -676,7 +676,11 @@ ui_utils.copy_document_selection = function(callback) {
     }
 
     offscreen.find('.nonselectable').remove();
-    sel.selectAllChildren(offscreen[0]);
+    // Firefox throws an exception if you try to select children and there are none(!)
+    if(offscreen.is(':empty'))
+        sel.removeAllRanges();
+    else
+        sel.selectAllChildren(offscreen[0]);
 
     window.setTimeout(function() {
         offscreen.remove();
