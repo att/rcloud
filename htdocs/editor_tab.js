@@ -1101,36 +1101,25 @@ var editor = function () {
     }
 
     function load_lazy_children(for_node, reselect_node) {
+        return get_notebooks_by_user(for_node.user).then(function(notebooks) {
 
-        var promise = Promise.resolve();
+            var initial_node;
 
-        promise = promise.then(function() {
+            var selected_node = get_selected_node();
 
-            return get_notebooks_by_user(for_node.user).then(function(notebooks) {
+            var notebook_nodes = convert_notebook_set(for_node.root, for_node.user, notebooks);
+            $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
 
-                var initial_node;
+            if(reselect_node) {
+                var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
-                var selected_node = get_selected_node();
+                if(node_to_select)
+                    select_node(node_to_select);
+                else console.log('sorry, neglected to highlight ' + selected_node.id);
+            }
 
-                var notebook_nodes = convert_notebook_set(for_node.root, for_node.user, notebooks);
-                $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
-
-                if(reselect_node) {
-                    var node_to_select = $tree_.tree('getNodeById', selected_node.id);
-
-                    if(node_to_select)
-                        select_node(node_to_select);
-                    else console.log('sorry, neglected to highlight ' + selected_node.id);
-                }
-
-                delete for_node.lazy_load;
-            });
-
-            promise = Promise.resolve();
-
+            delete for_node.lazy_load;
         });
-
-        return promise;
     }
 
     function tree_open(event) {
