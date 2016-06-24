@@ -211,7 +211,6 @@ RCloud.UI.menus = (function() {
                 }));
                 where.append(items);
             });
-            return this;
         }
     };
 })();

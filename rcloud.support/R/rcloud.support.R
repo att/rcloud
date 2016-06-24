@@ -406,8 +406,17 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                           id=src.nb$content$id))
     } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
-        rcloud.discovery.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
     }
+
+    rcloud.discovery.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
+
+    saveRDS(new.nb, "/tmp/forked.rds")
+
+    # save thumbnail to key-value database
+    if ("thumb.png.b64" %in% names(new.nb$content$files))
+      rcloud.discovery.set.thumb(id = new.nb$content$id,
+                                 thumb_png = new.nb$content$files$thumb.png.b64$content)
+
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
@@ -661,9 +670,11 @@ rcloud.config.new.notebook.number <- function()
 
 rcloud.config.get.recent.notebooks <- function() {
   keys <- rcs.list(usr.key(user=.session$username, notebook="system", "config", "recent", "*"))
-  vals <- rcs.get(keys, list=TRUE)
-  names(vals) <- gsub(".*/", "", names(vals))
-  vals
+  if(length(keys)>0) {
+    vals <- rcs.get(keys, list=TRUE)
+    names(vals) <- gsub(".*/", "", names(vals))
+    vals
+  } else list()
 }
 
 rcloud.config.set.recent.notebook <- function(id, date)
