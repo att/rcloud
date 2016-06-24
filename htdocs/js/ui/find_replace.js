@@ -91,6 +91,18 @@ RCloud.UI.find_replace = (function() {
                 active_transition('activate');
             }
 
+            function find_previous() {
+                active_transition('deactivate');
+                if(active_match_ !== undefined)
+                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
+                else
+                    active_match_ = 0;
+
+                show_match_details(active_match_ + 1, matches_.length);
+
+                active_transition('activate');
+            }
+
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -101,15 +113,7 @@ RCloud.UI.find_replace = (function() {
             find_last_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                active_transition('deactivate');
-                if(active_match_ !== undefined)
-                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
-                else
-                    active_match_ = 0;
-
-                show_match_details(active_match_ + 1, matches_.length);
-
-                active_transition('activate');
+                find_previous();
                 return false;
             });
 
@@ -152,7 +156,10 @@ RCloud.UI.find_replace = (function() {
                 if(e.keyCode===$.ui.keyCode.ENTER) {
                     e.preventDefault();
                     e.stopPropagation();
-                    find_next();
+                    if(e.shiftKey)
+                        find_previous();
+                    else
+                        find_next();
                     return false;
                 }
                 return undefined;
