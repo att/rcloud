@@ -168,19 +168,16 @@ var editor = function () {
         var pid = node_id("alls", username);
 
         // load all 'alls' for given username:
-        var parent = $tree_.tree('getNodeById', pid);
+        var root = $tree_.tree('getNodeById', pid);
         if(parent === undefined)
             return description;
 
-        var promise_load = Promise.resolve();
-
-        if(parent.lazy_load) {
-            promise_load = load_lazy_children(parent, false);
-        } else {
-            promise_load = Promise.resolve();
-        }
+        var promise_load = root.lazy_load ?
+                load_lazy_children(root, false) :
+                Promise.resolve();
 
         return promise_load.then(function() {
+            var parent;
 
             // if this is folder level, get the actual parent for comparison:
             if(description.indexOf('/')!==-1) {
