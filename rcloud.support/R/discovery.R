@@ -1,16 +1,21 @@
 rcloud.discovery.get.notebooks <- function(order = "recently.modified") {
-  switch(order,
-         recently.modified = rcloud.discovery.get.recently.modified.notebooks(),
-         most.popular = rcloud.discovery.get.most.popular.notebooks(),
-         none = list(sort='none', values=list())
-         )
+  notebooks <- switch(order,
+              recently.modified = rcloud.discovery.get.recently.modified.notebooks(),
+              most.popular = rcloud.discovery.get.most.popular.notebooks(),
+              none = list(sort='none', values=list())
+              )
+  list(
+    sort = notebooks$sort,
+    values = filter.notebooks(function(ids) { !is.notebook.encrypted(ids) },
+                              filter.notebooks(rcloud.is.notebook.visible, notebooks$values))
+  )
 }
 
 rcloud.discovery.unauthenticated.get.notebooks <- function(order = "recently.modified") {
   notebooks <- rcloud.discovery.get.notebooks(order)
   list(
     sort = notebooks$sort,
-    values = rcloud.filter.published(notebooks$values)
+    values = filter.published(notebooks$values)
   )
 }
 
@@ -60,9 +65,8 @@ rcloud.discovery.get.thumb <- function(id)
 rcloud.discovery.unauthenticated.get.thumb <- function(id)
   rcloud.fail.if.unpublished(rcloud.discovery.get.thumb)(id)
 
-# thumb_png is a location
+# thumb_png is a base64-encoded image
 rcloud.discovery.set.thumb <- function(id, thumb_png) {
-  base <- usr.key(user=".notebook", notebook=id)
-  thumb_png <- paste0("data:image/png;base64,", thumb_png)
-  rcs.set(rcs.key(base, "thumb"), thumb_png)
+  key <- usr.key(user=".notebook", notebook=id, "thumb")
+  if(is.null(thumb_png)) rcs.rm(key) else rcs.set(key, paste0("data:image/png;base64,", thumb_png))
 }
