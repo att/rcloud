@@ -172,41 +172,38 @@ var editor = function () {
                 Promise.resolve()).return(root);
     }
 
-
-
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     function find_next_copy_name(username, description) {
-        var promise;
-        if(root === undefined)
-            return description;
+        return load_user_root(username)
+            .then(function(root) {
+                var parent = root;
+                // if this is folder level, get the actual parent for comparison:
+                if(description.indexOf('/')!==-1) {
+                    var pid = node_id("alls", username, description.replace(/\/[^\/]*$/,''));
+                    parent = $tree_.tree('getNodeById', pid);
+                }
+                if(parent === undefined)
+                    return description;
 
-        return promise_load.then(function() {
-            var parent = root;
-            // if this is folder level, get the actual parent for comparison:
-            if(description.indexOf('/')!==-1) {
-                var pid = node_id("alls", username, description.replace(/\/[^\/]*$/,''));
-                parent = $tree_.tree('getNodeById', pid);
-            }
+                var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
+                if(!map[description])
+                    return description;
+                var match, base, n;
+                if((match = split_number(description))) {
+                    base = match[0];
+                    n = +match[1];
+                }
+                else {
+                    base = description + ' ';
+                    n = 1;
+                }
+                var copy_name;
+                do
+                    copy_name = base + (++n);
+                while(map[copy_name]);
 
-            var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
-            if(!map[description])
-                return description;
-            var match, base, n;
-            if((match = split_number(description))) {
-                base = match[0];
-                n = +match[1];
-            }
-            else {
-                base = description + ' ';
-                n = 1;
-            }
-            var copy_name;
-            do
-                copy_name = base + (++n);
-            while(map[copy_name]);
-
-            return copy_name;
-        });
+                return copy_name;
+            });
     }
 
 
