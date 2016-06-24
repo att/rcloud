@@ -49,9 +49,9 @@ function main() {
 
         RCloud.UI.shortcut_manager.disable_all();
 
-        if (error.message === "Authentication required") {
-            RCloud.UI.session_pane.post_error("Please login first!");
-        } else
+        if (error.message === "Authentication required")
+            window.location = ui_utils.relogin_uri();
+        else
             RCloud.UI.session_pane.post_rejection(error);
     });
 }

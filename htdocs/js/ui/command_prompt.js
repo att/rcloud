@@ -298,6 +298,9 @@ RCloud.UI.command_prompt = (function() {
             entry_.widget.focus();
             entry_.restore();
         },
+        ace_widget: function() {
+            return ace_widget_;
+        },
         get_selection: function() {
             if(!show_prompt_) {
                 return undefined;
