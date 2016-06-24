@@ -199,7 +199,8 @@ RCloud.UI.find_replace = (function() {
         if(active_cell_selection) {
             find_input_.val(active_cell_selection);
         } else {
-            var text = ui_utils.copy_document_selection();
+            ui_utils.select_allowed_elements();
+            var text = window.getSelection().toString();
 
             if(text) {
                 find_input_.val(text);

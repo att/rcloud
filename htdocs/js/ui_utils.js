@@ -664,7 +664,11 @@ ui_utils.hide_selectize_dropdown = function() {
     //$('div.selectize-input > input').blur();
 };
 
-ui_utils.copy_document_selection = function(callback) {
+
+// copy elements from the notebook, but skip anything .nonselectable
+// we have to do this by copying them to an offscreen "buffer" in the DOM
+// in order to remove the .nonselectables
+ui_utils.select_allowed_elements = function(callback) {
     var sel = window.getSelection();
     var offscreen = $('<pre class="offscreen"></pre>');
 
@@ -685,6 +689,4 @@ ui_utils.copy_document_selection = function(callback) {
     window.setTimeout(function() {
         offscreen.remove();
     }, 1000);
-
-    return $(offscreen).text();
 };
