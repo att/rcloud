@@ -167,7 +167,7 @@ var editor = function () {
         // load all 'alls' for given username:
         var root = $tree_.tree('getNodeById', pid);
 
-        return (root.lazy_load ?
+        return (root && root.lazy_load ?
                 load_lazy_children(root, false) :
                 Promise.resolve()).return(root);
     }
