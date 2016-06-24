@@ -1,16 +1,21 @@
 rcloud.discovery.get.notebooks <- function(order = "recently.modified") {
-  switch(order,
-         recently.modified = rcloud.discovery.get.recently.modified.notebooks(),
-         most.popular = rcloud.discovery.get.most.popular.notebooks(),
-         none = list(sort='none', values=list())
-         )
+  notebooks <- switch(order,
+              recently.modified = rcloud.discovery.get.recently.modified.notebooks(),
+              most.popular = rcloud.discovery.get.most.popular.notebooks(),
+              none = list(sort='none', values=list())
+              )
+  list(
+    sort = notebooks$sort,
+    values = filter.notebooks(function(ids) { !is.notebook.encrypted(ids) },
+                              filter.notebooks(rcloud.is.notebook.visible, notebooks$values))
+  )
 }
 
 rcloud.discovery.unauthenticated.get.notebooks <- function(order = "recently.modified") {
   notebooks <- rcloud.discovery.get.notebooks(order)
   list(
     sort = notebooks$sort,
-    values = rcloud.filter.published(notebooks$values)
+    values = filter.published(notebooks$values)
   )
 }
 

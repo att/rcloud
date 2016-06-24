@@ -26,6 +26,11 @@ rcloud.get.conf.values <- function(pattern) {
   lapply(matched, getConf)
 }
 
+filter.notebooks <- function(f, ids)
+  if(is.list(ids)) {
+    ids[filter.notebooks(f, names(ids))]
+  } else ids[f(ids)]
+
 .guess.language <- function(fn) {
     if (!length(grep(".",fn,TRUE))) return("unknown")
     ext <- gsub(".*\\.","",fn)
@@ -280,15 +285,6 @@ rcloud.unauthenticated.notebook.by.name <- function(name, user=.session$username
   if (vec) candidates[pub] else candidates[pub,,drop=FALSE]
 }
 
-rcloud.filter.published <- function(ids) {
-  if(is.list(ids)) {
-    ids[rcloud.filter.published(names(ids))]
-  } else {
-    pub <- sapply(ids, rcloud.is.notebook.published)
-    ids[pub]
-  }
-}
-
 ## this should go away antirely *and* be removed from OCAPs
 .rcloud.upload.to.notebook <- function(content, name) rcloud.upload.asset(name, content)
 
@@ -443,7 +439,7 @@ rcloud.multiple.notebook.fork.counts <- function(notebooks) {
 }
 
 rcloud.unauthenticated.multiple.notebook.fork.counts <- function(notebooks)
-  rcloud.filter.published(rcloud.multiple.notebook.fork.counts(notebooks))
+  filter.published(rcloud.multiple.notebook.fork.counts(notebooks))
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
@@ -462,16 +458,33 @@ rcloud.publish.notebook <- function(id)
 rcloud.unpublish.notebook <- function(id)
   rcloud.remove.notebook.property(id, "public")
 
-rcloud.is.notebook.published <- function(id)
-  !is.null(rcloud.get.notebook.property(id, "public"))
+property.multiple.notebooks <- function(id, property)
+  if(length(id)>1) {
+    x <- rcloud.get.notebook.property(id, property, list=TRUE)
+    names(x) <- NULL
+    sapply(x, identity) # vectorize
+  } else !is.null(rcloud.get.notebook.property(id, property))
 
-rcloud.is.notebook.visible <- function(id) {
-  visibility <- rcloud.get.notebook.property(id, "visible")
-  if(is.null(visibility) | length(visibility) == 0) {
-    visibility <- FALSE
+falsify.null <- function(v)
+  sapply(v, function(x) if(is.null(x)) FALSE else x)
+
+rcloud.is.notebook.published <- function(id)
+  as.logical(falsify.null(property.multiple.notebooks(id, "public")))
+
+filter.published <- function(ids)
+  filter.notebooks(rcloud.is.notebook.published, ids)
+
+rcloud.is.notebook.visible <- function(id)
+  if(length(id)>1) {
+    falsify.null(property.multiple.notebooks(id, "visible"))
+  } else {
+    visibility <- rcloud.get.notebook.property(id, "visible")
+    # what is the length zero case for?
+    if(is.null(visibility) | length(visibility) == 0) {
+      visibility <- FALSE
+    }
+    visibility
   }
-  visibility
-}
 
 rcloud.set.notebook.visibility <- function(id, value)
   rcloud.set.notebook.property(id, "visible", value != 0);
@@ -702,7 +715,7 @@ rcloud.get.multiple.notebook.infos <- function(ids)
   rcloud.get.notebook.info(ids, FALSE)
 
 rcloud.unauthenticated.get.multiple.notebook.infos <- function(ids)
-  rcloud.filter.published(rcloud.get.multiple.notebook.infos(ids))
+  filter.published(rcloud.get.multiple.notebook.infos(ids))
 
 # notebook properties settable by non-owners
 .anyone.settable = c('source', 'username', 'description', 'last_commit');
@@ -718,8 +731,8 @@ rcloud.set.notebook.info <- function(id, info) {
 # get/set another property of notebook
 # unlike info cache fields above, other properties can only
 # be set by owner
-rcloud.get.notebook.property <- function(id, key)
-  rcs.get(usr.key(user=".notebook", notebook=id, key))
+rcloud.get.notebook.property <- function(id, key, list=FALSE)
+  rcs.get(usr.key(user=".notebook", notebook=id, key), list=list)
 
 rcloud.set.notebook.property <- function(id, key, value)
   if(key %in% .anyone.settable || notebook.is.mine(id)) {
