@@ -169,7 +169,7 @@ var editor = function () {
 
         // load all 'alls' for given username:
         var root = $tree_.tree('getNodeById', pid);
-        if(parent === undefined)
+        if(root === undefined)
             return description;
 
         var promise_load = root.lazy_load ?
@@ -177,8 +177,7 @@ var editor = function () {
                 Promise.resolve();
 
         return promise_load.then(function() {
-            var parent;
-
+            var parent = root;
             // if this is folder level, get the actual parent for comparison:
             if(description.indexOf('/')!==-1) {
                 pid += '/' + description.replace(/\/[^\/]*$/,'');
