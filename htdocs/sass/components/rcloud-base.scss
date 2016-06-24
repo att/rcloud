@@ -316,7 +316,7 @@ td {
 }
 
 #find-dialog {
-    
+
     position: relative;
 
     #find-form {
@@ -341,7 +341,7 @@ td {
             &:hover,&:focus {
                 -webkit-box-shadow: 0 0 0px 1000px #fff inset;
             }
-        }        
+        }
     }
 
     #find-input {
@@ -351,7 +351,6 @@ td {
 
     #replace-input {
         border-radius: 0;
-        padding: 12px 5px;
     }
 
     #find-close {
@@ -608,7 +607,7 @@ body .modal-dialog.full {
             -webkit-appearance: none;
             width: 7px;
         }
-        
+
         &::-webkit-scrollbar-thumb {
             border-radius: 4px;
             background-color: rgba(0,0,0,.5);
