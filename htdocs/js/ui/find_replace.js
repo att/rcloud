@@ -1,5 +1,5 @@
 RCloud.UI.find_replace = (function() {
-    
+
     var find_dialog_ = null, regex_,
         find_form_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
@@ -51,7 +51,7 @@ RCloud.UI.find_replace = (function() {
             replace_all_ = markup.find('#replace-all');
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
-            
+
             find_input_.on('change keyup paste click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -71,7 +71,7 @@ RCloud.UI.find_replace = (function() {
                 if(!has_focus_) {
                     // save so that any new content since last save is matched:
                     shell.save_notebook();
-                    generate_matches(); 
+                    generate_matches();
                 }
 
                 has_focus_ = true;
@@ -79,9 +79,9 @@ RCloud.UI.find_replace = (function() {
 
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
-                
+
                 if(active_match_ !== undefined){
-                     active_match_ = (active_match_ + matches_.length + 1) % matches_.length;                            
+                     active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
                 } else{
                      active_match_ = 0;
                 }
@@ -193,7 +193,7 @@ RCloud.UI.find_replace = (function() {
         }
 
         find_dialog_.show();
- 
+
         var active_cell_selection = get_active_cell_selection();
 
         if(active_cell_selection) {
@@ -214,19 +214,19 @@ RCloud.UI.find_replace = (function() {
         if(!shown_) {
 
             change_interval_ = setInterval(function() {
-                
+
                 // get the value:
                 var old_value = find_input_.data('value'),
                     new_value = find_input_.val();
 
                 if(new_value !== old_value) {
 
-                    generate_matches();    
+                    generate_matches();
 
                     find_input_.data('value', new_value);
                 }
 
-            }, 250);  
+            }, 250);
 
             build_regex(find_input_.val());
 
@@ -249,13 +249,13 @@ RCloud.UI.find_replace = (function() {
     function hide_matches() {
         find_match_.css('visibility', 'hidden');
     }
-    
+
     function show_matches() {
         find_match_.css('visibility', 'visible');
     }
 
     function show_match_details(match_index, match_total) {
-        match_index_.text(match_index);         
+        match_index_.text(match_index);
         match_total_.text(match_total);
     }
 
@@ -291,7 +291,7 @@ RCloud.UI.find_replace = (function() {
         var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
-        
+
         if(focussed_cell) {
             selection = focussed_cell.views[0].get_selection();
         } else {
@@ -403,24 +403,24 @@ RCloud.UI.find_replace = (function() {
                 category: 'Notebook Management',
                 id: 'notebook_find',
                 description: 'Find text',
-                keys: { 
+                keys: {
                     mac: [
-                        ['command', 'f'] 
+                        ['command', 'f']
                     ],
                     win: [
                         ['ctrl', 'f']
                     ]
                 },
-                action: function() { 
-                    toggle_find_replace(false); 
+                action: function() {
+                    toggle_find_replace(false);
                 }
             }, {
                 category: 'Notebook Management',
                 id: 'notebook_replace',
                 description: 'Replace text',
-                keys: { 
+                keys: {
                     mac: [
-                        ['command', 'option', 'f'] 
+                        ['command', 'option', 'f']
                     ],
                     win: [
                         ['ctrl', 'h']

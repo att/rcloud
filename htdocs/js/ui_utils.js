@@ -162,7 +162,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
-        }, 
+        },
         {
             name: 'execute-selection-or-line',
             bindKey: {
@@ -660,7 +660,7 @@ ui_utils.kill_popovers = function() {
 ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
-    
+
     //$('div.selectize-input > input').blur();
 };
 
