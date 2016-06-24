@@ -1156,12 +1156,9 @@ var editor = function () {
         }
 
         // go off and get data for the given user:
-        var p_load_children;
-        if(n.lazy_load) {
-            p_load_children = load_lazy_children(n, true);
-        } else {
-            p_load_children = Promise.resolve();
-        }
+        var p_load_children = n.lazy_load ?
+                load_lazy_children(n, true) :
+                Promise.resolve();
 
         p_load_children.then(function() {
             // notebook folder name only editable when open
