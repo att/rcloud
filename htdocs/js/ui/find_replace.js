@@ -52,7 +52,7 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('change keyup paste click', function(e) {
+            find_input_.on('change paste', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 generate_matches();
@@ -80,9 +80,9 @@ RCloud.UI.find_replace = (function() {
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
 
-                if(active_match_ !== undefined){
+                if(active_match_ !== undefined) {
                      active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
-                } else{
+                } else {
                      active_match_ = 0;
                 }
 
@@ -148,18 +148,18 @@ RCloud.UI.find_replace = (function() {
             find_cycle_.push('find-close');
             replace_cycle_.push('find-close');
 
-            function click_find_next(e) {
+            function find_next_on_enter(e) {
                 if(e.keyCode===$.ui.keyCode.ENTER) {
                     e.preventDefault();
                     e.stopPropagation();
-                    find_next_.click();
+                    find_next();
                     return false;
                 }
                 return undefined;
             }
 
-            //find_input_.keydown(click_find_next);
-            replace_input_.keydown(click_find_next);
+            find_input_.keydown(find_next_on_enter);
+            replace_input_.keydown(find_next_on_enter);
 
             find_form_.keydown(function(e) {
                 switch(e.keyCode) {
