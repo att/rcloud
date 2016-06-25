@@ -7,13 +7,12 @@ function getDocHeight(D) {
     );
 }
 
-var hooks = false;
-
 function size_this(div) {
     var D = $(div).find('iframe').contents()[0];
     var B = D.body;
+
     if (!B) {
-        setTimeout(sizer, 100);
+        setTimeout(function() { size_this($(div)); }, 100);
     } else {
         var h = getDocHeight(D);
         $(div).find('iframe').height(h);
@@ -21,26 +20,43 @@ function size_this(div) {
     }
 }
 
-function initWidget(div, html, k) {
-    $(div).html(html)
+function resize_all() {
+    var widgets = $('.rcloud-htmlwidget').find('div');
+    $.map(
+        widgets,
+        function(w) {
+            setTimeout(function() { size_this(w) }, 200)
+        }
+    );
+    return widgets.length;
+}
 
-    function sizer() {
-        size_this($(div));
-    }
+var hooks = false;
 
+function add_hooks() {
     if (!hooks) {
         hooks = true;
-        window.addEventListener('resize', function() {
-            $.map(
-                $('.rcloud-htmlwidget').find('div'),
-                function(w) {
-                    setTimeout(function() { size_this(w) }, 200)
-                }
-            );
-        }, true)
+        window.addEventListener('resize', resize_all, true);
     };
+}
 
-    setTimeout(sizer, 100);
+// The resizer is mainly for mini.html, but might be handy for
+// notebook as well, if some widgets resize very slowly.
+
+$(document).ready(function() {
+    add_hooks()
+    function resizer() {
+        var num_widgets = resize_all();
+        var interval = 200;
+        if (num_widgets > 0) { interval = 5000; }
+        setTimeout(resizer, interval);
+    }
+    resizer()
+});
+
+function initWidget(div, html, k) {
+    $(div).html(html)
+    setTimeout(function() { size_this($(div)); }, 100);
     k(null, div);
 }
 
