@@ -231,12 +231,12 @@ function create_cell_html_view(language, cell_model) {
         widget.gotoPageUp = function() {
             widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
             widget.$moveByPage(-1, false);
-        }
+        };
 
         widget.gotoPageDown = function() {
             widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
             widget.$moveByPage(1, false);
-        }
+        };
 
         widget.setAutoScrollEditorIntoView = function(enable) {
             if (!enable)
@@ -967,7 +967,7 @@ function create_cell_html_view(language, cell_model) {
 
     result.edit_source(false);
     return result;
-};
+}
 
 Notebook.Cell.create_html_view = function(cell_model)
 {
