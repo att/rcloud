@@ -372,6 +372,7 @@ td {
         display: inline-block;
         border: 1px solid rgb(169, 169, 169);
         padding: 1px;
+        background: white;
     }
 
     .find, .replace {
@@ -393,7 +394,9 @@ td {
     display: inline-block;
     padding: 2px 5px;
     visibility: hidden;
+    text-align: right;
     color: #535353;
+    min-width: 50px;
     @include no-select();
 }
 
