@@ -306,7 +306,8 @@ RCloud.UI.find_replace = (function() {
         if(focussed_cell)
             return focussed_cell.views[0].get_selection();
 
-        if(RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
+        // command prompt inactive for view:
+        if(RCloud.UI.command_prompt.ace_widget() && RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
             return RCloud.UI.command_prompt.get_selection();
 
         return null;
