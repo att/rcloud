@@ -264,7 +264,8 @@ var shell = (function() {
             });
         }, open_from_github: function(notebook_or_url) {
             function isHex(str) {
-                return str.match(/^[a-f0-9]*$/i) !== null;
+                return str.match(/^[a-f0-9]*$/i) !== null &&
+                    [20,32].indexOf(str.length) !== -1;
             }
             var ponents;
             if(notebook_or_url.indexOf('://') > 0) {
@@ -280,8 +281,8 @@ var shell = (function() {
                     // new format URL
                     // [{username}/]{gistid}/{version}
                     // there's an ambiguity between usernames and gist IDs
-                    // so guess that if the first component is not 20 chars of hex, it's a username
-                    if(ponents[0].length != 20 || !isHex(ponents[0]))
+                    // so guess that if the first component is not 20 or 32 chars of hex, it's a username
+                    if(!isHex(ponents[0]))
                         ponents.splice(0,1);
                 }
                 else {
