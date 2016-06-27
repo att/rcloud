@@ -9433,7 +9433,8 @@ td {
   #find-dialog #find-details {
     display: inline-block;
     border: 1px solid darkgray;
-    padding: 1px; }
+    padding: 1px;
+    background: white; }
   #find-dialog .find, #find-dialog .replace {
     display: inline-block;
     padding: 6px 6px 0 6px; }
@@ -9446,7 +9447,9 @@ td {
   display: inline-block;
   padding: 2px 5px;
   visibility: hidden;
+  text-align: right;
   color: #535353;
+  min-width: 50px;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;

@@ -6157,7 +6157,6 @@ RCloud.UI.find_replace = (function() {
             if(navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
                 find_form_.on('focusout', function(e) {
                     setTimeout(function() {
-                        console.log('focusout on ', e);
                         if($(document.activeElement).closest(find_form_).length === 0) {
                             has_focus_ = false;
                             clear_highlights();
@@ -6400,7 +6399,8 @@ RCloud.UI.find_replace = (function() {
         if(focussed_cell)
             return focussed_cell.views[0].get_selection();
 
-        if(RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
+        // command prompt inactive for view:
+        if(RCloud.UI.command_prompt.ace_widget() && RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
             return RCloud.UI.command_prompt.get_selection();
 
         return null;
