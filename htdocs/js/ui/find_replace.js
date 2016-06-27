@@ -63,7 +63,6 @@ RCloud.UI.find_replace = (function() {
             if(navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
                 find_form_.on('focusout', function(e) {
                     setTimeout(function() {
-                        console.log('focusout on ', e);
                         if($(document.activeElement).closest(find_form_).length === 0) {
                             has_focus_ = false;
                             clear_highlights();
