@@ -197,7 +197,7 @@ RCloud.UI.cell_commands = (function() {
                             if(e.shiftKey) {
                                 shell.run_notebook_from(cell_model.id());
                             } else {
-                                cell_view.execute_cell();    
+                                cell_view.execute_cell();
                             }
                         });
                     }
