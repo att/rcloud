@@ -1,13 +1,18 @@
-## RCloud 1.6 (unreleased)
+## RCloud 1.6
 
 ### Features
-
 * Multiple cell selection. There is a checkbox on each cell, and a new
-  selection bar at the top of the notebook. The selection bar allows select
-  all or none, and inverting the selection. Click the trashcan (now on the
-  selection bar) or press delete to delete the selected cells; press
-  ctrl/cmd-K to "crop" or keep only the selected cells; ctrl/cmd-shift-I to
-  invert the selection. (#658)
+  selection bar at the top of the notebook. You can also click cell titles to
+  select cells (with the usual extend selection behavior for shift- and
+  ctrl/cmd- clicking). The selection bar allows select all or none, and
+  inverting the selection. Click the trashcan (now on the selection bar) or
+  press the delete key to delete the selected cells; press ctrl/cmd-K to
+  "crop" or keep only the selected cells; ctrl/cmd-shift-I to invert the
+  selection. (#658)
+
+* RCloud now supports many keyboard shortcuts. Press <kbd>?</kbd> with the
+  focus on the window in order to see a complete list of shortcuts (or click
+  the link in the Help panel). Of note are <key>ctrl
 
 * Support `exec.auth: as-local` configuration option which uses
   current unix user (i.e., the user running the RCloud server) without
@@ -22,9 +27,8 @@
   the permissions on the library path - the default permissions are to
   not allow others (including the web server) access to user libraries.
 
-
 ### Improvements
-
+* Panels are distributed to the left and right side based on their 
 * Stylesheets for reasonable styling of print/PDF output (#1783)
 
 * Undo and redo shortcuts (ctrl/cmd-Z and ctrl-Y/cmd-shift-Z) move forward and
@@ -33,12 +37,10 @@
   command prompt are not in focus.
 
 ### API changes
-
 * `notebook.R` passes an additional entry `.headers` containing the request
   headers.
 
 ### Bugfixes
-
 * Ctrl/Cmd-clicking on the New Notebook button should open a new tab with a
   new notebook (#1733)
 
