@@ -89,16 +89,7 @@ RCloud.UI.discovery_page = (function() {
             return rcloud.discovery.get_notebooks(current_metric).then(function(discover_data) {
                 data = discover_data;
 
-                // temporary
-                if(Object.keys(data.values).length > 100) {
-                    var keys_to_delete = Object.keys(data.values).slice(100);
-
-                    _.each(keys_to_delete, function(k) {
-                        delete data.values[k];
-                    });
-                }
-
-                // get the detailed notebook info;
+                // get the detailed notebook info:
                 return RCloud.discovery_model.get_notebooks(anonymous, Object.keys(data.values));
 
             }).then(function(notebooks) {
@@ -134,6 +125,11 @@ RCloud.UI.discovery_page = (function() {
                         };
                     }
                 };
+
+                // temporary limit of 100:
+                if(notebook_pairs.length > 100) {
+                    notebook_pairs = notebook_pairs.slice(0, 100);
+                }
 
                 var notebook_data_promises = notebook_pairs
                         .map(function(notebook) {
