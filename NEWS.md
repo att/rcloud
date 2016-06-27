@@ -1,13 +1,30 @@
-## RCloud 1.6 (unreleased)
+## RCloud 1.6
 
 ### Features
-
 * Multiple cell selection. There is a checkbox on each cell, and a new
-  selection bar at the top of the notebook. The selection bar allows select
-  all or none, and inverting the selection. Click the trashcan (now on the
-  selection bar) or press delete to delete the selected cells; press
-  ctrl/cmd-K to "crop" or keep only the selected cells; ctrl/cmd-shift-I to
-  invert the selection. (#658)
+  selection bar at the top of the notebook. You can also click cell titles to
+  select cells (with the usual extend selection behavior for <kbd>shift</kbd>
+  and <kbd>ctrl</kbd>/<kbd>cmd</kbd> clicking). The selection bar allows
+  select all or none, and inverting the selection. Click the trashcan (now on
+  the selection bar) or press the delete key to delete the selected cells;
+  press <kbd>ctrl k</kbd>/<kbd>cmd k</kbd> to "crop" or keep only the selected
+  cells; <kbd>ctrl shift i</kbd>/<kbd>cmd shift i</kbd> to invert the
+  selection. (#658)
+
+* RCloud now supports many keyboard shortcuts. Press <kbd>?</kbd> with the
+  focus on the window in order to see a complete list of shortcuts (or click
+  the link in the Help panel). Of note are <kbd>ctrl shift enter</kbd> to run
+  the entire notebook (#2001), and <kbd>ctrl shift <</kbd> and <kbd>ctrl shift ></kbd>
+  to go to the next or last cell (among many others). (#300)
+
+* New Discovery Page to show most recent and most popular notebooks. You can
+  add thumbnails to your notebooks to be displayed in this view by adding a
+  PNG asset named `thumb.png`. Recent shows the most recently modified
+  notebooks; Popular shows notebooks ranked by forks plus stars. Suggestions
+  for other recommendation metrics are welcome!
+
+* [HTML widgets](htmlwidgets.org) for visualization are now supported in
+  notebooks and in mini.html dashboards. (#1435)
 
 * Support `exec.auth: as-local` configuration option which uses
   current unix user (i.e., the user running the RCloud server) without
@@ -22,30 +39,64 @@
   the permissions on the library path - the default permissions are to
   not allow others (including the web server) access to user libraries.
 
-
 ### Improvements
+* Cells are shown at the full height of all their text, instead of adding a
+  second level of scrolling. This eliminates the behavior where they would
+  suddenly get smaller when activated, and the cursor usually lands at the
+  place that was clicked, or at least not too far away. (#1624)
+
+* The initial page load for `edit.html` is much faster, due to loading the
+  notebook tree asynchronously. We will continue to optimize the page
+  load. (#1781)
+
+* Panels are distributed to the left and right side based on their width, so
+  that the notebook area doesn't get too small. If the old "layout by purpose"
+  is wanted, uncheck "Arrange panels by size" in the Settings panel.
+  (#1802 / #447)
+
+* Run from this cell to the end of the notebook by <kbd>shift</kbd>-clicking
+  the play button, or pressing <kbd>alt shift enter</kbd> within the
+  cell. (#1949)
 
 * Stylesheets for reasonable styling of print/PDF output (#1783)
 
-* Undo and redo shortcuts (ctrl/cmd-Z and ctrl-Y/cmd-shift-Z) move forward and
-  backward in history. You still need to hit the Revert button to commit the
-  change. Currently these shortcuts only function when the cells, assets, and
+* One particularly useful set of keyboard shortcuts are undo and redo
+  (<kbd>ctrl z</kbd>/<kbd>cmd z</kbd> and <kbd>ctrl y</kbd>/<kbd>cmd shift
+  z</kbd>) to move forward and backward in history. Then press <kbd>ctrl
+  e</kbd> / <kbd>cmd e</kbd> to revert, or the Revert button in the navbar, to
+  commit the change. These shortcuts only work when the cells, assets, and
   command prompt are not in focus.
 
-### API changes
+* Numerous improvements to find and replace. In particular, the number of
+  results are shown and the first result starts highlighted, and you can press
+  <kbd>shift enter</kbd> to reverse-search. It is much harder to get in a
+  state where the search results don't match the current state of the
+  notebook, at least on browsers that are not Firefox. (#1720 / #2082 / #1849
+  / #1960 / etc.)
 
+* Navigating to `edit.html` when not logged in redirects you to the login
+  page, or reinitializes the access token, instead of displaying an Aw, Shucks
+  error message for something that is not an error. (#2122)
+
+### API changes
 * `notebook.R` passes an additional entry `.headers` containing the request
   headers.
 
 ### Bugfixes
-
-* Ctrl/Cmd-clicking on the New Notebook button should open a new tab with a
-  new notebook (#1733)
+* <kbd>ctrl</kbd>/<kbd>cmd</kbd>-clicking on the New Notebook button opens a
+  new tab with a new notebook (#1733)
 
 * Improved matching of code formatting to match look when inactive and in edit
   mode on Windows and Linux - not perfect but closer (#1266)
 
 * Autosave should not scroll assets/notebook/cells (#1622 / #1626 / #1686)
+
+* Renaming the folder of the current notebook would not display the change in
+  notebook name (#2046)
+
+* Leading and trailing spaces should not be allowed for protection groups and
+  asset names, as it can lead to confusion or deception. Spaces at the ends of
+  notebook names are mostly okay. (#1973)
 
 
 ## RCloud 1.5.3
