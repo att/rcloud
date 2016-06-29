@@ -30,6 +30,8 @@ update.solr <- function(notebook, starcount){
   solr.post.url <- getConf("solr.url")
   if (is.null(solr.post.url)) stop("solr configuration not enabled")
 
+  #Update only notebooks which are visible
+  if(rcloud.is.notebook.visible(notebook$content$id )){
   ## FIXME: gracefully handle unavailability
   content.files <- notebook$content$files
   fns <- as.vector(sapply(content.files, function(o) o$filename))
@@ -59,6 +61,7 @@ update.solr <- function(notebook, starcount){
     metadata.list$content$set <- content.files
     completedata <- toJSON(metadata.list)
     .solr.post(data=completedata)
+    }
   }
 }
 
