@@ -24,7 +24,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                 filename_span.text(old_asset_name);
                 return;
             }
-            
+
             if(old_asset_name === new_asset_name) {
                 filename_span.text(old_asset_name);
             } else {
@@ -56,7 +56,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    filename_span.click(function() {
+    anchor.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
         //ugly fix, but desperate times call for desperate measures.
