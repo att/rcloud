@@ -1695,6 +1695,16 @@ Notebook.Buffer.create_model = function(content, language) {
             checkpoint_ = content;
             return change;
         },
+        asset_url: function(with_version) {
+            var gist = this.parent_model.controller.current_gist();
+            var parts = [window.location.protocol + '//' + window.location.host,
+                         'notebook.R',
+                         gist.id];
+            if(with_version)
+                parts.push(gist.history[0].version);
+            parts.push(this.filename());
+            return parts.join('/');
+        },
         notify_views: function(f) {
             _.each(this.views, function(view) {
                 f(view);
@@ -1730,7 +1740,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                 filename_span.text(old_asset_name);
                 return;
             }
-            
+
             if(old_asset_name === new_asset_name) {
                 filename_span.text(old_asset_name);
             } else {
@@ -1762,7 +1772,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    filename_span.click(function() {
+    anchor.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
         //ugly fix, but desperate times call for desperate measures.
@@ -9604,7 +9614,7 @@ RCloud.UI.output_context = (function() {
                 switch(type) {
                 case 'code':
                     return function(text) {
-                        return $('<code></code>').append(text);
+                        return $.el.pre($.el.code(text));
                     };
                 case 'error':
                     return function(text) {
@@ -10074,11 +10084,6 @@ RCloud.UI.run_button = (function() {
 
 RCloud.UI.scratchpad = (function() {
     var binary_mode_; // not editing
-    // this function probably belongs elsewhere
-    function make_asset_url(model) {
-        return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
-            model.parent_model.controller.current_gist().id + '/' + model.filename();
-    }
     return {
         session: null,
         widget: null,
@@ -10262,13 +10267,13 @@ RCloud.UI.scratchpad = (function() {
                 if(/\.pdf$/i.test(this.current_model.filename()))
                     sbin.html('<p>PDF preview not supported</p>');
                 else
-                    sbin.html('<object data="' + make_asset_url(this.current_model) + '"></object>');
+                    sbin.html('<object data="' + this.current_model.asset_url(true) + '"></object>');
                 sbin.show();
             }
             else {
                 // text content: show editor
                 binary_mode_ = false;
-                that.widget.setReadOnly(false);
+                that.widget.setReadOnly(shell.notebook.model.read_only());
                 $('#scratchpad-binary').hide();
                 $('#scratchpad-editor').show();
                 $('#scratchpad-editor > *').show();
@@ -10286,11 +10291,6 @@ RCloud.UI.scratchpad = (function() {
                 that.language_updated();
                 that.widget.resize();
                 that.widget.focus();
-            }
-
-            // if it's readonly, 
-            if(shell.notebook.model.read_only()) {
-                ui_utils.set_ace_readonly(this.widget, true);
             }
         },
         // this behaves like cell_view's update_model
@@ -10325,7 +10325,7 @@ RCloud.UI.scratchpad = (function() {
             }
         }, update_asset_url: function() {
             if(this.current_model)
-                $('#asset-link').attr('href', make_asset_url(this.current_model));
+                $('#asset-link').attr('href', this.current_model.asset_url());
         }, clear: function() {
             if(!this.exists)
                 return;
