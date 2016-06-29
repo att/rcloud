@@ -23,7 +23,7 @@
   notebooks; Popular shows notebooks ranked by forks plus stars. Suggestions
   for other recommendation metrics are welcome!
 
-* [HTML widgets](htmlwidgets.org) for visualization are now supported in
+* [HTML widgets](http://htmlwidgets.org) for visualization are now supported in
   notebooks and in mini.html dashboards. (#1435)
 
 * Support `exec.auth: as-local` configuration option which uses
