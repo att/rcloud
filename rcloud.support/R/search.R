@@ -187,6 +187,8 @@ stitch.search.result <- function(splitted, type,k) {
 
 .solr.post.comment <- function(id, content, comment.id) {
 
+  ## Post comments to only notebooks with visibility flag true
+  if(rcloud.is.notebook.visible(notebook$content$id )){
   ## query ID to see if it has existing comments
   query <- list(q=paste0("id:",id),start=0,rows=1000)
   solr.res <- .solr.get(query=query)
@@ -198,6 +200,7 @@ stitch.search.result <- function(splitted, type,k) {
   ## send the update request
   metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':::',comment.content,':::',.session$username), '"}}')
   .solr.post(data=metadata)
+  }
 }
 
 .solr.modify.comment <- function(id, content, cid) {
