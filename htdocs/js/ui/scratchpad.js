@@ -1,10 +1,5 @@
 RCloud.UI.scratchpad = (function() {
     var binary_mode_; // not editing
-    // this function probably belongs elsewhere
-    function make_asset_url(model) {
-        return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
-            model.parent_model.controller.current_gist().id + '/' + model.filename();
-    }
     return {
         session: null,
         widget: null,
@@ -188,7 +183,7 @@ RCloud.UI.scratchpad = (function() {
                 if(/\.pdf$/i.test(this.current_model.filename()))
                     sbin.html('<p>PDF preview not supported</p>');
                 else
-                    sbin.html('<object data="' + make_asset_url(this.current_model) + '"></object>');
+                    sbin.html('<object data="' + this.current_model.asset_url(true) + '"></object>');
                 sbin.show();
             }
             else {
@@ -251,7 +246,7 @@ RCloud.UI.scratchpad = (function() {
             }
         }, update_asset_url: function() {
             if(this.current_model)
-                $('#asset-link').attr('href', make_asset_url(this.current_model));
+                $('#asset-link').attr('href', this.current_model.asset_url());
         }, clear: function() {
             if(!this.exists)
                 return;
