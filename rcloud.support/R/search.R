@@ -1,13 +1,19 @@
 # Some intelligent parsing account for basics like /solr/notebook and /solr/notebook/ is essentially the same thing
 # Using httr::parse_url
 
-.solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")) {
+.solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"),isXML=FALSE) {
+  content_type <- "application/json"
+  data = paste("[",data,"]",sep='')
+  if(isXML){
+    content_type ="text/xml"
+    data=data
+    }
   solr.post.url <- httr::parse_url(solr.url)
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
   if(is.null(solr.auth.user)){
-    httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json())
+   httr::POST(build_url(solr.post.url) ,body=data ,add_headers('Content-Type'=content_type))
   } else {
-    httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json() , authenticate(solr.auth.user,solr.auth.pwd))
+   httr::POST(build_url(solr.post.url) , body =data,add_headers('Content-Type'=content_type), authenticate(solr.auth.user,solr.auth.pwd))
   }
 }
 
@@ -219,4 +225,9 @@ stitch.search.result <- function(splitted, type,k) {
   solr.res$response$docs[[1]]$comments <- solr.res$response$docs[[1]]$comments[-index]
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
   .solr.post(data=metadata)
+}
+
+.solr.delete.doc <- function(id){
+    metadata <- paste0('<delete><id>',id,'</id></delete>')
+    .solr.post(data=metadata, isXML=TRUE)
 }
