@@ -189,7 +189,7 @@ RCloud.UI.scratchpad = (function() {
             else {
                 // text content: show editor
                 binary_mode_ = false;
-                that.widget.setReadOnly(false);
+                that.widget.setReadOnly(shell.notebook.model.read_only());
                 $('#scratchpad-binary').hide();
                 $('#scratchpad-editor').show();
                 $('#scratchpad-editor > *').show();
@@ -207,11 +207,6 @@ RCloud.UI.scratchpad = (function() {
                 that.language_updated();
                 that.widget.resize();
                 that.widget.focus();
-            }
-
-            // if it's readonly, 
-            if(shell.notebook.model.read_only()) {
-                ui_utils.set_ace_readonly(this.widget, true);
             }
         },
         // this behaves like cell_view's update_model
