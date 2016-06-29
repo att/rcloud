@@ -197,10 +197,10 @@ RCloud.UI.panel_loader = (function() {
             }
 
             // alternative layout?
-            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {    
+            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {
 
                 // default to true:
-                if(_.isNull(layoutBySize) || _.isUndefined(layoutBySize)) {
+                if(layoutBySize === null) {
                     layoutBySize = true;
                 }
 
