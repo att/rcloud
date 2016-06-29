@@ -3,17 +3,17 @@
 
 .solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"),isXML=FALSE) {
   content_type <- "application/json"
-  data = paste("[",data,"]",sep='')
+  body = paste("[",data,"]",sep='')
   if(isXML){
     content_type ="text/xml"
-    data=data
+    body=data
     }
   solr.post.url <- httr::parse_url(solr.url)
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
   if(is.null(solr.auth.user)){
-   httr::POST(build_url(solr.post.url) ,body=data ,add_headers('Content-Type'=content_type))
+   httr::POST(build_url(solr.post.url) ,body=body ,add_headers('Content-Type'=content_type))
   } else {
-   httr::POST(build_url(solr.post.url) , body =data,add_headers('Content-Type'=content_type), authenticate(solr.auth.user,solr.auth.pwd))
+   httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), authenticate(solr.auth.user,solr.auth.pwd))
   }
 }
 
