@@ -106,14 +106,16 @@ var editor = function () {
     }
 
     function update_notebook_model(user, gistname, description, time) {
-        var entry = get_notebook_info(gistname);
+        return load_user_root(user).then(function() {
+            var entry = get_notebook_info(gistname);
 
-        entry.username = user;
-        entry.description = description;
-        entry.last_commit = time;
+            entry.username = user;
+            entry.description = description;
+            entry.last_commit = time;
 
-        add_notebook_info(user, gistname, entry);
-        return entry; // note: let go of promise
+            add_notebook_info(user, gistname, entry);
+            return entry; // note: let go of promise
+        });
     }
 
 
@@ -905,6 +907,7 @@ var editor = function () {
             select_node(node);
         }
         var p, i_starred = result.i_starred(gistname);
+        var promises = [];
         if(selroot === true)
             selroot = featured_.indexOf(user) >=0 ? 'featured' :
                 i_starred ? 'interests' :
@@ -912,7 +915,8 @@ var editor = function () {
         if(i_starred) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
-                p.then(open_and_select);
+                p = p.then(open_and_select);
+            promises.push(p);
         }
         if(gistname === current_.notebook) {
             var starn = RCloud.UI.navbar.control('star_notebook');
@@ -921,22 +925,24 @@ var editor = function () {
                 starn.set_count(result.num_stars(gistname));
             }
         }
-        load_user_root(user).then(function() {
-            if(my_friends_[user]) {
-                p = update_tree_entry('friends', user, gistname, entry, true);
-                if(selroot==='friends')
-                    p.then(open_and_select);
-            }
-            if(featured_.indexOf(user)>=0) {
-                p = update_tree_entry('featured', user, gistname, entry, true);
-                if(selroot==='featured')
-                    p.then(open_and_select);
-            }
+        if(my_friends_[user]) {
+            p = update_tree_entry('friends', user, gistname, entry, true);
+            if(selroot==='friends')
+                p = p.then(open_and_select);
+            promises.push(p);
+        }
+        if(featured_.indexOf(user)>=0) {
+            p = update_tree_entry('featured', user, gistname, entry, true);
+            if(selroot==='featured')
+                p = p.then(open_and_select);
+            promises.push(p);
+        }
 
-            p = update_tree_entry('alls', user, gistname, entry, true);
-            if(selroot==='alls')
-                p.then(open_and_select);
-        });
+        p = update_tree_entry('alls', user, gistname, entry, true);
+        if(selroot==='alls')
+            p = p.then(open_and_select);
+        promises.push(p);
+        return Promise.all(promises);
     }
 
     function remove_node(node) {
@@ -980,11 +986,12 @@ var editor = function () {
         if(history)
             histories_[gistname] = history;
 
-        var entry = update_notebook_model(user, gistname,
-                                          result.description,
-                                          result.updated_at || result.history[0].committed_at);
-
-        update_notebook_view(user, gistname, entry, selroot);
+        return update_notebook_model(user, gistname,
+                                     result.description,
+                                     result.updated_at || result.history[0].committed_at)
+            .then(function(entry) {
+                return update_notebook_view(user, gistname, entry, selroot);
+            });
     }
 
     function change_folder_friendness(user) {
@@ -1422,7 +1429,7 @@ var editor = function () {
                 });
         },
         update_notebook_from_gist: function(notebook) {
-            update_notebook_from_gist(notebook, notebook.history, false);
+            return update_notebook_from_gist(notebook, notebook.history, false);
         },
         for_each_notebook: function(node, data, leaff, combinef) {
             var that = this;
@@ -1464,6 +1471,7 @@ var editor = function () {
                     add_interest(user, gistname);
                     if(my_friends_[user] === 1)
                         change_folder_friendness(user);
+                    var p;
                     if(opts.notebook) {
                         if(opts.make_current)
                             return that.load_callback({
@@ -1471,12 +1479,12 @@ var editor = function () {
                                 is_change: opts.is_change || false,
                                 selroot: 'interests'})(opts.notebook);
                         else
-                            update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                            p = update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
                     else {
-                        update_notebook_view(user, gistname, entry, opts.selroot);
+                        p = update_notebook_view(user, gistname, entry, opts.selroot);
                     }
-                    return Promise.resolve(opts.notebook);
+                    return p.return(opts.notebook);
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
@@ -1766,7 +1774,7 @@ var editor = function () {
                                     : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                         num_stars_[result.id] = count;
                                     })).then(function() {
-                                        update_notebook_from_gist(result, history, options.selroot);
+                                        return update_notebook_from_gist(result, history, options.selroot);
                                     }));
 
 
