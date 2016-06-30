@@ -169,7 +169,7 @@ var editor = function () {
         // load all 'alls' for given username:
         var root = $tree_.tree('getNodeById', pid);
 
-        return load_lazy_children(root).return(root);
+        return load_lazy_children(root);
     }
 
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
@@ -1123,6 +1123,7 @@ var editor = function () {
             $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
 
             delete for_node.lazy_load;
+            return for_node;
         });
     }
 
