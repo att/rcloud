@@ -169,9 +169,7 @@ var editor = function () {
         // load all 'alls' for given username:
         var root = $tree_.tree('getNodeById', pid);
 
-        return (root && root.lazy_load ?
-                load_lazy_children(root, false) :
-                Promise.resolve()).return(root);
+        return load_lazy_children(root).return(root);
     }
 
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
@@ -846,10 +844,6 @@ var editor = function () {
             RCloud.UI.notebook_title.make_editable(null);
     }
 
-    function get_selected_node() {
-        return $tree_.tree('getSelectedNode');
-    }
-
     function select_history_node(node) {
         select_node(node);
         $(node.element).find('.jqtree-element:eq(0)').trigger('click');
@@ -1107,23 +1101,26 @@ var editor = function () {
         return false;
     }
 
-    function load_lazy_children(for_node, reselect_node) {
+    function reselect_node(f) {
+        var selected_node = $tree_.tree('getSelectedNode');
+        return f().then(function() {
+            var node_to_select = $tree_.tree('getNodeById', selected_node.id);
+
+            if(node_to_select)
+                select_node(node_to_select);
+            else console.log('sorry, neglected to highlight ' + selected_node.id);
+        });
+    }
+
+    function load_lazy_children(for_node) {
+        if(!for_node || !for_node.lazy_load)
+            return Promise.resolve();
         return get_notebooks_by_user(for_node.user).then(function(notebooks) {
 
             var initial_node;
 
-            var selected_node = get_selected_node();
-
             var notebook_nodes = convert_notebook_set(for_node.root, for_node.user, notebooks);
             $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
-
-            if(reselect_node) {
-                var node_to_select = $tree_.tree('getNodeById', selected_node.id);
-
-                if(node_to_select)
-                    select_node(node_to_select);
-                else console.log('sorry, neglected to highlight ' + selected_node.id);
-            }
 
             delete for_node.lazy_load;
         });
@@ -1154,16 +1151,13 @@ var editor = function () {
                 .object().value();
         }
 
-        // go off and get data for the given user:
-        var p_load_children = n.lazy_load ?
-                load_lazy_children(n, true) :
-                Promise.resolve();
-
-        p_load_children.then(function() {
-            // notebook folder name only editable when open
-            if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
-                RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
-            $('#collapse-notebook-tree').trigger('size-changed');
+        reselect_node(function() {
+            return load_lazy_children(n).then(function() {
+                // notebook folder name only editable when open
+                if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
+                    RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
+                $('#collapse-notebook-tree').trigger('size-changed');
+            });
         });
     }
     function tree_close(event) {
