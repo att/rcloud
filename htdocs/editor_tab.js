@@ -1131,28 +1131,6 @@ var editor = function () {
     function tree_open(event) {
         var n = event.node;
 
-        function create_book_entry_map(books) {
-            return _.chain(books)
-                .filter(function(book) {
-                    var entry = notebook_info_[book];
-                    if(!entry) {
-                        invalid_notebooks_[book] = null;
-                        return false;
-                    }
-                    if(!entry.username || entry.username === "undefined" ||
-                       !entry.description || !entry.last_commit) {
-                        invalid_notebooks_[book] = entry;
-                        return false;
-                    }
-                    return true;
-                })
-                .map(function(book) {
-                    var entry = notebook_info_[book];
-                    return [book, entry];
-                })
-                .object().value();
-        }
-
         // notebook folder name only editable when open
         if(n.full_name && n.user === username_ && !n.gistname)
             RCloud.UI.notebook_title.make_editable(n, n.element, true);
