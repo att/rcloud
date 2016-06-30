@@ -37,7 +37,8 @@ var editor = function () {
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
-        path_tips_ = false; // debugging tool: show path tips on tree
+        path_tips_ = false, // debugging tool: show path tips on tree
+        lazy_load_ = {}; // which nodes need loading
 
     // view
     var $tree_ = null;
@@ -393,12 +394,12 @@ var editor = function () {
             children: _.map(all_the_users, function(u) {
                 var mine = u === username_;
                 var id = node_id('alls', u);
+                lazy_load_[id] = true;
                 return {
                     label: mine ? "My Notebooks" : someone_elses(u),
                     id: id,
                     sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
                     children: [{ label : 'loading...' }],
-                    lazy_load: true, // as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
                     user: u,
                     root: 'alls'
                 };
@@ -408,14 +409,14 @@ var editor = function () {
 
     function duplicate_tree_data(tree, f) {
         var t2 = f(tree);
-        if(tree.children && !tree.lazy_load) {
+        if(tree.children && !lazy_load_[tree.id]) {
             var ch2 = [];
             for(var i=0; i<tree.children.length; ++i)
                 ch2.push(duplicate_tree_data(tree.children[i], f));
             t2.children = ch2;
-        } else if(tree.lazy_load) {
+        } else if(lazy_load_[tree.id]) {
             t2.children = [{ label : 'loading...' }];
-            t2.lazy_load = true;
+            lazy_load_[t2.id] = true;
         }
         return t2;
     }
@@ -1113,7 +1114,7 @@ var editor = function () {
     }
 
     function load_lazy_children(for_node) {
-        if(!for_node || !for_node.lazy_load)
+        if(!for_node || !lazy_load_[for_node.id])
             return Promise.resolve();
         return get_notebooks_by_user(for_node.user).then(function(notebooks) {
 
@@ -1122,7 +1123,7 @@ var editor = function () {
             var notebook_nodes = convert_notebook_set(for_node.root, for_node.user, notebooks);
             $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
 
-            delete for_node.lazy_load;
+            delete lazy_load_[for_node.id];
             return for_node;
         });
     }
@@ -1152,14 +1153,12 @@ var editor = function () {
                 .object().value();
         }
 
-        reselect_node(function() {
-            return load_lazy_children(n).then(function() {
-                // notebook folder name only editable when open
-                if(n.full_name && n.user === username_ && !n.gistname)
-                    RCloud.UI.notebook_title.make_editable(n, n.element, true);
-                $('#collapse-notebook-tree').trigger('size-changed');
-            });
-        });
+        // notebook folder name only editable when open
+        if(n.full_name && n.user === username_ && !n.gistname)
+            RCloud.UI.notebook_title.make_editable(n, n.element, true);
+        $('#collapse-notebook-tree').trigger('size-changed');
+
+        load_lazy_children(n);
     }
     function tree_close(event) {
         var n = event.node;
