@@ -463,7 +463,9 @@ property.multiple.notebooks <- function(id, property)
     x <- rcloud.get.notebook.property(id, property, list=TRUE)
     names(x) <- NULL
     sapply(x, identity) # vectorize
-  } else !is.null(rcloud.get.notebook.property(id, property))
+  } else if(length(id)==1) {
+    list(rcloud.get.notebook.property(id, property))
+  } else NULL
 
 falsify.null <- function(v)
   sapply(v, function(x) if(is.null(x)) FALSE else x)
