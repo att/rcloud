@@ -1155,16 +1155,17 @@ var editor = function () {
         reselect_node(function() {
             return load_lazy_children(n).then(function() {
                 // notebook folder name only editable when open
-                if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
-                    RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
+                if(n.full_name && n.user === username_ && !n.gistname)
+                    RCloud.UI.notebook_title.make_editable(n, n.element, true);
                 $('#collapse-notebook-tree').trigger('size-changed');
             });
         });
     }
     function tree_close(event) {
+        var n = event.node;
         // notebook folder name only editable when open
-        if(event.node.full_name && !event.node.gistname)
-            RCloud.UI.notebook_title.make_editable(event.node, event.node.element, false);
+        if(n.full_name && !n.gistname)
+            RCloud.UI.notebook_title.make_editable(n, n.element, false);
     }
     var NOTEBOOK_LOAD_FAILS = 5;
     function open_last_loadable() {
