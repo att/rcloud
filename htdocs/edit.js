@@ -7,6 +7,11 @@ function main() {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
 
+    if(ui_utils.is_ie()) {
+        RCloud.UI.fatal_dialog("Sorry, RCloud does not currently support IE or Edge. Please try another browser.", "Close");
+        return;
+    }
+
     RCloud.UI.init();
     RCloud.session.init().then(function() {
         var opts = {};
