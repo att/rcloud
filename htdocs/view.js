@@ -5,6 +5,11 @@ function main() {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
     }
 
+    if(ui_utils.is_ie()) {
+        RCloud.UI.fatal_dialog("Sorry, RCloud does not currently support IE or Edge. Please try another browser.", "Close");
+        return;
+    }
+
     shell.is_view_mode(true);
     RCloud.UI.session_pane.init(); // really should be error logger which detects if there is a pane
     RCloud.UI.init();
@@ -45,7 +50,7 @@ function main() {
                 notebook = result[0];
             });
         }
-        var tag = getURLParameter("tag");   
+        var tag = getURLParameter("tag");
         if(!version && tag) {
             promise = promise.then(function() {
                 return rcloud.get_version_by_tag(notebook, tag)
@@ -77,7 +82,7 @@ function main() {
         RCloud.UI.shortcut_manager.disable_all();
 
         console.log(err.stack);
-        
+
         shell.improve_load_error(err, notebook, version).then(function(msg) {
             if(/Notebook does not exist or has not been published/.test(msg))
                 msg = ui_utils.disconnection_error("Could not load notebook. You may need to login to see it.", "Login");

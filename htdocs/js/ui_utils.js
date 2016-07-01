@@ -648,6 +648,17 @@ ui_utils.is_a_mac = function() {
     };
 }();
 
+
+// loosely based on https://codepen.io/gapcode/pen/vEJNZN
+ui_utils.is_ie = function() {
+    var ua = window.navigator.userAgent;
+
+    return(ua.indexOf('MSIE ') > 0 ||
+           ua.indexOf('Trident/') > 0 ||
+           ua.indexOf('Edge/') > 0);
+}
+
+
 ui_utils.kill_popovers = function() {
     if(window.allPopovers) {
         $(window.allPopovers).each(function(i, e) {
