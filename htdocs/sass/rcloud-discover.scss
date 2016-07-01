@@ -163,6 +163,7 @@ body {
 }
 
 .grid-item {
+    background-color: #e5eff2;
     color: black;
     margin-top: 0;
     width: 100%;
@@ -173,6 +174,7 @@ body {
     a {
         text-decoration: none;
         color: black;
+        display: block;
     }
     h1 {
         font-size: 17px;
