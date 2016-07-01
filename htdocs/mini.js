@@ -12,18 +12,7 @@ function main() {
         return res;
     }
 
-    // loosely based on https://codepen.io/gapcode/pen/vEJNZN
-    function isIE() {
-        var ua = window.navigator.userAgent;
-
-        return(ua.indexOf('MSIE ') > 0 ||
-            ua.indexOf('Trident/') > 0 || 
-            ua.indexOf('Edge/') > 0);
-    }
-
-    RCloud.UI.session_pane.init();
-
-    if(isIE()) {
+    if(ui_utils.is_ie()) {
         RCloud.UI.fatal_dialog("Sorry, RCloud does not currently support IE or Edge. Please try another browser.", "Close");
         return;
     }
