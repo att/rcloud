@@ -287,52 +287,38 @@ var editor = function () {
         return notebook_nodes;
     }
 
+    function clean_r(obj) {
+        delete obj.r_attributes;
+        delete obj.r_type;
+        return obj;
+    };
+
+    function get_infos_and_counts(ids) {
+        return Promise.all([
+            rcloud.stars.get_multiple_notebook_star_counts(ids),
+            rcloud.get_multiple_notebook_infos(ids)
+        ]).spread(function(counts, infos) {
+            return {
+                notebooks: clean_r(infos),
+                num_stars: clean_r(counts)
+            };
+        });
+    }
+
     function get_starred_info() {
-
-        var clean_r = function(obj) { delete obj.r_attributes; delete obj.r_type; return obj; };
-
         return rcloud.stars.get_my_starred_notebooks()
-            .then(function(res) {
-                return Promise.all([
-                    rcloud.stars.get_multiple_notebook_star_counts(res),
-                    rcloud.get_multiple_notebook_infos(res)
-                ]).spread(function(counts, infos) {
-                    return {
-                        notebooks: clean_r(infos),
-                        num_stars: clean_r(counts)
-                    };
-                });
-            });
+            .then(get_infos_and_counts);
     }
 
     function get_notebooks_by_user(username) {
-
-        var user_notebooks,
-            promise = Promise.resolve();
-
-        promise = promise.then(function() {
-            return rcloud.config.all_user_notebooks(username);
-        }).then(function(notebook_ids) {
-            return rcloud.get_multiple_notebook_infos(notebook_ids);
-        }).then(function(notebooks) {
-            delete notebooks.r_attributes;
-            delete notebooks.r_type;
-            user_notebooks = notebooks;
-
-            // merge these notebooks:
-            _.extend(notebook_info_, notebooks);
-
-            return rcloud.stars.get_multiple_notebook_star_counts(Object.keys(notebooks));
-
-        }).then(function(stars) {
-
-            // merge stars:
-            _.extend(num_stars_, stars);
-
-            return Promise.resolve(user_notebooks);
-        });
-
-        return promise;
+        return rcloud.config.all_user_notebooks(username)
+            .then(get_infos_and_counts)
+            .then(function(notebooks_stars) {
+                // merge these notebooks and stars
+                _.extend(notebook_info_, notebooks_stars.notebooks);
+                _.extend(num_stars_, notebooks_stars.num_stars);
+                return notebooks_stars.notebooks;
+            });
     }
 
     function populate_interests(my_stars_array) {
