@@ -127,6 +127,7 @@ unauthenticated.ocaps <- function(mode, compute)
       load_notebook_compute = compute$load_notebook,
       call_notebook = compute$unauthenticated_call_notebook,
       call_fastrweb_notebook = compute$unauthenticated_call_fastrweb_notebook,
+      get_notebook_info = make.oc(rcloud.unauthenticated.get.notebook.info),
       get_multiple_notebook_infos = make.oc(rcloud.unauthenticated.get.multiple.notebook.infos),
       notebook_by_name = make.oc(rcloud.unauthenticated.notebook.by.name),
       get_version_by_tag = make.oc(rcloud.get.version.by.tag),
