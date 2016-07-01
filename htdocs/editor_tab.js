@@ -289,34 +289,20 @@ var editor = function () {
 
     function get_starred_info() {
 
-        var my_stars_array,
-            my_stars,
-            counts,
-            infos,
-            promise = Promise.resolve(),
-            clean_r = function(obj) { delete obj.r_attributes; delete obj.r_type; return obj; };
+        var clean_r = function(obj) { delete obj.r_attributes; delete obj.r_type; return obj; };
 
-        promise = promise.then(function() {
-            return rcloud.stars.get_my_starred_notebooks();
-        }).then(function(res) {
-            my_stars_array = res;
-            return rcloud.stars.get_multiple_notebook_star_counts(res);
-        }).then(function(res2) {
-            counts = clean_r(res2);
-            return rcloud.get_multiple_notebook_infos(Object.keys(counts));
-        }).then(function(res3) {
-            infos = clean_r(res3);
-
-            var starred_info = {
-                notebooks: infos,
-                num_stars: counts
-            };
-
-            return Promise.resolve(starred_info);
-
-        });
-
-        return promise;
+        return rcloud.stars.get_my_starred_notebooks()
+            .then(function(res) {
+                return Promise.all([
+                    rcloud.stars.get_multiple_notebook_star_counts(res),
+                    rcloud.get_multiple_notebook_infos(res)
+                ]).spread(function(counts, infos) {
+                    return {
+                        notebooks: clean_r(infos),
+                        num_stars: clean_r(counts)
+                    };
+                });
+            });
     }
 
     function get_notebooks_by_user(username) {
