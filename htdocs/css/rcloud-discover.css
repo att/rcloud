@@ -106,6 +106,7 @@ body.loaded {
     top: 0; }
 
 .grid-item {
+  background-color: #e5eff2;
   color: black;
   margin-top: 0;
   width: 100%;
@@ -114,7 +115,8 @@ body.loaded {
     border-color: #777; }
   .grid-item a {
     text-decoration: none;
-    color: black; }
+    color: black;
+    display: block; }
   .grid-item h1 {
     font-size: 17px;
     margin: 0;
