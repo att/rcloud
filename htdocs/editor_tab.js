@@ -191,13 +191,12 @@ var editor = function () {
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     function find_next_copy_name(username, description) {
         return load_user_notebooks(username)
-            .then(function(root) {
-                var parent = root;
-                // if this is folder level, get the actual parent for comparison:
-                if(description.indexOf('/')!==-1) {
-                    var pid = node_id("alls", username, description.replace(/\/[^\/]*$/,''));
-                    parent = $tree_.tree('getNodeById', pid);
-                }
+            .then(function() {
+                // get folder parent or user trunk
+                var pid = description.indexOf('/') === -1 ?
+                        node_id("alls", username) :
+                        node_id("alls", username, description.replace(/\/[^\/]*$/,''));
+                var parent = $tree_.tree('getNodeById', pid);
                 if(parent === undefined)
                     return description;
 
