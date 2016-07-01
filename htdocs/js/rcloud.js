@@ -88,6 +88,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["anonymous_session_init"],
             ["anonymous_compute_init"],
             ["has_compute_separation"],
+            ["signal_to_compute"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_conf_values"],
@@ -163,6 +164,10 @@ RCloud.create = function(rcloud_ocaps) {
                     that.deferred_knitr_uuid = uuid;
                     that.has_compute_separation = has_compute;
                 });
+        };
+
+        rcloud.signal_to_compute = function(signal) {
+            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.get_conf_value = function(key, source) {
@@ -378,7 +383,6 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["compute_init"],
-            ["signal_to_compute"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -446,10 +450,6 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.compute_init = function(username, token) {
             return rcloud_ocaps.compute_initAsync(username, token);
-        };
-
-        rcloud.signal_to_compute = function(signal) {
-            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.update_notebook = function(id, content, is_current) {
