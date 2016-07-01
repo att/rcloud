@@ -15,7 +15,8 @@
   focus on the window in order to see a complete list of shortcuts (or click
   the link in the Help panel). Of note are <kbd>ctrl shift enter</kbd> to run
   the entire notebook (#2001), and <kbd>ctrl shift <</kbd> and <kbd>ctrl shift ></kbd>
-  to go to the next or last cell (among many others). (#300)
+  to go to the next or last cell (among many others). (#300) The shortcut help
+  dialog also shows shortcuts for the cell/asset/prompt editor. (#1870)
 
 * New Discovery Page to show most recent and most popular notebooks. You can
   add thumbnails to your notebooks to be displayed in this view by adding a
@@ -78,6 +79,18 @@
   page, or reinitializes the access token, instead of displaying an Aw, Shucks
   error message for something that is not an error. (#2122)
 
+* Errors in mini.html and shiny.html are displayed in a dialog (instead of
+  only appearing in the debug console). (#1766)
+
+* Warn when forking a notebook a second time has no effect, due to GitHub's
+  policy of returning the same notebook when forked again (#1715)
+
+* Display an unambiguous error when trying to run RCloud on IE or Edge, which
+  are currently unsupported. (#1845)
+
+* Display a list of valid notebook sources if an invalid source is specified
+  in the URL. (#2004)
+
 ### API changes
 * `notebook.R` passes an additional entry `.headers` containing the request
   headers.
@@ -85,6 +98,9 @@
 ### Bugfixes
 * <kbd>ctrl</kbd>/<kbd>cmd</kbd>-clicking on the New Notebook button opens a
   new tab with a new notebook (#1733)
+
+* <kbd>ctrl</kbd>/<kbd>cmd</kbd>-clicking a Recent notebook opens it in a new
+  tab (#1777)
 
 * Improved matching of code formatting to match look when inactive and in edit
   mode on Windows and Linux - not perfect but closer (#1266)
@@ -94,9 +110,33 @@
 * Renaming the folder of the current notebook would not display the change in
   notebook name (#2046)
 
+* Pre-formatted output text from R commands in output context was displaying
+  without line breaks. Output is now consistent with output in notebook
+  cells. (#1719)
+
 * Leading and trailing spaces should not be allowed for protection groups and
   asset names, as it can lead to confusion or deception. Spaces at the ends of
   notebook names are mostly okay. (#1973)
+
+* Allow opening a notebook in GitHub in view mode when running anonymously (#1823)
+
+* Allow stopping a notebook in view mode when running anonymously (#1828)
+
+* Allow removing your notebook through the UI if it was already deleted on
+  GitHub (#2161)
+
+* Switching asset tabs on a readonly notebook was allowing editing, resulting
+  in errors (#1808)
+
+* Renaming asset B.png to C.png, and A.png to B.png, resulted in both tabs
+  displaying C.png, due to browser cacheing. (#2148)
+
+* Deleting the last notebook in the recently opened list was failing. (#2132)
+
+* The run button kept on blinking after the notebook was done! (#1812)
+
+* The notebook tree would sometimes highlight the current notebook in a
+  different tree from the one that was clicked. (#1905)
 
 
 ## RCloud 1.5.3
@@ -119,6 +159,8 @@
 * New configuration option `use.gist.user.home` if set to `yes` allows deployments
   to use gist username as the executing user for purposes such as home directory
   location. It only applies if `exec.auth` is not set.
+
+* Compatibility with newer 32-character GitHub gist IDs.
 
 
 ## RCloud 1.5.2
