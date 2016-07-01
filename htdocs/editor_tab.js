@@ -287,66 +287,45 @@ var editor = function () {
         return notebook_nodes;
     }
 
-    function get_starred_info() {
+    function clean_r(obj) {
+        delete obj.r_attributes;
+        delete obj.r_type;
+        return obj;
+    };
 
-        var my_stars_array,
-            my_stars,
-            counts,
-            infos,
-            promise = Promise.resolve(),
-            clean_r = function(obj) { delete obj.r_attributes; delete obj.r_type; return obj; };
-
-        promise = promise.then(function() {
-            return rcloud.stars.get_my_starred_notebooks();
-        }).then(function(res) {
-            my_stars_array = res;
-            return rcloud.stars.get_multiple_notebook_star_counts(res);
-        }).then(function(res2) {
-            counts = clean_r(res2);
-            return rcloud.get_multiple_notebook_infos(Object.keys(counts));
-        }).then(function(res3) {
-            infos = clean_r(res3);
-
-            var starred_info = {
-                notebooks: infos,
-                num_stars: counts
+    function get_infos_and_counts(ids) {
+        return Promise.all([
+            rcloud.stars.get_multiple_notebook_star_counts(ids),
+            rcloud.get_multiple_notebook_infos(ids)
+        ]).spread(function(counts, infos) {
+            return {
+                notebooks: clean_r(infos),
+                num_stars: clean_r(counts)
             };
-
-            return Promise.resolve(starred_info);
-
         });
+    }
 
-        return promise;
+    function get_starred_info() {
+        return rcloud.stars.get_my_starred_notebooks()
+            .then(get_infos_and_counts);
+    }
+
+    function get_recent_info() {
+        return rcloud.config.get_recent_notebooks()
+            .then(function(recents) {
+                return get_infos_and_counts(Object.keys(recents));
+            });
     }
 
     function get_notebooks_by_user(username) {
-
-        var user_notebooks,
-            promise = Promise.resolve();
-
-        promise = promise.then(function() {
-            return rcloud.config.all_user_notebooks(username);
-        }).then(function(notebook_ids) {
-            return rcloud.get_multiple_notebook_infos(notebook_ids);
-        }).then(function(notebooks) {
-            delete notebooks.r_attributes;
-            delete notebooks.r_type;
-            user_notebooks = notebooks;
-
-            // merge these notebooks:
-            _.extend(notebook_info_, notebooks);
-
-            return rcloud.stars.get_multiple_notebook_star_counts(Object.keys(notebooks));
-
-        }).then(function(stars) {
-
-            // merge stars:
-            _.extend(num_stars_, stars);
-
-            return Promise.resolve(user_notebooks);
-        });
-
-        return promise;
+        return rcloud.config.all_user_notebooks(username)
+            .then(get_infos_and_counts)
+            .then(function(notebooks_stars) {
+                // merge these notebooks and stars
+                _.extend(notebook_info_, notebooks_stars.notebooks);
+                _.extend(num_stars_, notebooks_stars.num_stars);
+                return notebooks_stars.notebooks;
+            });
     }
 
     function populate_interests(my_stars_array) {
@@ -413,7 +392,7 @@ var editor = function () {
         };
     }
 
-    function populate_all_notebooks(all_the_users) {
+    function populate_users(all_the_users) {
         if(_.isString(all_the_users))
             all_the_users = [all_the_users];
         all_the_users.forEach(function(u) {
@@ -527,13 +506,17 @@ var editor = function () {
         return Promise.all([
             rcloud.get_users(),
             get_starred_info(),
+            get_recent_info(),
             rcloud.get_gist_sources(),
             rcloud.config.get_user_option('notebook-path-tips')
         ])
-            .spread(function(all_the_users, starred_info, gist_sources, path_tips) {
+            .spread(function(all_the_users, starred_info, recent_info, gist_sources, path_tips) {
                 path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
                 _.extend(notebook_info_, starred_info.notebooks);
+                _.extend(notebook_info_, recent_info.notebooks);
+                _.extend(num_stars_, recent_info.num_stars); // (not currently needed)
+                all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
                 var root_data = [];
                 var featured_tree;
 
@@ -547,7 +530,7 @@ var editor = function () {
                     })
                     .then(function() {
 
-                        var alls_root = populate_all_notebooks(all_the_users);
+                        var alls_root = populate_users(all_the_users);
 
                         return [
                             featured_tree,
