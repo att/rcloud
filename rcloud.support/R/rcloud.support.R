@@ -362,13 +362,15 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
 rcloud.create.notebook <- function(content, is.current = TRUE) {
     content <- .gist.binary.process.outgoing(NULL, content)
+
     res <- create.gist(content, ctx = .rcloud.get.gist.context())
     if (res$ok && is.current) {
+        rcloud.discovery.set.recently.modified.notebook(res$content$id, res$content$updated_at)
+        if ("thumb.png.b64" %in% names(content$files))
+            rcloud.discovery.set.thumb(id = res$content$id, thumb_png = content$files$thumb.png.b64$content)
         .session$current.notebook <- res
         rcloud.reset.session()
     }
-    rcloud.discovery.set.recently.modified.notebook(res$content$id,
-        res$content$updated_at)
     rcloud.augment.notebook(res)
 }
 
@@ -406,8 +408,12 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                           id=src.nb$content$id))
     } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
-        rcloud.discovery.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
     }
+    rcloud.discovery.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
+    # github does not return the content with a fork
+    if ("thumb.png.b64" %in% names(new.nb$content$files))
+      rcloud.discovery.set.thumb(id = new.nb$content$id,
+                                 thumb_png = rcloud.get.notebook(new.nb$content$id, raw=TRUE)$content$files$thumb.png.b64$content)
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
@@ -445,11 +451,14 @@ rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abus
   ## also note that we are looking deep in the config space - this shold be really much easier ...
   gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config", "current", "notebook")))
 
-# sloooow, but we don't have any other way of verifying the owner
-# we could use RCS cache first and then fall back on github?
 notebook.is.mine <- function(id) {
-  nb <- rcloud.get.notebook(id)
-  nb$content$user$login == .session$username
+  # check RCS first
+  user <- rcloud.get.notebook.property(id, 'username')
+  if(is.null(user)) {
+    nb <- rcloud.get.notebook(id)
+    user <- nb$content$user$login
+  }
+  user == .session$username
 }
 
 rcloud.publish.notebook <- function(id)
