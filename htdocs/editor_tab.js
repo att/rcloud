@@ -516,6 +516,7 @@ var editor = function () {
                 _.extend(notebook_info_, starred_info.notebooks);
                 _.extend(notebook_info_, recent_info.notebooks);
                 _.extend(num_stars_, recent_info.num_stars); // (not currently needed)
+                all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
                 var root_data = [];
                 var featured_tree;
 
