@@ -837,9 +837,14 @@ var editor = function () {
         ui_utils.scroll_into_view($tree_.parent(), 50, 100, $(node.element));
     }
 
-    function select_node(node) {
+    function select_node(node, scroll) {
         $tree_.tree('selectNode', node);
-        scroll_into_view(node);
+
+        // scroll by default:
+        if(_.isUndefined(scroll) || scroll) {
+            scroll_into_view(node);
+        }
+
         if(node.user === username_)
             RCloud.UI.notebook_title.make_editable(node, node.element, true);
         else
@@ -1121,8 +1126,9 @@ var editor = function () {
                 var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
                 if(node_to_select)
-                    select_node(node_to_select);
-                else console.log('sorry, neglected to highlight ' + selected_node.id);
+                    select_node(node_to_select, false);
+                else 
+                    console.log('sorry, neglected to highlight ' + selected_node.id);
             }
 
             delete for_node.lazy_load;
