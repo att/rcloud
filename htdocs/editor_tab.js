@@ -392,7 +392,7 @@ var editor = function () {
         };
     }
 
-    function populate_all_notebooks(all_the_users) {
+    function populate_users(all_the_users) {
         if(_.isString(all_the_users))
             all_the_users = [all_the_users];
         all_the_users.forEach(function(u) {
@@ -529,7 +529,7 @@ var editor = function () {
                     })
                     .then(function() {
 
-                        var alls_root = populate_all_notebooks(all_the_users);
+                        var alls_root = populate_users(all_the_users);
 
                         return [
                             featured_tree,
