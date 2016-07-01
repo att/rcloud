@@ -38,7 +38,7 @@ var editor = function () {
         invalid_notebooks_ = {},
         current_ = null, // current notebook and version
         path_tips_ = false, // debugging tool: show path tips on tree
-        lazy_load_ = {}; // which nodes need loading
+        lazy_load_ = {}; // which users need loading
 
     // view
     var $tree_ = null;
@@ -107,7 +107,7 @@ var editor = function () {
     }
 
     function update_notebook_model(user, gistname, description, time) {
-        return load_user_root(user).then(function() {
+        return load_user_notebooks(user).then(function() {
             var entry = get_notebook_info(gistname);
 
             entry.username = user;
@@ -165,17 +165,32 @@ var editor = function () {
         }
     }
 
-    function load_user_root(username) {
-        var pid = node_id("alls", username);
-        // load all 'alls' for given username:
-        var root = $tree_.tree('getNodeById', pid);
+    function load_user_notebooks(username) {
+        if(!lazy_load_[username])
+            return Promise.resolve();
 
-        return load_lazy_children(root);
+        return get_notebooks_by_user(username).then(function(notebooks) {
+            // load "alls" tree for username, and duplicate to friends tree if needed
+            var pid = node_id("alls", username);
+            var root = $tree_.tree('getNodeById', pid);
+
+            var notebook_nodes = convert_notebook_set("alls", username, notebooks);
+            var alls_data = as_folder_hierarchy(notebook_nodes, pid).sort(compare_nodes);
+            $tree_.tree('loadData', alls_data, root);
+
+            delete lazy_load_[username];
+
+            if(my_friends_[username]) {
+                var ftree = duplicate_tree_data(root, transpose_notebook('friends'));
+                var parent = $tree_.tree('getNodeById', node_id('friends', username));
+                $tree_.tree('loadData', ftree.children, parent);
+            }
+        });
     }
 
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     function find_next_copy_name(username, description) {
-        return load_user_root(username)
+        return load_user_notebooks(username)
             .then(function(root) {
                 var parent = root;
                 // if this is folder level, get the actual parent for comparison:
@@ -385,38 +400,42 @@ var editor = function () {
         };
     }
 
+    function lazy_node(root, user) {
+        var mine = user === username_;
+        var id = node_id(root, user);
+        return {
+            label: mine ? "My Notebooks" : someone_elses(user),
+            id: id,
+            sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
+            children: [{ label : 'loading...' }],
+            user: user,
+            root: root
+        };
+    }
+
     function populate_all_notebooks(all_the_users) {
         if(_.isString(all_the_users))
             all_the_users = [all_the_users];
+        all_the_users.forEach(function(u) {
+            lazy_load_[u] = true;
+        });
         return {
             label: 'All Notebooks',
             id: '/alls',
             children: _.map(all_the_users, function(u) {
-                var mine = u === username_;
-                var id = node_id('alls', u);
-                lazy_load_[id] = true;
-                return {
-                    label: mine ? "My Notebooks" : someone_elses(u),
-                    id: id,
-                    sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
-                    children: [{ label : 'loading...' }],
-                    user: u,
-                    root: 'alls'
-                };
+                return lazy_node('alls', u);
             }).sort(compare_nodes)
         };
     }
 
     function duplicate_tree_data(tree, f) {
+        console.assert(!tree.user || !lazy_load_[tree.user]);
         var t2 = f(tree);
-        if(tree.children && !lazy_load_[tree.id]) {
+        if(tree.children) {
             var ch2 = [];
             for(var i=0; i<tree.children.length; ++i)
                 ch2.push(duplicate_tree_data(tree.children[i], f));
             t2.children = ch2;
-        } else if(lazy_load_[tree.id]) {
-            t2.children = [{ label : 'loading...' }];
-            lazy_load_[t2.id] = true;
         }
         return t2;
     }
@@ -453,11 +472,16 @@ var editor = function () {
         return subtree.id.replace("/alls/","");
     }
 
-    function populate_friends(alls_root) {
-        var friend_subtrees = alls_root.children.filter(function(subtree) {
-            return my_friends_[alls_name(subtree)]>0;
-        });
-        return create_notebook_root(friend_subtrees, 'friends', 'People I Starred');
+    function populate_friends(all_the_users) {
+        return {
+            label: 'People I Starred',
+            id: '/friends',
+            children: all_the_users.filter(function(u) {
+                return my_friends_[u]>0;
+            }).map(function(u) {
+                return lazy_node('friends', u);
+            }).sort(compare_nodes)
+        };
     }
 
     function get_featured() {
@@ -528,7 +552,7 @@ var editor = function () {
                         return [
                             featured_tree,
                             populate_interests(starred_info.notebooks),
-                            populate_friends(alls_root),
+                            populate_friends(all_the_users),
                             alls_root
                         ].filter(function(t) { return !!t; });
 
@@ -1113,21 +1137,6 @@ var editor = function () {
         });
     }
 
-    function load_lazy_children(for_node) {
-        if(!for_node || !lazy_load_[for_node.id])
-            return Promise.resolve();
-        return get_notebooks_by_user(for_node.user).then(function(notebooks) {
-
-            var initial_node;
-
-            var notebook_nodes = convert_notebook_set(for_node.root, for_node.user, notebooks);
-            $tree_.tree('loadData', as_folder_hierarchy(notebook_nodes, node_id(for_node.root, for_node.user)).sort(compare_nodes), for_node);
-
-            delete lazy_load_[for_node.id];
-            return for_node;
-        });
-    }
-
     function tree_open(event) {
         var n = event.node;
 
@@ -1136,7 +1145,8 @@ var editor = function () {
             RCloud.UI.notebook_title.make_editable(n, n.element, true);
         $('#collapse-notebook-tree').trigger('size-changed');
 
-        load_lazy_children(n);
+        if(n.user && lazy_load_[n.user])
+            load_user_notebooks(n.user);
     }
     function tree_close(event) {
         var n = event.node;
