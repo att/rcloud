@@ -727,6 +727,9 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
   }
 }
 
+rcloud.unauthenticated.get.notebook.info <-
+  rcloud.fail.if.unpublished(rcloud.get.notebook.info)
+
 rcloud.get.multiple.notebook.infos <- function(ids)
   rcloud.get.notebook.info(ids, FALSE)
 
