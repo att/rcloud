@@ -410,6 +410,10 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         new.nb <- fork.gist(id, ctx = src.ctx)
     }
     rcloud.discovery.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
+    # github does not return the content with a fork
+    if ("thumb.png.b64" %in% names(new.nb$content$files))
+      rcloud.discovery.set.thumb(id = new.nb$content$id,
+                                 thumb_png = rcloud.get.notebook(new.nb$content$id, raw=TRUE)$content$files$thumb.png.b64$content)
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
