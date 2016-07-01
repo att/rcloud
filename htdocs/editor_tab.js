@@ -48,6 +48,9 @@ var editor = function () {
         show_terse_dates_ = false, // show terse date option for the user
         new_notebook_prefix_ = "Notebook ";
 
+    var github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so nothing happened.",
+                                  "If you want to fork the latest version, open your fork(s) in GitHub (through the Advanced menu) and delete them first."].join(' ');
+
     // work around oddities of rserve.js
     function each_r_list(list, f) {
         for(var key in list)
@@ -1498,7 +1501,11 @@ var editor = function () {
             return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    return this.star_and_show(notebook, true, !!version);
+                    if(notebook_info_[notebook.id]) {
+                        alert(github_nonfork_warning);
+                        return notebook;
+                    }
+                    else return this.star_and_show(notebook, true, !!version);
                 });
         },
         fork_folder: function(node, match, replace) {
@@ -1529,10 +1536,8 @@ var editor = function () {
                         forked.push(results[i].description);
                 }
                 if(already.length) {
-                    var lines = ["You already had the following " + already.length + " notebooks:"]
-                            .concat(already,
-                                    "GitHub wouldn't let me fork them again.",
-                                    "Fork your own copies if you really need more.");
+                    var lines = ["You already forked the following " + already.length + " notebooks:"]
+                            .concat(already, '', github_nonfork_warning);
                     if(promises.length > already.length)
                         lines = lines.concat("", "You forked " + forked.length + " notebooks.", forked);
 
