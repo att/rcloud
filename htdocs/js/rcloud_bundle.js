@@ -197,6 +197,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["anonymous_session_init"],
             ["anonymous_compute_init"],
             ["has_compute_separation"],
+            ["signal_to_compute"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_conf_values"],
@@ -234,6 +235,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "set_url"],
             ["api", "get_url"],
             ["get_notebook_by_name"],
+            ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["languages", "get_list"],
             ["plots", "render"],
@@ -272,6 +274,10 @@ RCloud.create = function(rcloud_ocaps) {
                     that.deferred_knitr_uuid = uuid;
                     that.has_compute_separation = has_compute;
                 });
+        };
+
+        rcloud.signal_to_compute = function(signal) {
+            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.get_conf_value = function(key, source) {
@@ -439,6 +445,7 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
         };
 
+        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
         rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
 
         ////////////////////////////////////////////////////////////////////////////////
@@ -487,7 +494,6 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["compute_init"],
-            ["signal_to_compute"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -540,7 +546,6 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "get_user_option"],
             ["config", "set_user_option"],
             ["config", "get_alluser_option"],
-            ["get_notebook_info"],
             ["set_notebook_info"],
             ["get_notebook_property"],
             ["set_notebook_property"],
@@ -555,10 +560,6 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.compute_init = function(username, token) {
             return rcloud_ocaps.compute_initAsync(username, token);
-        };
-
-        rcloud.signal_to_compute = function(signal) {
-            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.update_notebook = function(id, content, is_current) {
@@ -728,7 +729,6 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // notebook cache
-        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
         rcloud.set_notebook_info = function(id, info) {
             if(!info.username) return Promise.reject(new Error("attempt to set info no username"));
             if(!info.description) return Promise.reject(new Error("attempt to set info no description"));
