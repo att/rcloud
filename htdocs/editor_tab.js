@@ -310,6 +310,13 @@ var editor = function () {
             .then(get_infos_and_counts);
     }
 
+    function get_recent_info() {
+        return rcloud.config.get_recent_notebooks()
+            .then(function(recents) {
+                return get_infos_and_counts(Object.keys(recents));
+            });
+    }
+
     function get_notebooks_by_user(username) {
         return rcloud.config.all_user_notebooks(username)
             .then(get_infos_and_counts)
@@ -499,13 +506,16 @@ var editor = function () {
         return Promise.all([
             rcloud.get_users(),
             get_starred_info(),
+            get_recent_info(),
             rcloud.get_gist_sources(),
             rcloud.config.get_user_option('notebook-path-tips')
         ])
-            .spread(function(all_the_users, starred_info, gist_sources, path_tips) {
+            .spread(function(all_the_users, starred_info, recent_info, gist_sources, path_tips) {
                 path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
                 _.extend(notebook_info_, starred_info.notebooks);
+                _.extend(notebook_info_, recent_info.notebooks);
+                _.extend(num_stars_, recent_info.num_stars); // (not currently needed)
                 var root_data = [];
                 var featured_tree;
 
