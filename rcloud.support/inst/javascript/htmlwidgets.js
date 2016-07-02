@@ -47,9 +47,7 @@ $(document).ready(function() {
     add_hooks()
     function resizer() {
         var num_widgets = resize_all();
-        var interval = 200;
-        if (num_widgets > 0) { interval = 5000; }
-        setTimeout(resizer, interval);
+        if (num_widgets == 0) { setTimeout(resizer, 200); }
     }
     resizer()
 });
