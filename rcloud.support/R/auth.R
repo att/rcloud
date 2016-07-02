@@ -74,7 +74,11 @@ RC.authenticate <- function(v, check.only=FALSE)
 ## TRUE if successful
 RC.auth.anonymous <- function(v=NULL, check.only=FALSE) {
   ## FIXME: we may want to add an option to disable anonymous access even without exec.auth
-  if (!nzConf("exec.auth") || isTRUE(getConf("exec.auth") == "as-local")) return(TRUE) ## no exec auth -> allow anonymous and nothing to do
+  if (!nzConf("exec.auth") || isTRUE(getConf("exec.auth") == "as-local")) {
+      tmp <- tempdir() ## make sure tempdir exists (safe to create as there is no switching)
+      if (!dir.exists(tmp)) dir.create(tmp, FALSE, TRUE, "0700")
+      return(TRUE) ## no exec auth -> allow anonymous and nothing to do
+  }
 
   v <- as.list(v)
   exec.token <- if (length(v) > 1L) v[[2]] else if (length(v) == 1L) v[[1]] else NULL
