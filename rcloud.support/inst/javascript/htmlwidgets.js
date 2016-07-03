@@ -9,9 +9,8 @@ function getDocHeight(D) {
 
 function size_this(div) {
     var D = $(div).find('iframe').contents()[0];
-    var B = D.body;
 
-    if (!B) {
+    if (!D || !D.body) {
         setTimeout(function() { size_this($(div)); }, 100);
     } else {
         var h = getDocHeight(D);
