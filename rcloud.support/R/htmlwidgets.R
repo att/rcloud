@@ -78,6 +78,12 @@
 ##
 ## # Sizing
 ##
+## [ NOTE: Currently we turned off the periodic size check that ran every
+## five minutes. It generates an infinite loop for some widgets:
+## plotly, networkd3 and dygraphs. In theory this might mean that
+## some widgets might not size properly, especially in mini.html.
+## A possible workaround is to resize the window (again) by hand. ]
+##
 ## Sizing of html widgets is tricky by itself. See the vignette in the
 ## R package, currently here:
 ## https://cran.r-project.org/web/packages/htmlwidgets/vignettes/develop_sizing.html

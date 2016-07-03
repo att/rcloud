@@ -9,9 +9,8 @@ function getDocHeight(D) {
 
 function size_this(div) {
     var D = $(div).find('iframe').contents()[0];
-    var B = D.body;
 
-    if (!B) {
+    if (!D || !D.body) {
         setTimeout(function() { size_this($(div)); }, 100);
     } else {
         var h = getDocHeight(D);
@@ -47,9 +46,7 @@ $(document).ready(function() {
     add_hooks()
     function resizer() {
         var num_widgets = resize_all();
-        var interval = 200;
-        if (num_widgets > 0) { interval = 5000; }
-        setTimeout(resizer, interval);
+        if (num_widgets == 0) { setTimeout(resizer, 200); }
     }
     resizer()
 });
