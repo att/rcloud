@@ -42,6 +42,10 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
                          stop(e) })
         }
     }
+    ## Remove notebook from SOLR Caching notebook was successfully assigned a crypto group
+    if(is.notebook.encrypted(notebookid)) resp <- .solr.delete.doc(notebookid)
+    ## If group change is set back to Public update the solr index
+    if(!is.notebook.encrypted(notebookid)) resp <- update.solr(rcloud.get.notebook(notebookid),rcloud.notebook.star.count(notebookid))
     invisible(TRUE)
 }
 
