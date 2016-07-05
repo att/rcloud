@@ -46,7 +46,7 @@ rcloud.set.notebook.cryptgroup <- function(notebookid, groupid, modify=TRUE) { #
 }
 
 is.notebook.encrypted <- function(id)
-  sapply(property.multiple.notebooks(id, "cryptgroup"), function(x) !is.null(x))
+  sapply(property.multiple.notebooks(id, "cryptgroup"), function(x) {!is.null(x) && (x==TRUE)})
 
 rcloud.get.cryptgroup.users <- function(groupid) { # : list(user -> is.admin)
   keys <- rcs.list(rcs.key('.cryptgroup', groupid, 'users', '*'))
