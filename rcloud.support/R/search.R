@@ -37,7 +37,7 @@ update.solr <- function(notebook, starcount){
   if (is.null(solr.post.url)) stop("solr configuration not enabled")
 
   #Update only notebooks which are visible
-  if(rcloud.is.notebook.visible(notebook$content$id )){
+  if(rcloud.is.notebook.visible(notebook$content$id) && !(is.notebook.encrypted(notebook$content$id))){
   ## FIXME: gracefully handle unavailability
   content.files <- notebook$content$files
   fns <- as.vector(sapply(content.files, function(o) o$filename))
@@ -193,8 +193,8 @@ stitch.search.result <- function(splitted, type,k) {
 
 .solr.post.comment <- function(id, content, comment.id) {
 
-  ## Post comments to only notebooks with visibility flag true
-  if(rcloud.is.notebook.visible(notebook$content$id )){
+  ## Post comments to only notebooks with visibility flag true or non encrypted notebooks
+  if(rcloud.is.notebook.visible(notebook$content$id) && !(is.notebook.encrypted(notebook$content$id))){
   ## query ID to see if it has existing comments
   query <- list(q=paste0("id:",id),start=0,rows=1000)
   solr.res <- .solr.get(query=query)
