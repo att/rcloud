@@ -145,7 +145,7 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
               response.high[[i]]$comments <- final_res
               parts.content[[length(parts.content)+1]] <- list(filename="comments", content=response.high[[i]]$comments)
             }
-            response.high[[i]]$content <- jsonlite::toJSON(parts.content)
+            response.high[[i]]$content <- toJSON(parts.content)
             #Handling HTML content
             response.high[[i]]$content <- gsub("<","&lt;",response.high[[i]]$content)
             response.high[[i]]$content <- gsub(">","&gt;",response.high[[i]]$content)
@@ -163,7 +163,7 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
           updated.at <- response.docs[[i]]$updated_at
           user <- response.docs[[i]]$user
           parts <- response.high[[i]]$content
-          json[i] <- jsonlite::toJSON(c(QTime=time,notebook=notebook,id=id,starcount=starcount,updated_at=updated.at,user=user,numFound=count,pagesize=pagesize,parts=parts,source=as.vector(source)))
+          json[i] <- toJSON(c(QTime=time,notebook=notebook,id=id,starcount=starcount,updated_at=updated.at,user=user,numFound=count,pagesize=pagesize,parts=parts,source=as.vector(source)))
         }
         return(json)
       } else
