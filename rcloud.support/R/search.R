@@ -63,9 +63,9 @@ update.solr <- function(notebook, starcount){
     metadata<-paste0('{\"id\":\"',session.content$id, '\",\"user\":\"',session.content$user$login, '\",\"created_at\":\"',session.content$created_at, '\",\"updated_at\":\"',session.content$updated_at, '\",\"description\":\"',desc, '\",\"user_url\":\"',session.content$user$url, '\",\"avatar_url\":\"',session.content$user$avatar_url, '\",\"size\":\"',size, '\",\"commited_at\":\"',session.content$updated_at, '\",\"followers\":\"',0, '\",\"public\":\"',session.content$public, '\",\"starcount\":\"',starcount, '\",\"content\":{\"set\":\"\"}}')
     metadata.list <- fromJSON(metadata)
     content.files <- unname(lapply(content.files, function(o) list('filename'=o$filename,'content'=o$content)))
-    content.files <- toJSON(content.files)
+    content.files <- jsonlite::toJSON(content.files)
     metadata.list$content$set <- content.files
-    completedata <- toJSON(metadata.list)
+    completedata <- jsonlite::toJSON(metadata.list)
     .solr.post(data=completedata)
     }
   }
