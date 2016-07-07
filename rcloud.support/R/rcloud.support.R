@@ -497,8 +497,14 @@ rcloud.is.notebook.visible <- function(id)
     visibility
   }
 
-rcloud.set.notebook.visibility <- function(id, value)
+rcloud.set.notebook.visibility <- function(id, value){
   rcloud.set.notebook.property(id, "visible", value != 0);
+  if(value){
+    response <- update.solr(rcloud.get.notebook(id),rcloud.notebook.star.count(id))
+  } else {
+    response <- .solr.delete.doc(id)
+   }
+}
 
 rcloud.port.notebooks <- function(url, books, prefix) {
   foreign.ctx <- create.github.context(url)

@@ -202,14 +202,14 @@ rcloud.htmlwidgets.viewer <- function(url, height) {
   invisible()
 }
 
-as.character.htmlwidget <- function(x, ...) {
+as.character.htmlwidget <- function(x, ocaps = TRUE, ...) {
   tmp <- tempfile(fileext=".html")
   on.exit(unlink(tmp), add = TRUE)
   htmlwidgets::saveWidget(x, file = tmp, selfcontained = FALSE)
   htmlwidgets:::pandoc_self_contained_html(tmp, tmp)
 
   ## Only in mini, not in the notebook
-  if (!isEditMode()) htmlwidgets.install.ocap()
+  if (ocaps && !isEditMode()) htmlwidgets.install.ocap()
 
   widget <- paste(readLines(tmp), collapse = "\n")
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
@@ -226,7 +226,7 @@ as.character.htmlwidget <- function(x, ...) {
 add.iframe.htmlwidget <- function(widget) {
   paste(
     sep = "",
-    "<iframe frameBorder=\"0\" width=\"100%\" height=\"250\" srcdoc=\"",
+    "<iframe frameBorder=\"0\" width=\"100%\" height=\"400\" srcdoc=\"",
     gsub("\"", "&quot;", widget),
     "\"></iframe>"
   )

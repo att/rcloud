@@ -1,13 +1,19 @@
 # Some intelligent parsing account for basics like /solr/notebook and /solr/notebook/ is essentially the same thing
 # Using httr::parse_url
 
-.solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")) {
+.solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"),isXML=FALSE) {
+  content_type <- "application/json"
+  body = paste("[",data,"]",sep='')
+  if(isXML){
+    content_type ="text/xml"
+    body=data
+    }
   solr.post.url <- httr::parse_url(solr.url)
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
   if(is.null(solr.auth.user)){
-    httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json())
+   httr::POST(build_url(solr.post.url) ,body=body ,add_headers('Content-Type'=content_type))
   } else {
-    httr::POST(build_url(solr.post.url) , body = paste("[",data,"]",sep=''),content_type_json(),accept_json() , authenticate(solr.auth.user,solr.auth.pwd))
+   httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), authenticate(solr.auth.user,solr.auth.pwd))
   }
 }
 
@@ -30,6 +36,8 @@ update.solr <- function(notebook, starcount){
   solr.post.url <- getConf("solr.url")
   if (is.null(solr.post.url)) stop("solr configuration not enabled")
 
+  #Update only notebooks which are visible
+  if(rcloud.is.notebook.visible(notebook$content$id) && !(is.notebook.encrypted(notebook$content$id))){
   ## FIXME: gracefully handle unavailability
   content.files <- notebook$content$files
   fns <- as.vector(sapply(content.files, function(o) o$filename))
@@ -59,6 +67,7 @@ update.solr <- function(notebook, starcount){
     metadata.list$content$set <- content.files
     completedata <- toJSON(metadata.list)
     .solr.post(data=completedata)
+    }
   }
 }
 
@@ -184,6 +193,8 @@ stitch.search.result <- function(splitted, type,k) {
 
 .solr.post.comment <- function(id, content, comment.id) {
 
+  ## Post comments to only notebooks with visibility flag true or non encrypted notebooks
+  if(rcloud.is.notebook.visible(notebook$content$id) && !(is.notebook.encrypted(notebook$content$id))){
   ## query ID to see if it has existing comments
   query <- list(q=paste0("id:",id),start=0,rows=1000)
   solr.res <- .solr.get(query=query)
@@ -195,6 +206,7 @@ stitch.search.result <- function(splitted, type,k) {
   ## send the update request
   metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':::',comment.content,':::',.session$username), '"}}')
   .solr.post(data=metadata)
+  }
 }
 
 .solr.modify.comment <- function(id, content, cid) {
@@ -213,4 +225,9 @@ stitch.search.result <- function(splitted, type,k) {
   solr.res$response$docs[[1]]$comments <- solr.res$response$docs[[1]]$comments[-index]
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
   .solr.post(data=metadata)
+}
+
+.solr.delete.doc <- function(id){
+    metadata <- paste0('<delete><id>',id,'</id></delete>')
+    .solr.post(data=metadata, isXML=TRUE)
 }
