@@ -8,12 +8,14 @@
     content_type ="text/xml"
     body=data
     }
+   if(!is.null(solr.url)){
   solr.post.url <- httr::parse_url(solr.url)
   solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
   if(is.null(solr.auth.user)){
    httr::POST(build_url(solr.post.url) ,body=body ,add_headers('Content-Type'=content_type))
   } else {
    httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), authenticate(solr.auth.user,solr.auth.pwd))
+    }
   }
 }
 
@@ -33,13 +35,14 @@
 }
 
 update.solr <- function(notebook, starcount){
-  solr.post.url <- getConf("solr.url")
-  if (is.null(solr.post.url)) stop("solr configuration not enabled")
-
+  #solr.post.url <- getConf("solr.url")
+  #if (is.null(solr.post.url)) stop("solr configuration not enabled")
   #Update only notebooks which are visible
   if(rcloud.is.notebook.visible(notebook$content$id) && !(is.notebook.encrypted(notebook$content$id))){
   ## FIXME: gracefully handle unavailability
   content.files <- notebook$content$files
+  ## Remove binary assets by removing elements with .b64 extention
+  content.files <- content.files[unlist(lapply(names(content.files),function(o){tail(strsplit(o,split="\\.")[[1]],1) != "b64"}))]
   fns <- as.vector(sapply(content.files, function(o) o$filename))
   ## only index cells for now ...
   ## FIXME: do we really want to exclude the scratch file?
