@@ -73,14 +73,23 @@ exports.create_notebook = function (casper) {
 //verify if RCloud edit.html page has got loaded properly
 exports.validation = function (casper) {
     return casper
-        .then(function () {
+        .wait(5000, function () {
             this.wait(5000);
             this.waitForSelector('.icon-share', function () {
                 this.test.assertExists('.icon-share', 'the element Shareable Link exists');
             });
-            this.waitForSelector('#rcloud-navbar-menu > li:nth-child(7) > a:nth-child(1)', function () {
-                this.test.assertVisible("#rcloud-navbar-menu > li:nth-child(7) > a:nth-child(1)", 'Logout button exists');
+            this.wait(5000);
+            this.waitForSelector('div.btn > input:nth-child(1)', function () {
+                this.test.assertVisible("#rcloud-navbar-menu > li:nth-child(7) > a:nth-child(1)", 'Cell delete check box exists');
             });
+        });
+};
+
+//Function for injecting jQuery
+exports.inject_jquery = function (casper) {
+    return casper
+        .then(function () {
+            casper.page.injectJs('jquery-1.11.3.js');
         });
 };
 
@@ -111,10 +120,7 @@ exports.search1 = function (casper, search_Content) {
 exports.addnewcell = function (casper) {
     return casper
         .then(function () {
-            this.test.assertTruthy(this.click({
-                type: 'xpath',
-                path: ".//*[@id='prompt-area']/div[1]/div/span/i"
-            }, "Creating new cell"));
+            this.test.assertTruthy(this.click("span.cell-control > i:nth-child(1)", 'created new cell'), "New cell created");
             this.wait(7000);
         });
 };
@@ -127,16 +133,14 @@ exports.addcontentstocell = function (casper, input_code) {
                 this.test.pass('The cell is present');
                 console.log('Adding contents to the cell')
                 this.sendKeys("div.edit-code > div:nth-child(3) > div:nth-child(1)", input_code);
-
-                this.click("div.cell-control-bar:nth-child(2) > span:nth-child(2) > i:nth-child(1)", "Executing cell contents");//xpath for executing the contents
+                this.wait(4000);
+                this.click("div.cell-control-bar:nth-child(2) > span:nth-child(2) > i:nth-child(1)", "Executing cell contents");
                 this.wait(6000);
             }
             else {
                 this.test.fail('Cell is not present to pass the code content');
             }
-
         });
-
 };
 
 //Run all the cells
@@ -188,7 +192,7 @@ exports.delete_notebooksIstarred = function (casper) {
 //getting notebook title
 exports.notebookname = function (casper) {
     casper.wait(3000);
-    return casper.fetchText({type: 'xpath', path: '//*[@id="notebook-title"]'});
+    return casper.fetchText(".jqtree-selected > div:nth-child(1) > span:nth-child(1)");
 };
 
 //view.html link verifications
@@ -395,17 +399,9 @@ exports.comments = function (casper, comment) {
 };
 
 //Group create
-exports.create_group = function (casper) {
+exports.create_group = function (casper, GroupName) {
     return casper
         .then(function () {
-
-            //Random name generator to create Group name
-            casper.then(function () {
-                var GroupName = this.evaluate(function () {
-                    return Math.random().toString(36).substr(2, 3);
-                });
-                console.log('1st group name is :' + GroupName);
-            });
             //Open manage group window
             this.then(function () {
                 this.click("li.dropdown > a:nth-child(1)");
@@ -434,58 +430,3 @@ exports.create_group = function (casper) {
             });
         });
 };
-
-//Search elements
-exports.search = function (casper, item, combo) {
-    return casper
-        .then(function () {
-            var x = require('casper').selectXPath;
-            if (this.visible('#search-form')) {
-                console.log('Search div is already opened');
-            }
-            else {
-                var z = casper.evaluate(function () {
-                    $(' .icon-search').click();
-                });
-                this.echo("Opened Search div");
-            }
-            //entering item to be searched
-            casper.then(function () {
-                this.sendKeys('#input-text-search', item);
-                this.wait(6000);
-                this.click('#search-form > div:nth-child(1) > div:nth-child(2) > button:nth-child(1)');
-            });
-            var counter = 0;
-            casper.wait(5000);
-            //counting number of Search results
-            casper.then(function () {
-                do
-                {
-                    counter = counter + 1;
-                    this.wait(2000);
-                } while (this.visible(x('/html/body/div[3]/div/div[1]/div[1]/div/div/div[2]/div[2]/div/div/div[2]/div/div/table[' + counter + ']/tbody/tr[1]/td/a')));
-
-                counter = counter - 1;
-                this.echo("number of search results:" + counter);
-            });
-            //verify that the searched item is found in the local user's div
-            casper.viewport(1366, 768).then(function () {
-                //this.echo("Combo= "+combo);
-                var flag = 0;//to check if searched item has been found
-                for (var i = 1; i <= counter; i++) {
-                    this.wait(5000);
-                    var result = this.fetchText(x('/html/body/div[3]/div/div/div[2]/div/div/div[2]/div[2]/div/div/div[2]/div/div/table[' + i + ']/tbody/tr/td/a'));
-                    this.echo(result);
-                    if (result == combo) {
-                        var temp = this.fetchText(x('/html/body/div[3]/div/div/div[2]/div/div/div[2]/div[2]/div/div/div[2]/div/div/table[' + i + ']/tbody/tr[2]/td/div/table/tbody/tr[2]/td/table/tbody/tr/td[2]/code'));
-                        if (temp == item) {
-                            flag = 1;
-                            break;
-                        }
-                    }//outer if closes
-                }//for closes
-                this.test.assertEquals(flag, 1, "Searched item has been found");
-            });//function closes
-        });
-};
-
