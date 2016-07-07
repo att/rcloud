@@ -40,6 +40,8 @@ update.solr <- function(notebook, starcount){
   if(rcloud.is.notebook.visible(notebook$content$id) && !(is.notebook.encrypted(notebook$content$id))){
   ## FIXME: gracefully handle unavailability
   content.files <- notebook$content$files
+  ## Remove binary assets by removing elements with .b64 extention
+  content.files <- content.files[unlist(lapply(names(content.files),function(o){tail(strsplit(o,split="\\.")[[1]],1) != "b64"}))]
   fns <- as.vector(sapply(content.files, function(o) o$filename))
   ## only index cells for now ...
   ## FIXME: do we really want to exclude the scratch file?
