@@ -1,10 +1,20 @@
 
-function getDocHeight(D) {
-    return Math.max(
-        Math.max(D.body.scrollHeight, D.documentElement.scrollHeight),
-        Math.max(D.body.offsetHeight, D.documentElement.offsetHeight),
-        Math.max(D.body.clientHeight, D.documentElement.clientHeight)
-    );
+function getDocHeight(Di) {
+    var D = Di[0];
+
+    if (Di.find('body').css('overflow') === 'hidden') {
+        return Math.max(
+            D.documentElement.offsetHeight,
+            D.documentElement.clientHeight
+        );
+
+    } else {
+        return Math.max(
+            Math.max(D.body.scrollHeight, D.documentElement.scrollHeight),
+            Math.max(D.body.offsetHeight, D.documentElement.offsetHeight),
+            Math.max(D.body.clientHeight, D.documentElement.clientHeight)
+        );
+    }
 }
 
 var lastWidths = { };
@@ -12,7 +22,8 @@ var lastWidths = { };
 function size_this(div, reset) {
     // Check if the widget has a <body> already. If not, we need to wait
     // a bit
-    var D = $(div).find('iframe').contents()[0];
+    var Di = $(div).find('iframe').contents();
+    var D = Di[0];
 
     if (!D || !D.body) {
         setTimeout(function() { size_this($(div), reset); }, 100);
@@ -21,8 +32,8 @@ function size_this(div, reset) {
         // we don't need to do anything.
         var rcid = div.id;
         var width = $(div).find('iframe').width();
-        if (reset || (! rcid in lastWidths) || (lastWidths[rcid] < width)) {
-            var h = getDocHeight(D);
+        if (reset || (! rcid in lastWidths) || (lastWidths[rcid] != width)) {
+            var h = getDocHeight(Di);
             $(div).find('iframe').height(h);
             $(div).find('iframe').attr('height', h);
         }

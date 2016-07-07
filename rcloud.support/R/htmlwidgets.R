@@ -226,7 +226,7 @@ as.character.htmlwidget <- function(x, ocaps = TRUE, ...) {
 add.iframe.htmlwidget <- function(widget) {
   paste(
     sep = "",
-    "<iframe frameBorder=\"0\" width=\"100%\" height=\"250\" srcdoc=\"",
+    "<iframe frameBorder=\"0\" width=\"100%\" height=\"400\" srcdoc=\"",
     gsub("\"", "&quot;", widget),
     "\"></iframe>"
   )
