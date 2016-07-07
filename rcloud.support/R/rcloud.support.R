@@ -500,10 +500,8 @@ rcloud.is.notebook.visible <- function(id)
 rcloud.set.notebook.visibility <- function(id, value){
   rcloud.set.notebook.property(id, "visible", value != 0);
   if(value){
-    response <- update.solr(rcloud.get.notebook(id),rcloud.notebook.star.count(id))
-  } else {
-    response <- .solr.delete.doc(id)
-   }
+    response <- update.solr(rcloud.get.notebook(id,raw=TRUE),rcloud.notebook.star.count(id))
+  } else {response <- .solr.delete.doc(id)}
 }
 
 rcloud.port.notebooks <- function(url, books, prefix) {
