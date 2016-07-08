@@ -5,8 +5,8 @@
 
 ### Installation instructions for docker application containers ###
 
+> ##### 1. Linux - Launch Containers
+> `docker run -d -p 8080:8080 att/rcloud`
 
-> ##### 1. Get Kinematic #####
->`https://www.docker.com/products/docker-toolbox`
-
-> :exclamation: Your Mac must be running OS X 10.8 “Mountain Lion” or newer to run Docker software.
+> ##### 2. Mac/Windows Get Kinematic `https://www.docker.com/products/docker-toolbox`  #####
+> Search for rcloud and Launch Container
