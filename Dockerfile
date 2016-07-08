@@ -60,7 +60,19 @@ RUN mkdir -p /data/rcloud
 RUN mkdir -p /data/rcloud/data/gists
 RUN chmod -R a+rwx /data/rcloud/data
 
-ADD . /data/rcloud
+ADD conf             /data/rcloud/
+ADD htdocs           /data/rcloud/
+ADD packages         /data/rcloud/
+ADD rcloud.client    /data/rcloud/
+ADD rcloud.packages  /data/rcloud/
+ADD rcloud.support   /data/rcloud/
+ADD scripts          /data/rcloud/
+ADD tests            /data/rcloud/
+ADD VERSION          /data/rcloud/
+ADD package.json     /data/rcloud/
+ADD Gruntfile.js     /data/rcloud/
+ADD docker           /data/rcloud/
+
 RUN cd /data/rcloud && git apply docker/domainCookie.patch
 RUN cd /data/rcloud \
       && scripts/bootstrapR.sh \
