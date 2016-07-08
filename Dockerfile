@@ -69,7 +69,6 @@ RUN cd /data/rcloud \
 COPY docker/rcloud.conf /data/rcloud/conf
 COPY docker/init.sh /bin
 COPY docker/index.html /data/rcloud/htdocs
-COPY docker/sks.R /data/rcloud/htdocs
 
 RUN chown -R rcloud:rcloud /data/rcloud
 
