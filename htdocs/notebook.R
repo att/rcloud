@@ -1,5 +1,8 @@
 ## auto-convert mime-type based on the extension because typically GitHub jsut gives us text/plain
-auto.convert.ext <- c(js = "application/javascript", css ="text/css", html = "text/html")
+auto.convert.ext <- c(js = "application/javascript", css ="text/css", html = "text/html",
+                      png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg",
+                      tiff = "image/tiff", tif = "image/tiff", svg = "image/svg+xml"
+                      )
 
 cookies <- function(a) {
   if (length(a) && length(c <- grep("^cookie:", a, TRUE)) &&
@@ -85,9 +88,11 @@ run <- function(url, query, body, headers)
       type <- nb$content$files[[extra.path]]$type
 
       ## override types according to the extension (c.f. #680)
-      ac <- which(sapply(seq.int(auto.convert.ext), function(i) isTRUE(grepl(paste0("\\.",names(auto.convert.ext)[i],"$"),extra.path))))
-      if (length(ac)) type <- as.vector(auto.convert.ext[ac[1L]])
-      
+      ## NOTE: we could use mime::guess_type(extra.path, type, type), but we're being conservative for now
+      if (length(grep(".", extra.path, fixed=TRUE))) {
+          nt <- auto.convert.ext[tolower(gsub(".*\\.","",extra.path))]
+          if (!any(is.na(nt))) type <- as.vector(nt)
+      }
       list(payload, type)
     }
   }, error=function(e) {
