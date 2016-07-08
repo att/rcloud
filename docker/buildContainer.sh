@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t rcloud .
+docker build -t att/rcloud .
