@@ -1,5 +1,5 @@
 
-![alt-text](img/logo_rcloud.png)
+![alt-text](../htdocs/img/logo_rcloud.png)
 ----------
 <img src="https://www.docker.com/sites/all/themes/docker/assets/images/Logo-Docker.svg" width=240>
 
