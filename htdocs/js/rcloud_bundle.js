@@ -88,7 +88,9 @@ RClient = {
 
             post_response: function (msg) {
                 var d = $("<pre class='response'></pre>").html(msg);
-                $("#output").append(d);
+                //$(d).insertBefore("#selection-bar");//.insertBefore(d);
+
+                $('#output').append(d);
             },
 
             post_rejection: function(e) {
@@ -104,9 +106,11 @@ RClient = {
         return result;
     }
 };
+
 RCloud = {};
 
-// FIXME: what is considered an execption - and API error or also cell eval error? We can tell them apart now ...
+// FIXME: what is considered an exception - an API error or also cell eval error?
+// We can tell them apart now ...
 RCloud.is_exception = function(v) {
     // consider only OCAP errors an exception -- eventually both should use the exception mechanism, though
     return _.isObject(v) && v.r_attributes && v.r_attributes['class'] === 'OCAP-eval-error';
@@ -120,7 +124,9 @@ RCloud.is_exception = function(v) {
 RCloud.exception_message = function(v) {
     if (!RCloud.is_exception(v))
         throw new Error("Not an R exception value");
-    return v['error'];
+    var tb = v['traceback'] ? v['traceback'] : "";
+    if (tb.join) tb = tb.join("\n");
+    return v.error + "R trace:\n" + tb;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -130,9 +136,7 @@ RCloud.promisify_paths = (function() {
     function rcloud_handler(command, promise_fn) {
         function success(result) {
             if(result && RCloud.is_exception(result)) {
-                var tb = result['traceback'] ? result['traceback'] : "";
-                if (tb.join) tb = tb.join("\n");
-                throw new Error(command + ": " + result.error + "R trace:\n" + tb);
+                throw new Error(command + ": " + RCloud.exception_message(result));
             }
             return result;
         }
@@ -193,6 +197,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["anonymous_session_init"],
             ["anonymous_compute_init"],
             ["has_compute_separation"],
+            ["signal_to_compute"],
             ["prefix_uuid"],
             ["get_conf_value"],
             ["get_conf_values"],
@@ -218,6 +223,8 @@ RCloud.create = function(rcloud_ocaps) {
             ["stars","get_notebook_starrer_list"],
             ["stars","get_multiple_notebook_star_counts"],
             ["stars","get_my_starred_notebooks"],
+            ["discovery", "get_notebooks"],
+            ["discovery", "get_thumb"],
             ["session_cell_eval"],
             ["reset_session"],
             ["set_device_pixel_ratio"],
@@ -228,12 +235,18 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "set_url"],
             ["api", "get_url"],
             ["get_notebook_by_name"],
+            ["get_notebook_info"],
+            ["get_multiple_notebook_infos"],
             ["languages", "get_list"],
             ["plots", "render"],
-            ["plots", "get_formats"]
+            ["plots", "get_formats"],
+            ["get_fork_count"],
+            ["get_multiple_fork_counts"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
+        rcloud.get_fork_count = rcloud_ocaps.get_fork_countAsync;
+        rcloud.get_multiple_fork_counts = rcloud_ocaps.get_multiple_fork_countsAsync;
         rcloud.username = function() {
             return $.cookies.get('user');
         };
@@ -261,6 +274,10 @@ RCloud.create = function(rcloud_ocaps) {
                     that.deferred_knitr_uuid = uuid;
                     that.has_compute_separation = has_compute;
                 });
+        };
+
+        rcloud.signal_to_compute = function(signal) {
+            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.get_conf_value = function(key, source) {
@@ -401,6 +418,11 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_ocaps.stars.get_multiple_notebook_star_countsAsync(id);
         };
 
+        rcloud.discovery = {
+            get_notebooks: rcloud_ocaps.discovery.get_notebooksAsync,
+            get_thumb: rcloud_ocaps.discovery.get_thumbAsync
+        };
+
         rcloud.session_cell_eval = function(context_id, filename, language, version, silent) {
             return rcloud_ocaps.session_cell_evalAsync(context_id, filename, language, version, silent);
         };
@@ -422,6 +444,9 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.get_notebook_by_name = function(user, path) {
             return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
         };
+
+        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
+        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
 
         ////////////////////////////////////////////////////////////////////////////////
         // access the runtime API in javascript as well
@@ -469,7 +494,6 @@ RCloud.create = function(rcloud_ocaps) {
         var paths = [
             ["session_init"],
             ["compute_init"],
-            ["signal_to_compute"],
             ["search"],
             ["update_notebook"],
             ["create_notebook"],
@@ -508,7 +532,9 @@ RCloud.create = function(rcloud_ocaps) {
             ["api","disable_warnings"],
             ["api","enable_echo"],
             ["config", "all_notebooks"],
+            ["config", "all_user_notebooks"],
             ["config", "all_notebooks_multiple_users"],
+            ["config", "get_all_notebook_info"],
             ["config", "add_notebook"],
             ["config", "remove_notebook"],
             ["config", "get_current_notebook"],
@@ -520,8 +546,6 @@ RCloud.create = function(rcloud_ocaps) {
             ["config", "get_user_option"],
             ["config", "set_user_option"],
             ["config", "get_alluser_option"],
-            ["get_notebook_info"],
-            ["get_multiple_notebook_infos"],
             ["set_notebook_info"],
             ["get_notebook_property"],
             ["set_notebook_property"],
@@ -536,10 +560,6 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.compute_init = function(username, token) {
             return rcloud_ocaps.compute_initAsync(username, token);
-        };
-
-        rcloud.signal_to_compute = function(signal) {
-            return rcloud_ocaps.signal_to_computeAsync(signal);
         };
 
         rcloud.update_notebook = function(id, content, is_current) {
@@ -692,7 +712,9 @@ RCloud.create = function(rcloud_ocaps) {
         // config
         rcloud.config = {
             all_notebooks: rcloud_ocaps.config.all_notebooksAsync,
+            all_user_notebooks: rcloud_ocaps.config.all_user_notebooksAsync,
             all_notebooks_multiple_users: rcloud_ocaps.config.all_notebooks_multiple_usersAsync,
+            get_all_notebook_info: rcloud_ocaps.config.get_all_notebook_infoAsync,
             add_notebook: rcloud_ocaps.config.add_notebookAsync,
             remove_notebook: rcloud_ocaps.config.remove_notebookAsync,
             get_current_notebook: rcloud_ocaps.config.get_current_notebookAsync,
@@ -707,8 +729,6 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         // notebook cache
-        rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
-        rcloud.get_multiple_notebook_infos = rcloud_ocaps.get_multiple_notebook_infosAsync;
         rcloud.set_notebook_info = function(id, info) {
             if(!info.username) return Promise.reject(new Error("attempt to set info no username"));
             if(!info.description) return Promise.reject(new Error("attempt to set info no description"));
@@ -732,6 +752,7 @@ RCloud.create = function(rcloud_ocaps) {
 
     return rcloud;
 };
+
 var ui_utils = {};
 
 ui_utils.make_url = function(page, opts) {
@@ -851,7 +872,8 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     min_rows = _.isUndefined(min_rows) ? 0  : min_rows;
     max_rows = _.isUndefined(max_rows) ? 30 : max_rows;
     var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
+    //var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
+    var rows = Math.max(min_rows, widget.getSession().getScreenLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return newHeight;
 };
@@ -895,7 +917,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
-        }, 
+        },
         {
             name: 'execute-selection-or-line',
             bindKey: {
@@ -929,7 +951,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
             ctrlACount : 0,
             lastRow: -1,
             bindKey: {
-          
                 mac: 'Ctrl-A',
                 sender: 'editor'
             },
@@ -962,7 +983,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
         {
             name: 'cursor at end of line',
             bindKey: {
-       
                 mac: 'Ctrl-E',
                 sender: 'editor'
             },
@@ -1033,7 +1053,8 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     });
     return function(value) {
         listen = false;
-        var res = widget.setValue(value);
+        var oldValue = widget.getValue();
+        var res = (value !== oldValue) ? widget.setValue(value) : null;
         listen = true;
         return res;
     };
@@ -1284,6 +1305,7 @@ ui_utils.editable = function(elem$, command) {
                     }
                 } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
+                    window.getSelection().removeAllRanges();
                 }
                 return true;
             },
@@ -1381,6 +1403,17 @@ ui_utils.is_a_mac = function() {
     };
 }();
 
+
+// loosely based on https://codepen.io/gapcode/pen/vEJNZN
+ui_utils.is_ie = function() {
+    var ua = window.navigator.userAgent;
+
+    return(ua.indexOf('MSIE ') > 0 ||
+           ua.indexOf('Trident/') > 0 ||
+           ua.indexOf('Edge/') > 0);
+}
+
+
 ui_utils.kill_popovers = function() {
     if(window.allPopovers) {
         $(window.allPopovers).each(function(i, e) {
@@ -1394,9 +1427,36 @@ ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
 
-    
     //$('div.selectize-input > input').blur();
 };
+
+
+// copy elements from the notebook, but skip anything .nonselectable
+// we have to do this by copying them to an offscreen "buffer" in the DOM
+// in order to remove the .nonselectables
+ui_utils.select_allowed_elements = function(callback) {
+    var sel = window.getSelection();
+    var offscreen = $('<pre class="offscreen"></pre>');
+
+    $('body').append(offscreen);
+
+    for(var i=0; i < sel.rangeCount; ++i) {
+        var range = sel.getRangeAt(i);
+        offscreen.append(range.cloneContents());
+    }
+
+    offscreen.find('.nonselectable').remove();
+    // Firefox throws an exception if you try to select children and there are none(!)
+    if(offscreen.is(':empty'))
+        sel.removeAllRanges();
+    else
+        sel.selectAllChildren(offscreen[0]);
+
+    window.setTimeout(function() {
+        offscreen.remove();
+    }, 1000);
+};
+
 RCloud.utils = {};
 
 // Ways to execute promise in sequence, with each started after the last completes
@@ -1417,6 +1477,10 @@ RCloud.utils.promise_sequence = function(collection, operator) {
         },
         0);
 };
+
+RCloud.utils.get_url_parameter = function(name) {
+    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+}
 
 /*
  RCloud.extension is the root of all extension mechanisms in RCloud.
@@ -1441,7 +1505,7 @@ RCloud.extension = (function() {
         },
         create: function(options) {
             options = options || {};
-            var entries_ = {};
+            var items_ = {};
             var sections_ = {};
             var defaults_ = options.defaults ? options.defaults : {};
 
@@ -1453,7 +1517,7 @@ RCloud.extension = (function() {
 
             function recompute_sections() {
                 for(key in sections_) {
-                    sections_[key].entries = _.filter(entries_, function(entry) {
+                    sections_[key].entries = _.filter(items_, function(entry) {
                         if(entry.disable)
                             return false;
                         return sections_[key].filter ? sections_[key].filter(entry) : true;
@@ -1465,41 +1529,44 @@ RCloud.extension = (function() {
             return {
                 add: function(entries) {
                     for(var key in entries)
-                        entries_[key] = _.extend(_.extend({key: key}, defaults_), entries[key]);
+                        items_[key] = _.extend(_.extend({key: key}, defaults_), entries[key]);
                     recompute_sections();
                     return this;
                 },
                 remove: function(name) {
-                    delete entries_[name];
+                    delete items_[name];
                     recompute_sections();
                     return this;
                 },
                 disable: function(name, disable) {
-                    if(entries_[name]) {
-                        entries_[name].disable = disable;
+                    if(items_[name]) {
+                        items_[name].disable = disable;
                         recompute_sections();
                     }
                     return this;
                 },
                 get: function(name) {
-                    return entries_[name];
+                    return items_[name];
                 },
                 entries: function(name) {
                     return sections_[name].entries;
                 },
                 create: function(name, _) {
-                    var ret = {};
+                    var map = {}, array = [];
                     var args = Array.prototype.slice.call(arguments, 1);
-                    this.entries(name).forEach(function(entry) {
-                        ret[entry.key] = entry.create.apply(entry, args);
-                    });
-                    return ret;
+                    var entries = this.entries(name);
+                    if(entries)
+                        entries.forEach(function(entry) {
+                            array.push(map[entry.key] = entry.create.apply(entry, args));
+                        });
+                    return {map: map, array: array};
                 },
                 sections: sections_
             };
         }
     };
 })();
+
 
 var bootstrap_utils = {};
 
@@ -1526,15 +1593,20 @@ bootstrap_utils.button = function(opts)
     if (opts['class']) a.addClass(opts['class']);
     return a;
 };
+
 Notebook = {};
 
 //////////////////////////////////////////////////////////////////////////////
 //
 // roughly a MVC-kinda-thing per cell, plus a MVC for all the cells
 // 
+
 Notebook.Buffer = {};
+
 Notebook.Cell = {};
+
 Notebook.Asset = {};
+
 Notebook.Buffer.create_model = function(content, language) {
     // by default, consider this a new cell
     var checkpoint_ = "";
@@ -1634,6 +1706,16 @@ Notebook.Buffer.create_model = function(content, language) {
             checkpoint_ = content;
             return change;
         },
+        asset_url: function(with_version) {
+            var gist = this.parent_model.controller.current_gist();
+            var parts = [window.location.protocol + '//' + window.location.host,
+                         'notebook.R',
+                         gist.id];
+            if(with_version)
+                parts.push(gist.history[0].version);
+            parts.push(this.filename());
+            return parts.join('/');
+        },
         notify_views: function(f) {
             _.each(this.views, function(view) {
                 f(view);
@@ -1642,6 +1724,7 @@ Notebook.Buffer.create_model = function(content, language) {
     };
     return result;
 };
+
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
@@ -1655,31 +1738,34 @@ Notebook.Asset.create_html_view = function(asset_model)
     anchor.append(filename_span);
     filename_div.append(anchor);
     anchor.append(remove);
-    var asset_old_name = filename_span.text();
+    var old_asset_name = filename_span.text();
     var rename_file = function(v) {
         // this is massively inefficient - actually three round-trips to the server when
         // we could have one!  save, create new asset, delete old one
         shell.notebook.controller.save().then(function() {
-            var new_asset_name = filename_span.text();
+            var new_asset_name = filename_span.text().trim();
             new_asset_name = new_asset_name.replace(/\s/g, " ");
             var old_asset_content = asset_model.content();
             if (Notebook.is_part_name(new_asset_name)) {
                 alert("Asset names cannot start with 'part[0-9]', sorry!");
-                filename_span.text(asset_old_name);
+                filename_span.text(old_asset_name);
                 return;
             }
-            var found = shell.notebook.model.get_asset(new_asset_name);
-            if (found) {
-                alert('An asset with the name "' + filename_span.text() + '" already exists. Please choose a different name.');
-                filename_span.text(asset_old_name);
-            }
-            else {
-                shell.notebook.controller
-                    .append_asset(old_asset_content, new_asset_name)
-                    .spread(function(_, new_controller) {
-                        new_controller.select();
-                        asset_model.controller.remove(true);
-                    });
+
+            if(old_asset_name === new_asset_name) {
+                filename_span.text(old_asset_name);
+            } else {
+                if(shell.notebook.model.get_asset(new_asset_name)) {
+                    alert('An asset with the name "' + new_asset_name + '" already exists. Please choose a different name.');
+                    filename_span.text(old_asset_name);
+                } else {
+                    shell.notebook.controller
+                        .append_asset(old_asset_content, new_asset_name)
+                        .spread(function(_, new_controller) {
+                            new_controller.select();
+                            asset_model.controller.remove(true);
+                        });
+                }
             }
         });
     };
@@ -1697,7 +1783,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    filename_span.click(function() {
+    anchor.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
         //ugly fix, but desperate times call for desperate measures.
@@ -1745,6 +1831,7 @@ Notebook.Asset.create_html_view = function(asset_model)
     };
     return result;
 };
+
 Notebook.Asset.create_model = function(content, filename)
 {
     var cursor_position_;
@@ -1800,6 +1887,7 @@ Notebook.Asset.create_model = function(content, filename)
     });
     return result;
 };
+
 Notebook.Asset.create_controller = function(asset_model)
 {
     var result = {
@@ -1832,6 +1920,7 @@ Notebook.Asset.create_controller = function(asset_model)
     };
     return result;
 };
+
 (function() {
 
 function ensure_image_has_hash(img)
@@ -1845,6 +1934,7 @@ function ensure_image_has_hash(img)
 
 var MIN_LINES = 2;
 var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 10;
+var scrollable_area = $('#rcloud-cellarea');
 
 function create_cell_html_view(language, cell_model) {
     var ace_widget_;
@@ -1886,9 +1976,9 @@ function create_cell_html_view(language, cell_model) {
         if(left_controls_)
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
-    function set_widget_height() {
-        outer_ace_div.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
-                                   EXTRA_HEIGHT_SOURCE) + "px");
+    function set_widget_height(widget_height) {
+        outer_ace_div.css('height', widget_height ?
+            widget_height : (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +  EXTRA_HEIGHT_SOURCE) + "px");
     }
 
     cell_status_ = $("<div class='cell-status nonselectable'></div>");
@@ -1909,6 +1999,28 @@ function create_cell_html_view(language, cell_model) {
         var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
         above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
+
+        cell_status_.click(function(e) {
+
+            var cell_model = $(this).closest('.notebook-cell').data('rcloud.model');
+
+            if(e.ctrlKey || e.metaKey || e.shiftKey) {
+                e.preventDefault();
+            }
+            cell_model.parent_model.controller.select_cell(cell_model, {
+                is_toggle: (ui_utils.is_a_mac() && e.metaKey) || (!ui_utils.is_a_mac() && e.ctrlKey),
+                is_range : e.shiftKey,
+                is_exclusive: !e.ctrlKey && !e.shiftKey
+            });
+
+            $(':focus').blur();
+
+        }).children().click(function(e) {
+            var target = $(e.target);
+            if(!target.hasClass('cell-number')) {
+                e.stopPropagation();
+            }
+        });
     }
     notebook_cell_div.append(cell_status_);
 
@@ -1938,6 +2050,16 @@ function create_cell_html_view(language, cell_model) {
         }
     }
 
+    function update_selected() {
+        if(cell_model.is_selected()) {
+            notebook_cell_div.addClass("selected");
+        } else {
+            notebook_cell_div.removeClass("selected");
+        }
+
+        notebook_cell_div.find('.cell-control input[type="checkbox"]').prop('checked', cell_model.is_selected());
+    }
+
     //////////////////////////////////////////////////////////////////////////
 
     var inner_div = $("<div></div>");
@@ -1960,6 +2082,7 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
 
     function click_to_edit(div, whether) {
+
         if(whether) {
             set_background_class(code_div_.find('pre'));
             if(am_read_only_===false)
@@ -2012,7 +2135,7 @@ function create_cell_html_view(language, cell_model) {
         result_div_.empty();
         has_result_ = false;
         if(cell_controls_)
-            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
+            results_button_border(false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -2027,9 +2150,85 @@ function create_cell_html_view(language, cell_model) {
             session.getUndoManager().reset();
         });
         var document = session.getDocument();
+
+        widget.gotoPageUp = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(-1, false);
+        };
+
+        widget.gotoPageDown = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(1, false);
+        };
+
+        widget.setAutoScrollEditorIntoView = function(enable) {
+            if (!enable)
+                return;
+            var rect;
+            var self = widget;
+            var shouldScroll = false;
+            if (!widget.$scrollAnchor) {
+                widget.$scrollAnchor = window.document.createElement("div");
+            }
+            var scrollAnchor = widget.$scrollAnchor;
+            scrollAnchor.style.cssText = "position:absolute;";
+
+            $('#rcloud-cellarea').prepend(scrollAnchor);
+
+            var onChangeSelection = widget.on("changeSelection", function() {
+                shouldScroll = true;
+            });
+            var onBeforeRender = widget.renderer.on("beforeRender", function() {
+                if (shouldScroll)
+                    rect = self.renderer.container.getBoundingClientRect();
+            });
+            var onAfterRender = widget.renderer.on("afterRender", function() {
+                if (shouldScroll && rect && self.isFocused()) {
+                    var renderer = self.renderer;
+                    var pos = renderer.$cursorLayer.$pixelPos;
+                    var config = renderer.layerConfig;
+                    var top = pos.top - config.offset;
+
+                    // shouldScoll  = true  = ^
+                    // shouldScroll = false = v
+                    if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                        shouldScroll = true;
+                    } else if (pos.top < config.height &&
+                        pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                        shouldScroll = false;
+                    } else {
+                        shouldScroll = null;
+                    }
+
+                    if (shouldScroll != null) {
+                        var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                        var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                        scroll_top += pos.top;
+
+                        if(shouldScroll) {
+                            $('#rcloud-cellarea').scrollTop(scroll_top);
+                        } else {
+                            $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                        }
+                    }
+                    shouldScroll = rect = null;
+                }
+            });
+            widget.setAutoScrollEditorIntoView = function(enable) {
+                if (enable)
+                    return;
+                delete widget.setAutoScrollEditorIntoView;
+                widget.removeEventListener("changeSelection", onChangeSelection);
+                widget.renderer.removeEventListener("afterRender", onAfterRender);
+                widget.renderer.removeEventListener("beforeRender", onBeforeRender);
+            };
+        };
+
         widget.setOptions({
-            enableBasicAutocompletion: true
+            enableBasicAutocompletion: true,
+            autoScrollEditorIntoView: true
         });
+
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
         return {
@@ -2081,8 +2280,92 @@ function create_cell_html_view(language, cell_model) {
                 mac: 'Alt-Return',
                 sender: 'editor'
             },
-            exec: function(ace_widget_, args, request) {
+            exec: function() {
                 result.execute_cell();
+            }
+        }, {
+            name: 'executeCellsFromHere',
+            bindKey: {
+                win: 'Shift-Alt-Return',
+                mac: 'Shift-Alt-Return',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'navigateToPreviousCell',
+            bindKey: {
+                win: 'Ctrl-Shift-,',
+                mac: 'Ctrl-Shift-,',
+                sender: 'editor'
+            },
+            exec: function() {
+                var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                if(prior_cell) {
+                    prior_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'navigateToNextCell',
+            bindKey: {
+                win: 'Ctrl-Shift-.',
+                mac: 'Ctrl-Shift-.',
+                sender: 'editor'
+            },
+            exec: function() {
+                var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                if(subsequent_cell) {
+                    subsequent_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'insertCellBefore',
+            bindKey: {
+                win: 'Ctrl-[',
+                mac: 'Cmd-[',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'insertCellAfter',
+            bindKey: {
+                win: 'Ctrl-]',
+                mac: 'Cmd-]',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.insert_cell_after("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'blurCell',
+            bindKey: {
+                win: 'Escape',
+                mac: 'Escape',
+                sender: 'editor'
+            },
+            exec: function() {
+                ace_widget_.blur();
+            }
+        }, {
+            name: 'executeAll',
+            bindKey: {
+                win: 'Ctrl-Shift-Enter',
+                mac: 'Ctrl-Shift-Enter',
+                sender: 'editor'
+            },
+            exec: function() {
+                RCloud.UI.run_button.run();
             }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
@@ -2132,6 +2415,14 @@ function create_cell_html_view(language, cell_model) {
     }
     function highlight_classes(kind) {
         return 'find-highlight' + ' ' + kind;
+    }
+    function edit_button_border(whether) {
+        if(cell_controls_)
+            cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', whether);
+    }
+    function results_button_border(whether) {
+        if(cell_controls_)
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', whether);
     }
 
     // should be a code preprocessor extension, but i've run out of time
@@ -2237,6 +2528,9 @@ function create_cell_html_view(language, cell_model) {
         language_updated: function() {
             update_language();
             cell_changed();
+        },
+        selected_updated: function() {
+            update_selected();
         },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
@@ -2348,6 +2642,8 @@ function create_cell_html_view(language, cell_model) {
             });
             click_to_edit(code_div_.find('pre'), !readonly);
             cell_status_.toggleClass('readonly', readonly);
+            if(readonly)
+                edit_button_border($(source_div_).is(":visible"));
         },
         set_show_cell_numbers: function(whether) {
             left_controls_.set_flag('cell-numbers', whether);
@@ -2372,10 +2668,14 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
+
+                var offset = scrollable_area.scrollTop();
+
                 if(cell_controls_)
-                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
+                    edit_button_border(true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
+                var editor_height = code_div_.height();
                 code_div_.hide();
                 create_edit_widget();
                 /*
@@ -2408,7 +2708,7 @@ function create_cell_html_view(language, cell_model) {
                 // do the two-change dance to make ace happy
                 outer_ace_div.show();
                 ace_widget_.resize(true);
-                set_widget_height();
+                set_widget_height(editor_height);
                 ace_widget_.resize(true);
                 if(cell_controls_)
                     cell_controls_.set_flag('edit', true);
@@ -2416,10 +2716,12 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
+
+                    scrollable_area.scrollTop(offset);
+
                     var scrollTopOffset = ace_widget_.getSession().getScrollTop();
                     var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY - scrollTopOffset);
                     var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
-
 
                     var Range = ace.require('ace/range').Range;
                     var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
@@ -2429,7 +2731,7 @@ function create_cell_html_view(language, cell_model) {
             }
             else {
                 if(cell_controls_)
-                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
+                    edit_button_border(false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -2442,17 +2744,54 @@ function create_cell_html_view(language, cell_model) {
             edit_mode_ = edit_mode;
             this.change_highlights(highlights_); // restore highlights
         },
+        scroll_into_view: function() {
+            var renderer = ace_widget_.renderer;
+            var rect = renderer.container.getBoundingClientRect();
+            var pos = renderer.$cursorLayer.$pixelPos;
+            var config = renderer.layerConfig;
+            var top = pos.top - config.offset;
+
+            // shouldScoll  = true  = ^
+            // shouldScroll = false = v
+            if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                shouldScroll = true;
+            } else if (pos.top < config.height &&
+                pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                shouldScroll = false;
+            } else {
+                shouldScroll = null;
+            }
+
+            if (shouldScroll != null) {
+                var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                scroll_top += pos.top;
+
+                if(shouldScroll) {
+                    $('#rcloud-cellarea').scrollTop(scroll_top);
+                } else {
+                    $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                }
+            }
+        },
+        toggle_source: function() {
+            this.hide_source($(source_div_).is(":visible"));
+        },
         hide_source: function(whether) {
-            if(whether)
+            if(whether) {
                 source_div_.hide();
-            else
+                edit_button_border(false);
+            }
+            else {
                 source_div_.show();
+                edit_button_border(true);
+            }
         },
         toggle_results: function(val) {
             if(val===undefined)
                 val = result_div_.is(':hidden');
             if(cell_controls_)
-                cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+                results_button_border(val);
             if(val) result_div_.show();
             else result_div_.hide();
         },
@@ -2497,6 +2836,9 @@ function create_cell_html_view(language, cell_model) {
         },
         get_content: function() { // for debug
             return cell_model.content();
+        },
+        get_selection: function() {
+            return this.ace_widget().getSession().doc.getTextRange(this.ace_widget().selection.getRange());
         },
         reformat: function() {
             if(edit_mode_) {
@@ -2548,16 +2890,18 @@ function create_cell_html_view(language, cell_model) {
 
     result.edit_source(false);
     return result;
-};
+}
 
 Notebook.Cell.create_html_view = function(cell_model)
 {
     return create_cell_html_view(cell_model.language(), cell_model);
 };
 })();
+
 Notebook.Cell.create_model = function(content, language)
 {
     var id_ = -1;
+    var is_selected_ = false;
     var result = Notebook.Buffer.create_model(content, language);
     var base_change_object = result.change_object;
 
@@ -2587,6 +2931,42 @@ Notebook.Cell.create_model = function(content, language)
                 version: this.parent_model.controller.current_gist().history[0].version
             };
         },
+        set_focus: function() {
+            this.notify_views(function(view) {
+                view.edit_source(true);
+                view.scroll_into_view(true);
+            });
+        },
+        deselect_cell: function() {
+            is_selected_ = false;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;
+        },
+        select_cell: function() {
+            is_selected_ = true;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;
+        },
+        toggle_cell: function() {
+            is_selected_ = !is_selected_;
+
+            this.notify_views(function(view) {
+                view.selected_updated();
+            });
+
+            return is_selected_;
+        },
+        is_selected: function() {
+            return is_selected_;
+        },
         json: function() {
             return {
                 content: content,
@@ -2610,6 +2990,7 @@ Notebook.Cell.create_model = function(content, language)
     });
     return result;
 };
+
 Notebook.Cell.create_controller = function(cell_model)
 {
     var execution_context_ = null;
@@ -2687,6 +3068,7 @@ Notebook.Cell.create_controller = function(cell_model)
 
     return result;
 };
+
 Notebook.Cell.preprocessors = RCloud.extension.create();
 Notebook.Cell.postprocessors = RCloud.extension.create();
 
@@ -2813,6 +3195,7 @@ Notebook.Cell.preprocessors.add({
     }
 });
 
+
 Notebook.create_html_view = function(model, root_div)
 {
     var show_cell_numbers_;
@@ -2907,12 +3290,14 @@ Notebook.create_html_view = function(model, root_div)
     model.views.push(result);
     return result;
 };
+
 // these functions in loops are okay
 /*jshint -W083 */
 Notebook.create_model = function()
 {
-    var readonly_ = false;
-    var user_ = "";
+    var readonly_ = false,
+        user_ = "",
+        last_selected_ = undefined;
 
     function last_id(cells) {
         if(cells.length)
@@ -2935,6 +3320,7 @@ Notebook.create_model = function()
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
+            RCloud.UI.selection_bar.update(this.cells);
             return cells_removed.concat(assets_removed);
         },
         get_asset: function(filename) {
@@ -2952,6 +3338,12 @@ Notebook.create_model = function()
                     view.asset_appended(asset_model);
                 });
             return changes;
+        },
+        cell_count: function() {
+            return this.cells.length;
+        },
+        selected_count: function() {
+            return _.filter(this.cells, function(cell) { return cell.is_selected(); }).length;
         },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
@@ -2971,6 +3363,7 @@ Notebook.create_model = function()
                 ++id;
                 --n;
             }
+            RCloud.UI.selection_bar.update(this.cells);
             return changes;
         },
         insert_cell: function(cell_model, id, skip_event) {
@@ -3011,6 +3404,9 @@ Notebook.create_model = function()
                 ++x;
                 ++id;
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
+
             // apply the changes backward so that we're moving each cell
             // out of the way just before putting the next one in its place
             return changes.reverse();
@@ -3081,7 +3477,59 @@ Notebook.create_model = function()
                 ++id;
                 --n;
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
+
             return changes;
+        },
+        remove_selected_cells: function() {
+            var that = this, changes = [];
+
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return cell.is_selected();
+            })
+            .each(function(cell) {
+                changes = changes.concat(that.remove_cell(cell));
+            });
+
+            RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
+        },
+        invert_selected_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.toggle_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        clear_all_selected_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.deselect_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        crop_cells: function() {
+            var that = this, changes = [];
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return !cell.is_selected();
+            })
+            .each(function(cell) {
+                changes = changes.concat(that.remove_cell(cell));
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
+        },
+        can_crop_cells: function() {
+            return this.selected_count() && this.selected_count() !== this.cell_count();
+        },
+        select_all_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.select_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         move_cell: function(cell_model, before) {
             // remove doesn't change any ids, so we can just remove then add
@@ -3091,6 +3539,7 @@ Notebook.create_model = function()
                             this.insert_cell(cell_model, before, true) :
                             this.append_cell(cell_model, null, true)),
                 post_index = this.cells.indexOf(cell_model);
+                last_selected_ = post_index;
             _.each(this.views, function(view) {
                 view.cell_moved(cell_model, pre_index, post_index);
             });
@@ -3103,12 +3552,58 @@ Notebook.create_model = function()
             else
                 return null;
         },
+        subsequent_cell: function(cell_model) {
+            var index = this.cells.indexOf(cell_model);
+            if(index < this.cells.length - 1)
+                return this.cells[index + 1];
+            else
+                return null;
+        },
         change_cell_language: function(cell_model, language) {
             // for this one case we have to use filenames instead of ids
             var pre_name = cell_model.filename();
             cell_model.language(language);
             return [cell_model.change_object({filename: pre_name,
                                               rename: cell_model.filename()})];
+        },
+        select_cell: function(cell_model, modifiers) {
+
+            var that = this;
+
+            var clear_all = function() {
+                _.chain(that.cells)
+                .filter(function(cell) {
+                    return cell.is_selected();
+                })
+                .each(function(cell) {
+                    cell.deselect_cell();
+                });
+            };
+
+            var select_range = function(lower, upper) {
+                clear_all();
+                var items = [];
+                for(var loop = lower; loop <= upper; loop++) {
+                    that.cells[loop].select_cell();
+                }
+            };
+
+            if(modifiers.is_toggle) {
+                cell_model.toggle_cell();
+                last_selected_ = this.cells.indexOf(cell_model);
+            } else if(modifiers.is_exclusive) {
+                clear_all();
+                cell_model.toggle_cell();
+                last_selected_ = this.cells.indexOf(cell_model);
+            } else /* is_range */ {
+
+                var start = this.cells.indexOf(cell_model),
+                    end = last_selected_;
+
+                select_range(Math.min(start, end), Math.max(start, end));
+            }
+
+            RCloud.UI.selection_bar.update(this.cells);
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];
@@ -3175,14 +3670,12 @@ Notebook.create_model = function()
         }
     };
 };
+
 Notebook.create_controller = function(model)
 {
     var current_gist_,
         dirty_ = false,
-        save_button_ = null,
-        save_timer_ = null,
-        save_timeout_ = 30000; // 30s
-
+        save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
     var default_callback = function() {
@@ -3191,8 +3684,8 @@ Notebook.create_controller = function(model)
             if(!cb_) {
                 var editor_callback = editor.load_callback({is_change: true, selroot: true});
                 cb_ = function(notebook) {
-                    if(save_button_)
-                        ui_utils.disable_bs_button(save_button_);
+                    var saveb = RCloud.UI.navbar.control('save_notebook');
+                    saveb && saveb.disable();
                     dirty_ = false;
                     if(save_timer_) {
                         window.clearTimeout(save_timer_);
@@ -3396,16 +3889,18 @@ Notebook.create_controller = function(model)
 
     function on_dirty() {
         if(!dirty_) {
-            if(save_button_)
-                ui_utils.enable_bs_button(save_button_);
+            var saveb = RCloud.UI.navbar.control('save_notebook');
+            saveb && saveb.enable();
             dirty_ = true;
         }
         if(save_timer_)
             window.clearTimeout(save_timer_);
-        save_timer_ = window.setTimeout(function() {
-            result.save();
-            save_timer_ = null;
-        }, save_timeout_);
+        var save_timeout = shell.autosave_timeout();
+        if(save_timeout > 0)
+            save_timer_ = window.setTimeout(function() {
+                result.save();
+                save_timer_ = null;
+            }, save_timeout);
     }
 
     model.dishers.push({on_dirty: on_dirty});
@@ -3414,12 +3909,6 @@ Notebook.create_controller = function(model)
         current_gist: function() {
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
-        },
-        save_button: function(save_button) {
-            if(arguments.length) {
-                save_button_ = save_button;
-            }
-            return save_button_;
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
@@ -3430,6 +3919,12 @@ Notebook.create_controller = function(model)
                     cch.model.content(notebook.files[filename].content);
                     return [notebook, cch.controller];
                 });
+        },
+        cell_count: function() {
+            return model.cell_count();
+        },
+        selected_count: function() {
+            return model.selected_count();
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -3452,6 +3947,34 @@ Notebook.create_controller = function(model)
             RCloud.UI.command_prompt.focus();
             return update_notebook(changes)
                 .then(default_callback());
+        },
+        remove_selected_cells: function() {
+            var changes = refresh_buffers().concat(model.remove_selected_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
+        },
+        invert_selected_cells: function() {
+            model.invert_selected_cells();
+        },
+        clear_all_selected_cells: function() {
+            model.clear_all_selected_cells();
+        },
+        crop_cells: function() {
+
+            if(!this.can_crop_cells())
+                return;
+
+            var changes = refresh_buffers().concat(model.crop_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
+        },
+        can_crop_cells: function() {
+            return model.can_crop_cells();
+        },
+        select_all_cells: function() {
+            model.select_all_cells();
         },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
@@ -3560,6 +4083,9 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
+        select_cell: function(cell_model, modifiers) {
+            var changes = refresh_buffers().concat(model.select_cell(cell_model, modifiers));
+        },
         clear: function() {
             model.clear();
             // FIXME when scratchpad becomes a view, clearing the model
@@ -3660,6 +4186,18 @@ Notebook.create_controller = function(model)
                 });
             });
         },
+        run_from: function(cell_id) {
+            var that = this,
+                process = false;
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    if(process || cell_model.id() === cell_id) {
+                        process = true;
+                        cell_model.controller.enqueue_execution_snapshot();
+                    }
+                });
+            });
+        },
         show_cell_numbers: function(whether) {
             _.each(model.views, function(view) {
                 view.set_show_cell_numbers(whether);
@@ -3691,6 +4229,7 @@ Notebook.create_controller = function(model)
     model.controller = result;
     return result;
 };
+
 Notebook.hide_r_source = function(selection)
 {
     if (selection)
@@ -3712,6 +4251,62 @@ Notebook.show_r_source = function(selection)
 Notebook.is_binary_content = function(content) {
     return !_.isUndefined(content.byteLength) && !_.isUndefined(content.slice);
 };
+
+RCloud.discovery_model = function () {
+
+    var notebooks_ = {};
+
+    function clean_r(obj) {
+        delete obj.r_attributes;
+        delete obj.r_type;
+        return obj;
+    }
+
+    return {
+        get_notebooks : function(anonymous, notebook_ids) {
+
+            var promise;
+            notebook_ids = _.filter(notebook_ids, function(id) { return id.length && id[0] !== 'r'; });
+
+            // get only the items that we don't currently have:
+            var ids = _.difference(notebook_ids, Object.keys(notebooks_));
+
+            if(ids.length) {
+
+                promise = Promise.all([
+                    rcloud.get_multiple_notebook_infos(ids),
+                    rcloud.stars.get_multiple_notebook_star_counts(ids),
+                    anonymous ? Promise.resolve([]) : rcloud.stars.get_my_starred_notebooks(),
+                    rcloud.get_multiple_fork_counts(ids)
+                ]).spread(function(notebooks, stars, my_starred_notebooks, forks) {
+                    notebooks = clean_r(notebooks);
+
+                    // populate #stars/forks whether or not we got results
+                    Object.keys(notebooks).forEach(function(id) {
+                        notebooks[id].stars = stars[id] || 0;
+                        notebooks[id].forks = forks[id] || 0;
+                    });
+
+                    _.extend(notebooks_, notebooks);
+
+                    // has the current user starred it?
+                    _.each(my_starred_notebooks, function(id) {
+                        if(notebooks_[id])
+                            notebooks_[id].is_starred_by_me = true;
+                    });
+                });
+
+            } else {
+                promise = Promise.resolve();
+            }
+
+            return promise.then(function() {
+                return _.pick(notebooks_, notebook_ids);
+            });
+        }
+    };
+}();
+
 Notebook.part_name = function(id, language) {
     // yuk
     if(_.isString(id))
@@ -3741,10 +4336,27 @@ Notebook.sanitize = function(notebook) {
 };
 
 
+
 (function() {
 
 function append_session_info(ctx, text) {
+    // usually a punt because ctx is bad
     RCloud.UI.session_pane.append_text(text);
+}
+
+function invoke_context_callback(type /*, ... */) {
+    var ctx = arguments[1];
+    var args = Array.prototype.slice.call(arguments, 2);
+    var context = output_contexts_[ctx];
+    console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
+    if(context && context[type]) {
+        context[type].apply(context, args);
+        return true;
+    }
+    else {
+        append_session_info(ctx, args[0]);
+        return false;
+    }
 }
 
 function handle_img(msg, ctx, url, dims, device, page) {
@@ -3755,10 +4367,7 @@ function handle_img(msg, ctx, url, dims, device, page) {
     // the image from whatever cell it was in, simply by wrapping the plot in
     // a jquery object, and jquery selection.append removes it from previous parent
     var image = RCloud.UI.image_manager.update(url, dims, device, page);
-    if(ctx && output_contexts_[ctx] && output_contexts_[ctx].html_out)
-        output_contexts_[ctx].selection_out(image.div());
-    else
-        append_session_info(image.div());
+    invoke_context_callback('selection_out', ctx, image.div());
 }
 
 var output_contexts_ = {};
@@ -3774,24 +4383,15 @@ RCloud.unregister_output_context = function(context_id) {
 };
 
 RCloud.end_cell_output = function(context_id, error) {
-    if(output_contexts_[context_id] && output_contexts_[context_id].end)
-        output_contexts_[context_id].end(error);
+    invoke_context_callback('end', context_id, error);
     RCloud.unregister_output_context(context_id);
 };
 
 function forward_to_context(type, has_continuation) {
     return function() {
-        var ctx = arguments[0];
-        var args = Array.prototype.slice.call(arguments, 1);
-        var context = output_contexts_[ctx];
-        console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
-        if(context && context[type])
-            context[type].apply(context, args);
-        else {
-            append_session_info.apply(null, args);
-            if(has_continuation)
-                arguments[arguments.length-1]("context does not support input", null);
-        }
+        var res = invoke_context_callback.apply(null, [type].concat(Array.prototype.slice.call(arguments, 0)));
+        if(!res && has_continuation)
+            arguments[arguments.length-1]("context does not support input", null);
     };
 }
 
@@ -3818,7 +4418,7 @@ var oob_sends = {
         // FIXME: do somethign with it - eventually this
         // should be a modal thing - for now we should at least
         // show the content ...
-        append_session_info("what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
+        append_session_info('editor', "what: "+ what + "\ncontents:" + content + "\nname: "+name+"\n");
     },
     "console.out": forward_to_context('out'),
     "console.msg": forward_to_context('msg'),
@@ -3838,7 +4438,7 @@ var oob_sends = {
     }
 };
 
-var on_data = function(v) {
+function on_data(v) {
     v = v.value.json();
     // FIXME: this is a temporary debugging to see all OOB calls irrespective of handlers
     console.log("OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
@@ -3851,7 +4451,7 @@ var oob_messages = {
     "console.in": forward_to_context('in', true)
 };
 
-var on_message = function(v, k) {
+function on_message(v, k) {
     v = v.value.json();
     console.log("OOB message arrived: ['"+v[0]+"']" + (oob_messages[v[0]]?'':' (unhandled)'));
     if(oob_messages[v[0]]) {
@@ -3936,7 +4536,10 @@ function rclient_promise(allow_anonymous) {
         if(window.rclient)
             rclient.close();
         if (error.message === "Authentication required") {
-            RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
+            if(RCloud.session.first_session_)
+                window.location = ui_utils.relogin_uri();
+            else
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
         } else {
             var msg = error.message || error.error || error;
             RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
@@ -3989,10 +4592,12 @@ RCloud.session = {
         return rclient_promise(allow_anonymous);
     },
     on_data: on_data,
-    on_oob_message: on_message
+    on_oob_message: on_message,
+    invoke_context_callback: invoke_context_callback
 };
 
 })();
+
 RCloud.language = (function() {
     // the keys of the language map come from GitHub's language detection
     // infrastructure which we don't control. (this is likely a bad thing)
@@ -4048,6 +4653,7 @@ RCloud.language = (function() {
     };
 
 })();
+
 (function() {
     function upload_opts(opts) {
         if(_.isBoolean(opts) || _.isUndefined(opts))
@@ -4196,7 +4802,9 @@ RCloud.language = (function() {
         }
     };
 })();
+
 RCloud.UI = {};
+
 RCloud.UI.advanced_menu = (function() {
     var menu_;
     var result = {
@@ -4279,18 +4887,19 @@ RCloud.UI.advanced_menu = (function() {
     return result;
 })();
 
+
 RCloud.UI.cell_commands = (function() {
     var extension_;
 
     function create_command_set(area, div, cell_model, cell_view) {
         var commands_ = extension_.create(area, cell_model, cell_view);
-        _.each(commands_, function(command) {
+        commands_.array.forEach(function(command) {
             command.control.addClass('cell-control');
         });
         var flags_ = {};
-        div.append.apply(div, _.pluck(commands_, 'control'));
+        div.append.apply(div, _.pluck(commands_.array, 'control'));
         return {
-            controls: commands_,
+            controls: commands_.map,
             set_flag: function(flag, value) {
                 var checkf = function(f) {
                     var reverse;
@@ -4305,13 +4914,13 @@ RCloud.UI.cell_commands = (function() {
                 flags_[flag] = value;
                 extension_.entries(area).forEach(function(cmd) {
                     if(!_.every(cmd.enable_flags, checkf))
-                        commands_[cmd.key].disable();
+                        commands_.map[cmd.key].disable();
                     else
-                        commands_[cmd.key].enable();
+                        commands_.map[cmd.key].enable();
                     if(!_.every(cmd.display_flags, checkf))
-                        commands_[cmd.key].control.hide();
+                        commands_.map[cmd.key].control.hide();
                     else
-                        commands_[cmd.key].control.show();
+                        commands_.map[cmd.key].control.show();
                 });
             }
         };
@@ -4325,7 +4934,7 @@ RCloud.UI.cell_commands = (function() {
                 // when they are set to container = body
                 $(".tooltip").remove();
                 if (!$(e.currentTarget).hasClass("button-disabled")) {
-                    action(control);
+                    action(control, e);
                 }
             });
             return {
@@ -4363,9 +4972,14 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_static: function(html, wrap) {
+        create_static: function(html, wrap, action) {
             var content = $('<span><span/>').html(html);
             var span = wrap ? wrap(content) : content;
+
+            if(action) {
+                action(span);
+            }
+
             return {
                 control: span,
                 enable: function() {},
@@ -4469,18 +5083,24 @@ RCloud.UI.cell_commands = (function() {
                     area: 'cell',
                     sort: 2000,
                     create: function(cell_model, cell_view) {
-                        return that.create_button("icon-play", "run", function() {
-                            cell_view.execute_cell();
+                        return that.create_button("icon-play", "run", function(control, e) {
+                            if(e.shiftKey) {
+                                shell.run_notebook_from(cell_model.id());
+                            } else {
+                                cell_view.execute_cell();
+                            }
                         });
                     }
                 },
                 edit: {
                     area: 'cell',
                     sort: 3000,
-                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit borderable", "toggle edit mode", function() {
-                            cell_view.toggle_edit();
+                            if(cell_model.parent_model.read_only())
+                                cell_view.toggle_source();
+                            else
+                                cell_view.toggle_edit();
                         });
                     }
                 },
@@ -4518,24 +5138,21 @@ RCloud.UI.cell_commands = (function() {
                         });
                     }
                 },
-                remove: {
-                    area: 'cell',
-                    sort: 5000,
-                    enable_flags: ['modify'],
-                    create: function(cell_model) {
-                        return that.create_button("icon-trash", "remove", function() {
-                            cell_model.parent_model.controller.remove_cell(cell_model);
-                        });
-                    }
-                },
-                grab_affordance: {
+                selection: {
                     area: 'left',
-                    sort: 1000,
+                    sort: 1250,
                     display_flags: ['modify'],
                     create: function(cell_model) {
-                        var svg = "<img src='/img/grab_affordance.svg' type='image/svg+xml'></img>";
-                        return that.create_static(svg, function(x) {
-                            return $("<span class='grab-affordance'>").append(x);
+                        var html = "<input type='checkbox'></input>";
+                        return that.create_static(html, function(x) {
+                            return $("<span class='cell-selection'>").append(x);
+                        }, function(static_content) {
+                            static_content.click(function(e) {
+                                cell_model.parent_model.controller.select_cell(cell_model, {
+                                    is_toggle: !e.shiftKey, 
+                                    is_range : e.shiftKey
+                                });
+                            });
                         });
                     }
                 },
@@ -4560,7 +5177,8 @@ RCloud.UI.cell_commands = (function() {
                     display_flags: ['cell-numbers'],
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
-                            return $("<span class='left-indicator'></span>").append('cell ', x);
+                            return $("<span class='left-indicator cell-number'></span>").append('cell ', x);
+                        }, function(static_content) {
                         });
                     }
                 }
@@ -4601,6 +5219,7 @@ RCloud.UI.cell_commands = (function() {
     };
     return result;
 })();
+
 RCloud.UI.column = function(sel_column) {
     var colwidth_;
     function classes(cw) {
@@ -4880,6 +5499,7 @@ RCloud.UI.collapsible_column.default_sizer = function(el) {
         padding = RCloud.UI.collapsible_column.default_padder(el);
     return {height: height, padding: padding};
 };
+
 //////////////////////////////////////////////////////////////////////////
 // resize left and right panels by dragging on the divider
 
@@ -4934,13 +5554,16 @@ RCloud.UI.column_sizer = {
     }
 };
 
+
 RCloud.UI.command_prompt = (function() {
     var show_prompt_ = false, // start hidden so it won't flash if user has it turned off
         readonly_ = true,
         history_ = null,
         entry_ = null,
         language_ = null,
-        command_bar_ = null;
+        command_bar_ = null,
+        ace_widget_,
+        ace_session_;
 
     function setup_command_entry() {
         var prompt_div = $("#command-prompt");
@@ -4956,9 +5579,11 @@ RCloud.UI.command_prompt = (function() {
         prompt_div.addClass("r-language-pseudo");
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
+        ace_widget_ = widget;
         set_ace_height();
         var RMode = ace.require("ace/mode/r").Mode;
         var session = widget.getSession();
+        ace_session_ = session;
         var doc = session.doc;
         widget.setOptions({
             enableBasicAutocompletion: true
@@ -5062,7 +5687,16 @@ RCloud.UI.command_prompt = (function() {
                         }
                     }
                 }
-            }
+            }, {
+            name: 'blurCell',
+                bindKey: {
+                    win: 'Escape',
+                    mac: 'Escape'
+                },
+                exec: function() {
+                    ace_widget_.blur();
+                }
+            }                
         ]);
         widget.commands.removeCommands(['find', 'replace']);
         ui_utils.customize_ace_gutter(widget, function(i) {
@@ -5220,10 +5854,21 @@ RCloud.UI.command_prompt = (function() {
                 return;
             entry_.widget.focus();
             entry_.restore();
+        },
+        ace_widget: function() {
+            return ace_widget_;
+        },
+        get_selection: function() {
+            if(!show_prompt_) {
+                return undefined;
+            } else {
+                return ace_session_.doc.getTextRange(ace_widget_.selection.getRange());
+            }
         }
     };
     return result;
 })();
+
 RCloud.UI.comments_frame = (function() {
     var is_foreign_ = false;
     function rebuild_comments(comments) {
@@ -5376,38 +6021,43 @@ RCloud.UI.comments_frame = (function() {
     return result;
 })();
 
+
 /*
  * Adjusts the UI depending on whether notebook is read-only
  */
 RCloud.UI.configure_readonly = function() {
     var readonly_notebook = $("#readonly-notebook");
+    var revertb = RCloud.UI.navbar.control('revert_notebook'),
+        saveb = RCloud.UI.navbar.control('save_notebook');
     if(shell.notebook.controller.is_mine()) {
         if(shell.notebook.model.read_only()) {
-            $('#revert-notebook').show();
-            $('#save-notebook').hide();
+            revertb && revertb.show();
+            saveb && saveb.hide();
         }
         else {
-            $('#revert-notebook').hide();
-            $('#save-notebook').show();
+            revertb && revertb.hide();
+            saveb && saveb.show();
         }
     }
     else {
-        $('#revert-notebook,#save-notebook').hide();
+        revertb && revertb.hide();
+        saveb && saveb.hide();
     }
     if(shell.notebook.model.read_only()) {
         RCloud.UI.command_prompt.readonly(true);
+        RCloud.UI.selection_bar.hide();
         readonly_notebook.show();
-        $('#save-notebook').hide();
         $('#output').sortable('disable');
         $('#upload-to-notebook')
             .prop('checked', false)
             .attr("disabled", true);
         RCloud.UI.scratchpad.set_readonly(true);
+        RCloud.UI.find_replace.hide_replace();
     }
     else {
         RCloud.UI.command_prompt.readonly(false);
+        RCloud.UI.selection_bar.show();
         readonly_notebook.hide();
-        $('#save-notebook').show();
         $('#output').sortable('enable');
         $('#upload-to-notebook')
             .prop('checked', false)
@@ -5415,6 +6065,7 @@ RCloud.UI.configure_readonly = function() {
         RCloud.UI.scratchpad.set_readonly(false);
     }
 };
+
 (function() {
 
 var fatal_dialog_;
@@ -5461,49 +6112,116 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
 };
 
 })();
+
 RCloud.UI.find_replace = (function() {
+
     var find_dialog_ = null, regex_,
-        find_desc_, find_input_, replace_desc_, replace_input_, replace_stuff_,
-        find_next_, find_last_, replace_next_, replace_all_,
+        find_form_,
+        find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
+        find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
-        matches_ = [], active_match_;
+        has_focus_ = false,
+        matches_ = [], active_match_,
+        change_interval;
+
+    function generate_matches() {
+        active_match_ = undefined;
+        build_regex(find_input_.val());
+        highlight_all();
+
+        // matches_
+        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
+        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
+
+        if(find_input_.val().length) {
+            active_match_ = 0;
+            show_matches();
+            active_transition('activate');
+        } else {
+            active_match_ = undefined;
+            hide_matches();
+        }
+    };
+
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
-            find_dialog_ = $('<div id="find-dialog"></div>');
-            var find_form = $('<form id="find-form"></form>');
-            find_desc_ = $('<label id="find-label" for="find-input"><span>Find</span></label>');
-            find_input_ = $('<input type=text id="find-input" class="form-control-ext"></input>');
-            find_next_ = $('<button id="find-next" class="btn btn-primary">Next</button>');
-            find_last_ = $('<button id="find-last" class="btn">Previous</button>');
-            var replace_break = $('<br/>');
-            replace_desc_ = $('<label id="replace-label" for="replace-input"><span>Replace</span></label>');
-            replace_input_ = $('<input type=text id="replace-input" class="form-control-ext"></input>');
-            replace_next_ = $('<button id="replace" class="btn">Replace</button>');
-            replace_all_ = $('<button id="replace-all" class="btn">Replace All</button>');
-            replace_stuff_ = replace_break.add(replace_desc_).add(replace_input_).add(replace_next_).add(replace_all_);
-            var close = $('<span id="find-close"><i class="icon-remove"></i></span>');
-            find_form.append(find_desc_.append(find_input_), find_next_, find_last_, close, replace_break,
-                             replace_desc_.append(replace_input_), replace_next_, replace_all_);
-            find_dialog_.append(find_form);
-            $('#middle-column').prepend(find_dialog_);
 
-            find_input_.on('input', function(e) {
+            var markup = $(_.template(
+                $("#find-in-notebook-snippet").html()
+            )({}));
+
+            $('#middle-column').prepend(markup);
+
+            find_dialog_ = $(markup.get(0));
+            find_form_ = markup.find('#find-form');
+            find_input_ = markup.find('#find-input');
+            find_match_ = markup.find('#match-status');
+            match_index_ = markup.find('#match-index');
+            match_total_ = markup.find('#match-total');
+            find_next_ = markup.find('#find-next');
+            find_last_ = markup.find('#find-last');
+            replace_input_ = markup.find('#replace-input');
+            replace_next_ = markup.find('#replace');
+            replace_all_ = markup.find('#replace-all');
+            replace_stuff_ = markup.find('.replace');
+            close_ = markup.find('#find-close');
+
+            find_input_.on('change paste', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                active_match_ = undefined;
-                build_regex(find_input_.val());
-                highlight_all();
+                generate_matches();
             });
+
+            // disabling clear results on blur for firefox, since its implementation
+            // is either the only unbroken one or the only broken one (unclear)
+            if(navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
+                find_form_.on('focusout', function(e) {
+                    setTimeout(function() {
+                        if($(document.activeElement).closest(find_form_).length === 0) {
+                            has_focus_ = false;
+                            clear_highlights();
+                        }
+                    }, 100);
+                });
+
+                find_form_.on('focusin', function(e) {
+                    if(!has_focus_) {
+                        // save so that any new content since last save is matched:
+                        shell.save_notebook();
+                        generate_matches();
+                    }
+
+                    has_focus_ = true;
+                });
+            }
 
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
-                if(active_match_ !== undefined)
-                    active_match_ = (active_match_ + 1) % matches_.length;
-                else
-                    active_match_ = 0;
+
+                if(active_match_ !== undefined) {
+                     active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
+                } else {
+                     active_match_ = 0;
+                }
+
+                show_match_details(active_match_ + 1, matches_.length);
+
                 active_transition('activate');
             }
+
+            function find_previous() {
+                active_transition('deactivate');
+                if(active_match_ !== undefined)
+                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
+                else
+                    active_match_ = 0;
+
+                show_match_details(active_match_ + 1, matches_.length);
+
+                active_transition('activate');
+            }
+
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -5514,12 +6232,7 @@ RCloud.UI.find_replace = (function() {
             find_last_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                active_transition('deactivate');
-                if(active_match_ !== undefined)
-                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
-                else
-                    active_match_ = 0;
-                active_transition('activate');
+                find_previous();
                 return false;
             });
 
@@ -5552,23 +6265,29 @@ RCloud.UI.find_replace = (function() {
                 return false;
             });
 
-            find_cycle_ = ['find-input', 'find-next', 'find-last'];
-            replace_cycle_ = ['find-input', 'replace-input', 'find-next', 'find-last', 'replace-all'];
+            find_cycle_ = ['find-input', 'find-last', 'find-next'];
+            replace_cycle_ = ['find-input', 'find-last', 'find-next', 'replace-input', 'replace', 'replace-all'];
 
-            function click_find_next(e) {
+            find_cycle_.push('find-close');
+            replace_cycle_.push('find-close');
+
+            function find_next_on_enter(e) {
                 if(e.keyCode===$.ui.keyCode.ENTER) {
                     e.preventDefault();
                     e.stopPropagation();
-                    find_next_.click();
+                    if(e.shiftKey)
+                        find_previous();
+                    else
+                        find_next();
                     return false;
                 }
                 return undefined;
             }
 
-            find_input_.keydown(click_find_next);
-            replace_input_.keydown(click_find_next);
+            find_input_.keydown(find_next_on_enter);
+            replace_input_.keydown(find_next_on_enter);
 
-            find_form.keydown(function(e) {
+            find_form_.keydown(function(e) {
                 switch(e.keyCode) {
                 case $.ui.keyCode.TAB:
                     e.preventDefault();
@@ -5588,32 +6307,94 @@ RCloud.UI.find_replace = (function() {
                 return undefined;
             });
 
-            find_form.find('input').focus(function() {
+            find_form_.find('input').focus(function() {
                 window.setTimeout(function() {
                     this.select();
                 }.bind(this), 0);
             });
 
-            close.click(function() {
+            close_.click(function() {
                 hide_dialog();
             });
         }
 
         find_dialog_.show();
-        find_input_.focus();
+
+        var active_cell_selection = get_active_cell_selection();
+
+        if(active_cell_selection !== null) {
+            find_input_.val(active_cell_selection);
+        } else {
+            ui_utils.select_allowed_elements();
+            var text = window.getSelection().toString();
+
+            if(text) {
+                find_input_.val(text);
+            }
+        }
+
         if(replace)
             replace_stuff_.show();
         else
             replace_stuff_.hide();
-        build_regex(find_input_.val());
-        highlight_all();
+
+        if(!shown_) {
+
+            change_interval_ = setInterval(function() {
+
+                // get the value:
+                var old_value = find_input_.data('value'),
+                    new_value = find_input_.val();
+
+                if(new_value !== old_value) {
+
+                    generate_matches();
+
+                    find_input_.data('value', new_value);
+                }
+
+            }, 250);
+
+            build_regex(find_input_.val());
+
+            highlight_all();
+
+            find_input_.focus();
+
+        } else {
+            if(replace) {
+                replace_input_.focus();
+            } else {
+                find_input_.focus();
+            }
+        }
+
         shown_ = true;
         replace_mode_ = replace;
     }
-    function hide_dialog() {
+
+    function hide_matches() {
+        find_match_.css('visibility', 'hidden');
+    }
+
+    function show_matches() {
+        find_match_.css('visibility', 'visible');
+    }
+
+    function show_match_details(match_index, match_total) {
+        match_index_.text(match_index);
+        match_total_.text(match_total);
+    }
+
+    function clear_highlights() {
+        hide_matches();
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
+    }
+    function hide_dialog() {
+        clearInterval(change_interval_);
+        clear_highlights();
         find_dialog_.hide();
         shown_ = false;
     }
@@ -5631,18 +6412,35 @@ RCloud.UI.find_replace = (function() {
             view.change_highlights(matches);
         });
     }
+    function get_active_cell_selection() {
+        var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
+            return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
+        });
+
+        if(focussed_cell)
+            return focussed_cell.views[0].get_selection();
+
+        // command prompt inactive for view:
+        if(RCloud.UI.command_prompt.ace_widget() && RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
+            return RCloud.UI.command_prompt.get_selection();
+
+        return null;
+    }
     function active_transition(transition) {
         if(active_match_ !== undefined) {
             var match = matches_[active_match_];
-            switch(transition) {
-            case 'replace': match.kind = 'replaced';
-                break;
-            case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
-                break;
-            case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
-                break;
+
+            if(match) {
+                switch(transition) {
+                    case 'replace': match.kind = 'replaced';
+                        break;
+                    case 'activate': match.kind = match.kind === 'replaced' ? 'activereplaced' : 'active';
+                        break;
+                    case 'deactivate': match.kind = match.kind === 'activereplaced' ? 'replaced' : 'normal';
+                        break;
+                }
+                update_match_cell(match);
             }
-            update_match_cell(match);
         }
     }
     function highlight_cell(cell) {
@@ -5727,28 +6525,1083 @@ RCloud.UI.find_replace = (function() {
     }
     var result = {
         init: function() {
-            document.addEventListener("keydown", function(e) {
-                var action;
-                if (ui_utils.is_a_mac() && e.keyCode == 70 && e.metaKey) { // cmd-F
-                    if(e.shiftKey)
-                        return; // don't capture Full Screen
-                    action = e.altKey ? 'replace' : 'find';
+            RCloud.UI.shortcut_manager.add([{
+                category: 'Notebook Management',
+                id: 'notebook_find',
+                description: 'Find text',
+                keys: {
+                    mac: [
+                        ['command', 'f']
+                    ],
+                    win: [
+                        ['ctrl', 'f']
+                    ]
+                },
+                action: function() {
+                    toggle_find_replace(false);
                 }
-                else if(!ui_utils.is_a_mac() && e.keyCode == 70 && e.ctrlKey)
-                    action = 'find';
-                else if(!ui_utils.is_a_mac() && e.keyCode == 72 && e.ctrlKey)
-                    action = 'replace';
-                if(action) {
-                    // do not allow replace in view mode or read-only
-                    if(shell.notebook.model.read_only())
-                        action = 'find';
-                    e.preventDefault();
-                    toggle_find_replace(action === 'replace');
-                }
-            });
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_replace',
+                description: 'Replace text',
+                keys: {
+                    mac: [
+                        ['command', 'option', 'f']
+                    ],
+                    win: [
+                        ['ctrl', 'h']
+                    ]
+                },
+                modes: ['writeable'],
+                action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
+            }]);
+        },
+        hide_replace: function() {
+            if(replace_stuff_) {
+                replace_stuff_.hide();
+            }
+        },
+        clear_highlights: function() {
+            clear_highlights();
         }
     };
     return result;
+})();
+
+RCloud.UI.shortcut_manager = (function() {
+
+    var extension_;
+
+    function get_by_id(id) {
+        return _.find(extension_.sections.all.entries, function(s) {
+            return s.id === id;
+        });
+    };
+
+    function modify(ids, func) {
+        if (!_.isArray(ids)) {
+            ids = [ids];
+        }
+
+        _.each(ids, function(id) {
+            var shortcut = get_by_id(id);
+            if (shortcut) {
+                func(shortcut);
+            }
+        });
+    };
+
+    function is_active(shortcut) {
+        return shortcut.enabled && 
+            _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable') &&
+            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit');
+    }
+
+    function convert_extension(shortcuts) {
+        var shortcuts_to_add, obj = {};
+        var existing_shortcuts = extension_.sections.all.entries;
+
+        if (!_.isArray(shortcuts)) {
+            shortcuts_to_add = [shortcuts];
+        } else {
+            shortcuts_to_add = shortcuts;
+        }
+
+        _.each(shortcuts_to_add, function(shortcut) {
+
+            var can_add = true;
+
+            var shortcut_to_add = _.defaults(shortcut, {
+                category: 'General',
+                modes: ['writeable', 'readonly'],
+                on_page: ['view', 'edit'],
+                ignore_clash: false,
+                enable_in_dialogs: false,
+                enabled: true
+            });
+
+            // clean-up:
+            var is_mac = ui_utils.is_a_mac();
+
+            if (shortcut.keys.hasOwnProperty('win_mac')) {
+                shortcut.bind_keys = shortcut.keys.win_mac;
+            } else {
+                shortcut.bind_keys = shortcut.keys[is_mac ? 'mac' : 'win'];
+            }
+
+            // if this is a shortcut that needs to be added:
+            if (shortcut.bind_keys && shortcut.bind_keys.length) {
+
+                shortcut_to_add.key_desc = [];
+
+                // construct the key bindings:
+                for (var i = 0; i < shortcut.bind_keys.length; i++) {
+
+                    // ensure consistent order across definitions:
+                    var bind_keys = _
+                        .chain(shortcut.bind_keys[i])
+                        .map(function(element) {
+                            return element.toLowerCase(); })
+                        .sortBy(function(element) {
+                            var rank = {
+                                "command": 1,
+                                "ctrl": 2,
+                                "shift": 3
+                            };
+                            return rank[element];
+                        }).value();
+
+                    // so that they can be compared:
+                    shortcut_to_add.key_desc.push(bind_keys.join('+'));
+                }
+
+                // with existing shortcuts:
+                if (!shortcut_to_add.ignore_clash) {
+                    for (var loop = 0; loop < existing_shortcuts.length; loop++) {
+
+                        if (existing_shortcuts[loop].ignore_clash)
+                            continue;
+
+                        if (_.intersection(existing_shortcuts[loop].key_desc, shortcut_to_add.key_desc).length > 0) {
+                            console.warn('Keyboard shortcut "' + shortcut_to_add.description +
+                                '" cannot be registered because its keycode clashes with an existing shortcut id "' +
+                                existing_shortcuts[loop].id + '" in the "' + existing_shortcuts[loop].category + '" category.');
+                            can_add = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (can_add) {
+
+                    if (_.isUndefined(shortcut.action)) {
+                        shortcut_to_add.create = function() {};
+                    } else {
+                        shortcut_to_add.create = function() {
+                            _.each(shortcut_to_add.key_desc, function(binding) {
+
+                                var func_to_bind = function(e) {
+
+                                    if (is_active(get_by_id(shortcut_to_add.id))) {
+                                        e.preventDefault();
+
+                                        // invoke if conditions are met:
+                                        if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
+                                            !$('.modal').is(':visible')) {
+                                            shortcut.action(e);
+                                        }
+
+                                    }
+                                };
+
+                                if (shortcut_to_add.global) {
+                                    window.Mousetrap.bindGlobal(binding, func_to_bind);
+                                } else {
+                                    window.Mousetrap().bind(binding, func_to_bind);
+                                }
+
+                            });
+                        }
+                    }
+
+                    if (can_add) {
+                        obj[shortcut.id] = shortcut_to_add;
+
+                        // add to the existing shortcuts so that it can be compared:
+                        existing_shortcuts.push(shortcut_to_add);
+                    }
+
+                }
+            }
+        });
+
+        return obj;
+    };
+
+    var result = {
+
+        init: function() {
+
+            // based on https://craig.is/killing/mice#api.stopCallback
+            window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
+
+                // this only executes if the shortcut is *not* defined as global
+                var search_values = ['mousetrap', 'ace_text-input'],
+                    has_modifier = e.metaKey || e.ctrlKey || e.altKey;
+
+                // allow the event to be handled:
+                if (has_modifier && search_values.some(function(v) {
+                        return (' ' + element.className + ' ').indexOf(' ' + v + ' ') > -1;
+                    }))
+                    return false;
+
+                // prevent on form fields and content editables:
+                return (element.tagName == 'INPUT' && element.type !== 'checkbox') ||
+                    element.tagName == 'SELECT' ||
+                    element.tagName == 'TEXTAREA' ||
+                    (element.contentEditable && element.contentEditable == 'true');
+            };
+
+            extension_ = RCloud.extension.create({
+
+            });
+
+            this.add([]);
+
+            return this;
+        },
+        add: function(s) {
+            if (extension_) {
+                extension_.add(convert_extension(s));
+            }
+
+            return this;
+        },
+        load: function() {
+            if (extension_) {
+                extension_.create('all');
+            }
+        },
+        disable: function(ids) {
+            modify(ids, function(s) {
+                s.enabled = false;
+            });
+        },
+        disable_all: function() {
+            this.disable(_.pluck(extension_.sections.all.entries, 'id'));
+        },
+        enable: function(ids) {
+            modify(ids, function(s) {
+                s.enabled = true;
+            });
+        },
+        get_registered_shortcuts_by_category: function(sort_items) {
+
+            //console.log(extension_.sections.all.entries);
+
+            var rank = _.map(sort_items, (function(item, index) {
+                return { key: item, value: index + 1 } }));
+            rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
+
+            var available_shortcuts = _.filter(_.sortBy(extension_.sections.all.entries, function(shortcut) {
+                    return shortcut.category + shortcut.description; }),
+                function(s) {
+                    return is_active(s); });
+
+            return _.sortBy(_.map(_.chain(available_shortcuts).groupBy('category').value(), function(item, key) {
+                return { category: key, shortcuts: item };
+            }), function(group) {
+                return rank[group.category];
+            });
+        }
+    };
+
+    return result;
+})();
+
+RCloud.UI.shortcut_dialog = (function() {
+
+    var shortcuts_by_category_ = [];
+
+    var result = {
+
+        show: function() {
+
+            $('#loading-animation').hide();
+
+            var template_data = [];
+
+            if(shortcuts_by_category_) {
+                shortcuts_by_category_ = RCloud.UI.shortcut_manager.get_registered_shortcuts_by_category([
+                'Code Editor',
+                'Code Prompt',
+                'Cell Management',
+                'Notebook Management',
+                'General']);
+            }
+
+            _.each(shortcuts_by_category_, function(group) {
+
+                var key_group = {
+                    name: group.category,
+                    shortcuts: []
+                };
+
+                _.each(group.shortcuts, function(shortcut) {
+
+                    var current_shortcut = {
+                            description : shortcut.description,
+                            keys: []
+                        };
+
+                    _.each(shortcut.bind_keys, function(keys) {
+
+                        keys = _.map(keys, function(key) { 
+                            
+                            var replacement =  _.findWhere([
+                                { initial: 'option', replace_with: 'opt' },
+                                { initial: 'command', replace_with: 'cmd' }
+                            ], { initial : key });
+                          
+                            return replacement ? replacement.replace_with : key;
+                        });
+
+                        current_shortcut.keys.push(keys.join(' '));
+                    });
+
+                    key_group.shortcuts.push(current_shortcut);
+
+                });
+
+                template_data.push(key_group);
+            });
+
+            // generate dynamic content:
+            var content_template = _.template(
+                $("#shortcut_dialog_content_template").html()
+            );
+
+            var dialog_content = content_template({
+                categories : template_data
+            });
+
+            $('#shortcut-content').html(dialog_content);
+       
+            $('#shortcut-dialog').modal({
+                keyboard: false
+            });
+        }
+    };
+
+    return result;
+
+})();
+
+RCloud.UI.ace_shortcuts = (function() {
+
+    var result = {
+        init: function() {
+
+            var ace_shortcuts = [{
+                category: 'Code prompt',
+                id: 'code_prompt_execute',
+                description: 'Create cell and execute code',
+                keys: { 
+                    win_mac: [
+                        ['enter'], ['alt', 'enter']
+                    ]
+                }
+            }, {
+                category: 'Code prompt',
+                id: 'code_prompt_history_back',
+                description: 'Go back in code history',
+                keys: { 
+                    win_mac: [
+                        ['up']
+                    ]
+                }
+            }, {
+                category: 'Code prompt',
+                id: 'code_prompt_history_forwards',
+                description: 'Go forwards in code history',
+                keys: { 
+                    win_mac: [
+                        ['down']
+                    ]
+                }
+            }, {                           
+                category: 'Code Editor',
+                id: 'code_editor_execute',
+                description: 'Execute code',
+                keys: { 
+                    win_mac: [
+                        ['alt', 'enter']
+                    ]
+                }
+            }, {
+                category: 'Code Editor',
+                id: 'code_editor_autocomplete',
+                description: 'Suggest autocompletion',
+                keys: { 
+                    win_mac: [
+                        ['ctrl', '.'], ['tab']
+                    ]
+                }
+            }, {
+                category: 'Code Editor',
+                id: 'code_editor_execute_selection_or_line',
+                description: 'Execute selection or line',
+                keys: { 
+                    mac: [
+                        ['command', 'enter'] 
+                    ],
+                    win: [
+                        ['ctrl', 'enter']
+                    ]
+                }
+            }, {                                                        // !
+                category: 'Code Editor',
+                id: 'code_editor_cursor_start_of_line',
+                description: 'Cursor at beginning of line',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'a'] 
+                    ]
+                },
+            }, {
+                category: 'Code Editor',
+                id: 'code_editor_cursor_end_of_line',
+                description: 'Cursor at end of line',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'e'] 
+                    ]
+                }
+            },
+
+            // line operations:
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_line',
+                description: 'Remove line',
+                keys: { 
+                    mac: [
+                        ['cmd', 'd'] 
+                    ],
+                    win: [
+                        ['ctrl', 'd']
+                    ]
+                }
+            },          
+            {
+                category: 'Code Editor',
+                id: 'ace_copy_lines_down',
+                description: 'Copy lines down',
+                keys: { 
+                    mac: [
+                        ['cmd', 'option', 'down'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'down']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_line',
+                description: 'Copy lines up',
+                keys: { 
+                    mac: [
+                        ['cmd', 'option', 'up'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'up']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_move_lines_down',
+                description: 'Move lines down',
+                keys: { 
+                    mac: [
+                        ['option', 'down'] 
+                    ],
+                    win: [
+                        ['alt', 'down']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_move_lines_up',
+                description: 'Moves lines up',
+                keys: { 
+                    mac: [
+                        ['option', 'up'] 
+                    ],
+                    win: [
+                        ['alt', 'up']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_to_line_end',
+                description: 'Remove to line end',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'k'] 
+                    ],
+                    win: [
+                        ['alt', 'delete']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_to_line_start',
+                description: 'Remove to line start',
+                keys: { 
+                    mac: [
+                        ['cmd', 'backspace'] 
+                    ],
+                    win: [
+                        ['alt', 'backspace']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_word_left',
+                description: 'Remove word left',
+                keys: { 
+                    mac: [
+                        ['option', 'backspace'],
+                        ['ctrl', 'option', 'backspace']
+                    ],
+                    win: [
+                        ['ctrl', 'backspace']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_remove_word_right',
+                description: 'Remove word right',
+                keys: { 
+                    mac: [
+                        ['option', 'delete'] 
+                    ],
+                    win: [
+                        ['ctrl', 'delete']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_split_line',
+                description: 'Split line',
+                keys: { 
+                    mac: [
+                        ['ctrl', 'o'] 
+                    ]
+                }
+            },
+
+            // selection
+            {
+                category: 'Code Editor',
+                id: 'ace_select_all',
+                description: 'Select all',
+                keys: { 
+                    mac: [
+                        ['cmd', 'a'] 
+                    ],
+                    win: [
+                        ['ctrl', 'a']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_left',
+                description: 'Select left',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'left'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_right',
+                description: 'Select right',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'right'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_word_left',
+                description: 'Select word left',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'left'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_word_right',
+                description: 'Select word right',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'right'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_start',
+                description: 'Select line start',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'home'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_end',
+                description: 'Select line end',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'end'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_end',
+                description: 'Select to line end',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'right'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_line_start',
+                description: 'Select to line start',
+                keys: { 
+                    mac: [
+                        ['option', 'shift', 'left'] 
+                    ],
+                    win: [
+                        ['alt', 'shift', 'left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_up',
+                description: 'Select up',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'up'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_down',
+                description: 'Select down',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'down'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_page_up',
+                description: 'Select page up',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'pageup'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_page_down',
+                description: 'Select page down',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'pagedown'] 
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_to_start',
+                description: 'Select to start',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'up'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'home']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_to_end',
+                description: 'Select to end',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'down'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'end']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_duplicate_selection',
+                description: 'Duplicate selection',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'd'] 
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'd']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_select_to_matching_bracket',
+                description: 'Select to matching bracket',
+                keys: { 
+                    win: [
+                        ['ctrl', 'shift', 'p']
+                    ]
+                }
+            },
+
+            // go to:
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_left',
+                description: 'Go to left',
+                keys: { 
+                    mac: [
+                        ['left'],
+                        ['ctrl', 'b']
+                    ],
+                    win: [
+                        ['left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_right',
+                description: 'Go to right',
+                keys: { 
+                    mac: [
+                        ['right'],
+                        ['ctrl', 'f']
+                    ],
+                    win: [
+                        ['right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_word_left',
+                description: 'Go to word left',
+                keys: { 
+                    mac: [
+                        ['option', 'left'] 
+                    ],
+                    win: [
+                        ['ctrl', 'left']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_word_right',
+                description: 'Go to word right',
+                keys: { 
+                    mac: [
+                        ['option', 'right'] 
+                    ],
+                    win: [
+                        ['ctrl', 'right']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_line_up',
+                description: 'Go line up',
+                keys: { 
+                    mac: [
+                        ['up'],
+                        ['ctrl', 'p']
+                    ],
+                    win: [
+                        ['up']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_line_down',
+                description: 'Go line down',
+                keys: { 
+                    mac: [
+                        ['down'],
+                        ['ctrl', 'n']
+                    ],
+                    win: [
+                        ['down']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_line_start',
+                description: 'Go to line start',
+                keys: { 
+                    mac: [
+                        ['command', 'left'],
+                        ['home'],
+                        ['ctrl', 'a']
+                    ],
+                    win: [
+                        ['alt', 'left'],
+                        ['home']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_line_end',
+                description: 'Go to line end',
+                keys: { 
+                    mac: [
+                        ['command', 'right'],
+                        ['end'],
+                        ['ctrl', 'e']
+                    ],
+                    win: [
+                        ['alt', 'right'],
+                        ['end']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_page_up',
+                description: 'Go to page up',
+                keys: { 
+                    mac: [
+                        ['option', 'pageup']
+                    ],
+                    win: [
+                        ['pageup']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_page_down',
+                description: 'Go to page down',
+                keys: { 
+                    mac: [
+                        ['option', 'pagedown'],
+                        ['ctrl', 'v']
+                    ],
+                    win: [
+                        ['pagedown']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_start',
+                description: 'Go to start',
+                keys: { 
+                    mac: [
+                        ['command', 'home'],
+                        ['command', 'up']
+                    ],
+                    win: [
+                        ['ctrl', 'home']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_end',
+                description: 'Go to end',
+                keys: { 
+                    mac: [
+                        ['command', 'end'],
+                        ['command', 'down']
+                    ],
+                    win: [
+                        ['ctrl', 'end']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_go_to_matching_bracket',
+                description: 'Go to matching bracket',
+                keys: { 
+                    win: [
+                        ['ctrl', 'p']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_scroll_page_down',
+                description: 'Scroll page down',
+                keys: { 
+                    mac: [
+                        ['option', 'pagedown']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_scroll_page_up',
+                description: 'Scroll page up',
+                keys: { 
+                    mac: [
+                        ['option', 'pageup']
+                    ]
+                }
+            },
+
+            // find/replace
+
+            // folding
+
+            // other:
+            {
+                category: 'Code Editor',
+                id: 'ace_indent',
+                description: 'Indent',
+                keys: { 
+                    win_mac: [
+                        ['tab']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_outdent',
+                description: 'Outdent',
+                keys: { 
+                    win_mac: [
+                        ['shift', 'tab']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_undo',
+                description: 'Undo',
+                keys: { 
+                    mac: [
+                        ['command', 'z']
+                    ],
+                    win: [
+                        ['ctrl', 'z']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_redo',
+                description: 'Redo',
+                keys: { 
+                    mac: [
+                        ['command', 'shift', 'z'],
+                        ['command', 'y']
+                    ],
+                    win: [
+                        ['ctrl', 'y'],
+                        ['ctrl', 'shift', 'z']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_toggle_comment',
+                description: 'Toggle comment',
+                keys: { 
+                    mac: [
+                        ['command', '/']
+                    ],
+                    win: [
+                        ['ctrl', '/']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_change_to_lower_case',
+                description: 'Change to lower case',
+                keys: { 
+                    win_mac: [
+                        ['ctrl', 'shift', 'u']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_change_to_upper_case',
+                description: 'Change to upper case',
+                keys: { 
+                    win_mac: [
+                        ['ctrl', 'u']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_insert',
+                description: 'Overwrite',
+                keys: { 
+                    win_mac: [
+                        ['insert']
+                    ]
+                }
+            },
+            {
+                category: 'Code Editor',
+                id: 'ace_delete',
+                description: 'Delete',
+                keys: { 
+                    win_mac: [
+                        ['delete']
+                    ]
+                }
+            }];
+
+            _.each(ace_shortcuts, function(s) { s.ignore_clash = true; s.modes = ['writeable']; });
+
+            RCloud.UI.shortcut_manager.add(ace_shortcuts);
+
+        }
+    };
+
+    return result;
+
 })();
 RCloud.UI.help_frame = {
     body: function() {
@@ -5766,6 +7619,11 @@ RCloud.UI.help_frame = {
             rcloud.help(topic);
             return false;
         });
+
+        $("#show-shortcuts").click(function(e) {
+            e.preventDefault();
+            RCloud.UI.shortcut_dialog.show();
+        });
     },
     panel_sizer: function(el) {
         if($('#help-body').css('display') === 'none')
@@ -5779,7 +7637,15 @@ RCloud.UI.help_frame = {
         $("#help-body").css('display', 'table-row');
         $("#help-body").attr('data-widgetheight', "greedy");
         $("#collapse-help").trigger('size-changed');
-        RCloud.UI.left_panel.collapse($("#collapse-help"), false);
+
+        var my_selector = $("#collapse-help");
+
+        // where am I?
+        var left_or_right = my_selector.closest('.panel-group').attr('id').includes('left')
+            ? 'left' : 'right';
+
+        RCloud.UI[left_or_right + '_panel'].collapse($("#collapse-help"), false);
+        
         ui_utils.prevent_backspace($("#help-frame").contents());
     },
     display_content: function(content) {
@@ -5791,6 +7657,7 @@ RCloud.UI.help_frame = {
         this.show();
     }
 };
+
 (function() {
 
 // from https://github.com/ebidel/filer.js/blob/master/src/filer.js
@@ -5831,11 +7698,11 @@ RCloud.UI.image_manager = (function() {
     function create_image(id, url, dims, device, page) {
         var div_, img_, image_div_, scroller_div_, dims_;
         function img_tag() {
-            var attrs = [];
-            attrs.push("id='" + id + "'");
-
-            attrs.push("src='" + url + "'");
-            return $("<img " + attrs.join(' ') + ">\n");
+            var attrs = {
+                id: id,
+                src: url
+            };
+            return $($.el.img(attrs));
         }
         function save_as(fmt) {
             var options = {type: fmt};
@@ -6004,6 +7871,7 @@ RCloud.UI.image_manager = (function() {
 })();
 
 })();
+
 RCloud.UI.import_export = (function() {
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});
@@ -6139,31 +8007,58 @@ RCloud.UI.import_export = (function() {
                                 fr.readAsText(file);
                             }
                             function do_import() {
-                                if(notebook) {
-                                    notebook.description = notebook_desc_content.val();
+
+                                var desc = notebook_desc_content.val();
+
+                                if(notebook && desc.length > 0) {
+                                    notebook.description = desc;
+
                                     rcloud.create_notebook(notebook, false).then(function(notebook) {
                                         editor.star_notebook(true, {notebook: notebook}).then(function() {
                                             editor.set_notebook_visibility(notebook.id, true);
                                         });
                                     });
+
+                                    dialog.modal('hide');
                                 }
-                                dialog.modal('hide');
                             }
+
                             var body = $('<div class="container"/>');
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
-                            file_select.click(function() { ui_utils.disable_bs_button(import_button); })
-                                .change(function() { do_upload(file_select[0].files[0]); });
+
+                            file_select
+                                .click(function() { 
+                                    ui_utils.disable_bs_button(import_button); 
+                                    [notebook_desc, notebook_status].forEach(function(el) { el.hide(); });
+                                    file_select.val(null);
+                                })
+                                .change(function() { 
+                                    do_upload(file_select[0].files[0]); 
+                                });
+
                             notebook_status = $('<span />');
                             notebook_status.append(notebook_status);
+
                             var notebook_desc = $('<span>Notebook description: </span>');
-                            notebook_desc_content = $('<input type="text" class="form-control-ext" size="50"></input>')
-                                .keypress(function(e) {
-                                    if (e.which === $.ui.keyCode.ENTER) {
+                            notebook_desc_content = $('<input type="text" class="form-control-ext" size="50" id="import-notebook-description"></input>')
+                                .on('change paste keyup', function(e) {
+
+                                    var desc_length = $(this).val().length;
+
+                                    if(desc_length) {
+                                        ui_utils.enable_bs_button(import_button);
+                                    } else {
+                                        ui_utils.disable_bs_button(import_button);
+                                    }
+
+                                    if (e.which === $.ui.keyCode.ENTER && desc_length) {
                                         do_import();
                                         return false;
-                                    }
+                                    } 
+
                                     return true;
                                 });
+
                             notebook_desc.append(notebook_desc_content);
                             body.append($('<p/>').append(file_select))
                                 .append($('<p/>').append(notebook_status.hide()))
@@ -6172,7 +8067,9 @@ RCloud.UI.import_export = (function() {
                                     .on('click', function() { $(dialog).modal('hide'); });
                             import_button = $('<span class="btn btn-primary">Import</span>')
                                 .on('click', do_import);
+
                             ui_utils.disable_bs_button(import_button);
+
                             var footer = $('<div class="modal-footer"></div>')
                                     .append(cancel).append(import_button);
                             var header = $(['<div class="modal-header">',
@@ -6247,27 +8144,8 @@ RCloud.UI.import_export = (function() {
         }
     };
 })();
+
 RCloud.UI.init = function() {
-
-
-    $("#fork-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.fork_notebook(is_mine, gistname, version);
-    });
-    $("#revert-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.revert_notebook(is_mine, gistname, version);
-    });
-
-    var saveb = $("#save-notebook");
-    saveb.click(function() {
-        shell.save_notebook();
-    });
-    shell.notebook.controller.save_button(saveb);
 
     RCloud.UI.run_button.init();
 
@@ -6292,6 +8170,7 @@ RCloud.UI.init = function() {
                 shell.notebook.controller.move_cell(model, next);
             },
             handle: " .cell-status",
+            helper: 'clone',
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true
@@ -6312,6 +8191,11 @@ RCloud.UI.init = function() {
     RCloud.UI.menus.init();
     RCloud.UI.advanced_menu.init();
     RCloud.UI.navbar.init();
+    RCloud.UI.selection_bar.init();
+
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+    RCloud.UI.ace_shortcuts.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -6330,10 +8214,6 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
-    $("#edit-notebook").click(function() {
-        window.location = "edit.html?notebook=" + shell.gistname();
-    });
-
     ui_utils.prevent_backspace($(document));
 
     $(document).on('copy', function(e) {
@@ -6341,18 +8221,8 @@ RCloud.UI.init = function() {
         if($(arguments[0].target).hasClass('ace_text-input') ||
            !$(arguments[0].target).closest($("#output")).size())
             return;
-        var sel = window.getSelection();
-        var offscreen = $('<pre class="offscreen"></pre>');
-        $('body').append(offscreen);
-        for(var i=0; i < sel.rangeCount; ++i) {
-            var range = sel.getRangeAt(i);
-            offscreen.append(range.cloneContents());
-        }
-        offscreen.find('.nonselectable').remove();
-        sel.selectAllChildren(offscreen[0]);
-        window.setTimeout(function() {
-            offscreen.remove();
-        }, 1000);
+
+        ui_utils.select_allowed_elements();
     });
 
     // prevent unwanted document scrolling e.g. by dragging
@@ -6373,31 +8243,275 @@ RCloud.UI.init = function() {
         shell.refresh_notebook_title();
     });
 
-    // key handlers
-    document.addEventListener("keydown", function(e) {
-        // if we have a save button (e.g. not view mode), prevent browser's default
-        // ctrl/cmd+s and save notebook
-        if(saveb.size()) {
-            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-S
-                e.preventDefault();
-                shell.save_notebook();
+    // notebook management:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'Notebook Management',
+        id: 'notebook_cell',
+        description: 'Saves the current notebook',
+        keys: {
+            mac: [
+                ['command', 's']
+            ],
+            win: [
+                ['ctrl', 's']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
+    }, {
+        category: 'Notebook Management',
+        id: 'select_all',
+        description: 'Select all',
+        keys: {
+            mac: [
+                ['command', 'a']
+            ],
+            win: [
+                ['ctrl', 'a']
+            ]
+        },
+        modes: ['writeable'],
+        action: function(e) {
+
+            if(!$(e.target).parents('#find-form').length) {
+                var selection = window.getSelection();
+                selection.removeAllRanges();
+                var range = new Range();
+                range.selectNode(document.getElementById('output'));
+                range.setStartAfter($('.response')[0]);
+                selection.addRange(range);
+            } else {
+                $(e.target).select();
+            }
+
+        }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_undo',
+        description: 'Steps back through the notebook\'s history',
+        keys: {
+            mac: [
+                ['command', 'z']
+            ],
+            win: [
+                ['ctrl', 'z']
+            ]
+        },
+        on_page: ['edit'],
+        action: function() { editor.step_history_undo(); }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_redo',
+        description: 'Steps forwards through the notebook\'s history',
+        keys: {
+            mac: [
+                ['command', 'shift', 'z']
+            ],
+            win: [
+                ['ctrl', 'y']
+            ]
+        },
+        on_page: ['edit'],
+        action: function() { editor.step_history_redo(); }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_revert',
+        description: 'Reverts a notebook',
+        keys: {
+            mac: [
+                ['command', 'e']
+            ],
+            win: [
+                ['ctrl', 'e']
+            ]
+        },
+        on_page: ['edit'],
+        action: function() {
+            if(shell.notebook.controller.is_mine() && shell.version()) {
+                editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
-        // select all ctrl/cmd-a
-        if(e.keyCode == 65 && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            var selection = window.getSelection();
-            selection.removeAllRanges();
-            var range = new Range();
-            range.selectNode(document.getElementById('output'));
-            range.setStartAfter($('.response')[0]);
-            selection.addRange(range);
+    }, {
+        id: 'notebook_run_all',
+        description: 'Run all',
+        keys: {
+            win_mac: [
+                ['ctrl', 'shift', 'enter']
+            ]
+        },
+        action: function() { RCloud.UI.run_button.run(); }
+    }]);
+
+    // cell management:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'Cell Management',
+        id: 'remove_cells',
+        description: 'Removes selected cells',
+        keys: {
+            mac: [
+                ['del'],
+                ['backspace'],
+                ['command', 'backspace']
+            ],
+            win: [
+                ['del'],
+                ['backspace']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { shell.notebook.controller.remove_selected_cells(); }
+    }, {
+        category: 'Cell Management',
+        id: 'invert_cells',
+        description: 'Invert selected cells',
+        keys: {
+            mac: [
+                ['command', 'shift', 'i']
+            ],
+            win: [
+                ['ctrl', 'shift', 'i']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() {
+            shell.notebook.controller.invert_selected_cells();
+            $(':focus').blur();
         }
-    });
+    }, {
+        category: 'Cell Management',
+        id: 'crop_cells',
+        description: 'Crop cells',
+        keys: {
+            mac: [
+                ['command', 'k']
+            ],
+            win: [
+                ['ctrl', 'k']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { shell.notebook.controller.crop_cells(); }
+    }/*, {
+        category: 'Cell Management',
+        id: 'arrow_next_cell',
+        description: 'Enter next cell (from end of current)',
+        keys: {
+            win_mac: ['right']
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'arrow_previous_cell',
+        description: 'Enter previous cell (from start of current)',
+        keys: {
+            win_mac: ['left']
+        },
+        modes: ['writeable']
+    }*/, {
+        category: 'Cell Management',
+        id: 'goto_previous_cell',
+        description: 'Go to previous cell',
+        keys: {
+            win_mac: [
+                ['ctrl', 'shift', '<']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'goto_next_cell',
+        description: 'Go to next cell',
+        keys: {
+            win_mac: [
+                ['ctrl', 'shift', '>']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'insert_cell_before',
+        description: 'Insert cell before current',
+        keys: {
+            win: [
+                ['ctrl', '[']
+            ],
+            mac: [
+                ['command', '[']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management',
+        id: 'insert_cell_after',
+        description: 'Insert cell after current',
+        keys: {
+            win: [
+                ['ctrl', ']']
+            ],
+            mac: [
+                ['command', ']']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management',
+        id: 'cell_run_from_here',
+        description: 'Run from this cell on',
+        keys: {
+            win_mac: [
+                ['shift', 'alt', 'enter']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'blur_cell',
+        description: 'Blur Cell/Command Prompt',
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
+        modes: ['writeable']
+    }]);
+
+    // general:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'General',
+        id: 'show_help',
+        description: 'Show shortcuts help',
+        keys: {
+            win_mac: [
+                ['?']
+            ]
+        },
+        modes: ['writeable', 'readonly'],
+        action: function(e) {
+            RCloud.UI.shortcut_dialog.show();
+        }
+    }, {
+        category: 'General',
+        id: 'close_modal',
+        description: 'Close dialog',
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
+        ignore_clash: true,
+        enable_in_dialogs: true,
+        global: true,
+        action: function() { $('.modal').modal('hide'); }
+    }]);
+
 };
+
 RCloud.UI.left_panel =
     RCloud.UI.collapsible_column("#left-column",
                                  "#accordion-left", "#left-pane-collapser");
+
 RCloud.UI.load_options = function() {
     return rcloud.get_conf_value('smtp.server').then(function(has_mail) {
         // this extra round trip is not ideal.  the load order still needs
@@ -6438,12 +8552,14 @@ RCloud.UI.load_options = function() {
 
             return Promise.all([RCloud.UI.navbar.load(),
                                 RCloud.UI.menus.load(),
+                                RCloud.UI.shortcut_manager.load(),
                                 RCloud.UI.share_button.load(),
                                 RCloud.UI.left_panel.load_options(),
                                 RCloud.UI.right_panel.load_options()]);
         });
     });
 };
+
 RCloud.UI.menu = (function() {
     var mode_sections_, ui_mode_;
     return {
@@ -6559,6 +8675,18 @@ RCloud.UI.menus = (function() {
                 sections: RCloud.UI.menu.mode_sections()
             });
             this.add({
+                discover_divider: {
+                    sort: 7000,
+                    type: 'divider',
+                    modes: ['edit']
+                },
+                discover: {
+                    sort: 8000,
+                    type: 'link',
+                    href: '/discover.html',
+                    text: 'Discover',
+                    modes: ['edit']
+                },
                 logout_divider: {
                     sort: 10000,
                     type: 'divider',
@@ -6603,7 +8731,7 @@ RCloud.UI.menus = (function() {
         load: function(mode) {
             var that = this;
             var where = $('#rcloud-navbar-menu');
-            rcloud.get_conf_values('^rcloud\\.menu\\..*').then(function(menus) {
+            return rcloud.get_conf_values('^rcloud\\.menu\\..*').then(function(menus) {
                 // fun option-parsing crap
                 menus = _.omit(menus, 'r_type', 'r_attributes');
                 var add = {};
@@ -6645,10 +8773,10 @@ RCloud.UI.menus = (function() {
                 }));
                 where.append(items);
             });
-            return this;
         }
     };
 })();
+
 
 
 (function() {
@@ -6687,6 +8815,7 @@ RCloud.UI.message_dialog = function(title, message, k) {
 };
 
 })();
+
 RCloud.UI.middle_column = (function() {
     var result = RCloud.UI.column("#middle-column");
 
@@ -6699,26 +8828,233 @@ RCloud.UI.middle_column = (function() {
     });
     return result;
 }());
+
 RCloud.UI.navbar = (function() {
-    var extension_;
+    var extension_, controls_;
     var result = {
+        create_button: function(id, title, icon) {
+            var button = $.el.button({
+                id: id,
+                title: title,
+                type: 'button',
+                class: 'btn btn-link navbar-btn'
+            }, $.el.i({
+                class: icon
+            })), $button = $(button);
+            return {
+                control: button,
+                click: function(handler) {
+                    $(button).click(handler);
+                    return this;
+                },
+                hide: function() {
+                    $button.hide();
+                    return this;
+                },
+                show: function() {
+                    $button.show();
+                    return this;
+                },
+                disable: function() {
+                    ui_utils.disable_bs_button($button);
+                    return this;
+                },
+                enable: function() {
+                    ui_utils.enable_bs_button($button);
+                    return this;
+                },
+                display: function(title, icon) {
+                    $(button).find('i').removeClass().addClass(icon);
+                    $(button).attr('title', title);
+                    return this;
+                }
+            };
+
+        },
+        create_highlight_button: function(id, title, icon) {
+            var result = this.create_button(id, title, icon);
+            result.control = $.el.span($.el.span({
+                class: 'button-highlight'
+            }), result.control);
+            result.highlight = function(whether) {
+                $(result.control)
+                    .find('.button-highlight')
+                    .animate({opacity: whether ? 1 : 0}, {duration: 250, queue: false});
+                return this;
+            };
+            return result;
+        },
         init: function() {
+            // display brand now (won't wait for load/session)
+            var header = $('#rcloud-navbar-header');
+            header.empty().append('<a class="navbar-brand" href="#">RCloud</a>');
+            var cmd_filter = RCloud.extension.filter_field('area', 'commands'),
+                view_filter = RCloud.UI.menu.filter_mode('view'),
+                edit_filter = RCloud.UI.menu.filter_mode('edit');
+
             extension_ = RCloud.extension.create({
                 sections: {
                     header: {
                         filter: RCloud.extension.filter_field('area', 'header')
                     },
-                    main: {
-                        filter: RCloud.extension.filter_field('area', 'main')
+                    view_commands: {
+                        filter: function(entry) {
+                            return cmd_filter(entry) && view_filter(entry);
+                        }
+                    },
+                    edit_commands: {
+                        filter: function(entry) {
+                            return cmd_filter(entry) && edit_filter(entry);
+                        }
                     }
                 }
             });
             this.add({
-                rcloud: {
-                    area: 'header',
+                shareable_link: {
+                    area: 'commands',
                     sort: 1000,
+                    modes: ['edit'],
                     create: function() {
-                        return '<a class="navbar-brand" href="#">RCloud</a>';
+                        var share_link_, view_types_;
+                        return {
+                            control: $.el.span(share_link_ = $.el.a({
+                                href: '#',
+                                id: 'share-link',
+                                title: 'Shareable Link',
+                                class: 'btn btn-link navbar-btn',
+                                style: 'text-decoration:none; padding-right: 0px',
+                                target: '_blank'
+                            }, $.el.i({class: 'icon-share'})), $.el.span({
+                                class: 'dropdown',
+                                style: 'position: relative; margin-left: -2px; padding-right: 12px'
+                            }, $.el.a({
+                                href: '#',
+                                class: 'dropdown-toggle',
+                                'data-toggle': 'dropdown',
+                                id: 'view-mode'
+                            }, $.el.b({class: 'caret'})), view_types_ = $.el.ul({
+                                class: 'dropdown-menu view-menu',
+                                id: 'view-type'
+                            }))),
+                            set_url: function(url) {
+                                if(share_link_)
+                                    $(share_link_).attr('href', url);
+                                return this;
+                            },
+                            set_view_types: function(items) {
+                                $(view_types_).append($(items.map(function(item) {
+                                    var a = $.el.a({href: '#'}, item.title);
+                                    $(a).click(item.handler);
+                                    return $.el.li(a);
+                                })));
+                            }
+                        };
+                    }
+                },
+                star_notebook: {
+                    area: 'commands',
+                    sort: 2000,
+                    modes: ['edit'],
+                    create: function() {
+                        var star_, unstar_, icon_, count_;
+                        var button = $.el.button({
+                            id: 'star-notebook',
+                            title: 'Add to Interests',
+                            type: 'button',
+                            class: 'btn btn-link navbar-btn',
+                            style: 'padding-left: 3px'
+                        }, $.el.i({
+                            class: 'icon-star-empty'
+                        }), $.el.sub(count_ = $.el.span({
+                            id: 'curr-star-count'
+                        })));
+                        icon_ = ui_utils.twostate_icon($(button),
+                                                       function() { star_(); },
+                                                       function() { unstar_(); },
+                                                       'icon-star', 'icon-star-empty');
+                        return {
+                            control: button,
+                            set_star_unstar: function(star, unstar) {
+                                star_ = star;
+                                unstar_ = unstar;
+                                return this;
+                            },
+                            set_fill: function(filled) {
+                                icon_.set_state(filled);
+                                return this;
+                            },
+                            set_count: function(count) {
+                                $(count_).text(count);
+                                return this;
+                            }
+                        };
+                    }
+                },
+                fork_notebook: {
+                    area: 'commands',
+                    sort: 3000,
+                    modes: ['edit'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_button('fork-notebook', 'Fork', 'icon-code-fork');
+                        $(control.control).click(function() {
+                            var is_mine = shell.notebook.controller.is_mine();
+                            var gistname = shell.gistname();
+                            var version = shell.version();
+                            editor.fork_notebook(is_mine, gistname, version);
+                        });
+                        return control;
+                    }
+                },
+                save_notebook: {
+                    area: 'commands',
+                    sort: 4000,
+                    modes: ['edit'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_button('save-notebook', 'Save', 'icon-save');
+                        $(control.control).click(function() {
+                            shell.save_notebook();
+                        });
+                        control.disable();
+                        return control;
+                    }
+                },
+                revert_notebook: {
+                    area: 'commands',
+                    sort: 5000,
+                    modes: ['edit'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_button('revert-notebook', 'Revert', 'icon-undo');
+                        $(control.control).click(function() {
+                            var is_mine = shell.notebook.controller.is_mine();
+                            var gistname = shell.gistname();
+                            var version = shell.version();
+                            editor.revert_notebook(is_mine, gistname, version);
+                        });
+                        return control;
+                    }
+                },
+                edit_notebook: {
+                    area: 'commands',
+                    sort: 1000,
+                    modes: ['view'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_button('edit-notebook', 'Edit Notebook', 'icon-edit');
+                        $(control.control).click(function() {
+                            window.location = "edit.html?notebook=" + shell.gistname();
+                        });
+                        return control;
+                    }
+                },
+                run_notebook: {
+                    area: 'commands',
+                    sort: 6000,
+                    modes: ['edit', 'view'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
+                        $(control.control).click(function() {
+                            RCloud.UI.run_button.run();
+                        });
+                        return control;
                     }
                 }
             });
@@ -6733,16 +9069,33 @@ RCloud.UI.navbar = (function() {
                 extension_.remove(command_name);
             return this;
         },
+        get: function(command_name) {
+            return extension_ ? extension_.get(command_name) : null;
+        },
+        control: function(command_name) {
+            return controls_ ? controls_[command_name] : null;
+        },
         load: function() {
             if(extension_) {
-                var items = extension_.create('header');
+                var brands = extension_.create('header').array;
                 var header = $('#rcloud-navbar-header');
-                header.append.apply(header, _.values(items));
+                if(brands.length)
+                    header.empty().append.apply(header, brands);
+                var commands_section = RCloud.UI.menu.ui_mode() + '_commands';
+                var commands = extension_.create(commands_section);
+                var main = $('#rcloud-navbar-main');
+                if(commands.array.length)
+                    main.prepend.apply(main, commands.array.map(function(button) {
+                        return $.el.li(button.control);
+                    }));
+                controls_ = commands.map;
             }
+            return Promise.resolve(undefined);
         }
     };
     return result;
 })();
+
 RCloud.UI.notebook_commands = (function() {
     var icon_style_ = {'line-height': '90%'};
     var star_style_ = _.extend({'font-size': '80%'}, icon_style_);
@@ -6888,10 +9241,11 @@ RCloud.UI.notebook_commands = (function() {
                     },
                     create: function(node) {
                         var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
-                        var orig_name = node.full_name, folder_name = editor.find_next_copy_name(orig_name);
-                        var orig_name_regex = new RegExp('^' + orig_name);
                         fork.click(function(e) {
-                            editor.fork_folder(node, orig_name_regex, folder_name);
+                            var orig_name = node.full_name, orig_name_regex = new RegExp('^' + orig_name);
+                            editor.find_next_copy_name(orig_name).then(function(folder_name) {
+                                editor.fork_folder(node, orig_name_regex, folder_name);
+                            });
                         });
                         return fork;
                     }
@@ -6988,7 +9342,7 @@ RCloud.UI.notebook_commands = (function() {
             }
 
             do_always();
-            $li.find('*:not(ul)').hover(
+            $li.find('div.jqtree-element').hover(
                 function() {
                     if(!appeared)
                         do_appear();
@@ -7005,6 +9359,100 @@ RCloud.UI.notebook_commands = (function() {
     };
     return result;
 })();
+
+RCloud.UI.selection_bar = (function() {
+
+    var $partial_indicator,
+        $selection_checkbox,
+        $dropdown_toggle,
+        $delete_button,
+        $cell_selection;
+
+    var reset = function() {
+        $selection_checkbox.prop('checked', false);
+        $partial_indicator.hide();
+    };
+
+    var result = {
+        init: function() {
+
+            var $selection_bar = $(RCloud.UI.panel_loader.load_snippet('selection-bar-snippet'));
+            $partial_indicator = $selection_bar.find('.cell-selection span');
+            $selection_checkbox = $selection_bar.find('.cell-selection input[type="checkbox"]');
+            $dropdown_toggle = $selection_bar.find('.dropdown-toggle');
+            $delete_button = $selection_bar.find('#selection-bar-delete');
+            $crop_button = $selection_bar.find('#selection-bar-crop');
+            $cell_selection = $selection_bar.find('.cell-selection');
+
+            $selection_bar
+                .find('.btn-default input[type="checkbox"]').click(function(e) {
+                    e.stopPropagation();
+
+                    if(!shell.notebook.controller.cell_count()) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    if($(this).is(':checked')) {
+                        shell.notebook.controller.select_all_cells();
+                    } else {
+                        shell.notebook.controller.clear_all_selected_cells();
+                    }
+                })
+                .end()
+                .find('a[data-action]').click(function() {
+                    shell.notebook.controller[$(this).attr('data-action')]();
+                })
+                .end()
+                .find('#selection-bar-delete').click(function() {
+                    shell.notebook.controller.remove_selected_cells();
+                })
+                .end()
+                .find('#selection-bar-crop').click(function() {
+                    shell.notebook.controller.crop_cells();
+                })
+                .end();
+
+            $selection_bar.find('div[type="button"].cell-selection').click(function(e) {
+                $(this).find('input').trigger('click');
+            });
+            
+            $('#' + $selection_bar.attr('id')).replaceWith($selection_bar);
+        },  
+        update: function(cells) {
+
+            var cell_count = cells.length,
+                selected_count = shell.notebook.controller.selected_count();
+
+            $selection_checkbox.prop({
+                'checked' : selected_count === cell_count && cell_count != 0,
+                'disabled' : cell_count === 0
+            });
+
+            // checkbox/dropdown enabled status based on cell count:
+            _.each([$dropdown_toggle, $cell_selection], function(el) { 
+                el[cell_count ? 'removeClass' : 'addClass']('disabled');  
+            });
+
+            $partial_indicator[selected_count !== cell_count && selected_count !== 0 ? 'show' : 'hide']();   
+
+            // delete/crop buttons' enabled status based on selection count:
+            $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
+            $crop_button[shell.notebook.controller.can_crop_cells() ? 'removeClass' : 'addClass']('disabled');
+        },
+        hide: function() {
+            $('#selection-bar').hide();
+            reset();
+        },
+        show: function() {
+            $('#selection-bar').show();
+            reset();
+        }
+    };
+    return result;
+
+})();
+
 RCloud.UI.notebook_title = (function() {
     var last_editable_ =  null;
     function version_tagger(node) {
@@ -7014,7 +9462,6 @@ RCloud.UI.notebook_title = (function() {
                     return editor.show_history(node.parent, {update: true});
                 });
         };
-        
     }
     function rename_current_notebook(name) {
         return editor.rename_notebook(name)
@@ -7026,7 +9473,7 @@ RCloud.UI.notebook_title = (function() {
         return function(name) {
             editor.for_each_notebook(node, name, function(node, name) {
                 if(node.gistname === shell.gistname())
-                    shell.rename_notebook(name);
+                    rename_current_notebook(name);
                 else {
                     rcloud.update_notebook(node.gistname, {description: name}, false)
                         .then(function(notebook) {
@@ -7154,6 +9601,7 @@ RCloud.UI.notebook_title = (function() {
     };
     return result;
 })();
+
 // eventually more of editor_tab might land here.  for now, just
 // initialization for loadable panel
 RCloud.UI.notebooks_frame = {
@@ -7168,6 +9616,7 @@ RCloud.UI.notebooks_frame = {
         return $('#notebooks-panel-inner');
     }
 };
+
 RCloud.UI.output_context = (function() {
     function create_context(selector) {
         var sel = $(selector);
@@ -7176,7 +9625,7 @@ RCloud.UI.output_context = (function() {
                 switch(type) {
                 case 'code':
                     return function(text) {
-                        return $('<code></code>').append(text);
+                        return $.el.pre($.el.code(text));
                     };
                 case 'error':
                     return function(text) {
@@ -7217,8 +9666,10 @@ RCloud.UI.output_context = (function() {
         }
     };
 })();
+
 RCloud.UI.panel_loader = (function() {
     var extension_;
+    var panel_data_ = {};
     var panels_ = {};
 
     function collapse_name(name) {
@@ -7300,8 +9751,8 @@ RCloud.UI.panel_loader = (function() {
                     }
                 }
             });
-            // built-in panels
-            this.add({
+
+            panel_data_ = {
                 Notebooks: {
                     side: 'left',
                     name: 'notebook-tree',
@@ -7312,14 +9763,14 @@ RCloud.UI.panel_loader = (function() {
                     sort: 1000,
                     panel: RCloud.UI.notebooks_frame
                 },
-                Search: {
+                'File Upload': {
                     side: 'left',
-                    name: 'search',
-                    title: 'Search',
-                    icon_class: 'icon-search',
-                    colwidth: 4,
+                    name: 'file-upload',
+                    title: 'File Upload',
+                    icon_class: 'icon-upload-alt',
+                    colwidth: 2,
                     sort: 2000,
-                    panel: RCloud.UI.search
+                    panel: RCloud.UI.upload_frame
                 },
                 Settings: {
                     side: 'left',
@@ -7330,15 +9781,15 @@ RCloud.UI.panel_loader = (function() {
                     sort: 3000,
                     panel: RCloud.UI.settings_frame
                 },
-                Help: {
+                Comments: {
                     side: 'left',
-                    name: 'help',
-                    title: 'Help',
-                    icon_class: 'icon-question',
-                    colwidth: 5,
+                    name: 'comments',
+                    title: 'Comments',
+                    icon_class: 'icon-comments',
+                    colwidth: 2,
                     sort: 4000,
-                    panel: RCloud.UI.help_frame
-                },
+                    panel: RCloud.UI.comments_frame
+                },                
                 Assets: {
                     side: 'right',
                     name: 'assets',
@@ -7348,23 +9799,23 @@ RCloud.UI.panel_loader = (function() {
                     sort: 1000,
                     panel: RCloud.UI.scratchpad
                 },
-                'File Upload': {
+                Search: {
                     side: 'right',
-                    name: 'file-upload',
-                    title: 'File Upload',
-                    icon_class: 'icon-upload-alt',
-                    colwidth: 2,
+                    name: 'search',
+                    title: 'Search',
+                    icon_class: 'icon-search',
+                    colwidth: 4,
                     sort: 2000,
-                    panel: RCloud.UI.upload_frame
+                    panel: RCloud.UI.search
                 },
-                Comments: {
+                Help: {
                     side: 'right',
-                    name: 'comments',
-                    title: 'Comments',
-                    icon_class: 'icon-comments',
-                    colwidth: 2,
+                    name: 'help',
+                    title: 'Help',
+                    icon_class: 'icon-question',
+                    colwidth: 5,
                     sort: 3000,
-                    panel: RCloud.UI.comments_frame
+                    panel: RCloud.UI.help_frame
                 },
                 Session: {
                     side: 'right',
@@ -7375,7 +9826,7 @@ RCloud.UI.panel_loader = (function() {
                     sort: 4000,
                     panel: RCloud.UI.session_pane
                 }
-            });
+            };
         },
         add: function(P) {
             // if we have not been initialized, that means there is no GUI
@@ -7392,6 +9843,9 @@ RCloud.UI.panel_loader = (function() {
             return $($('#' + id).html())[0];
         },
         load: function() {
+
+            var that = this;
+
             function do_side(panels, side) {
                 function do_panel(p) {
                     add_panel(p);
@@ -7411,17 +9865,47 @@ RCloud.UI.panel_loader = (function() {
                 add_filler_panel(side);
             }
 
-            do_side(panels_, 'left');
-            do_side(panels_, 'right');
+            // alternative layout?
+            return rcloud.config.get_user_option('panel-layout-by-size').then(function(layoutBySize) {
 
-            // this is dumb but i don't want the collapser to show until load time
-            $('#left-column').append(this.load_snippet('left-pane-collapser-snippet'));
-            $('#right-column').append(this.load_snippet('right-pane-collapser-snippet'));
+                // default to true:
+                if(layoutBySize === null) {
+                    layoutBySize = true;
+                }
 
-            return Promise.cast(undefined); // until we are loading opts here
+                if(!layoutBySize) {
+
+                    var update_panel = function update_panel(panel, side, sort) {
+                        panel_data_[panel].side = side;
+                        panel_data_[panel].sort = sort;
+                    };
+
+                    // adjust:
+                    _.each(['Notebooks', 'Search', 'Settings', 'Help'], function(panel, index) {
+                        update_panel(panel, 'left', (index + 1) * 1000);
+                    });
+
+                    _.each(['Assets', 'File Upload', 'Comments', 'Session'], function(panel, index) {
+                        update_panel(panel, 'right', (index + 1) * 1000);
+                    });
+
+                }
+
+                that.add(panel_data_);
+
+                do_side(panels_, 'left');
+                do_side(panels_, 'right');
+
+                // this is dumb but i don't want the collapser to show until load time
+                $('#left-column').append(that.load_snippet('left-pane-collapser-snippet'));
+                $('#right-column').append(that.load_snippet('right-pane-collapser-snippet'));
+
+                return Promise.cast(undefined); // until we are loading opts here
+            });
         }
     };
 })();
+
 
 (function() {
 
@@ -7513,36 +9997,36 @@ RCloud.UI.allow_progress_modal = function() {
 };
 
 })();
+
 RCloud.UI.right_panel =
     RCloud.UI.collapsible_column("#right-column",
                                  "#accordion-right", "#right-pane-collapser");
+
 RCloud.UI.run_button = (function() {
-    var run_button_ = $("#run-notebook"),
-        running_ = false,
+    var running_ = false,
         stopping_ = false,
         queue_ = [],
         cancels_ = [];
 
-    function display(icon, title) {
-        $('i', run_button_).removeClass().addClass(icon);
-        run_button_.attr('title', title);
+    function display(title, icon) {
+        RCloud.UI.navbar.control('run_notebook').display(title, icon);
     }
     function highlight(whether) {
-        run_button_.parent().find('.button-highlight').animate({opacity: whether ? 1 : 0}, 250);
+        RCloud.UI.navbar.control('run_notebook').highlight(whether);
     }
 
     function start_queue() {
         if(queue_.length === 0) {
             stopping_ = false;
             running_ = false;
-            display('icon-play', 'Run All');
+            display('Run All', 'icon-play');
             highlight(false);
             return Promise.resolve(undefined);
         }
         else {
             running_ = true;
             var first = queue_.shift();
-            display('icon-stop', 'Stop');
+            display('Stop', 'icon-stop');
             highlight(true);
             return first().then(function() {
                 if(stopping_) {
@@ -7557,19 +10041,17 @@ RCloud.UI.run_button = (function() {
     return {
         init: function() {
             var that = this;
-            run_button_.click(function() {
-                if(running_) {
-                    that.stop();
-                }
-                else
-                    shell.run_notebook();
-            });
-
             RCloud.session.listeners.push({
                 on_reset: function() {
                     that.on_stopped();
                 }
             });
+        },
+        run: function() {
+            if(running_)
+                this.stop();
+            else
+                shell.run_notebook();
         },
         stop: function() {
             if(rcloud.has_compute_separation)
@@ -7582,7 +10064,7 @@ RCloud.UI.run_button = (function() {
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            display('icon-play', 'Run All');
+            display('Run All', 'icon-play');
             highlight(false);
         },
         enqueue: function(f, cancel) {
@@ -7610,13 +10092,9 @@ RCloud.UI.run_button = (function() {
         }
     };
 })();
+
 RCloud.UI.scratchpad = (function() {
     var binary_mode_; // not editing
-    // this function probably belongs elsewhere
-    function make_asset_url(model) {
-        return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
-            model.parent_model.controller.current_gist().id + '/' + model.filename();
-    }
     return {
         session: null,
         widget: null,
@@ -7729,7 +10207,7 @@ RCloud.UI.scratchpad = (function() {
             }
             $("#new-asset > a").click(function() {
                 // FIXME prompt, yuck. I know, I know.
-                var filename = prompt("Choose a filename for your asset");
+                var filename = prompt("Choose a filename for your asset").trim();
                 if (!filename)
                     return;
                 if (Notebook.is_part_name(filename)) {
@@ -7795,18 +10273,18 @@ RCloud.UI.scratchpad = (function() {
                 binary_mode_ = true;
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
-                // PDF seems not to be supported properly by browers
+                // PDF seems not to be supported properly by browsers
                 var sbin = $('#scratchpad-binary');
                 if(/\.pdf$/i.test(this.current_model.filename()))
                     sbin.html('<p>PDF preview not supported</p>');
                 else
-                    sbin.html('<object data="' + make_asset_url(this.current_model) + '"></object>');
+                    sbin.html('<object data="' + this.current_model.asset_url(true) + '"></object>');
                 sbin.show();
             }
             else {
                 // text content: show editor
                 binary_mode_ = false;
-                that.widget.setReadOnly(false);
+                that.widget.setReadOnly(shell.notebook.model.read_only());
                 $('#scratchpad-binary').hide();
                 $('#scratchpad-editor').show();
                 $('#scratchpad-editor > *').show();
@@ -7858,7 +10336,7 @@ RCloud.UI.scratchpad = (function() {
             }
         }, update_asset_url: function() {
             if(this.current_model)
-                $('#asset-link').attr('href', make_asset_url(this.current_model));
+                $('#asset-link').attr('href', this.current_model.asset_url());
         }, clear: function() {
             if(!this.exists)
                 return;
@@ -7868,6 +10346,7 @@ RCloud.UI.scratchpad = (function() {
         }
     };
 })();
+
 RCloud.UI.search = (function() {
 var page_size_ = 10;
 var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
@@ -8202,6 +10681,7 @@ return {
 };
 })();
 
+
 RCloud.UI.session_pane = {
     error_dest_: null,
     allow_clear: true,
@@ -8250,8 +10730,8 @@ RCloud.UI.session_pane = {
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
         if(!$('#session-info').length) {
-            console.log(['session log; ', msg].join(''));
-             return; // workaround for view mode
+            console.log('session log; ', msg);
+            return; // workaround for view mode
         }
         // one hacky way is to maintain a <pre> that we fill as we go
         // note that R will happily spit out incomplete lines so it's
@@ -8266,35 +10746,48 @@ RCloud.UI.session_pane = {
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
-        var errclass = 'session-error';
-        if (typeof msg === 'string') {
-            msg = ui_utils.string_error(msg);
-            errclass = 'session-error spare';
-        }
-        else if (typeof msg !== 'object')
-            throw new Error("post_error expects a string or a jquery div");
-        msg.addClass(errclass);
         dest = dest || this.error_dest_;
-        if(dest) { // if initialized, we can use the UI
+        if(!dest || !dest.length) {
+            if(typeof msg === 'object')
+                msg = msg.text();
+            RCloud.UI.fatal_dialog(msg, "Login", ui_utils.relogin_uri());
+        }
+        else {
+            var errclass = 'session-error';
+            if (typeof msg === 'string') {
+                msg = ui_utils.string_error(msg);
+                errclass = 'session-error spare';
+            }
+            else if (typeof msg !== 'object')
+                throw new Error("post_error expects a string or a jquery div");
+            msg.addClass(errclass);
             dest.append(msg);
             this.show_error_area();
             ui_utils.on_next_tick(function() {
                 ui_utils.scroll_to_after($("#session-info"));
             });
         }
-        if(!logged)
-            console.log("pre-init post_error: " + msg.text());
+        if(!logged) {
+            if(typeof msg === 'object')
+                msg = msg.text();
+            console.log("pre-init post_error: " + msg);
+        }
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
-        // bluebird will print the message for Chrome/Opera but no other browser
-        if(!window.chrome && e.message)
-            msg += "Error: " + e.message + "\n";
-        msg += e.stack;
+        if(RCloud.is_exception(e))
+            msg = RCloud.exception_message(e);
+        else {
+            // bluebird will print the message for Chrome/Opera but no other browser
+            if(!window.chrome && e.message)
+                msg += "Error: " + e.message + "\n";
+            msg += e.stack;
+        }
         console.log(msg);
         this.post_error(msg, undefined, true);
     }
 };
+
 RCloud.UI.settings_frame = (function() {
     // options to fetch from server, with callbacks for what to do once we get them
     var options_ = {};
@@ -8429,7 +10922,7 @@ RCloud.UI.settings_frame = (function() {
         text_input_vector: function(opts) {
             opts = _.extend({
                 parse: function(val) {
-                    return val.trim().split(/, */).filter(function(x) { return !!x; });
+                    return val.trim().split(/[, ]+/).filter(function(x) { return !!x; });
                 },
                 format: function(val) {
                     // might be devectorized by rserve.js
@@ -8465,6 +10958,12 @@ RCloud.UI.settings_frame = (function() {
                     set: function(val) {
                         shell.notebook.controller.show_cell_numbers(val);
                     }
+                }),
+                'panel-layout-by-size': that.checkbox({
+                    sort: 4000,
+                    default_value: true,
+                    needs_reload: true,
+                    label: "Arrange panels by size"
                 }),
                 'addons': that.text_input_vector({
                     sort: 10000,
@@ -8517,7 +11016,7 @@ RCloud.UI.settings_frame = (function() {
             var option_keys = _.keys(options_);
             if(option_keys.length === 1)
                 option_keys.push("foo"); // evade rcloud scalarizing
-            rcloud.config.get_user_option(option_keys)
+            return rcloud.config.get_user_option(option_keys)
                 .then(function(settings) {
                     for(var key in settings) {
                         if(key==="foo" || key==='r_attributes' || key==='r_type')
@@ -8533,34 +11032,50 @@ RCloud.UI.settings_frame = (function() {
     return result;
 })();
 
+
 RCloud.UI.share_button = (function() {
-    var view_types_ = {};
+    var extension_;
     var default_item_ = null;
     function set_page(title) {
-        title = (title && view_types_[title]) ? title : default_item_;
+        title = (title && extension_.get(title)) ? title : default_item_;
+        var view_type = extension_.get(title);
         if(!title)
             return Promise.reject(new Error('share button view types set up wrong'));
-        var page = view_types_[title].page;
+        var page = view_type.page;
         $("#view-type li a").css("font-weight", function() {
             return $(this).text() === title ? "bold" : "normal";
         });
         var opts = {notebook: shell.gistname(),
-                    do_path: view_types_[title].do_path,
+                    do_path: view_type.do_path,
                     version: shell.version()};
         if(!opts.version) {
-            $("#share-link").attr("href", ui_utils.make_url(page, opts));
+            RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
             return Promise.resolve(undefined);
         }
         else return rcloud.get_tag_by_version(shell.gistname(), opts.version)
             .then(function(t) {
                 if(t)
                     opts.tag = t;
-                $("#share-link").attr("href", ui_utils.make_url(page, opts));
+                RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
             });
     }
 
     return {
         init: function() {
+            extension_ = RCloud.extension.create({
+                defaults: {
+                    create: function() {
+                        var that = this;
+                        return {
+                            title: that.key,
+                            handler: function() {
+                                rcloud.set_notebook_property(shell.gistname(), "view-type", that.key);
+                                set_page(that.key);
+                            }
+                        };
+                    }
+                }
+            });
             this.add({
                 'view.html': {
                     sort: 1000,
@@ -8583,26 +11098,20 @@ RCloud.UI.share_button = (function() {
             return this;
         },
         add: function(view_types) {
-            for(var vt in view_types) {
-                view_types_[vt] = _.extend({title: vt}, view_types[vt]);
-            }
+            if(extension_)
+                extension_.add(view_types);
             return this;
         },
         remove: function(view_type) {
-            delete view_types_[view_type];
+            if(extension_)
+                extension_.remove(command_name);
+            return this;
         },
         load: function() {
             var that = this;
-            var items = _.values(view_types_).sort(function(a, b) { return a.sort - b.sort; });
+            var items = extension_.create('all').array;
             default_item_ = items.length ? items[0].title : null;
-            $('#view-type').append($(items.map(function(item) {
-                var a = $.el.a({href: '#'}, item.title);
-                $(a).click(function() {
-                    rcloud.set_notebook_property(shell.gistname(), "view-type", item.title);
-                    set_page(item.title);
-                });
-                return $.el.li(a);
-            })));
+            RCloud.UI.navbar.control('shareable_link').set_view_types(items);
             return this;
         },
         update_link: function() {
@@ -8611,6 +11120,7 @@ RCloud.UI.share_button = (function() {
         }
     };
 })();
+
 RCloud.UI.upload_with_alerts = (function() {
     function upload_ui_opts(opts) {
         if(_.isBoolean(opts))
@@ -8746,6 +11256,7 @@ RCloud.UI.upload_with_alerts = (function() {
 
     return upload_files;
 })();
+
 RCloud.UI.upload_frame = {
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('file-upload-snippet');
@@ -8774,6 +11285,7 @@ RCloud.UI.upload_frame = {
         return {height: height, padding: padding};
     }
 };
+
 
 RCloud.UI.notebook_protection_logger = {
     timeout: 0,
@@ -8807,7 +11319,7 @@ RCloud.UI.notebook_protection_logger = {
                     .addClass('white');
             $('.logging-panel span').html('&nbsp;');
         }, 20000);
-    }, 
+    },
     clear: function(){
         $('.logging-panel').removeClass('red')
                     .removeClass('green')
@@ -8815,6 +11327,7 @@ RCloud.UI.notebook_protection_logger = {
         $('.logging-panel span').html('&nbsp;');
     }
 };
+
 RCloud.UI.notebook_protection = (function() {
 
     //set from outside
@@ -8897,7 +11410,7 @@ RCloud.UI.notebook_protection = (function() {
 
             $('#protection-app #tab2 a')
               .tab('show');
-              
+
             this.appScope.initGroups();
           }
         },
@@ -8925,3 +11438,214 @@ RCloud.UI.notebook_protection = (function() {
     };
 
 })();
+
+RCloud.UI.discovery_page = (function() {
+
+    var Masonry_;
+
+    var metric_handler = function() {
+
+        var $el_ = $('#metric-type');
+        var types_ = ['recently.modified', 'most.popular'];
+        var default_type_ = types_[0];
+
+        function set_active_link(metric_type) {
+            $el_.find('li').removeClass('active');
+            $el_.find('a[data-type="' + metric_type + '"]').parent().addClass('active');
+        }
+
+        function get_links() {
+            return $el_.find('a');
+        }
+
+        function initialise_links() {
+            _.each(get_links(), function(link) {
+                // give the links proper URLs
+                $(link).attr('href', '?metric=' + $(link).attr('data-type'));
+            });
+        }
+
+        var updateQueryStringParam = function (key, value) {
+            var baseUrl = [location.protocol, '//', location.host, location.pathname].join(''),
+                param = '?' + key + '=' + value;
+
+            window.history.pushState({ path : baseUrl + param  }, '', baseUrl + param);
+        };
+
+        var get_qs_metric = function() {
+            var qs_metric = RCloud.utils.get_url_parameter('metric');
+
+            return types_.indexOf(qs_metric) > -1 ? qs_metric : default_type_;
+        };
+
+        return {
+            init: function(opts) {
+
+                initialise_links();
+
+                get_links().click(function(e) {
+
+                    e.preventDefault();
+
+                    var metric_type = $(this).attr('data-type');
+
+                    set_active_link(metric_type);
+
+                    updateQueryStringParam('metric', metric_type);
+
+                    if(_.isFunction(opts.change)) {
+                        opts.change(metric_type);
+                    }
+                });
+
+                window.addEventListener('popstate', function(e) {
+                    if(_.isFunction(opts.change)) {
+                        var metric_type = get_qs_metric();
+                        set_active_link(metric_type);
+                        opts.change(metric_type);
+                    }
+                });
+
+                var qs_metric = get_qs_metric();
+                set_active_link(qs_metric);
+
+                if(_.isFunction(opts.oncomplete)) {
+                    opts.oncomplete(qs_metric);
+                }
+            }
+        };
+    };
+
+    var discovery = {
+
+        load_current_metric: function(current_metric) {
+
+            var data, missing_img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAMAAAC3Ycb+AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAURQTFRF6PH06fH0+fv8w9fd+vz94+3xxtne5O7xwNXbx9nf9fn64u3w5/Dzwtbc5u/yxdjeydvgz9/k4ezv1eTo9vr73+vu3Ons8vf4+vz84+7x6/P13entx9rf5vDy7/X32efr9vn6wdbb3ert8vf5zd7jzN3i8/j59Pj51uTo8Pb48fb4zt/k0ODlytzh9/r7w9fc1+Xp0+LnwdXb1OPn2+js4ezw4Ozv7vT2yNrg2ebq6PHz6vL0xNjdy9zh2Obq2OXq2ufr0+Lm7fT20uLm6vL17PT25vDzyNvg+Pr73urt5/Hz8/f57vX36fL0+fz8xtnf8ff4zN7i1uXp9Pj6xNfd3Ojs3uru+Pv77PP1+Pv84Ovv1OPo0uHm0eHlzt7jy93i8Pb30ODk6/L17PP21ePo5O7yydvh5O/y0eHm4+3wv9Ta5e/yk3jLJAAACxdJREFUeNrs3f1bFNcVwPGjKLvruu4CAlKwCAFFgfAiWrWAUNpQkzZGY22jpmn63nv//9+rxii7DLszc8/MnNn5nufJ88TnYYZzzsfx7p25c1emxROGQuQ8IoY43l4fiBjyOC/iEbHk4cUjYsnjPQgidjx+AkHEjMcHEESsePwMgogRj48giNjw+ASCiAmPEyCIWPA4CYKIAY8uEESK9+gGQaRwjx4QRIr26AVBpGCPUyCIFOtxGgSRQj0iQBAp0iMKBJECPSJBECnOIxoEkcI8zgBBpCiPs0AQKcjjTBBEivE4GwSRQjz6gCBShEc/EEQK8OgLgkj+Hv1BEMndYwAIInl7DAJBJGePgSCI5OsxGASRXD1igCCSp0ccEERy9IgFgkh+HvFAEMnNIyYIInl5xAVBJCeP2CCI5OMRHwSRXDwSgCCSh0cSEERy8EgEgkj2HslAEMncIyEIIll7JAVBJOt+iUfEkkdyEESy7ZV4RCx5pAFBJMs+iUfEkkc6EESy65F4RCx5pAVBJKv+iEfEkkd6EESy6Y14RCx5hIAgkkVfxCNiySMMBBH9nohHxJJHKAgi2v0Qj4glj3AQRHR7IR4RSx4aIIho9kE8IpY8dEAQ0euBeERMdUA8IqbqF4+IqerFI2KqdvGImKpcPCKm6haPiKmqxSNiqmbxiJiqWDwipuoVj4ipasUjYqpW8YiYqlQ8IqbqFI+IqSrFI2KqRvGImKpQPCKm6hOPiKnqxCNiqjbxiJiqTDwipuoSj4ipqsQjYqom8YiYqkg8IqbqEY+IqWrEI2KqFvGImKpEPCKm6hCPiKkqxCNiqgbxiJiqQDwipvIXj4ip7MUjYip38YiYylw8IqbyFo+Iqax5v9waPy0AhAAEEAIQQAhAACEAAYQAhBhqkCdjoy5VtJcXAVGP2poLiLuAKMfFOeeGSKT0ILVAD+dmAdGMv4Z6uAeAKMa8C48/AaIWMyMKIMuAqMWWgoer1wDRGtE3+ne68S7aA0UeA6IUryMZlv95MPuq+a/uH202m5OTs1Pzb+qnjxgDROkCiRpB5u4PnNf3HrILiE48jLob8p/Bx021eg66B4hKLEeAvIpz4GbPQQ8B0YhmxHAwEu/fup6j1gDRiJWIC+Tf8Q7tGXzmANGI9QiQmOPzgtmZSIlBavWoD73/i3Pofbt3T0oMshM5yYs1p5joPep7QMLjv9HT7jifmObSfRYApG90IjQ2Go2lycHzEMN3T4oEqc0vNV44ozHSWN5vVgtkZcMZj4WtWnVAmh1Xgng6XhWQi21Xiti4XxGQjitJjM5UAmTFlSa+rwJIbaQ8INv3KgCy70oUExUAWSoTyHoFQBplAmlVAGSkTCAOkPd/L8c2n48tRI6yP0zsrxw+yA/kIiDO7b2/jzQeMV1Z+nCHabYBSH4gox9uIp1eKvr802fnPUByA/n4isDDPssRaqMD1i0uHW4uLi5Ovv1vZ2Ws8wKQ1CCfPtj0PKcdmRnwXOPn6Bydfio7/vjZCCCpQEY//ehGv/sYZ1wijYkzn2TsLG0DEgTS/aM73ecZizp4wCPDmZUXgKiB9PT68PTAsRrjfvlmGxAlkJ63mN+cGjomY/3+2t1tQFRANrvP07O4dyP+UoXxPUA0QH7oHg66P4J1mkly2KwDEg7i5k+epvsN3KOESUy2AQkHaZ24CromjfWDxFnMdAAJBnHtj5P4iZMDcyvN6/+1Z4AEgzj34/ulOVPHXTP4yXSJjAESDuLcbqPR/VJa62XaTJ4BogByajYYsF3JHiD6IPMBqdQagGiDhL0heH8BEF2QucAV0fuAqIJsB6+HXgVEEyR8HdugLYUASQLyVCGdx4DogUxp5PMAEC2QPZV8pgDRAlHawbIDiA5IRymhHUB0QA60MhoFRANkQy2ju4BogOhtq3QPEA2QJ3oprQMSDqK5Q8kEIOEgmruJjgMSDrKvmdMuIMEgqi8sLwESCrKhmtNrQEJBOqo57QASCqK7Q/g4IKEgyl9WVAckEGRTN6kNQAJBDnSTagMSCDKlm9QDQAABBJAMQXZ0k5oDJBBE+Vs/GNRDQZ7rJtUCJBDkSDWnGjP1UJAl1ZwmAQkF0f1enHlAQkG2VXM6AiT4AdVLzZzWAQkGUb3dWwckGERzR90pFjmEgywopnQIiMJCuXm9lNqAKIDofTX9IktJNUDqTa2MfgRE5XUErW8uqLUAUQHRWt37mhd2lF5p01no0P8LZgBJANJWyec5L32qvRatMYoM2DkAkCQgLYUV12tsHKC4tcaz4GyesNeJ6m5AodP1gTtmAZIMpBW4HdDAfRcBSbiB2YOgXObZUU59i7+Q9xJeLgCiDuIOU2cyHuP8gCQGST0bae46QLIASSkyHmv7d0BSgKRaNTcZ7+SApAFxq4k3J51qOUCyA3GN+8mS2Ip7YkDSgbiFJMvhm+sOkIxBnNuLPWmfWHCAZA/i6luxRpLFRN+jC0h6EOdad2cG/fbZ9WSnBOTko/K6SxqtN/1G99r+cdITAuLcx7HgiUsTxyvN6F+8s9pKfjZATtwuXHYpo702/6r70pi9u76d6lSAfLoVcuSCorG8unq4srK6unrcTn8WQN5F52Dm4sGcsxCAGAtAAAEEkBKFH36Qp2XyaFUAZKlMIMcVAHlcJpCtCoDUWuXxqI9XACT+07riY81XAaQ2VxaP3WYlQHyzJJ98FyZ9NUD8vVJcI7t5exQH4mtbC+bH87WLvjogb//Zmlg3PENsd7buFdCUIkEIQAAhAAGEAAQQAhBACEAIQAAhAAGEAAQQAhBACEAIQAAhAAGEAAQQYqhBbn9+xWRPzl04V0mQ21evGP1bWqSI4GFLRPCwJVIUyJ2rtsfWwkQED1sigoctEcHDlkgRIHdulGOOVohIASDflMSjGBHBw5ZI7iDTJfIoQkTwsCWSM8j0Je8RsQNSPo/cRXIF+ayEHnmLCB62RAQPWyKChy0RwcOWSF4gX5XaI0cRwcOWSD4gN7/1HhE7IMPgkZdIHiA3b3mPiB2QYfHIR0TwsCWSOcitIfLIQ0TwsCWSMcitm94jYgdk+DwyF8kU5Nsh9MhaRPCwJZIhyKWvvEfEDsjwemQqkhnIpc+8R8QOyHB7ZCgieNgSETxsiQgetkSyALk07T0idkCq4pGNiOBhS0Qd5EaFPLIQETxsiSiD3PjGe0TsgFTPQ11EFeTGHe8RsQNytZIeyiKChy0RwcOWiBbIlau3vUfEDEjFPRRFBA9bIiogVz6vvIeaiOBhS0Q0PP6GhpqI4GFLRMI9fomEoojgYUtE8LAlEgZy5fd4KIsIHrZEQkCu46EvInjYEkkPcp3xPAsR4fqwJZIW5Pqf8chERNJ6/IGuZyIieNgSSQVy/Ts8shIRPGyJpAC5fv5XdDszEcHDlkhikC/wyFRE8LAlkhDki+/wyFZEuD5siQgetkSSgFw+/xv6m7WI4GFLRPCwJSJ42BIRPGyJCB62RCSmx+/oaT4igoctEcHDlojgYUtE8LAlIoM9/kEncxQRPGyJyCCPv9DFXEX6g1z+Go+cRQQPWyL9QC5f+wX9y1tE8LAlcjbIl3gUISJ42BI5C+TLr/EoRES4PmyJRIM8wqMoEcHDlkgUyCPGj+JEhOvDlojgYUvkFMijC3+nUwWKCB62RHpA5MJv6VKhIoKHLZEuELmGR9EiwvVhS0TwsCUiJzx+TW+KFxE8bInIx/EcDxMiwvVhS0TwsCUiP/0BDysigoctEXn3P3+kG2ZExJ+7hochEeH6sCUieJgSmf6/AAMAF4/8wMtS1yoAAAAASUVORK5CYII=';
+            current_metric = current_metric || 'recently.modified';
+
+            $('body').addClass('loading');
+
+            var anonymous = !rcloud.username();
+
+            return rcloud.discovery.get_notebooks(current_metric).then(function(discover_data) {
+                data = discover_data;
+
+                // get the detailed notebook info:
+                return RCloud.discovery_model.get_notebooks(anonymous, Object.keys(data.values));
+
+            }).then(function(notebooks) {
+
+                var notebook_pairs = _.chain(data.values)
+                        .pairs()
+                        .filter(function(kv) {
+                            return kv[0] != 'r_attributes' && kv[0] != 'r_type' &&
+                                !_.isEmpty(notebooks[kv[0]]);
+                        });
+
+                // assumes we always want descending, among other things
+                if(data.sort === 'date') {
+                    notebook_pairs = notebook_pairs
+                        .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                        .sortBy(function(kv) { return kv[1] * -1; });
+                } else if(data.sort === 'number') {
+                    notebook_pairs = notebook_pairs.sortBy(function(kv) {
+                        return kv[1] * -1;
+                    });
+                }
+
+                var get_path_and_name = function(notebook_description) {
+                    if(!notebook_description || notebook_description.lastIndexOf('/') == -1) {
+                        return {
+                            path: undefined,
+                            name: notebook_description
+                        };
+                    } else {
+                        return {
+                            path: notebook_description.substring(0, notebook_description.lastIndexOf('/')),
+                            name: notebook_description.substring(notebook_description.lastIndexOf('/') + 1)
+                        };
+                    }
+                };
+
+                // temporary limit of 100:
+                notebook_pairs = notebook_pairs.value();
+                if(notebook_pairs.length > 100) {
+                    notebook_pairs = notebook_pairs.slice(0, 100);
+                }
+
+                var notebook_data_promises = notebook_pairs
+                        .map(function(notebook) {
+                            var current = notebooks[notebook[0]];
+                            var desc = get_path_and_name(current.description);
+                            return rcloud.discovery.get_thumb(notebook[0]).then(function(thumb_src){
+                                return {
+                                    id: notebook[0],
+                                    time: notebook[1],
+                                    description: desc.name,
+                                    folder_path: desc.path,
+                                    last_commit: new Date(current.last_commit).toDateString(),
+                                    page: anonymous ? 'view.html' : 'edit.html',
+                                    username: current.username,
+                                    stars: current.stars,
+                                    star_icon: !_.isUndefined(current.is_starred_by_me) && current.is_starred_by_me ? 'icon-star' : 'icon-star-empty',
+                                    forks: current.forks,
+                                    image_src: thumb_src || missing_img
+                                };
+                            });
+                        });
+
+                return Promise.all(notebook_data_promises).then(function(page_notebooks) {
+
+                    var template = _.template(
+                        $("#item_template").html()
+                    );
+
+                    $('.grid').html(template({
+                        notebooks: page_notebooks
+                    })).imagesLoaded(function() {
+                        new Masonry_( '.grid', {
+                            itemSelector: '.grid-item',
+                            transitionDuration: 0
+                        });
+
+                        if(!$('.body').hasClass('loaded')) {
+                            $('body').addClass('loaded');
+                        }
+                    
+                        $('body').scrollTop(0).removeClass('loading');
+
+                    });
+                });
+            });
+        },
+
+        init: function() {
+            return new Promise(function(resolve, reject) {
+                require([
+                    'imagesloaded.pkgd.min',
+                    'masonry.pkgd.min'
+                ], function(imagesLoaded, Masonry) {
+                    'use strict';
+
+                    Masonry_ = Masonry;
+
+                    var metric = new metric_handler();
+
+                    metric.init({
+                        change: function(metric) {
+                            discovery.load_current_metric(metric);
+                        },
+                        oncomplete: function(metric) {
+                            resolve(discovery.load_current_metric(metric));
+                        }
+                    });
+
+                }, reject);
+            });
+        }
+    };
+
+    return discovery;
+})();
+
+//# sourceMappingURL=rcloud_bundle.js.map

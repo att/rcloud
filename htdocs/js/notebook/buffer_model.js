@@ -97,6 +97,16 @@ Notebook.Buffer.create_model = function(content, language) {
             checkpoint_ = content;
             return change;
         },
+        asset_url: function(with_version) {
+            var gist = this.parent_model.controller.current_gist();
+            var parts = [window.location.protocol + '//' + window.location.host,
+                         'notebook.R',
+                         gist.id];
+            if(with_version)
+                parts.push(gist.history[0].version);
+            parts.push(this.filename());
+            return parts.join('/');
+        },
         notify_views: function(f) {
             _.each(this.views, function(view) {
                 f(view);

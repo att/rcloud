@@ -1,10 +1,5 @@
 RCloud.UI.scratchpad = (function() {
     var binary_mode_; // not editing
-    // this function probably belongs elsewhere
-    function make_asset_url(model) {
-        return window.location.protocol + '//' + window.location.host + '/notebook.R/' +
-            model.parent_model.controller.current_gist().id + '/' + model.filename();
-    }
     return {
         session: null,
         widget: null,
@@ -117,7 +112,7 @@ RCloud.UI.scratchpad = (function() {
             }
             $("#new-asset > a").click(function() {
                 // FIXME prompt, yuck. I know, I know.
-                var filename = prompt("Choose a filename for your asset");
+                var filename = prompt("Choose a filename for your asset").trim();
                 if (!filename)
                     return;
                 if (Notebook.is_part_name(filename)) {
@@ -183,18 +178,18 @@ RCloud.UI.scratchpad = (function() {
                 binary_mode_ = true;
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
-                // PDF seems not to be supported properly by browers
+                // PDF seems not to be supported properly by browsers
                 var sbin = $('#scratchpad-binary');
                 if(/\.pdf$/i.test(this.current_model.filename()))
                     sbin.html('<p>PDF preview not supported</p>');
                 else
-                    sbin.html('<object data="' + make_asset_url(this.current_model) + '"></object>');
+                    sbin.html('<object data="' + this.current_model.asset_url(true) + '"></object>');
                 sbin.show();
             }
             else {
                 // text content: show editor
                 binary_mode_ = false;
-                that.widget.setReadOnly(false);
+                that.widget.setReadOnly(shell.notebook.model.read_only());
                 $('#scratchpad-binary').hide();
                 $('#scratchpad-editor').show();
                 $('#scratchpad-editor > *').show();
@@ -246,7 +241,7 @@ RCloud.UI.scratchpad = (function() {
             }
         }, update_asset_url: function() {
             if(this.current_model)
-                $('#asset-link').attr('href', make_asset_url(this.current_model));
+                $('#asset-link').attr('href', this.current_model.asset_url());
         }, clear: function() {
             if(!this.exists)
                 return;

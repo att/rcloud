@@ -18,14 +18,14 @@ rcloud.html.out <- function(..., sep="") {
     invisible(x)
 }
 
-.install.oc.js <- function() {
-  ocjs <- paste(readLines(system.file("javascript", "rcloud.output.context.js", package="rcloud.support")), collapse='\n')
-  .session$.output.context.cap <- rcloud.install.js.module("rcloud.output.context", ocjs)
-}
-
 rcloud.session.log <- function(...) {
     .rc.oobSend("stderr", x <- paste(..., collapse="\n"))
     invisible(x)
+}
+
+.install.oc.js <- function() {
+  ocjs <- paste(readLines(system.file("javascript", "rcloud.output.context.js", package="rcloud.support")), collapse='\n')
+  .session$.output.context.cap <- rcloud.install.js.module("rcloud.output.context", ocjs)
 }
 
 # returns an ID which should be passed to Rserve.context

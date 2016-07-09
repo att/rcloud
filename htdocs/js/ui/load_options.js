@@ -38,6 +38,7 @@ RCloud.UI.load_options = function() {
 
             return Promise.all([RCloud.UI.navbar.load(),
                                 RCloud.UI.menus.load(),
+                                RCloud.UI.shortcut_manager.load(),
                                 RCloud.UI.share_button.load(),
                                 RCloud.UI.left_panel.load_options(),
                                 RCloud.UI.right_panel.load_options()]);

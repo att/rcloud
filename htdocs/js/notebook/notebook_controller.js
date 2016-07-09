@@ -2,10 +2,7 @@ Notebook.create_controller = function(model)
 {
     var current_gist_,
         dirty_ = false,
-        save_button_ = null,
-        save_timer_ = null,
-        save_timeout_ = 30000; // 30s
-
+        save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
     var default_callback = function() {
@@ -14,8 +11,8 @@ Notebook.create_controller = function(model)
             if(!cb_) {
                 var editor_callback = editor.load_callback({is_change: true, selroot: true});
                 cb_ = function(notebook) {
-                    if(save_button_)
-                        ui_utils.disable_bs_button(save_button_);
+                    var saveb = RCloud.UI.navbar.control('save_notebook');
+                    saveb && saveb.disable();
                     dirty_ = false;
                     if(save_timer_) {
                         window.clearTimeout(save_timer_);
@@ -219,16 +216,18 @@ Notebook.create_controller = function(model)
 
     function on_dirty() {
         if(!dirty_) {
-            if(save_button_)
-                ui_utils.enable_bs_button(save_button_);
+            var saveb = RCloud.UI.navbar.control('save_notebook');
+            saveb && saveb.enable();
             dirty_ = true;
         }
         if(save_timer_)
             window.clearTimeout(save_timer_);
-        save_timer_ = window.setTimeout(function() {
-            result.save();
-            save_timer_ = null;
-        }, save_timeout_);
+        var save_timeout = shell.autosave_timeout();
+        if(save_timeout > 0)
+            save_timer_ = window.setTimeout(function() {
+                result.save();
+                save_timer_ = null;
+            }, save_timeout);
     }
 
     model.dishers.push({on_dirty: on_dirty});
@@ -237,12 +236,6 @@ Notebook.create_controller = function(model)
         current_gist: function() {
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
-        },
-        save_button: function(save_button) {
-            if(arguments.length) {
-                save_button_ = save_button;
-            }
-            return save_button_;
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
@@ -253,6 +246,12 @@ Notebook.create_controller = function(model)
                     cch.model.content(notebook.files[filename].content);
                     return [notebook, cch.controller];
                 });
+        },
+        cell_count: function() {
+            return model.cell_count();
+        },
+        selected_count: function() {
+            return model.selected_count();
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
@@ -275,6 +274,34 @@ Notebook.create_controller = function(model)
             RCloud.UI.command_prompt.focus();
             return update_notebook(changes)
                 .then(default_callback());
+        },
+        remove_selected_cells: function() {
+            var changes = refresh_buffers().concat(model.remove_selected_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
+        },
+        invert_selected_cells: function() {
+            model.invert_selected_cells();
+        },
+        clear_all_selected_cells: function() {
+            model.clear_all_selected_cells();
+        },
+        crop_cells: function() {
+
+            if(!this.can_crop_cells())
+                return;
+
+            var changes = refresh_buffers().concat(model.crop_cells());
+            RCloud.UI.command_prompt.focus();
+            return update_notebook(changes)
+                .then(default_callback());
+        },
+        can_crop_cells: function() {
+            return model.can_crop_cells();
+        },
+        select_all_cells: function() {
+            model.select_all_cells();
         },
         remove_asset: function(asset_model) {
             var changes = refresh_buffers().concat(model.remove_asset(asset_model));
@@ -383,6 +410,9 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
+        select_cell: function(cell_model, modifiers) {
+            var changes = refresh_buffers().concat(model.select_cell(cell_model, modifiers));
+        },
         clear: function() {
             model.clear();
             // FIXME when scratchpad becomes a view, clearing the model
@@ -480,6 +510,18 @@ Notebook.create_controller = function(model)
             return this.save().then(function() {
                 _.each(model.cells, function(cell_model) {
                     cell_model.controller.enqueue_execution_snapshot();
+                });
+            });
+        },
+        run_from: function(cell_id) {
+            var that = this,
+                process = false;
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    if(process || cell_model.id() === cell_id) {
+                        process = true;
+                        cell_model.controller.enqueue_execution_snapshot();
+                    }
                 });
             });
         },

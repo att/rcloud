@@ -31,20 +31,25 @@ var editor = function () {
         histories_ = {}, // cached notebook histories
         notebook_info_ = {}, // all notebooks we are aware of
         num_stars_ = {}, // number of stars for all known notebooks
+        fork_count_ = {},
         my_stars_ = {}, // set of notebooks starred by me
         my_friends_ = {}, // people whose notebooks i've starred
         featured_ = [], // featured users - samples, intros, etc
         invalid_notebooks_ = {},
-        current_ = null; // current notebook and version
+        current_ = null, // current notebook and version
+        path_tips_ = false, // debugging tool: show path tips on tree
+        lazy_load_ = {}; // which users need loading
 
     // view
-    var $tree_ = null,
-        star_notebook_button_ = null;
+    var $tree_ = null;
 
     // configuration stuff
     var gist_sources_ = null, // valid gist sources on server
         show_terse_dates_ = false, // show terse date option for the user
         new_notebook_prefix_ = "Notebook ";
+
+    var github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so nothing happened.",
+                                  "If you want to fork the latest version, open your fork(s) in GitHub (through the Advanced menu) and delete them first."].join(' ');
 
     // work around oddities of rserve.js
     function each_r_list(list, f) {
@@ -52,6 +57,7 @@ var editor = function () {
             if(key!=='r_attributes' && key!=='r_type')
                 f(key);
     }
+
     function r_vector(value) {
         return _.isArray(value) ? value : [value];
     }
@@ -104,14 +110,16 @@ var editor = function () {
     }
 
     function update_notebook_model(user, gistname, description, time) {
-        var entry = get_notebook_info(gistname);
+        return load_user_notebooks(user).then(function() {
+            var entry = get_notebook_info(gistname);
 
-        entry.username = user;
-        entry.description = description;
-        entry.last_commit = time;
+            entry.username = user;
+            entry.description = description;
+            entry.last_commit = time;
 
-        add_notebook_info(user, gistname, entry);
-        return entry; // note: let go of promise
+            add_notebook_info(user, gistname, entry);
+            return entry; // note: let go of promise
+        });
     }
 
 
@@ -160,33 +168,60 @@ var editor = function () {
         }
     }
 
+    function load_user_notebooks(username) {
+        if(!lazy_load_[username])
+            return Promise.resolve();
+
+        return get_notebooks_by_user(username).then(function(notebooks) {
+            // load "alls" tree for username, and duplicate to friends tree if needed
+            var pid = node_id("alls", username);
+            var root = $tree_.tree('getNodeById', pid);
+
+            var notebook_nodes = convert_notebook_set("alls", username, notebooks);
+            var alls_data = as_folder_hierarchy(notebook_nodes, pid).sort(compare_nodes);
+            $tree_.tree('loadData', alls_data, root);
+
+            delete lazy_load_[username];
+
+            if(my_friends_[username]) {
+                var ftree = duplicate_tree_data(root, transpose_notebook('friends'));
+                var parent = $tree_.tree('getNodeById', node_id('friends', username));
+                $tree_.tree('loadData', ftree.children, parent);
+            }
+        });
+    }
+
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     function find_next_copy_name(username, description) {
-        var pid = node_id("alls", username);
-        if(description.indexOf('/')!==-1)
-            pid += '/' + description.replace(/\/[^\/]*$/,'');
-        var parent = $tree_.tree('getNodeById', pid);
-        if(parent === undefined)
-            return description;
-        if(parent.delay_children)
-            load_children(parent);
-        var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
-        if(!map[description])
-            return description;
-        var match, base, n;
-        if((match = split_number(description))) {
-            base = match[0];
-            n = +match[1];
-        }
-        else {
-            base = description + ' ';
-            n = 1;
-        }
-        var copy_name;
-        do
-            copy_name = base + (++n);
-        while(map[copy_name]);
-        return copy_name;
+        return load_user_notebooks(username)
+            .then(function() {
+                // get folder parent or user trunk
+                var pid = description.indexOf('/') === -1 ?
+                        node_id("alls", username) :
+                        node_id("alls", username, description.replace(/\/[^\/]*$/,''));
+                var parent = $tree_.tree('getNodeById', pid);
+                if(parent === undefined)
+                    return description;
+
+                var map = _.object(_.map(parent.children, function(c) { return [c.full_name, true]; }));
+                if(!map[description])
+                    return description;
+                var match, base, n;
+                if((match = split_number(description))) {
+                    base = match[0];
+                    n = +match[1];
+                }
+                else {
+                    base = description + ' ';
+                    n = 1;
+                }
+                var copy_name;
+                do
+                    copy_name = base + (++n);
+                while(map[copy_name]);
+
+                return copy_name;
+            });
     }
 
 
@@ -254,6 +289,47 @@ var editor = function () {
         return notebook_nodes;
     }
 
+    function clean_r(obj) {
+        delete obj.r_attributes;
+        delete obj.r_type;
+        return obj;
+    };
+
+    function get_infos_and_counts(ids) {
+        return Promise.all([
+            rcloud.stars.get_multiple_notebook_star_counts(ids),
+            rcloud.get_multiple_notebook_infos(ids)
+        ]).spread(function(counts, infos) {
+            return {
+                notebooks: clean_r(infos),
+                num_stars: clean_r(counts)
+            };
+        });
+    }
+
+    function get_starred_info() {
+        return rcloud.stars.get_my_starred_notebooks()
+            .then(get_infos_and_counts);
+    }
+
+    function get_recent_info() {
+        return rcloud.config.get_recent_notebooks()
+            .then(function(recents) {
+                return get_infos_and_counts(Object.keys(recents));
+            });
+    }
+
+    function get_notebooks_by_user(username) {
+        return rcloud.config.all_user_notebooks(username)
+            .then(get_infos_and_counts)
+            .then(function(notebooks_stars) {
+                // merge these notebooks and stars
+                _.extend(notebook_info_, notebooks_stars.notebooks);
+                _.extend(num_stars_, notebooks_stars.num_stars);
+                return notebooks_stars.notebooks;
+            });
+    }
+
     function populate_interests(my_stars_array) {
         function create_user_book_entry_map(books) {
             var users = {};
@@ -276,7 +352,7 @@ var editor = function () {
             return users;
         }
 
-        var interests = create_user_book_entry_map(my_stars_array);
+        var interests = create_user_book_entry_map(Object.keys(my_stars_array));
         var user_nodes = [];
         for (var username in interests) {
             var user_notebooks = interests[username];
@@ -305,52 +381,36 @@ var editor = function () {
         };
     }
 
-    function populate_all_notebooks(user_notebooks) {
-        function create_book_entry_map(books) {
-            return _.chain(books)
-                .filter(function(book) {
-                    var entry = notebook_info_[book];
-                    if(!entry) {
-                        invalid_notebooks_[book] = null;
-                        return false;
-                    }
-                    if(!entry.username || entry.username === "undefined" ||
-                       !entry.description || !entry.last_commit) {
-                        invalid_notebooks_[book] = entry;
-                        return false;
-                    }
-                    return true;
-                })
-                .map(function(book) {
-                    var entry = notebook_info_[book];
-                    return [book, entry];
-                })
-                .object().value();
-        }
+    function lazy_node(root, user) {
+        var mine = user === username_;
+        var id = node_id(root, user);
+        return {
+            label: mine ? "My Notebooks" : someone_elses(user),
+            id: id,
+            sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
+            children: [{ label : 'loading...' }],
+            user: user,
+            root: root
+        };
+    }
 
-        var user_nodes = [], my_config = null;
-        each_r_list(user_notebooks, function(username) {
-            var notebook_nodes =
-                    convert_notebook_set('alls', username,
-                                         create_book_entry_map(r_vector(user_notebooks[username])));
-            var mine = username===username_;
-            var id = node_id('alls', username);
-            var node = {
-                label: mine ? "My Notebooks" : someone_elses(username),
-                id: id,
-                sort_order: mine ? ordering.MYFOLDER : ordering.SUBFOLDER,
-                children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
-            };
-            user_nodes.push(node);
+    function populate_users(all_the_users) {
+        if(_.isString(all_the_users))
+            all_the_users = [all_the_users];
+        all_the_users.forEach(function(u) {
+            lazy_load_[u] = true;
         });
         return {
             label: 'All Notebooks',
             id: '/alls',
-            children: user_nodes.sort(compare_nodes)
+            children: _.map(all_the_users, function(u) {
+                return lazy_node('alls', u);
+            }).sort(compare_nodes)
         };
     }
 
     function duplicate_tree_data(tree, f) {
+        console.assert(!tree.user || !lazy_load_[tree.user]);
         var t2 = f(tree);
         if(tree.children) {
             var ch2 = [];
@@ -368,7 +428,7 @@ var editor = function () {
         return function(datum) {
             if(datum.delay_children)
                 load_children(datum);
-            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order");
+            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order", "version");
             d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
             d2.root = destroot;
             return d2;
@@ -393,83 +453,94 @@ var editor = function () {
         return subtree.id.replace("/alls/","");
     }
 
-    function populate_friends(alls_root) {
-        var friend_subtrees = alls_root.children.filter(function(subtree) {
-            return my_friends_[alls_name(subtree)]>0;
-        });
-        return create_notebook_root(friend_subtrees, 'friends', 'People I Starred');
+    function populate_friends(all_the_users) {
+        return {
+            label: 'People I Starred',
+            id: '/friends',
+            children: all_the_users.filter(function(u) {
+                return my_friends_[u]>0;
+            }).map(function(u) {
+                return lazy_node('friends', u);
+            }).sort(compare_nodes)
+        };
     }
 
-    function populate_featured(alls_root) {
-        var featured_subtrees = alls_root.children.filter(function(subtree) {
-            return featured_.indexOf(alls_name(subtree))>=0;
+    function get_featured() {
+
+        return rcloud.config.get_alluser_option('featured_users').then(function(featured) {
+            featured_ = featured || [];
+
+            if(_.isString(featured_))
+                featured_ = [featured_];
+
+            if(!featured_.length)
+                return null;
+
+            return get_notebooks_by_user(featured_[0]).then(function(notebooks) {
+                var notebook_nodes = convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
+                    notebook.id = '/featured/' + notebook.gistname;
+                    return notebook;
+                });
+
+                return {
+                    label: 'RCloud Sample Notebooks',
+                    id: '/featured',
+                    children: as_folder_hierarchy(notebook_nodes, node_id('featured')).sort(compare_nodes)
+                };
+            });
+
         });
-        featured_ = featured_subtrees.map(alls_name); // remove any we didn't find in All Notebooks
-        if(!featured_subtrees.length)
-            return null;
-        return create_notebook_root(featured_subtrees, 'featured', 'RCloud Sample Notebooks', featured_subtrees.length===1 ? featured_[0] : null);
     }
 
     function load_tree(root_data) {
-        // delay construction of dom elements for Alls
-        var alls = _.find(root_data, function(root) { return root.id === "/alls"; }).children;
-        for(var i = 0; i < alls.length; ++i)
-            if(alls[i].children && alls[i].children.length) {
-                alls[i].delay_children = alls[i].children;
-                alls[i].children = [{label: 'loading...'}];
-            }
         result.create_book_tree_widget(root_data);
         var interests = $tree_.tree('getNodeById', "/interests");
         $tree_.tree('openNode', interests);
     }
 
     function load_children(n) {
+        console.warn('redundant code?');
         $tree_.tree('loadData', n.delay_children, n);
         delete n.delay_children;
     }
 
     function load_everything() {
         return Promise.all([
-            rcloud.get_users()
-            .then(function(allUsers){
-                //save them to global here
-                editor.allTheUsers = allUsers;
-                return allUsers;
-            })
-            .then(rcloud.config.all_notebooks_multiple_users),
-            rcloud.stars.get_my_starred_notebooks(),
-            rcloud.get_gist_sources()
+            rcloud.get_users(),
+            get_starred_info(),
+            get_recent_info(),
+            rcloud.get_gist_sources(),
+            rcloud.config.get_user_option('notebook-path-tips')
         ])
-            .spread(function(user_notebook_set, my_stars_array, gist_sources) {
-                my_stars_array = r_vector(my_stars_array);
+            .spread(function(all_the_users, starred_info, recent_info, gist_sources, path_tips) {
+                path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
-                var all_notebooks = [];
-                each_r_list(user_notebook_set, function(username) {
-                    all_notebooks = all_notebooks.concat(r_vector(user_notebook_set[username]));
-                });
-                all_notebooks = all_notebooks.concat(my_stars_array);
-                all_notebooks = _.uniq(all_notebooks.sort(), true);
+                _.extend(notebook_info_, starred_info.notebooks);
+                _.extend(notebook_info_, recent_info.notebooks);
+                _.extend(num_stars_, recent_info.num_stars); // (not currently needed)
+                all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
                 var root_data = [];
+                var featured_tree;
+
                 return Promise.all([rcloud.config.get_current_notebook(),
-                                    rcloud.stars.get_multiple_notebook_star_counts(all_notebooks),
-                                    rcloud.get_multiple_notebook_infos(all_notebooks),
-                                    rcloud.config.get_alluser_option('featured_users')])
-                    .spread(function(current, counts, notebook_entries, featured) {
+                                    get_featured()
+                                    ])
+                    .spread(function(current, featured_notebooks) {
                         current_ = current;
-                        num_stars_ = counts;
-                        notebook_info_ = notebook_entries;
-                        featured_ = featured || [];
-                        if(_.isString(featured_))
-                            featured_ = [featured_];
+                        num_stars_ = starred_info.num_stars;
+                        featured_tree = featured_notebooks;
                     })
                     .then(function() {
-                        var alls_root = populate_all_notebooks(user_notebook_set);
+
+                        var alls_root = populate_users(all_the_users);
+
                         return [
-                            populate_featured(alls_root),
-                            populate_interests(my_stars_array),
-                            populate_friends(alls_root),
+                            featured_tree,
+                            populate_interests(starred_info.notebooks),
+                            populate_friends(all_the_users),
                             alls_root
                         ].filter(function(t) { return !!t; });
+
                     });
             })
             .then(load_tree)
@@ -593,7 +664,6 @@ var editor = function () {
         }
         return -1;
     }
-
 
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
@@ -784,6 +854,11 @@ var editor = function () {
             RCloud.UI.notebook_title.make_editable(null);
     }
 
+    function select_history_node(node) {
+        select_node(node);
+        $(node.element).find('.jqtree-element:eq(0)').trigger('click');
+    }
+
     function update_tree_entry(root, user, gistname, entry, create) {
         var data = {user: user,
                     label: entry.description,
@@ -836,6 +911,7 @@ var editor = function () {
             select_node(node);
         }
         var p, i_starred = result.i_starred(gistname);
+        var promises = [];
         if(selroot === true)
             selroot = featured_.indexOf(user) >=0 ? 'featured' :
                 i_starred ? 'interests' :
@@ -843,27 +919,34 @@ var editor = function () {
         if(i_starred) {
             p = update_tree_entry('interests', user, gistname, entry, true);
             if(selroot==='interests')
-                p.then(open_and_select);
+                p = p.then(open_and_select);
+            promises.push(p);
         }
         if(gistname === current_.notebook) {
-            if(!_.isUndefined(star_notebook_button_) && !_.isNull(star_notebook_button_))
-                star_notebook_button_.set_state(i_starred);
-            $('#curr-star-count').text(result.num_stars(gistname));
+            var starn = RCloud.UI.navbar.control('star_notebook');
+            if(starn) {
+                starn.set_fill(i_starred);
+                starn.set_count(result.num_stars(gistname));
+            }
         }
         if(my_friends_[user]) {
             p = update_tree_entry('friends', user, gistname, entry, true);
             if(selroot==='friends')
-                p.then(open_and_select);
+                p = p.then(open_and_select);
+            promises.push(p);
         }
         if(featured_.indexOf(user)>=0) {
             p = update_tree_entry('featured', user, gistname, entry, true);
             if(selroot==='featured')
-                p.then(open_and_select);
+                p = p.then(open_and_select);
+            promises.push(p);
         }
 
         p = update_tree_entry('alls', user, gistname, entry, true);
         if(selroot==='alls')
-            p.then(open_and_select);
+            p = p.then(open_and_select);
+        promises.push(p);
+        return Promise.all(promises);
     }
 
     function remove_node(node) {
@@ -907,11 +990,12 @@ var editor = function () {
         if(history)
             histories_[gistname] = history;
 
-        var entry = update_notebook_model(user, gistname,
-                                          result.description,
-                                          result.updated_at || result.history[0].committed_at);
-
-        update_notebook_view(user, gistname, entry, selroot);
+        return update_notebook_model(user, gistname,
+                                     result.description,
+                                     result.updated_at || result.history[0].committed_at)
+            .then(function(entry) {
+                return update_notebook_view(user, gistname, entry, selroot);
+            });
     }
 
     function change_folder_friendness(user) {
@@ -973,6 +1057,10 @@ var editor = function () {
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
         title.css('color', node.color);
+
+        if(path_tips_)
+            element.attr('title', node.id);
+
         if(node.gistname) {
             if(node.source)
                 title.addClass('foreign-notebook');
@@ -996,6 +1084,7 @@ var editor = function () {
     }
 
     function tree_click(event) {
+
         if(event.node.id === 'showmore')
             result.show_history(event.node.parent, false);
         else if(event.node.gistname) {
@@ -1021,19 +1110,34 @@ var editor = function () {
         }
         return false;
     }
+
+    function reselect_node(f) {
+        var selected_node = $tree_.tree('getSelectedNode');
+        return f().then(function() {
+            var node_to_select = $tree_.tree('getNodeById', selected_node.id);
+
+            if(node_to_select)
+                select_node(node_to_select);
+            else console.log('sorry, neglected to highlight ' + selected_node.id);
+        });
+    }
+
     function tree_open(event) {
         var n = event.node;
-        if(n.delay_children)
-            load_children(n);
+
         // notebook folder name only editable when open
-        if(event.node.full_name && event.node.user === username_ && !event.node.gistname)
-            RCloud.UI.notebook_title.make_editable(event.node, event.node.element, true);
+        if(n.full_name && n.user === username_ && !n.gistname)
+            RCloud.UI.notebook_title.make_editable(n, n.element, true);
         $('#collapse-notebook-tree').trigger('size-changed');
+
+        if(n.user && lazy_load_[n.user])
+            load_user_notebooks(n.user);
     }
     function tree_close(event) {
+        var n = event.node;
         // notebook folder name only editable when open
-        if(event.node.full_name && !event.node.gistname)
-            RCloud.UI.notebook_title.make_editable(event.node, event.node.element, false);
+        if(n.full_name && !n.gistname)
+            RCloud.UI.notebook_title.make_editable(n, n.element, false);
     }
     var NOTEBOOK_LOAD_FAILS = 5;
     function open_last_loadable() {
@@ -1079,13 +1183,49 @@ var editor = function () {
             });
     }
 
+    var history_manager = {
+        get_current_notebook_histories : function() {
+            return histories_[current_.notebook];
+        },
+        get_current_notebook_history_index : function() {
+            return current_.version === null ?
+                0 :
+                find_index(this.get_current_notebook_histories(), function(h) {
+                    return h.version === current_.version;
+                });
+        },
+        get_history_by_index : function(index) {
+            return histories_[current_.notebook][index];
+        },
+        get_previous : function() {
+            // no version at latest:
+            var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index();
+
+            if(current_index === this.get_current_notebook_histories().length - 1) {
+                return undefined;   // already at first
+            } else {
+                return this.get_history_by_index(current_index + 1).version;
+            }
+        },
+        get_next : function() {
+            var current_index = this.get_current_notebook_history_index();
+
+            if(current_index === 0) {
+                return undefined;
+            } else {
+                return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
+            }
+        }
+    };
+
     var result = {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
             var promise = load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version, opts.source, true, false, ui_utils.make_url('edit.html'));
+                    return that.load_notebook(opts.notebook, opts.version, opts.source,
+                                              true, false, ui_utils.make_url('edit.html'));
                 } else if(!opts.new_notebook && current_.notebook) {
                     return that.load_notebook(current_.notebook, current_.version)
                         .catch(function(xep) {
@@ -1118,10 +1258,7 @@ var editor = function () {
                     that.new_notebook();
             });
             var snf = result.star_notebook;
-            star_notebook_button_ =
-                ui_utils.twostate_icon($("#star-notebook"),
-                                       snf.bind(this, true), snf.bind(this, false),
-                                       'icon-star', 'icon-star-empty');
+            RCloud.UI.navbar.control('star_notebook').set_star_unstar(snf.bind(this, true), snf.bind(this, false));
             return promise;
         },
         // partial access to state, for add-ons.  (should be explicit model)
@@ -1178,7 +1315,9 @@ var editor = function () {
                 if(source==='default')
                     source = null; // drop it
                 else if(gist_sources_.indexOf(source)<0) {
-                    before = Promise.reject(new Error("Invalid gist source '" + source + "'"));
+                    before = Promise.reject(new Error(
+                        "Invalid gist source '" + source + "'; available sources are: " +
+                            gist_sources_.join(', ')));
                 } else if(!notebook_info_[gistname]) {
                     notebook_info_[gistname] = {source: source};
                     before = rcloud.set_notebook_property(gistname, "source", source);
@@ -1187,6 +1326,7 @@ var editor = function () {
             }
             before = before || Promise.resolve(undefined);
             selroot = selroot || true;
+
             return before.then(function() {
                 return shell.load_notebook(gistname, version)
                     .then(that.load_callback({version: version,
@@ -1208,7 +1348,7 @@ var editor = function () {
                 window.open(url, "_blank");
             }
             else
-                this.load_notebook(gistname, version, source, null, selroot);
+                this.load_notebook(gistname, version, source, selroot, null);
         },
         new_notebook_prefix: function(_) {
             if(arguments.length) {
@@ -1257,7 +1397,7 @@ var editor = function () {
                 });
         },
         update_notebook_from_gist: function(notebook) {
-            update_notebook_from_gist(notebook, notebook.history, false);
+            return update_notebook_from_gist(notebook, notebook.history, false);
         },
         for_each_notebook: function(node, data, leaff, combinef) {
             var that = this;
@@ -1299,6 +1439,7 @@ var editor = function () {
                     add_interest(user, gistname);
                     if(my_friends_[user] === 1)
                         change_folder_friendness(user);
+                    var p;
                     if(opts.notebook) {
                         if(opts.make_current)
                             return that.load_callback({
@@ -1306,12 +1447,12 @@ var editor = function () {
                                 is_change: opts.is_change || false,
                                 selroot: 'interests'})(opts.notebook);
                         else
-                            update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                            p = update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
                     else {
-                        update_notebook_view(user, gistname, entry, opts.selroot);
+                        p = update_notebook_view(user, gistname, entry, opts.selroot);
                     }
-                    return Promise.resolve(opts.notebook);
+                    return p.return(opts.notebook);
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
@@ -1360,7 +1501,11 @@ var editor = function () {
             return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    return this.star_and_show(notebook, true, !!version);
+                    if(notebook_info_[notebook.id]) {
+                        alert(github_nonfork_warning);
+                        return notebook;
+                    }
+                    else return this.star_and_show(notebook, true, !!version);
                 });
         },
         fork_folder: function(node, match, replace) {
@@ -1371,7 +1516,7 @@ var editor = function () {
                 var promise_fork;
                 if(is_mine)
                     promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
-                        return desc.replace(match, replace);
+                        return Promise.resolve(desc.replace(match, replace));
                     });
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
@@ -1382,7 +1527,7 @@ var editor = function () {
                         return editor.star_and_show(notebook, false, false);
                 }));
             });
-            Promise.all(promises).then(function(results) {
+            return Promise.all(promises).then(function(results) {
                 var already = [], forked = [];
                 for(var i = 0; i < results.length; ++i) {
                     if(_.isString(results[i]))
@@ -1391,17 +1536,14 @@ var editor = function () {
                         forked.push(results[i].description);
                 }
                 if(already.length) {
-                    var lines = ["You already had the following " + already.length + " notebooks:"]
-                            .concat(already,
-                                    "GitHub wouldn't let me fork them again.",
-                                    "Fork your own copies if you really need more.");
+                    var lines = ["You already forked the following " + already.length + " notebooks:"]
+                            .concat(already, '', github_nonfork_warning);
                     if(promises.length > already.length)
                         lines = lines.concat("", "You forked " + forked.length + " notebooks.", forked);
 
                     alert(lines.join('\n'));
                 }
             });
-            return this;
         },
         revert_notebook: function(is_mine, gistname, version) {
             if(!is_mine)
@@ -1418,11 +1560,11 @@ var editor = function () {
             if(node.children.length) {
                 if(!node.is_open) {
                     $tree_.tree('openNode', node);
-                    return;
+                    return Promise.resolve(undefined);
                 }
                 if(opts.toggle) whither = 'hide';
             }
-            update_history_nodes(node, whither, null)
+            return update_history_nodes(node, whither, null)
                 .then(function(node) {
                     var history_len = 0;
                     if(histories_[node.gistname]) {
@@ -1434,12 +1576,35 @@ var editor = function () {
                     $tree_.tree('openNode', node);
                 });
         },
+        step_history_undo: function() {
 
+            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+
+            var previous_version = history_manager.get_previous();
+
+            if(!_.isUndefined(previous_version)) {
+                this.load_notebook(current_.notebook, previous_version).then(function() {
+                    RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
+                });
+            }
+        },
+        step_history_redo: function() {
+
+            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+
+            var next_version = history_manager.get_next();
+
+            if(!_.isUndefined(next_version)) {
+                this.load_notebook(current_.notebook, next_version).then(function() {
+                    RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
+                });
+            }
+        },
         update_recent_notebooks: function(data) {
             var sorted = _.chain(data)
                 .pairs()
-                .filter(function(kv) { 
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ; 
+                .filter(function(kv) {
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ;
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
@@ -1460,7 +1625,7 @@ var editor = function () {
                 e.preventDefault();
                 var gist = $(e.currentTarget).data('gist');
                 $('.dropdown-toggle.recent-btn').dropdown("toggle");
-                result.open_notebook(gist);
+                result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
             };
             for(var i = 0; i < sorted.length; i ++) {
                 var li = $('<li></li>');
@@ -1579,8 +1744,9 @@ var editor = function () {
                                     : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                         num_stars_[result.id] = count;
                                     })).then(function() {
-                                        update_notebook_from_gist(result, history, options.selroot);
+                                        return update_notebook_from_gist(result, history, options.selroot);
                                     }));
+
 
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
                      promises.push(RCloud.UI.comments_frame.display_comments());

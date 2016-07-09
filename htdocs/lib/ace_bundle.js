@@ -5,6 +5,7 @@ var require = undefined;
 var old_requirejs = window.requirejs;
 var old_require = window.require;
 var old_define = window.define;
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -17525,6 +17526,7 @@ exports.LineWidgets = LineWidgets;
                 });
             })();
         
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -17683,6 +17685,7 @@ background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZ
 var dom = require("../lib/dom");
 dom.importCssString(exports.cssText, exports.cssClass);
 });
+
 /*
  * r.js
  *
@@ -17801,9 +17804,11 @@ define("ace/mode/r", function(require, exports, module)
          }
          return false;
       };
+      this.lineCommentStart = ["#"];
    }).call(Mode.prototype);
    exports.Mode = Mode;
 });
+
 /*
  * markdown_highlight_rules.js
  *
@@ -17852,6 +17857,7 @@ oop.inherits(RMarkdownHighlightRules, TextHighlightRules);
 
 exports.RMarkdownHighlightRules = RMarkdownHighlightRules;
 });
+
 /*
  * markdown.js
  *
@@ -17908,6 +17914,7 @@ oop.inherits(Mode, MarkdownMode);
 
 exports.Mode = Mode;
 });
+
 /*
  * auto_brace_insert.js
  *
@@ -18107,6 +18114,7 @@ define("ace/mode/auto_brace_insert", function(require, exports, module)
    };
 
 });
+
 /*
  * r_highlight_rules.js
  *
@@ -18295,6 +18303,7 @@ define("ace/mode/r_highlight_rules", function(require, exports, module)
 
    exports.RHighlightRules = RHighlightRules;
 });
+
 /*
  * r_matching_brace_outdent.js
  *
@@ -18377,6 +18386,7 @@ define("ace/mode/r_matching_brace_outdent", function(require, exports, module)
    }).call(RMatchingBraceOutdent);
    exports.RMatchingBraceOutdent = RMatchingBraceOutdent;
 });
+
 /*
  * r_code_model.js
  *
@@ -19591,6 +19601,7 @@ exports.setVerticallyAlignFunctionArgs = function(verticallyAlign) {
 
 
 });
+
 /*
  * r_scope_tree.js
  *
@@ -19986,6 +19997,7 @@ define('ace/mode/r_scope_tree', function(require, exports, module) {
    exports.ScopeManager = ScopeManager;
 
 });
+
 /*
  * tex_highlight_rules.js
  *
@@ -20094,6 +20106,7 @@ oop.inherits(TexHighlightRules, TextHighlightRules);
 
 exports.TexHighlightRules = TexHighlightRules;
 });
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -22840,6 +22853,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 }).call(FoldMode.prototype);
 
 });
+
 /*
  * sweave_background_highlighter.js
  *
@@ -23049,6 +23063,7 @@ define("ace/mode/sweave_background_highlighter", function(require, exports, modu
 
    exports.SweaveBackgroundHighlighter = SweaveBackgroundHighlighter;
 });
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -24722,6 +24737,7 @@ define('ace/autocomplete/text_completer', ['require', 'exports', 'module' , 'ace
                     window.require(["ace/ext/language_tools"], function() {});
                 })();
             
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -25147,7 +25163,8 @@ exports.Search = function(editor, isReplace) {
                 (function() {
                     window.require(["ace/ext/searchbox"], function() {});
                 })();
-            /* ***** BEGIN LICENSE BLOCK *****
+            
+/* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
  * Copyright (c) 2010, Ajax.org B.V.
@@ -26080,6 +26097,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 }).call(FoldMode.prototype);
 
 });
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -26382,6 +26400,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 }).call(FoldMode.prototype);
 
 });
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
@@ -26702,6 +26721,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 }).call(FoldMode.prototype);
 
 });
+
 // restore true requirejs since ace clobbers global variables.
 var global = (function() {
     return this;
@@ -26710,3 +26730,5 @@ global.requirejs = old_requirejs;
 global.require = old_require;
 global.define = old_define;
 })();
+
+//# sourceMappingURL=ace_bundle.js.map

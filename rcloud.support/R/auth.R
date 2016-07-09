@@ -30,7 +30,7 @@ RC.authenticate <- function(v, check.only=FALSE)
   v <- as.list(v)
   if (length(v) < 1 || is.null(v[[1]])) return(FALSE)
   ## is execution authentication enabled?
-  if (nzConf("exec.auth")) {
+  if (nzConf("exec.auth") && !isTRUE(getConf("exec.auth") == "as-local")) {
     ## FIXME: should we allow anonymous execution and logged-in github? We don't support that now...
     if (length(v) < 2 || is.null(v[[2]])) return(FALSE)
     exec.usr <- check.token(v[[2]], paste0("auth/",getConf("exec.auth")), "rcloud.exec")
@@ -74,7 +74,11 @@ RC.authenticate <- function(v, check.only=FALSE)
 ## TRUE if successful
 RC.auth.anonymous <- function(v=NULL, check.only=FALSE) {
   ## FIXME: we may want to add an option to disable anonymous access even without exec.auth
-  if (!nzConf("exec.auth")) return(TRUE) ## no exec auth -> allow anonymous and nothing to do
+  if (!nzConf("exec.auth") || isTRUE(getConf("exec.auth") == "as-local")) {
+      tmp <- tempdir() ## make sure tempdir exists (safe to create as there is no switching)
+      if (!dir.exists(tmp)) dir.create(tmp, FALSE, TRUE, "0700")
+      return(TRUE) ## no exec auth -> allow anonymous and nothing to do
+  }
 
   v <- as.list(v)
   exec.token <- if (length(v) > 1L) v[[2]] else if (length(v) == 1L) v[[1]] else NULL

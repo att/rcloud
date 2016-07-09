@@ -117,7 +117,8 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     min_rows = _.isUndefined(min_rows) ? 0  : min_rows;
     max_rows = _.isUndefined(max_rows) ? 30 : max_rows;
     var lineHeight = widget.renderer.lineHeight;
-    var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
+    //var rows = Math.max(min_rows, Math.min(max_rows, widget.getSession().getScreenLength()));
+    var rows = Math.max(min_rows, widget.getSession().getScreenLength());
     var newHeight = lineHeight*rows + widget.renderer.scrollBar.getWidth();
     return newHeight;
 };
@@ -161,7 +162,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                 mac: "Command-L"
             },
             exec: function() { return false; }
-        }, 
+        },
         {
             name: 'execute-selection-or-line',
             bindKey: {
@@ -195,7 +196,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
             ctrlACount : 0,
             lastRow: -1,
             bindKey: {
-          
                 mac: 'Ctrl-A',
                 sender: 'editor'
             },
@@ -228,7 +228,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
         {
             name: 'cursor at end of line',
             bindKey: {
-       
                 mac: 'Ctrl-E',
                 sender: 'editor'
             },
@@ -299,7 +298,8 @@ ui_utils.ignore_programmatic_changes = function(widget, listener) {
     });
     return function(value) {
         listen = false;
-        var res = widget.setValue(value);
+        var oldValue = widget.getValue();
+        var res = (value !== oldValue) ? widget.setValue(value) : null;
         listen = true;
         return res;
     };
@@ -550,6 +550,7 @@ ui_utils.editable = function(elem$, command) {
                     }
                 } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
+                    window.getSelection().removeAllRanges();
                 }
                 return true;
             },
@@ -647,6 +648,17 @@ ui_utils.is_a_mac = function() {
     };
 }();
 
+
+// loosely based on https://codepen.io/gapcode/pen/vEJNZN
+ui_utils.is_ie = function() {
+    var ua = window.navigator.userAgent;
+
+    return(ua.indexOf('MSIE ') > 0 ||
+           ua.indexOf('Trident/') > 0 ||
+           ua.indexOf('Edge/') > 0);
+}
+
+
 ui_utils.kill_popovers = function() {
     if(window.allPopovers) {
         $(window.allPopovers).each(function(i, e) {
@@ -660,6 +672,32 @@ ui_utils.hide_selectize_dropdown = function() {
     $('.selectize-dropdown').hide();
     $('.selectize-input').removeClass('focus input-active dropdown-active');
 
-    
     //$('div.selectize-input > input').blur();
+};
+
+
+// copy elements from the notebook, but skip anything .nonselectable
+// we have to do this by copying them to an offscreen "buffer" in the DOM
+// in order to remove the .nonselectables
+ui_utils.select_allowed_elements = function(callback) {
+    var sel = window.getSelection();
+    var offscreen = $('<pre class="offscreen"></pre>');
+
+    $('body').append(offscreen);
+
+    for(var i=0; i < sel.rangeCount; ++i) {
+        var range = sel.getRangeAt(i);
+        offscreen.append(range.cloneContents());
+    }
+
+    offscreen.find('.nonselectable').remove();
+    // Firefox throws an exception if you try to select children and there are none(!)
+    if(offscreen.is(':empty'))
+        sel.removeAllRanges();
+    else
+        sel.selectAllChildren(offscreen[0]);
+
+    window.setTimeout(function() {
+        offscreen.remove();
+    }, 1000);
 };

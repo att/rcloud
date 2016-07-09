@@ -26,6 +26,11 @@ rcloud.get.conf.values <- function(pattern) {
   lapply(matched, getConf)
 }
 
+filter.notebooks <- function(f, ids)
+  if(is.list(ids)) {
+    ids[filter.notebooks(f, names(ids))]
+  } else ids[f(ids)]
+
 .guess.language <- function(fn) {
     if (!length(grep(".",fn,TRUE))) return("unknown")
     ext <- gsub(".*\\.","",fn)
@@ -75,11 +80,15 @@ rcloud.augment.notebook <- function(res) {
   }
   res
 }
-rcloud.unauthenticated.load.notebook <- function(id, version = NULL, source = NULL) {
-  if (!rcloud.is.notebook.published(id))
-    stop("Notebook does not exist or has not been published")
-  rcloud.load.notebook(id, version, source)
-}
+
+rcloud.fail.if.unpublished <- function(f)
+  function(id, ...)
+    if (!rcloud.is.notebook.published(id)) {
+      stop("Notebook does not exist or has not been published")
+    } else f(id, ...)
+
+rcloud.unauthenticated.load.notebook <-
+  rcloud.fail.if.unpublished(rcloud.load.notebook)
 
 rcloud.load.notebook <- function(id, version = NULL, source = NULL, reset = TRUE) {
   res <- rcloud.get.notebook(id, version, source)
@@ -138,11 +147,8 @@ rcloud.install.notebook.stylesheets <- function() {
   rcloud.install.css(urls)
 }
 
-rcloud.unauthenticated.get.notebook <- function(id, version = NULL) {
-  if (!rcloud.is.notebook.published(id))
-    stop("Notebook does not exist or has not been published")
-  rcloud.get.notebook(id, version)
-}
+rcloud.unauthenticated.get.notebook <-
+  rcloud.fail.if.unpublished(rcloud.get.notebook)
 
 rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
   if (is.null(source)) source <- rcloud.get.notebook.source(id)
@@ -165,14 +171,8 @@ rcloud.get.notebook <- function(id, version = NULL, source = NULL, raw=FALSE) {
 ## this is extremely experimental -- use at your own risk
 ## the meaining of args is ambiguous and probably a bad idea - it jsut makes the client code a bit easier to write ...
 
-## FIXME shouldn't the detection of unauthenticated vs authenticated happen
-## transparently so we don't need to write different calls for different
-## situations?
-rcloud.unauthenticated.call.notebook <- function(id, version = NULL, args = NULL) {
-  if (!rcloud.is.notebook.published(id))
-    stop("Notebook does not exist or has not been published")
-  rcloud.call.notebook(id, version, args)
-}
+rcloud.unauthenticated.call.notebook <-
+  rcloud.fail.if.unpublished(rcloud.call.notebook)
 
 # get notebook cells, in sorted order
 rcloud.notebook.cells <- function(id, version = NULL) {
@@ -235,14 +235,8 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
   } else NULL
 }
 
-## FIXME shouldn't the detection of unauthenticated vs authenticated happen
-## transparently so we don't need to write different calls for different
-## situations?
-rcloud.unauthenticated.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
-  if (!rcloud.is.notebook.published(id))
-    stop("Notebook does not exist or has not been published")
-  rcloud.call.FastRWeb.notebook(id, version, args)
-}
+rcloud.unauthenticated.call.FastRWeb.notebook <-
+  rcloud.fail.if.unpublished(rcloud.call.FastRWeb.notebook)
 
 rcloud.call.FastRWeb.notebook <- function(id, version = NULL, args = NULL) {
   result <- rcloud.call.notebook(id, version, NULL)
@@ -345,11 +339,17 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     }
     content <- .gist.binary.process.outgoing(id, content)
 
+    # save thumbnail to key-value database
+    if ("thumb.png.b64" %in% names(content$files))
+      rcloud.discovery.set.thumb(id = id, thumb_png = content$files$thumb.png.b64$content)
+
     res <- modify.gist(id, content, ctx = .rcloud.get.gist.context())
     aug.res <- rcloud.augment.notebook(res)
 
     if(is.current)
       .session$current.notebook <- aug.res
+
+    rcloud.discovery.set.recently.modified.notebook(id, res$content$updated_at)
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
@@ -362,8 +362,12 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
 rcloud.create.notebook <- function(content, is.current = TRUE) {
     content <- .gist.binary.process.outgoing(NULL, content)
+
     res <- create.gist(content, ctx = .rcloud.get.gist.context())
     if (res$ok && is.current) {
+        rcloud.discovery.set.recently.modified.notebook(res$content$id, res$content$updated_at)
+        if ("thumb.png.b64" %in% names(content$files))
+            rcloud.discovery.set.thumb(id = res$content$id, thumb_png = content$files$thumb.png.b64$content)
         .session$current.notebook <- res
         rcloud.reset.session()
     }
@@ -402,24 +406,59 @@ rcloud.fork.notebook <- function(id, source = NULL) {
                                      list(owner=owner,
                                           description=src.nb$content$description,
                                           id=src.nb$content$id))
-    } else ## src=dst, regular fork
+    } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
-
+    }
+    rcloud.discovery.set.recently.modified.notebook(new.nb$content$id, new.nb$content$updated_at)
+    # github does not return the content with a fork
+    if ("thumb.png.b64" %in% names(new.nb$content$files))
+      rcloud.discovery.set.thumb(id = new.nb$content$id,
+                                 thumb_png = rcloud.get.notebook(new.nb$content$id, raw=TRUE)$content$files$thumb.png.b64$content)
     ## inform the UI as well
     if (!is.null(group))
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
+
+    rcloud.update.fork.count(id)
     new.nb
 }
+
+rcloud.get.notebook.forks <- function(id)
+  get.gist.forks(id, ctx = .rcloud.get.gist.context())
+
+rcloud.update.fork.count <- function(id) {
+  count <- length(rcloud.get.notebook.forks(id)$content)
+  rcs.set(rcs.key('.notebook', id, 'forkcount'), count)
+}
+
+rcloud.get.fork.count <- function(id)
+  rcs.get(rcs.key('.notebook', id, 'forkcount'))
+
+rcloud.unauthenticated.get.fork.count <-
+  rcloud.fail.if.unpublished(rcloud.get.fork.count)
+
+rcloud.multiple.notebook.fork.counts <- function(notebooks) {
+  if (!length(notebooks)) return(list())
+  counts <- lapply(rcs.get(rcs.key('.notebook', notebooks, 'forkcount'), list=TRUE),
+                   function(o) if(is.null(o)) 0L else as.integer(o))
+  names(counts) <- notebooks
+  counts
+}
+
+rcloud.unauthenticated.multiple.notebook.fork.counts <- function(notebooks)
+  filter.published(rcloud.multiple.notebook.fork.counts(notebooks))
 
 rcloud.get.users <- function() ## NOTE: this is a bit of a hack, because it abuses the fact that users are first in usr.key...
   ## also note that we are looking deep in the config space - this shold be really much easier ...
   gsub("/.*","",rcs.list(usr.key(user="*", notebook="system", "config", "current", "notebook")))
 
-# sloooow, but we don't have any other way of verifying the owner
-# we could use RCS cache first and then fall back on github?
 notebook.is.mine <- function(id) {
-  nb <- rcloud.get.notebook(id)
-  nb$content$user$login == .session$username
+  # check RCS first
+  user <- rcloud.get.notebook.property(id, 'username')
+  if(is.null(user)) {
+    nb <- rcloud.get.notebook(id)
+    user <- nb$content$user$login
+  }
+  user == .session$username
 }
 
 rcloud.publish.notebook <- function(id)
@@ -428,19 +467,42 @@ rcloud.publish.notebook <- function(id)
 rcloud.unpublish.notebook <- function(id)
   rcloud.remove.notebook.property(id, "public")
 
+property.multiple.notebooks <- function(id, property)
+  if(length(id)>1) {
+    x <- rcloud.get.notebook.property(id, property, list=TRUE)
+    names(x) <- NULL
+    sapply(x, identity) # vectorize
+  } else if(length(id)==1) {
+    list(rcloud.get.notebook.property(id, property))
+  } else NULL
+
+falsify.null <- function(v)
+  sapply(v, function(x) if(is.null(x)) FALSE else x)
+
 rcloud.is.notebook.published <- function(id)
-  !is.null(rcloud.get.notebook.property(id, "public"))
+  as.logical(falsify.null(property.multiple.notebooks(id, "public")))
 
-rcloud.is.notebook.visible <- function(id) {
-  visibility <- rcloud.get.notebook.property(id, "visible")
-  if(is.null(visibility) | length(visibility) == 0) {
-    visibility <- FALSE
+filter.published <- function(ids)
+  filter.notebooks(rcloud.is.notebook.published, ids)
+
+rcloud.is.notebook.visible <- function(id)
+  if(length(id)>1) {
+    falsify.null(property.multiple.notebooks(id, "visible"))
+  } else {
+    visibility <- rcloud.get.notebook.property(id, "visible")
+    # what is the length zero case for?
+    if(is.null(visibility) | length(visibility) == 0) {
+      visibility <- FALSE
+    }
+    visibility
   }
-  visibility
-}
 
-rcloud.set.notebook.visibility <- function(id, value)
+rcloud.set.notebook.visibility <- function(id, value){
   rcloud.set.notebook.property(id, "visible", value != 0);
+  if(value){
+    response <- update.solr(rcloud.get.notebook(id,raw=TRUE),rcloud.notebook.star.count(id))
+  } else {response <- .solr.delete.doc(id)}
+}
 
 rcloud.port.notebooks <- function(url, books, prefix) {
   foreign.ctx <- create.github.context(url)
@@ -579,11 +641,23 @@ rcloud.config.all.notebooks.multiple.users <- function(users) {
   result
 }
 
+rcloud.config.get.all.notebook.info <- function() {
+  users <- rcloud.get.users()
+  notebooks <- rcloud.config.all.notebooks.multiple.users(users)
+  ids <- unlist(notebooks)
+  infos <- rcloud.get.multiple.notebook.infos(ids)
+  stars <- rcloud.multiple.notebook.star.counts(ids)
+  list(users = users, notebooks = notebooks, infos = infos, stars = stars)
+}
+
 rcloud.config.add.notebook <- function(id)
   rcs.set(usr.key(user=.session$username, notebook="system", "config", "notebooks", id), TRUE)
 
-rcloud.config.remove.notebook <- function(id)
+rcloud.config.remove.notebook <- function(id) {
+  # also set visibility for easy filtering
+  rcloud.set.notebook.visibility(id, FALSE)
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
+}
 
 rcloud.config.get.current.notebook <- function() {
   base <- usr.key(user=.session$username, notebook="system", "config", "current")
@@ -602,9 +676,11 @@ rcloud.config.new.notebook.number <- function()
 
 rcloud.config.get.recent.notebooks <- function() {
   keys <- rcs.list(usr.key(user=.session$username, notebook="system", "config", "recent", "*"))
-  vals <- rcs.get(keys, list=TRUE)
-  names(vals) <- gsub(".*/", "", names(vals))
-  vals
+  if(length(keys)>0) {
+    vals <- rcs.get(keys, list=TRUE)
+    names(vals) <- gsub(".*/", "", names(vals))
+    vals
+  } else list()
 }
 
 rcloud.config.set.recent.notebook <- function(id, date)
@@ -634,6 +710,8 @@ rcloud.config.get.alluser.option <- function(key)
 
 # single just changes the format for querying a single notebook (essentially acting as [[1]])
 rcloud.get.notebook.info <- function(id, single=TRUE) {
+  if(length(id) == 0)
+    return(list())
   base <- usr.key(user=".notebook", notebook=id)
   fields <- c("source", "username", "description", "last_commit", "visible")
   keys <- rcs.key(rep(base, each=length(fields)), fields)
@@ -642,13 +720,25 @@ rcloud.get.notebook.info <- function(id, single=TRUE) {
       names(results) <- fields
       results
   } else {
-      if (!length(id)) lapply(fields, function(o) character()) else
-      lapply(split(results, rep(id, each=length(fields))), function(o) { names(o) = fields; o })
+      if (!length(id)) lapply(fields, function(o) character()) else {
+         ## results are indiviudal keys - we have to convert that into
+	 ## a list of attibutes
+	 i0 <- seq_along(fields)
+	 l <- lapply((seq_along(id) - 1L) * length(fields), function(i) { o <- results[i + i0]; names(o) <- fields; o })
+	 names(l) <- id
+         l
+      }
   }
 }
 
+rcloud.unauthenticated.get.notebook.info <-
+  rcloud.fail.if.unpublished(rcloud.get.notebook.info)
+
 rcloud.get.multiple.notebook.infos <- function(ids)
-    rcloud.get.notebook.info(ids, FALSE)
+  rcloud.get.notebook.info(ids, FALSE)
+
+rcloud.unauthenticated.get.multiple.notebook.infos <- function(ids)
+  filter.published(rcloud.get.multiple.notebook.infos(ids))
 
 # notebook properties settable by non-owners
 .anyone.settable = c('source', 'username', 'description', 'last_commit');
@@ -664,8 +754,8 @@ rcloud.set.notebook.info <- function(id, info) {
 # get/set another property of notebook
 # unlike info cache fields above, other properties can only
 # be set by owner
-rcloud.get.notebook.property <- function(id, key)
-  rcs.get(usr.key(user=".notebook", notebook=id, key))
+rcloud.get.notebook.property <- function(id, key, list=FALSE)
+  rcs.get(usr.key(user=".notebook", notebook=id, key), list=list)
 
 rcloud.set.notebook.property <- function(id, key, value)
   if(key %in% .anyone.settable || notebook.is.mine(id)) {

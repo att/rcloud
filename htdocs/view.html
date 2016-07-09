@@ -2,17 +2,10 @@
   <head>
     <title>RCloud</title>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
-    <link rel="stylesheet" type="text/css" href="/css/custom-theme/jquery-ui-1.8.18.custom.css" />
-    <link rel="stylesheet" type="text/css" href="/css/font-awesome.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/jqtree.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/view.css"/>
-
+    <link rel="stylesheet" type="text/css" href="/css/rcloud.css" />
+    <link rel="stylesheet" type="text/css" href="/css/rcloud-view.css" />
     <script src="/lib/js/require-common.js"></script>
     <script type="text/javascript" data-main="/lib/js/require-view.js" src="/lib/js/require.js"></script>
-
     <!-- <script type="text/javascript" src="/lib/dependencies_bundle.js" charset="utf-8"></script> -->
     <!-- <script type="text/javascript">MathJax = undefined;</script> -->
     <!-- <script type="text/javascript" src="/js/rcloud_bundle.js"></script> -->
@@ -22,19 +15,14 @@
 
     <div class="navbar navbar-inverse ">
       <div>
-        <!--div class="container"-->
-          <div id="rcloud-navbar-header" class="navbar-header">
-          </div>
-          <div class="nav-collapse "> <!-- why collapse not work here worx in main -->
-            <ul id="rcloud-navbar-main" class="nav navbar-nav">
-              <li><button id="edit-notebook" title="Edit Notebook" type="button" class="btn btn-link navbar-btn"><i class="icon-edit"></i></button></li>
-              <li><button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn"><i class="icon-play"></i></button></li>
-              <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display: none">[<span id="notebook-title"></span>]</span></a><small id="forked-from-desc"></small></li>
-              <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
-            </ul>
-            <ul id="rcloud-navbar-menu" class="nav navbar-nav navbar-right"></ul>
-          </div>
-        <!--/div-->
+        <div id="rcloud-navbar-header" class="navbar-header"></div>
+        <div class="nav-collapse "> <!-- why collapse not work here worx in main -->
+          <ul id="rcloud-navbar-main" class="nav navbar-nav">
+            <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display: none">[<span id="notebook-title"></span>]</span></a><small id="forked-from-desc"></small></li>
+            <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
+          </ul>
+          <ul id="rcloud-navbar-menu" class="nav navbar-nav navbar-right"></ul>
+        </div>
       </div>
     </div>
 
@@ -50,6 +38,67 @@
         </div>
       </div>
     </div>
+
+    <script type="text/template" id="find-in-notebook-snippet">
+      <div id="find-dialog">
+        <form id="find-form">
+          <i class="icon-search"></i>
+          <div class="find">
+            <span id="find-details">
+              <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+              <span id="match-status"><span id="match-index"></span> of <span id="match-total"></span></span>  
+            </span>    
+            <button id="find-last" class="btn"><i class="icon-arrow-left"></i></button>
+            <button id="find-next" class="btn btn-primary"><i class="icon-arrow-right"></i></button>        
+          </div>
+          <div class="replace" style="display:none">
+            <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
+            <button id="replace" class="btn">Replace</button>
+            <button id="replace-all" class="btn">Replace All</button>
+          </div>
+          <a id="find-close" href="javascript:void(0)"><i class="icon-remove"></i></a>
+        </form>
+      </div>
+    </script>
+
+    <div id="shortcut-dialog" class="modal fade">
+      <div class="modal-dialog">
+          <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
+              <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
+                  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+                  <h4 class="modal-title" style="font-size: 20px">Keyboard shortcuts</h4>
+              </div>
+              <div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;">
+                <div id="shortcut-content"></div>
+              </div>
+          </div>
+      </div>
+    </div>
+
+    <script type="text/template" id="shortcut_dialog_content_template">
+    <% _.each(categories, function(category) { %>
+      <div class="category">
+        <h3><%=category.name%></h3>
+        <table>
+          <tbody>
+            <% _.each(category.shortcuts, function(shortcut) { %>
+              <tr>
+                <td>
+                  <% _.each(shortcut.keys, function(key_combo, index) { %>
+                    <%if(index > 0) {%> / <%}%>
+                    <kbd><%=key_combo%></kbd>
+                  <% }); %>
+                </td>
+                <td>
+                  <%=shortcut.description%>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% }); %>
+    </script>
 
     <script type="text/javascript"
             src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">

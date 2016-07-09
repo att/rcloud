@@ -8,7 +8,8 @@ var shell = (function() {
         notebook_model_ = Notebook.create_model(),
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
-        view_mode_ = false;
+        view_mode_ = false,
+        autosave_timeout_ = 30000;
 
     function on_new(notebook) {
         gistname_ = notebook.id;
@@ -75,7 +76,7 @@ var shell = (function() {
             return version_;
         },
         init: function() {
-            rcloud.get_gist_sources().then(function(sources) {
+            return rcloud.get_gist_sources().then(function(sources) {
                 // de-rserve-ify
                 if(_.isString(sources))
                     sources = [sources];
@@ -89,6 +90,11 @@ var shell = (function() {
                         if(url) gist_urls_[source] = url;
                     });
                 });
+                (rcloud.config ? rcloud.config.get_user_option('autosave-timeout') : Promise.resolve(30))
+                    .then(function(TO) {
+                        if(TO !== null)
+                            autosave_timeout_ = +TO * 1000;
+                    });
             });
         },
         refresh_notebook_title: function() {
@@ -102,6 +108,9 @@ var shell = (function() {
             }
             return view_mode_;
         },
+        autosave_timeout: function() {
+            return autosave_timeout_;
+        },
         scroll_to_end: scroll_to_end,
         new_cell: function(content, language, execute) {
             check_cell_language(language);
@@ -110,7 +119,12 @@ var shell = (function() {
         insert_cell_before: function(content, language, index) {
             check_cell_language(language);
             return notebook_controller_.insert_cell(content, language, index);
-        }, join_prior_cell: function(cell_model) {
+        },
+        insert_cell_after: function(content, language, index) {
+            check_cell_language(language);
+            return notebook_controller_.insert_cell(content, language, index + 1);
+        },
+        join_prior_cell: function(cell_model) {
             return notebook_controller_.join_prior_cell(cell_model);
         }, split_cell: function(cell_model, point1, point2) {
             return notebook_controller_.split_cell(cell_model, point1, point2);
@@ -144,20 +158,22 @@ var shell = (function() {
                                    id: notebook.id
                                   };
                     notebook = Notebook.sanitize(notebook);
-                    notebook.description = transform_description(notebook.description);
-                    var promise_create = open_it ? notebook_controller_.create_notebook(notebook) :
-                            rcloud.create_notebook(notebook, false);
-                    return promise_create
-                        .then(function(result) {
-                            result.fork_of = fork_of;
-                            return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
-                                .then(function() {
-                                    return cryptgroup ?
-                                        rcloud.protection.set_notebook_cryptgroup(result.id, cryptgroup.id, false) :
-                                        undefined;
-                                })
-                                .return(result);
-                        });
+                    return transform_description(notebook.description).then(function(desc) {
+                        notebook.description = desc;
+                        var promise_create = open_it ? notebook_controller_.create_notebook(notebook) :
+                                rcloud.create_notebook(notebook, false);
+                        return promise_create
+                            .then(function(result) {
+                                result.fork_of = fork_of;
+                                return rcloud.set_notebook_property(result.id, 'fork_of', fork_of)
+                                    .then(function() {
+                                        return cryptgroup ?
+                                            rcloud.protection.set_notebook_cryptgroup(result.id, cryptgroup.id, false) :
+                                            undefined;
+                                    })
+                                    .return(result);
+                            });
+                    });
                 });
         }, fork_notebook: function(is_mine, gistname, version) {
             var that = this;
@@ -175,10 +191,10 @@ var shell = (function() {
                          // it would be nice to choose a new name if we've forked someone
                          // else's notebook and we already have a notebook of that name
                          // but this slams into the github concurrency problem
-                        var new_desc = editor.find_next_copy_name(notebook.description);
-                        if(new_desc != notebook.description)
-                            return notebook_controller_.rename_notebook(new_desc);
-                        else
+                        editor.find_next_copy_name(notebook.description).then(function(new_desc) {
+                            if(new_desc != notebook.description)
+                                return notebook_controller_.rename_notebook(new_desc);
+                            else ...
                          */
                         return notebook;
                     });
@@ -247,8 +263,10 @@ var shell = (function() {
                 return url;
             });
         }, open_from_github: function(notebook_or_url) {
-            function isHex(str) {
-                return str.match(/^[a-f0-9]*$/i) !== null;
+            // a gist id is 20 or 32 chars of hex
+            function isGistId(str) {
+                return str.match(/^[a-f0-9]*$/i) !== null &&
+                    [20,32].indexOf(str.length) !== -1;
             }
             var ponents;
             if(notebook_or_url.indexOf('://') > 0) {
@@ -264,8 +282,8 @@ var shell = (function() {
                     // new format URL
                     // [{username}/]{gistid}/{version}
                     // there's an ambiguity between usernames and gist IDs
-                    // so guess that if the first component is not 20 chars of hex, it's a username
-                    if(ponents[0].length != 20 || !isHex(ponents[0]))
+                    // so guess that if the first component is not a gist id, it's a username
+                    if(!isGistId(ponents[0]))
                         ponents.splice(0,1);
                 }
                 else {
@@ -297,6 +315,12 @@ var shell = (function() {
         }, run_notebook: function() {
             RCloud.UI.with_progress(function() {
                 return result.notebook.controller.run_all();
+            }).then(function() {
+                RCloud.UI.command_prompt.focus();
+            });
+        }, run_notebook_from: function(cell_id) {
+            RCloud.UI.with_progress(function() {
+                return result.notebook.controller.run_from(cell_id);
             }).then(function() {
                 RCloud.UI.command_prompt.focus();
             });

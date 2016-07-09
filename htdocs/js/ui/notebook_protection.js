@@ -80,7 +80,7 @@ RCloud.UI.notebook_protection = (function() {
 
             $('#protection-app #tab2 a')
               .tab('show');
-              
+
             this.appScope.initGroups();
           }
         },

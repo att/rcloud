@@ -1,10 +1,12 @@
 ## auto-convert mime-type based on the extension because typically GitHub jsut gives us text/plain
-auto.convert.ext <- c(js = "application/javascript", css ="text/css", html = "text/html")
+auto.convert.ext <- c(js = "application/javascript", css ="text/css", html = "text/html",
+                      png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg",
+                      tiff = "image/tiff", tif = "image/tiff", svg = "image/svg+xml"
+                      )
 
-cookies <- function(headers) {
-  a <- strsplit(rawToChar(headers), "\n")
-  if (length(a) && length(c <- grep("^cookie:", a[[1]], TRUE)) &&
-      length(p <- unlist(strsplit(gsub("^cookie:\\s*", "", a[[1]][c], TRUE), ";\\s*")))) {
+cookies <- function(a) {
+  if (length(a) && length(c <- grep("^cookie:", a, TRUE)) &&
+      length(p <- unlist(strsplit(gsub("^cookie:\\s*", "", a[c], TRUE), ";\\s*")))) {
     ## annoyingly, we can't use strsplit, because it has no limit argument and we need only one =
     keys <- gsub("\\s*=.*", "", p)
     vals <- as.list(gsub("^[^=]+=\\s*", "", p))
@@ -15,6 +17,7 @@ cookies <- function(headers) {
 
 run <- function(url, query, body, headers)
 {
+  headers <- if (is.raw(headers)) strsplit(rawToChar(headers), "\n", TRUE)[[1]] else character()
   cookies <- cookies(headers)
   et <- "Unable to connect to R back-end"
   tryCatch({
@@ -23,6 +26,7 @@ run <- function(url, query, body, headers)
     query <- as.list(query)
     query$.cookies <- cookies
     query$.body <- body
+    query$.headers <- headers
     query$.url <- url
     c <- if (is.null(rcloud.config("rserve.socket"))) RSclient::RS.connect() else RSclient::RS.connect(rcloud.config("rserve.socket"), 0L)
     oc.init <- attr(c, "capabilities")
@@ -84,9 +88,11 @@ run <- function(url, query, body, headers)
       type <- nb$content$files[[extra.path]]$type
 
       ## override types according to the extension (c.f. #680)
-      ac <- which(sapply(seq.int(auto.convert.ext), function(i) isTRUE(grepl(paste0("\\.",names(auto.convert.ext)[i],"$"),extra.path))))
-      if (length(ac)) type <- as.vector(auto.convert.ext[ac[1L]])
-      
+      ## NOTE: we could use mime::guess_type(extra.path, type, type), but we're being conservative for now
+      if (length(grep(".", extra.path, fixed=TRUE))) {
+          nt <- auto.convert.ext[tolower(gsub(".*\\.","",extra.path))]
+          if (!any(is.na(nt))) type <- as.vector(nt)
+      }
       list(payload, type)
     }
   }, error=function(e) {

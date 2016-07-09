@@ -14,6 +14,4 @@ rcs.engine: redis
 solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
 rcloud.alluser.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info
 rcloud.languages: rcloud.r, rcloud.python, rcloud.rmarkdown
-#--optional: set to enable for sending comment notificaion e-mails if desired
-#smtp.server:xxxxxxxxxxxxx
-#email.from:donotreply
+compute.separation.modes: IDE

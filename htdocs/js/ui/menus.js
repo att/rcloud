@@ -113,6 +113,18 @@ RCloud.UI.menus = (function() {
                 sections: RCloud.UI.menu.mode_sections()
             });
             this.add({
+                discover_divider: {
+                    sort: 7000,
+                    type: 'divider',
+                    modes: ['edit']
+                },
+                discover: {
+                    sort: 8000,
+                    type: 'link',
+                    href: '/discover.html',
+                    text: 'Discover',
+                    modes: ['edit']
+                },
                 logout_divider: {
                     sort: 10000,
                     type: 'divider',
@@ -157,7 +169,7 @@ RCloud.UI.menus = (function() {
         load: function(mode) {
             var that = this;
             var where = $('#rcloud-navbar-menu');
-            rcloud.get_conf_values('^rcloud\\.menu\\..*').then(function(menus) {
+            return rcloud.get_conf_values('^rcloud\\.menu\\..*').then(function(menus) {
                 // fun option-parsing crap
                 menus = _.omit(menus, 'r_type', 'r_attributes');
                 var add = {};
@@ -199,7 +211,6 @@ RCloud.UI.menus = (function() {
                 }));
                 where.append(items);
             });
-            return this;
         }
     };
 })();

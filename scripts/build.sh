@@ -43,14 +43,9 @@ if [ ! -e rcloud.support/DESCRIPTION ]; then
 fi
 
 # build JS (if available)
-for dir in htdocs/js  htdocs/lib; do
-    if [ -d $dir/node_modules ]; then
-	echo " - checking JS code in $dir"
-	(cd $dir; make --always-make) || exit 1
-    else
-	echo "   no node.js modules, skipping"
-    fi
-done
+if [ -d ./node_modules ]; then
+    node_modules/grunt-cli/bin/grunt
+fi
 
 # check if we need to worry about mathjax
 sh scripts/fetch-mathjax.sh

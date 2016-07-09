@@ -1,4 +1,4 @@
-useDynLib(rcloud.support, uri_encode, uri_decode, hex2raw)
+useDynLib(rcloud.support, uri_encode, uri_decode, hex2raw, parse_headers)
 exportPattern("^rcloud.*") ## rcloud API
 exportPattern("^w.*")      ## wplot, wdc, wgeo...
 export(rcs.key, rcs.get, rcs.set, rcs.rm, rcs.incr, rcs.decr, rcs.list, usr.key)  ## RCS
@@ -24,6 +24,8 @@ S3method(rcs.decr, RCSff)
 S3method(rcs.list, RCSff)
 
 S3method(print, deferred_result)
+
+S3method(as.character, htmlwidget)
 
 import(gist)
 import(knitr)

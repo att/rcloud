@@ -11,6 +11,7 @@ function ensure_image_has_hash(img)
 
 var MIN_LINES = 2;
 var EXTRA_HEIGHT_SOURCE = 2, EXTRA_HEIGHT_INPUT = 10;
+var scrollable_area = $('#rcloud-cellarea');
 
 function create_cell_html_view(language, cell_model) {
     var ace_widget_;
@@ -52,9 +53,9 @@ function create_cell_html_view(language, cell_model) {
         if(left_controls_)
             left_controls_.controls['cell_number'].set(cell_model.id());
     }
-    function set_widget_height() {
-        outer_ace_div.css('height', (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +
-                                   EXTRA_HEIGHT_SOURCE) + "px");
+    function set_widget_height(widget_height) {
+        outer_ace_div.css('height', widget_height ?
+            widget_height : (ui_utils.ace_editor_height(ace_widget_, MIN_LINES) +  EXTRA_HEIGHT_SOURCE) + "px");
     }
 
     cell_status_ = $("<div class='cell-status nonselectable'></div>");
@@ -75,6 +76,28 @@ function create_cell_html_view(language, cell_model) {
         var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
         above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
+
+        cell_status_.click(function(e) {
+
+            var cell_model = $(this).closest('.notebook-cell').data('rcloud.model');
+
+            if(e.ctrlKey || e.metaKey || e.shiftKey) {
+                e.preventDefault();
+            }
+            cell_model.parent_model.controller.select_cell(cell_model, {
+                is_toggle: (ui_utils.is_a_mac() && e.metaKey) || (!ui_utils.is_a_mac() && e.ctrlKey),
+                is_range : e.shiftKey,
+                is_exclusive: !e.ctrlKey && !e.shiftKey
+            });
+
+            $(':focus').blur();
+
+        }).children().click(function(e) {
+            var target = $(e.target);
+            if(!target.hasClass('cell-number')) {
+                e.stopPropagation();
+            }
+        });
     }
     notebook_cell_div.append(cell_status_);
 
@@ -104,6 +127,16 @@ function create_cell_html_view(language, cell_model) {
         }
     }
 
+    function update_selected() {
+        if(cell_model.is_selected()) {
+            notebook_cell_div.addClass("selected");
+        } else {
+            notebook_cell_div.removeClass("selected");
+        }
+
+        notebook_cell_div.find('.cell-control input[type="checkbox"]').prop('checked', cell_model.is_selected());
+    }
+
     //////////////////////////////////////////////////////////////////////////
 
     var inner_div = $("<div></div>");
@@ -126,6 +159,7 @@ function create_cell_html_view(language, cell_model) {
     inner_div.append(source_div_);
 
     function click_to_edit(div, whether) {
+
         if(whether) {
             set_background_class(code_div_.find('pre'));
             if(am_read_only_===false)
@@ -178,7 +212,7 @@ function create_cell_html_view(language, cell_model) {
         result_div_.empty();
         has_result_ = false;
         if(cell_controls_)
-            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', false);
+            results_button_border(false);
     }
 
     // start trying to refactor out this repetitive nonsense
@@ -193,9 +227,85 @@ function create_cell_html_view(language, cell_model) {
             session.getUndoManager().reset();
         });
         var document = session.getDocument();
+
+        widget.gotoPageUp = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(-1, false);
+        };
+
+        widget.gotoPageDown = function() {
+            widget.renderer.layerConfig.height = $('#rcloud-cellarea').height();
+            widget.$moveByPage(1, false);
+        };
+
+        widget.setAutoScrollEditorIntoView = function(enable) {
+            if (!enable)
+                return;
+            var rect;
+            var self = widget;
+            var shouldScroll = false;
+            if (!widget.$scrollAnchor) {
+                widget.$scrollAnchor = window.document.createElement("div");
+            }
+            var scrollAnchor = widget.$scrollAnchor;
+            scrollAnchor.style.cssText = "position:absolute;";
+
+            $('#rcloud-cellarea').prepend(scrollAnchor);
+
+            var onChangeSelection = widget.on("changeSelection", function() {
+                shouldScroll = true;
+            });
+            var onBeforeRender = widget.renderer.on("beforeRender", function() {
+                if (shouldScroll)
+                    rect = self.renderer.container.getBoundingClientRect();
+            });
+            var onAfterRender = widget.renderer.on("afterRender", function() {
+                if (shouldScroll && rect && self.isFocused()) {
+                    var renderer = self.renderer;
+                    var pos = renderer.$cursorLayer.$pixelPos;
+                    var config = renderer.layerConfig;
+                    var top = pos.top - config.offset;
+
+                    // shouldScoll  = true  = ^
+                    // shouldScroll = false = v
+                    if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                        shouldScroll = true;
+                    } else if (pos.top < config.height &&
+                        pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                        shouldScroll = false;
+                    } else {
+                        shouldScroll = null;
+                    }
+
+                    if (shouldScroll != null) {
+                        var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                        var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                        scroll_top += pos.top;
+
+                        if(shouldScroll) {
+                            $('#rcloud-cellarea').scrollTop(scroll_top);
+                        } else {
+                            $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                        }
+                    }
+                    shouldScroll = rect = null;
+                }
+            });
+            widget.setAutoScrollEditorIntoView = function(enable) {
+                if (enable)
+                    return;
+                delete widget.setAutoScrollEditorIntoView;
+                widget.removeEventListener("changeSelection", onChangeSelection);
+                widget.renderer.removeEventListener("afterRender", onAfterRender);
+                widget.renderer.removeEventListener("beforeRender", onBeforeRender);
+            };
+        };
+
         widget.setOptions({
-            enableBasicAutocompletion: true
+            enableBasicAutocompletion: true,
+            autoScrollEditorIntoView: true
         });
+
         widget.setTheme("ace/theme/chrome");
         session.setUseWrapMode(true);
         return {
@@ -247,8 +357,92 @@ function create_cell_html_view(language, cell_model) {
                 mac: 'Alt-Return',
                 sender: 'editor'
             },
-            exec: function(ace_widget_, args, request) {
+            exec: function() {
                 result.execute_cell();
+            }
+        }, {
+            name: 'executeCellsFromHere',
+            bindKey: {
+                win: 'Shift-Alt-Return',
+                mac: 'Shift-Alt-Return',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'navigateToPreviousCell',
+            bindKey: {
+                win: 'Ctrl-Shift-,',
+                mac: 'Ctrl-Shift-,',
+                sender: 'editor'
+            },
+            exec: function() {
+                var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                if(prior_cell) {
+                    prior_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'navigateToNextCell',
+            bindKey: {
+                win: 'Ctrl-Shift-.',
+                mac: 'Ctrl-Shift-.',
+                sender: 'editor'
+            },
+            exec: function() {
+                var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                if(subsequent_cell) {
+                    subsequent_cell.set_focus();
+                }
+            }
+        }, {
+            name: 'insertCellBefore',
+            bindKey: {
+                win: 'Ctrl-[',
+                mac: 'Cmd-[',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.insert_cell_before("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'insertCellAfter',
+            bindKey: {
+                win: 'Ctrl-]',
+                mac: 'Cmd-]',
+                sender: 'editor'
+            },
+            exec: function() {
+                shell.insert_cell_after("", cell_model.language(), cell_model.id())
+                    .spread(function(_, controller) {
+                        controller.edit_source(true);
+                    });
+            }
+        }, {
+            name: 'blurCell',
+            bindKey: {
+                win: 'Escape',
+                mac: 'Escape',
+                sender: 'editor'
+            },
+            exec: function() {
+                ace_widget_.blur();
+            }
+        }, {
+            name: 'executeAll',
+            bindKey: {
+                win: 'Ctrl-Shift-Enter',
+                mac: 'Ctrl-Shift-Enter',
+                sender: 'editor'
+            },
+            exec: function() {
+                RCloud.UI.run_button.run();
             }
         }]);
         ace_widget_.commands.removeCommands(['find', 'replace']);
@@ -298,6 +492,14 @@ function create_cell_html_view(language, cell_model) {
     }
     function highlight_classes(kind) {
         return 'find-highlight' + ' ' + kind;
+    }
+    function edit_button_border(whether) {
+        if(cell_controls_)
+            cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', whether);
+    }
+    function results_button_border(whether) {
+        if(cell_controls_)
+            cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', whether);
     }
 
     // should be a code preprocessor extension, but i've run out of time
@@ -403,6 +605,9 @@ function create_cell_html_view(language, cell_model) {
         language_updated: function() {
             update_language();
             cell_changed();
+        },
+        selected_updated: function() {
+            update_selected();
         },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
@@ -514,6 +719,8 @@ function create_cell_html_view(language, cell_model) {
             });
             click_to_edit(code_div_.find('pre'), !readonly);
             cell_status_.toggleClass('readonly', readonly);
+            if(readonly)
+                edit_button_border($(source_div_).is(":visible"));
         },
         set_show_cell_numbers: function(whether) {
             left_controls_.set_flag('cell-numbers', whether);
@@ -538,10 +745,14 @@ function create_cell_html_view(language, cell_model) {
                 return;
             }
             if(edit_mode) {
+
+                var offset = scrollable_area.scrollTop();
+
                 if(cell_controls_)
-                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', true);
+                    edit_button_border(true);
                 if(RCloud.language.is_a_markdown(language))
                     this.hide_source(false);
+                var editor_height = code_div_.height();
                 code_div_.hide();
                 create_edit_widget();
                 /*
@@ -574,7 +785,7 @@ function create_cell_html_view(language, cell_model) {
                 // do the two-change dance to make ace happy
                 outer_ace_div.show();
                 ace_widget_.resize(true);
-                set_widget_height();
+                set_widget_height(editor_height);
                 ace_widget_.resize(true);
                 if(cell_controls_)
                     cell_controls_.set_flag('edit', true);
@@ -582,10 +793,12 @@ function create_cell_html_view(language, cell_model) {
                 ace_widget_.resize(); // again?!?
                 ace_widget_.focus();
                 if(event) {
+
+                    scrollable_area.scrollTop(offset);
+
                     var scrollTopOffset = ace_widget_.getSession().getScrollTop();
                     var screenPos = ace_widget_.renderer.pixelToScreenCoordinates(event.pageX, event.pageY - scrollTopOffset);
                     var docPos = ace_session_.screenToDocumentPosition(Math.abs(screenPos.row), Math.abs(screenPos.column));
-
 
                     var Range = ace.require('ace/range').Range;
                     var row = Math.abs(docPos.row), column = Math.abs(docPos.column);
@@ -595,7 +808,7 @@ function create_cell_html_view(language, cell_model) {
             }
             else {
                 if(cell_controls_)
-                    cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', false);
+                    edit_button_border(false);
                 var new_content = update_model();
                 if(new_content!==null) // if any change (including removing the content)
                     cell_model.parent_model.controller.update_cell(cell_model);
@@ -608,17 +821,54 @@ function create_cell_html_view(language, cell_model) {
             edit_mode_ = edit_mode;
             this.change_highlights(highlights_); // restore highlights
         },
+        scroll_into_view: function() {
+            var renderer = ace_widget_.renderer;
+            var rect = renderer.container.getBoundingClientRect();
+            var pos = renderer.$cursorLayer.$pixelPos;
+            var config = renderer.layerConfig;
+            var top = pos.top - config.offset;
+
+            // shouldScoll  = true  = ^
+            // shouldScroll = false = v
+            if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
+                shouldScroll = true;
+            } else if (pos.top < config.height &&
+                pos.top + rect.top + config.lineHeight > window.innerHeight) {
+                shouldScroll = false;
+            } else {
+                shouldScroll = null;
+            }
+
+            if (shouldScroll != null) {
+                var ace_div = $(renderer.$cursorLayer.element).closest('.outer-ace-div');
+                var scroll_top = (ace_div.offset().top + $('#rcloud-cellarea').scrollTop()) - $('#rcloud-cellarea').offset().top;
+                scroll_top += pos.top;
+
+                if(shouldScroll) {
+                    $('#rcloud-cellarea').scrollTop(scroll_top);
+                } else {
+                    $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
+                }
+            }
+        },
+        toggle_source: function() {
+            this.hide_source($(source_div_).is(":visible"));
+        },
         hide_source: function(whether) {
-            if(whether)
+            if(whether) {
                 source_div_.hide();
-            else
+                edit_button_border(false);
+            }
+            else {
                 source_div_.show();
+                edit_button_border(true);
+            }
         },
         toggle_results: function(val) {
             if(val===undefined)
                 val = result_div_.is(':hidden');
             if(cell_controls_)
-                cell_controls_.controls['results'].control.find('i').toggleClass('icon-border', val);
+                results_button_border(val);
             if(val) result_div_.show();
             else result_div_.hide();
         },
@@ -663,6 +913,9 @@ function create_cell_html_view(language, cell_model) {
         },
         get_content: function() { // for debug
             return cell_model.content();
+        },
+        get_selection: function() {
+            return this.ace_widget().getSession().doc.getTextRange(this.ace_widget().selection.getRange());
         },
         reformat: function() {
             if(edit_mode_) {
@@ -714,7 +967,7 @@ function create_cell_html_view(language, cell_model) {
 
     result.edit_source(false);
     return result;
-};
+}
 
 Notebook.Cell.create_html_view = function(cell_model)
 {

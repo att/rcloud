@@ -1,8 +1,15 @@
 function main() {
+
+
     Promise.longStackTraces();
 
     function getURLParameter(name) {
         return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+    }
+
+    if(ui_utils.is_ie()) {
+        RCloud.UI.fatal_dialog("Sorry, RCloud does not currently support IE or Edge. Please try another browser.", "Close");
+        return;
     }
 
     RCloud.UI.init();
@@ -13,7 +20,7 @@ function main() {
                 opts.notebook = getURLParameter("notebook");
                 opts.version = getURLParameter("version");
                 if (opts.notebook === null && getURLParameter("new_notebook"))
-                    opts = {new_notebook: true};
+                    opts.new_notebook = true;
                 var source = getURLParameter("source");
                 if(source) {
                     if(opts.notebook)
@@ -44,9 +51,12 @@ function main() {
         }).then(shell.init.bind(shell))
             .then(editor.init.bind(editor, opts));
     }).catch(function(error) {
-        if (error.message === "Authentication required") {
-            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Please login first!"));
-        } else
+
+        RCloud.UI.shortcut_manager.disable_all();
+
+        if (error.message === "Authentication required")
+            window.location = ui_utils.relogin_uri();
+        else
             RCloud.UI.session_pane.post_rejection(error);
     });
 }

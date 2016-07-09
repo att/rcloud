@@ -6,7 +6,7 @@ RCloud.UI.output_context = (function() {
                 switch(type) {
                 case 'code':
                     return function(text) {
-                        return $('<code></code>').append(text);
+                        return $.el.pre($.el.code(text));
                     };
                 case 'error':
                     return function(text) {

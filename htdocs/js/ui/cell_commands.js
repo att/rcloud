@@ -3,13 +3,13 @@ RCloud.UI.cell_commands = (function() {
 
     function create_command_set(area, div, cell_model, cell_view) {
         var commands_ = extension_.create(area, cell_model, cell_view);
-        _.each(commands_, function(command) {
+        commands_.array.forEach(function(command) {
             command.control.addClass('cell-control');
         });
         var flags_ = {};
-        div.append.apply(div, _.pluck(commands_, 'control'));
+        div.append.apply(div, _.pluck(commands_.array, 'control'));
         return {
-            controls: commands_,
+            controls: commands_.map,
             set_flag: function(flag, value) {
                 var checkf = function(f) {
                     var reverse;
@@ -24,13 +24,13 @@ RCloud.UI.cell_commands = (function() {
                 flags_[flag] = value;
                 extension_.entries(area).forEach(function(cmd) {
                     if(!_.every(cmd.enable_flags, checkf))
-                        commands_[cmd.key].disable();
+                        commands_.map[cmd.key].disable();
                     else
-                        commands_[cmd.key].enable();
+                        commands_.map[cmd.key].enable();
                     if(!_.every(cmd.display_flags, checkf))
-                        commands_[cmd.key].control.hide();
+                        commands_.map[cmd.key].control.hide();
                     else
-                        commands_[cmd.key].control.show();
+                        commands_.map[cmd.key].control.show();
                 });
             }
         };
@@ -44,7 +44,7 @@ RCloud.UI.cell_commands = (function() {
                 // when they are set to container = body
                 $(".tooltip").remove();
                 if (!$(e.currentTarget).hasClass("button-disabled")) {
-                    action(control);
+                    action(control, e);
                 }
             });
             return {
@@ -82,9 +82,14 @@ RCloud.UI.cell_commands = (function() {
                 }
             };
         },
-        create_static: function(html, wrap) {
+        create_static: function(html, wrap, action) {
             var content = $('<span><span/>').html(html);
             var span = wrap ? wrap(content) : content;
+
+            if(action) {
+                action(span);
+            }
+
             return {
                 control: span,
                 enable: function() {},
@@ -188,18 +193,24 @@ RCloud.UI.cell_commands = (function() {
                     area: 'cell',
                     sort: 2000,
                     create: function(cell_model, cell_view) {
-                        return that.create_button("icon-play", "run", function() {
-                            cell_view.execute_cell();
+                        return that.create_button("icon-play", "run", function(control, e) {
+                            if(e.shiftKey) {
+                                shell.run_notebook_from(cell_model.id());
+                            } else {
+                                cell_view.execute_cell();
+                            }
                         });
                     }
                 },
                 edit: {
                     area: 'cell',
                     sort: 3000,
-                    enable_flags: ['modify'],
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit borderable", "toggle edit mode", function() {
-                            cell_view.toggle_edit();
+                            if(cell_model.parent_model.read_only())
+                                cell_view.toggle_source();
+                            else
+                                cell_view.toggle_edit();
                         });
                     }
                 },
@@ -237,24 +248,21 @@ RCloud.UI.cell_commands = (function() {
                         });
                     }
                 },
-                remove: {
-                    area: 'cell',
-                    sort: 5000,
-                    enable_flags: ['modify'],
-                    create: function(cell_model) {
-                        return that.create_button("icon-trash", "remove", function() {
-                            cell_model.parent_model.controller.remove_cell(cell_model);
-                        });
-                    }
-                },
-                grab_affordance: {
+                selection: {
                     area: 'left',
-                    sort: 1000,
+                    sort: 1250,
                     display_flags: ['modify'],
                     create: function(cell_model) {
-                        var svg = "<img src='/img/grab_affordance.svg' type='image/svg+xml'></img>";
-                        return that.create_static(svg, function(x) {
-                            return $("<span class='grab-affordance'>").append(x);
+                        var html = "<input type='checkbox'></input>";
+                        return that.create_static(html, function(x) {
+                            return $("<span class='cell-selection'>").append(x);
+                        }, function(static_content) {
+                            static_content.click(function(e) {
+                                cell_model.parent_model.controller.select_cell(cell_model, {
+                                    is_toggle: !e.shiftKey, 
+                                    is_range : e.shiftKey
+                                });
+                            });
                         });
                     }
                 },
@@ -279,7 +287,8 @@ RCloud.UI.cell_commands = (function() {
                     display_flags: ['cell-numbers'],
                     create: function(cell_model) {
                         return that.create_static(cell_model.id(), function(x) {
-                            return $("<span class='left-indicator'></span>").append('cell ', x);
+                            return $("<span class='left-indicator cell-number'></span>").append('cell ', x);
+                        }, function(static_content) {
                         });
                     }
                 }

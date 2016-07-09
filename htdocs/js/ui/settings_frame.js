@@ -132,7 +132,7 @@ RCloud.UI.settings_frame = (function() {
         text_input_vector: function(opts) {
             opts = _.extend({
                 parse: function(val) {
-                    return val.trim().split(/, */).filter(function(x) { return !!x; });
+                    return val.trim().split(/[, ]+/).filter(function(x) { return !!x; });
                 },
                 format: function(val) {
                     // might be devectorized by rserve.js
@@ -168,6 +168,12 @@ RCloud.UI.settings_frame = (function() {
                     set: function(val) {
                         shell.notebook.controller.show_cell_numbers(val);
                     }
+                }),
+                'panel-layout-by-size': that.checkbox({
+                    sort: 4000,
+                    default_value: true,
+                    needs_reload: true,
+                    label: "Arrange panels by size"
                 }),
                 'addons': that.text_input_vector({
                     sort: 10000,
@@ -220,7 +226,7 @@ RCloud.UI.settings_frame = (function() {
             var option_keys = _.keys(options_);
             if(option_keys.length === 1)
                 option_keys.push("foo"); // evade rcloud scalarizing
-            rcloud.config.get_user_option(option_keys)
+            return rcloud.config.get_user_option(option_keys)
                 .then(function(settings) {
                     for(var key in settings) {
                         if(key==="foo" || key==='r_attributes' || key==='r_type')

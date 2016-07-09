@@ -12,7 +12,7 @@ If you install from sources or git repository then you will need to
 install SOLR. Assuming you have checked out RCloud in `/data/rcloud`
 then you would run
 
-    cd /data/rcloud/conf
+    cd /data/rcloud/conf/solr
     sh solrsetup.sh /data/rcloud/services
 
 It will also start a SOLR instance. You can also start it later using

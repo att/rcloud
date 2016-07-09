@@ -46,8 +46,8 @@ RCloud.UI.session_pane = {
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
         if(!$('#session-info').length) {
-            console.log(['session log; ', msg].join(''));
-             return; // workaround for view mode
+            console.log('session log; ', msg);
+            return; // workaround for view mode
         }
         // one hacky way is to maintain a <pre> that we fill as we go
         // note that R will happily spit out incomplete lines so it's
@@ -62,31 +62,43 @@ RCloud.UI.session_pane = {
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
-        var errclass = 'session-error';
-        if (typeof msg === 'string') {
-            msg = ui_utils.string_error(msg);
-            errclass = 'session-error spare';
-        }
-        else if (typeof msg !== 'object')
-            throw new Error("post_error expects a string or a jquery div");
-        msg.addClass(errclass);
         dest = dest || this.error_dest_;
-        if(dest) { // if initialized, we can use the UI
+        if(!dest || !dest.length) {
+            if(typeof msg === 'object')
+                msg = msg.text();
+            RCloud.UI.fatal_dialog(msg, "Login", ui_utils.relogin_uri());
+        }
+        else {
+            var errclass = 'session-error';
+            if (typeof msg === 'string') {
+                msg = ui_utils.string_error(msg);
+                errclass = 'session-error spare';
+            }
+            else if (typeof msg !== 'object')
+                throw new Error("post_error expects a string or a jquery div");
+            msg.addClass(errclass);
             dest.append(msg);
             this.show_error_area();
             ui_utils.on_next_tick(function() {
                 ui_utils.scroll_to_after($("#session-info"));
             });
         }
-        if(!logged)
-            console.log("pre-init post_error: " + msg.text());
+        if(!logged) {
+            if(typeof msg === 'object')
+                msg = msg.text();
+            console.log("pre-init post_error: " + msg);
+        }
     },
     post_rejection: function(e) { // print exception on stack and then post to UI
         var msg = "";
-        // bluebird will print the message for Chrome/Opera but no other browser
-        if(!window.chrome && e.message)
-            msg += "Error: " + e.message + "\n";
-        msg += e.stack;
+        if(RCloud.is_exception(e))
+            msg = RCloud.exception_message(e);
+        else {
+            // bluebird will print the message for Chrome/Opera but no other browser
+            if(!window.chrome && e.message)
+                msg += "Error: " + e.message + "\n";
+            msg += e.stack;
+        }
         console.log(msg);
         this.post_error(msg, undefined, true);
     }

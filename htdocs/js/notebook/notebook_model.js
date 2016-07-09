@@ -2,8 +2,9 @@
 /*jshint -W083 */
 Notebook.create_model = function()
 {
-    var readonly_ = false;
-    var user_ = "";
+    var readonly_ = false,
+        user_ = "",
+        last_selected_ = undefined;
 
     function last_id(cells) {
         if(cells.length)
@@ -26,6 +27,7 @@ Notebook.create_model = function()
         clear: function() {
             var cells_removed = this.remove_cell(null,last_id(this.cells));
             var assets_removed = this.remove_asset(null,this.assets.length);
+            RCloud.UI.selection_bar.update(this.cells);
             return cells_removed.concat(assets_removed);
         },
         get_asset: function(filename) {
@@ -43,6 +45,12 @@ Notebook.create_model = function()
                     view.asset_appended(asset_model);
                 });
             return changes;
+        },
+        cell_count: function() {
+            return this.cells.length;
+        },
+        selected_count: function() {
+            return _.filter(this.cells, function(cell) { return cell.is_selected(); }).length;
         },
         append_cell: function(cell_model, id, skip_event) {
             cell_model.parent_model = this;
@@ -62,6 +70,7 @@ Notebook.create_model = function()
                 ++id;
                 --n;
             }
+            RCloud.UI.selection_bar.update(this.cells);
             return changes;
         },
         insert_cell: function(cell_model, id, skip_event) {
@@ -102,6 +111,9 @@ Notebook.create_model = function()
                 ++x;
                 ++id;
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
+
             // apply the changes backward so that we're moving each cell
             // out of the way just before putting the next one in its place
             return changes.reverse();
@@ -172,7 +184,59 @@ Notebook.create_model = function()
                 ++id;
                 --n;
             }
+
+            RCloud.UI.selection_bar.update(this.cells);
+
             return changes;
+        },
+        remove_selected_cells: function() {
+            var that = this, changes = [];
+
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return cell.is_selected();
+            })
+            .each(function(cell) {
+                changes = changes.concat(that.remove_cell(cell));
+            });
+
+            RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
+        },
+        invert_selected_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.toggle_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        clear_all_selected_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.deselect_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+        },
+        crop_cells: function() {
+            var that = this, changes = [];
+            _.chain(this.cells)
+            .filter(function(cell) {
+                return !cell.is_selected();
+            })
+            .each(function(cell) {
+                changes = changes.concat(that.remove_cell(cell));
+            });
+            RCloud.UI.selection_bar.update(this.cells);
+
+            return changes;
+        },
+        can_crop_cells: function() {
+            return this.selected_count() && this.selected_count() !== this.cell_count();
+        },
+        select_all_cells: function() {
+            _.each(this.cells, function(cell) {
+                cell.select_cell();
+            });
+            RCloud.UI.selection_bar.update(this.cells);
         },
         move_cell: function(cell_model, before) {
             // remove doesn't change any ids, so we can just remove then add
@@ -182,6 +246,7 @@ Notebook.create_model = function()
                             this.insert_cell(cell_model, before, true) :
                             this.append_cell(cell_model, null, true)),
                 post_index = this.cells.indexOf(cell_model);
+                last_selected_ = post_index;
             _.each(this.views, function(view) {
                 view.cell_moved(cell_model, pre_index, post_index);
             });
@@ -194,12 +259,58 @@ Notebook.create_model = function()
             else
                 return null;
         },
+        subsequent_cell: function(cell_model) {
+            var index = this.cells.indexOf(cell_model);
+            if(index < this.cells.length - 1)
+                return this.cells[index + 1];
+            else
+                return null;
+        },
         change_cell_language: function(cell_model, language) {
             // for this one case we have to use filenames instead of ids
             var pre_name = cell_model.filename();
             cell_model.language(language);
             return [cell_model.change_object({filename: pre_name,
                                               rename: cell_model.filename()})];
+        },
+        select_cell: function(cell_model, modifiers) {
+
+            var that = this;
+
+            var clear_all = function() {
+                _.chain(that.cells)
+                .filter(function(cell) {
+                    return cell.is_selected();
+                })
+                .each(function(cell) {
+                    cell.deselect_cell();
+                });
+            };
+
+            var select_range = function(lower, upper) {
+                clear_all();
+                var items = [];
+                for(var loop = lower; loop <= upper; loop++) {
+                    that.cells[loop].select_cell();
+                }
+            };
+
+            if(modifiers.is_toggle) {
+                cell_model.toggle_cell();
+                last_selected_ = this.cells.indexOf(cell_model);
+            } else if(modifiers.is_exclusive) {
+                clear_all();
+                cell_model.toggle_cell();
+                last_selected_ = this.cells.indexOf(cell_model);
+            } else /* is_range */ {
+
+                var start = this.cells.indexOf(cell_model),
+                    end = last_selected_;
+
+                select_range(Math.min(start, end), Math.max(start, end));
+            }
+
+            RCloud.UI.selection_bar.update(this.cells);
         },
         update_cell: function(cell_model) {
             return [cell_model.change_object()];

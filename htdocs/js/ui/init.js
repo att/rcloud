@@ -1,25 +1,5 @@
 RCloud.UI.init = function() {
 
-
-    $("#fork-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.fork_notebook(is_mine, gistname, version);
-    });
-    $("#revert-notebook").click(function() {
-        var is_mine = shell.notebook.controller.is_mine();
-        var gistname = shell.gistname();
-        var version = shell.version();
-        editor.revert_notebook(is_mine, gistname, version);
-    });
-
-    var saveb = $("#save-notebook");
-    saveb.click(function() {
-        shell.save_notebook();
-    });
-    shell.notebook.controller.save_button(saveb);
-
     RCloud.UI.run_button.init();
 
     //////////////////////////////////////////////////////////////////////////
@@ -43,6 +23,7 @@ RCloud.UI.init = function() {
                 shell.notebook.controller.move_cell(model, next);
             },
             handle: " .cell-status",
+            helper: 'clone',
             scroll: true,
             scrollSensitivity: 40,
             forcePlaceholderSize: true
@@ -63,6 +44,11 @@ RCloud.UI.init = function() {
     RCloud.UI.menus.init();
     RCloud.UI.advanced_menu.init();
     RCloud.UI.navbar.init();
+    RCloud.UI.selection_bar.init();
+
+    // keyboard shortcuts:
+    RCloud.UI.shortcut_manager.init();
+    RCloud.UI.ace_shortcuts.init();
 
     //////////////////////////////////////////////////////////////////////////
     // edit mode things - move more of them here
@@ -81,10 +67,6 @@ RCloud.UI.init = function() {
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
-    $("#edit-notebook").click(function() {
-        window.location = "edit.html?notebook=" + shell.gistname();
-    });
-
     ui_utils.prevent_backspace($(document));
 
     $(document).on('copy', function(e) {
@@ -92,18 +74,8 @@ RCloud.UI.init = function() {
         if($(arguments[0].target).hasClass('ace_text-input') ||
            !$(arguments[0].target).closest($("#output")).size())
             return;
-        var sel = window.getSelection();
-        var offscreen = $('<pre class="offscreen"></pre>');
-        $('body').append(offscreen);
-        for(var i=0; i < sel.rangeCount; ++i) {
-            var range = sel.getRangeAt(i);
-            offscreen.append(range.cloneContents());
-        }
-        offscreen.find('.nonselectable').remove();
-        sel.selectAllChildren(offscreen[0]);
-        window.setTimeout(function() {
-            offscreen.remove();
-        }, 1000);
+
+        ui_utils.select_allowed_elements();
     });
 
     // prevent unwanted document scrolling e.g. by dragging
@@ -124,25 +96,267 @@ RCloud.UI.init = function() {
         shell.refresh_notebook_title();
     });
 
-    // key handlers
-    document.addEventListener("keydown", function(e) {
-        // if we have a save button (e.g. not view mode), prevent browser's default
-        // ctrl/cmd+s and save notebook
-        if(saveb.size()) {
-            if (e.keyCode == 83 && (e.ctrlKey || e.metaKey)) { // ctrl/cmd-S
-                e.preventDefault();
-                shell.save_notebook();
+    // notebook management:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'Notebook Management',
+        id: 'notebook_cell',
+        description: 'Saves the current notebook',
+        keys: {
+            mac: [
+                ['command', 's']
+            ],
+            win: [
+                ['ctrl', 's']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { if(RCloud.UI.navbar.get('save_notebook')) { shell.save_notebook(); } }
+    }, {
+        category: 'Notebook Management',
+        id: 'select_all',
+        description: 'Select all',
+        keys: {
+            mac: [
+                ['command', 'a']
+            ],
+            win: [
+                ['ctrl', 'a']
+            ]
+        },
+        modes: ['writeable'],
+        action: function(e) {
+
+            if(!$(e.target).parents('#find-form').length) {
+                var selection = window.getSelection();
+                selection.removeAllRanges();
+                var range = new Range();
+                range.selectNode(document.getElementById('output'));
+                range.setStartAfter($('.response')[0]);
+                selection.addRange(range);
+            } else {
+                $(e.target).select();
+            }
+
+        }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_undo',
+        description: 'Steps back through the notebook\'s history',
+        keys: {
+            mac: [
+                ['command', 'z']
+            ],
+            win: [
+                ['ctrl', 'z']
+            ]
+        },
+        on_page: ['edit'],
+        action: function() { editor.step_history_undo(); }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_redo',
+        description: 'Steps forwards through the notebook\'s history',
+        keys: {
+            mac: [
+                ['command', 'shift', 'z']
+            ],
+            win: [
+                ['ctrl', 'y']
+            ]
+        },
+        on_page: ['edit'],
+        action: function() { editor.step_history_redo(); }
+    }, {
+        category: 'Notebook Management',
+        id: 'history_revert',
+        description: 'Reverts a notebook',
+        keys: {
+            mac: [
+                ['command', 'e']
+            ],
+            win: [
+                ['ctrl', 'e']
+            ]
+        },
+        on_page: ['edit'],
+        action: function() {
+            if(shell.notebook.controller.is_mine() && shell.version()) {
+                editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
-        // select all ctrl/cmd-a
-        if(e.keyCode == 65 && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            var selection = window.getSelection();
-            selection.removeAllRanges();
-            var range = new Range();
-            range.selectNode(document.getElementById('output'));
-            range.setStartAfter($('.response')[0]);
-            selection.addRange(range);
+    }, {
+        id: 'notebook_run_all',
+        description: 'Run all',
+        keys: {
+            win_mac: [
+                ['ctrl', 'shift', 'enter']
+            ]
+        },
+        action: function() { RCloud.UI.run_button.run(); }
+    }]);
+
+    // cell management:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'Cell Management',
+        id: 'remove_cells',
+        description: 'Removes selected cells',
+        keys: {
+            mac: [
+                ['del'],
+                ['backspace'],
+                ['command', 'backspace']
+            ],
+            win: [
+                ['del'],
+                ['backspace']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { shell.notebook.controller.remove_selected_cells(); }
+    }, {
+        category: 'Cell Management',
+        id: 'invert_cells',
+        description: 'Invert selected cells',
+        keys: {
+            mac: [
+                ['command', 'shift', 'i']
+            ],
+            win: [
+                ['ctrl', 'shift', 'i']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() {
+            shell.notebook.controller.invert_selected_cells();
+            $(':focus').blur();
         }
-    });
+    }, {
+        category: 'Cell Management',
+        id: 'crop_cells',
+        description: 'Crop cells',
+        keys: {
+            mac: [
+                ['command', 'k']
+            ],
+            win: [
+                ['ctrl', 'k']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { shell.notebook.controller.crop_cells(); }
+    }/*, {
+        category: 'Cell Management',
+        id: 'arrow_next_cell',
+        description: 'Enter next cell (from end of current)',
+        keys: {
+            win_mac: ['right']
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'arrow_previous_cell',
+        description: 'Enter previous cell (from start of current)',
+        keys: {
+            win_mac: ['left']
+        },
+        modes: ['writeable']
+    }*/, {
+        category: 'Cell Management',
+        id: 'goto_previous_cell',
+        description: 'Go to previous cell',
+        keys: {
+            win_mac: [
+                ['ctrl', 'shift', '<']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'goto_next_cell',
+        description: 'Go to next cell',
+        keys: {
+            win_mac: [
+                ['ctrl', 'shift', '>']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'insert_cell_before',
+        description: 'Insert cell before current',
+        keys: {
+            win: [
+                ['ctrl', '[']
+            ],
+            mac: [
+                ['command', '[']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management',
+        id: 'insert_cell_after',
+        description: 'Insert cell after current',
+        keys: {
+            win: [
+                ['ctrl', ']']
+            ],
+            mac: [
+                ['command', ']']
+            ]
+        },
+        modes: ['writeable'],
+        action: function() { }
+    }, {
+        category: 'Cell Management',
+        id: 'cell_run_from_here',
+        description: 'Run from this cell on',
+        keys: {
+            win_mac: [
+                ['shift', 'alt', 'enter']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'blur_cell',
+        description: 'Blur Cell/Command Prompt',
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
+        modes: ['writeable']
+    }]);
+
+    // general:
+    RCloud.UI.shortcut_manager.add([{
+        category: 'General',
+        id: 'show_help',
+        description: 'Show shortcuts help',
+        keys: {
+            win_mac: [
+                ['?']
+            ]
+        },
+        modes: ['writeable', 'readonly'],
+        action: function(e) {
+            RCloud.UI.shortcut_dialog.show();
+        }
+    }, {
+        category: 'General',
+        id: 'close_modal',
+        description: 'Close dialog',
+        keys: {
+            win_mac: [
+                ['esc']
+            ]
+        },
+        ignore_clash: true,
+        enable_in_dialogs: true,
+        global: true,
+        action: function() { $('.modal').modal('hide'); }
+    }]);
+
 };

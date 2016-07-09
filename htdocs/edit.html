@@ -2,15 +2,8 @@
   <head>
     <title>RCloud</title>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
-    <link rel="stylesheet" type="text/css" href="/css/jquery-ui.css" />
-    <link rel="stylesheet" type="text/css" href="/css/font-awesome.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/jqtree.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/rmarkdown.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/bootstrap-rcloud-tweaks.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/edit.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/nonselect.css"/>
-    <link rel="stylesheet" type="text/css" href="/css/selectize.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/rcloud.css" />
+    <link rel="stylesheet" type="text/css" href="/css/rcloud-edit.css" />
 
     <!--
 
@@ -37,34 +30,15 @@
 <body style="overflow:hidden">
 <div class="navbar navbar-inverse navbar-fixed-top">
   <div>
-    <!--div class="container"-->
-      <div id="rcloud-navbar-header" class="navbar-header">
-      </div>
-      <div class="nav-collapse">
-        <ul id="rcloud-navbar-main" class="nav navbar-nav">
-          <li><span><a href="#" id="share-link" title="Shareable Link" class="btn btn-link navbar-btn" style="text-decoration:none; padding-right: 0px" target="_blank"><i class="icon-share"></i></a>
-              <span class="dropdown" style="position:relative; margin-left: -2px; padding-right: 12px">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="view-mode"><b class="caret"></b></a>
-                <ul class="dropdown-menu view-menu" id="view-type"></ul>
-              </span>
-          </span></li> <!-- the span breaks the damn bootstrap li > a before .btn business-->
-          <li><button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px"><i class="icon-star-empty"></i><sub><span id="curr-star-count" /></sub></button></li>
-          <li><button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn"><i class="icon-code-fork"></i></button></li>
-          <li><button id="save-notebook" title="Save" type="button" class="btn btn-link navbar-btn disabled" style="display:none;"><i class="icon-save"></i></button></li>
-          <li><button id="revert-notebook" title="Revert" type="button" class="btn btn-link navbar-btn" style="display:none;"><i class="icon-undo"></i></button></li>
-          <li>
-            <span class="button-highlight"></span>
-            <button id="run-notebook" title="Run All" type="button" class="btn btn-link navbar-btn">
-              <i class="icon-play"></i>
-            </button>
-          </li>
-          <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</a></span><small id="forked-from-desc"></small></li>
-          <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
-          <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
-        </ul>
-        <ul id="rcloud-navbar-menu" class="nav navbar-nav navbar-right"></ul>
-      </div>
-    <!--/div-->
+    <div id="rcloud-navbar-header" class="navbar-header"></div>
+    <div class="nav-collapse">
+      <ul id="rcloud-navbar-main" class="nav navbar-nav">
+        <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</a></span><small id="forked-from-desc"></small></li>
+        <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
+        <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
+      </ul>
+      <ul id="rcloud-navbar-menu" class="nav navbar-nav navbar-right"></ul>
+    </div>
   </div>
 </div>
 
@@ -82,14 +56,34 @@
       </span>
     </a>
     <div class="dropdown recent-notebooks-dropdown">
-      <a href="#" class="dropdown-toggle recent-btn" data-toggle="dropdown">Recent</a>
+      <a href="#" class="dropdown-toggle recent-btn" data-toggle="dropdown">Recent<b class="caret"></b></a>
       <ul class="dropdown-menu recent-notebooks-list">
       </ul>
     </div>
   </span>
 </script>
 
-
+<script type="text/template" id="find-in-notebook-snippet">
+  <div id="find-dialog">
+    <form id="find-form">
+      <i class="icon-search"></i>
+      <div class="find">
+        <span id="find-details">
+          <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+          <span id="match-status"><span id="match-index"></span> of <span id="match-total"></span></span>  
+        </span>
+        <button id="find-last" class="btn"><i class="icon-arrow-left"></i></button>
+        <button id="find-next" class="btn btn-primary"><i class="icon-arrow-right"></i></button>
+      </div>
+      <div class="replace" style="display:none">
+        <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
+        <button id="replace" class="btn">Replace</button>
+        <button id="replace-all" class="btn">Replace All</button>
+      </div>
+      <a id="find-close" href="javascript:void(0)"><i class="icon-remove"></i></a>
+    </form>
+  </div>
+</script>
 
 <script type="text/html" id="search-snippet">
   <div class="panel-body" style="padding-bottom: 0;padding-top:3px">
@@ -141,6 +135,9 @@
 
 <script type="text/html" id="help-snippet">
   <div id="help-wrapper" class="panel-body widget-vsize">
+    <a href="#" id="show-shortcuts">
+      <i class="icon-keyboard"></i>Keyboard
+    </a>
     <div id="help-header">
       <form id="help-form" action="#">
         <div class="input-group input-group-sm" style="width: 160px;padding-left: 8px;">
@@ -154,6 +151,27 @@
       </form>
     </div>
     <div id="help-body"></div>
+  </div>
+</script>
+
+<script type="text/html" id="selection-bar-snippet">
+  <div id="selection-bar">
+    <div class="btn-group">
+      <div type="button" class="btn btn-default cell-selection">
+          <input type="checkbox" /><span>&ndash;</span>
+      </div>
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        <span class="caret"></span>
+        <span class="sr-only">Toggle Dropdown</span>
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="selection-menu">
+        <li><a href="javascript:void(0)" data-action="select_all_cells">All</a></li>
+        <li><a href="javascript:void(0)" data-action="clear_all_selected_cells">None</a></li>
+        <li><a href="javascript:void(0)" data-action="invert_selected_cells">Invert</a></li>
+      </ul>
+    </div>
+    <button id="selection-bar-crop" title="Crop cells (delete unselected cells)" type="button" class="btn btn-link navbar-btn"><i class="icon-crop"></i></button>
+    <button id="selection-bar-delete" title="Delete selected cells" type="button" class="btn btn-link navbar-btn"><i class="icon-trash"></i></button>
   </div>
 </script>
 
@@ -242,8 +260,7 @@
 
     <div id="command-prompt" style="float: left; width:100%;
             height: 50px; background:#FFFFFF; border:1px solid
-            #DDDDDD">
-    </div>
+            #DDDDDD"></div>
   </div>
 </script>
 
@@ -265,7 +282,6 @@
   </div>
 </script>
 
-
 <script type="text/html" id="notebook-protection-modal">
 
   <div class="modal-body" id='protection-app' ng-controller='NotebookProtectionController' ng-cloak>
@@ -279,7 +295,7 @@
       <div class="tab-content">
         <!-- first tab -->
         <div class="tab-pane active inner-tab" id="notebook-tab">
-          <div class="row sec">
+          <div class="row sec" style="word-break:break-all;">
             {{notebookFullName}}
           </div>
           <div class="row sec">
@@ -291,7 +307,7 @@
             <span>Assign to Group</span>&nbsp;&nbsp;&nbsp;
             <select ng-model="selectedUserGroup"
                     ng-disabled="sharedStatus !== 'group'"
-                    ng-options="group.name for group in allUserGroups"
+                    ng-options="group.name for group in allUserGroups | orderBy:'name'"
                     ng-change="anotherUserGroupSelected()">
             </select>
           </div>
@@ -306,7 +322,7 @@
             <div class='col-md-6' style='padding-left: 0px;' ng-show="allAdminGroups.length" >
               <span>Select group:</span></br>
               <select ng-model="selectedAdminGroup"
-                      ng-options="group.name for group in allAdminGroups"
+                      ng-options="group.name for group in allAdminGroups | orderBy:'name'"
                       ng-change="anotherAdminGroupSelected()" >
               </select>
             </div>
@@ -355,6 +371,77 @@
   </div>
 </script>
 
+<div id="shortcut-dialog" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
+            <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+                <h4 class="modal-title" style="font-size: 20px">Keyboard shortcuts</h4>
+            </div>
+            <div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;">
+              <div id="shortcut-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/template" id="shortcut_dialog_content_template">
+<% _.each(categories, function(category) { %>
+  <div class="category">
+    <h3><%=category.name%></h3>
+    <table>
+      <tbody>
+        <% _.each(category.shortcuts, function(shortcut) { %>
+          <tr>
+            <td>
+              <% _.each(shortcut.keys, function(key_combo, index) { %>
+                <%if(index > 0) {%> / <%}%>
+                <kbd><%=key_combo%></kbd>
+              <% }); %>
+            </td>
+            <td>
+              <%=shortcut.description%>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+<% }); %>
+</script>
+
+<script type="text/template" id="item_template">
+  <% _.each(notebooks, function(notebook) { %>
+  <div class="grid-item">
+    <a href="edit.html?notebook=<%=notebook.id%>">
+
+      <div class="row" style="position:relative">
+        <div class='header col-sm-10'>
+          <h1><%=notebook.description%></h1>
+          <h2><%=notebook.last_commit%> by <%=notebook.username%> </h2>
+        </div>
+        <div class="star-holder">
+          <button id="star-notebook" title="Add to Interests" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
+            <i class="icon-star"></i><sub><span id="curr-star-count"><%=editor.num_stars(notebook.id)%></span></sub>
+          </button>
+        </div>
+        <div class="fork-holder">
+          <button id="fork-notebook" title="Fork" type="button" class="btn btn-link navbar-btn" style="padding-left: 3px">
+            <i class="icon-code-fork"></i><sub><span id="curr-fork-count"><%=editor.fork_count(notebook.id)%></span></sub>
+          </button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="image-holder col-sm-12">
+          <img src="<%=notebook.image_src%>" class="img-responsive" alt="Responsive image">
+        </div>
+      </div>
+    </a>
+  </div>
+  <% }); %>
+</script>
+
+
 <div class="container nopad" id="main-div">
   <div class="row">
     <div class="col-md-1 col-sm-1 no-padding" style="height:100%" id="left-column">
@@ -367,7 +454,11 @@
       </div>
     </div>
     <div class="col-md-10 col-sm-10 no-padding" id="middle-column">
+
+      <div id="selection-bar"><!-- replaced by load_snippet call --></div>
+
       <div id="rcloud-cellarea">
+
         <span id="notebook-left-resizer" class="notebook-sizer left">
           <span class="bar"></span>
         </span>
@@ -376,6 +467,7 @@
         </span>
 
         <div id="output" class="tab-div">
+        
         </div>
 
         <div id="end-of-output"></div>

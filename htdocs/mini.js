@@ -12,6 +12,11 @@ function main() {
         return res;
     }
 
+    if(ui_utils.is_ie()) {
+        RCloud.UI.fatal_dialog("Sorry, RCloud does not currently support IE or Edge. Please try another browser.", "Close");
+        return;
+    }
+
     rclient = RClient.create({
         debug: false,
         mode: "client", // "IDE" = edit (separated), "call" = API (one process), "client" = JS (currently one process but may change)
@@ -19,11 +24,13 @@ function main() {
         on_connect: function(ocaps) {
             rcloud = RCloud.create(ocaps.rcloud);
             var promise;
+
             if (rcloud.authenticated) {
                 promise = rcloud.session_init(rcloud.username(), rcloud.github_token());
             } else {
                 promise = rcloud.anonymous_session_init();
             }
+
             promise = promise.then(function(hello) {
                 rclient.post_response(hello);
             });
