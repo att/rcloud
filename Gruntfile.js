@@ -75,6 +75,7 @@ module.exports = function (grunt) {
             "htdocs/js/ui/share_button.js",
             "htdocs/js/ui/upload.js",
             "htdocs/js/ui/upload_frame.js",
+            "htdocs/js/ui/thumb_dialog.js",
             "htdocs/js/ui/notebook_protection_logger.js",
             "htdocs/js/ui/notebook_protection.js",
             "htdocs/js/ui/discovery_page.js"
