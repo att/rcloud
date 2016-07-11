@@ -750,6 +750,16 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
 
 #asset-list-wrapper {
     display: table-row;
+
+    #manage-thumb {
+        background: white;
+        position: relative;
+
+        #update-thumb {
+            float: right;
+            margin: 2px;
+        }
+    }
 }
 
 #scratchpad-editor-wrapper {
