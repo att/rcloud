@@ -44,6 +44,14 @@ Notebook.Asset.create_html_view = function(asset_model)
                         .spread(function(_, new_controller) {
                             new_controller.select();
                             asset_model.controller.remove(true);
+
+                            if(!is_thumb(old_asset_name) && is_thumb(new_asset_name)) {
+                                // wasn't, but now is:
+                                thumb_camera.insertBefore(remove);
+                            } else if(is_thumb(old_asset_name) && !is_thumb(new_asset_name)) {
+                                // was, but now isn't
+                                thumb_camera.remove();
+                            }
                         });
                 }
             }
