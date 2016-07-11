@@ -8,6 +8,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                                         'left': '2px',
                                         'opacity': '0.75'
                                     }, true);
+    var thumb_camera = $('<i class="icon-camera"></i>');
     anchor.append(filename_span);
     filename_div.append(anchor);
     anchor.append(remove);
@@ -50,6 +51,9 @@ Notebook.Asset.create_html_view = function(asset_model)
         range.setStart(el.firstChild, 0);
         range.setEnd(el.firstChild, (text.lastIndexOf('.')>0?text.lastIndexOf('.'):text.length));
         return range;
+    }
+    function is_thumb(filename) {
+        return filename === 'thumb.png';
     }
     var editable_opts = {
         change: rename_file,
