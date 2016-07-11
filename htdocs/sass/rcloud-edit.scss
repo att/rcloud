@@ -778,7 +778,7 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
     position: absolute;
     left: 1ex;
     bottom: 1ex;
-    z-index: 10000;
+    z-index: 999;
     display: none;
     text-shadow:
     0 0 0.9em #eee,
@@ -1191,15 +1191,23 @@ a.accordion-toggle.right > i {
 
 .drop-asset-body {
     display: none;
-    opacity:.8;
-    outline: 2px dashed lightslategray;
+    opacity: .9;
+    outline: 5px dashed lightslategray;
     outline-offset:-20px;
     border: 1px solid #999;
     background-color: whitesmoke;
     position:absolute;
-    z-index:999;
+    z-index: 1000;
     height:100%;
     width:100%;
+
+    h1 {
+        vertical-align: middle;
+        position: relative;
+        text-align: center;
+        padding-top: 5%;
+        color: lightslategray;
+    }
 }
 
 /******************************************************************************/
