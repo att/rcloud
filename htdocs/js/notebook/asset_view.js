@@ -8,11 +8,17 @@ Notebook.Asset.create_html_view = function(asset_model)
                                         'left': '2px',
                                         'opacity': '0.75'
                                     }, true);
-    var thumb_camera = $('<i class="icon-camera"></i>');
+    var thumb_camera = $('<i class="icon-camera" style="padding-left: 4px"></i>');
     anchor.append(filename_span);
     filename_div.append(anchor);
+
+    if(is_thumb(asset_model.filename())) {
+        anchor.append(thumb_camera);
+    }
+
     anchor.append(remove);
     var old_asset_name = filename_span.text();
+
     var rename_file = function(v) {
         // this is massively inefficient - actually three round-trips to the server when
         // we could have one!  save, create new asset, delete old one
