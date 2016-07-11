@@ -2,13 +2,13 @@ Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
     var anchor = $("<a href='#'></a>");
-    var filename_span = $("<span  style='cursor:pointer'>" + asset_model.filename() + "</span>");
+    var filename_span = $("<span style='cursor:pointer'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
                                         'left': '2px',
                                         'opacity': '0.75'
                                     }, true);
-    var thumb_camera = $('<i class="icon-camera" style="padding-left: 4px"></i>');
+    var thumb_camera = $('<i class="icon-camera" style="padding-left: 4px; cursor: help;" title="Shown as your notebook\'s thumbnail on the Discover page"></i>');
     anchor.append(filename_span);
     filename_div.append(anchor);
 
