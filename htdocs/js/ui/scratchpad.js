@@ -249,10 +249,8 @@ RCloud.UI.scratchpad = (function() {
             if(!shell.is_view_mode()) {
                 if(this.widget && !binary_mode_)
                     ui_utils.set_ace_readonly(this.widget, readonly);
-                if(readonly)
-                    $('#new-asset').hide();
-                else
-                    $('#new-asset').show();
+
+                $('#new-asset, #update-thumb')[readonly ? 'hide' : 'show']();
             }
         }, update_asset_url: function() {
             if(this.current_model)
