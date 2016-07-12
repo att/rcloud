@@ -184,7 +184,7 @@
       <div id="asset-list-wrapper">
 
         <div id="manage-thumb">
-          <button id="update-thumb" class="btn btn-primary">Update <i class="icon-camera"></i></button>
+          <button id="update-thumb" class="btn btn-primary"><i class="icon-camera"></i></button>
         </div>
         
         <ul class="nav nav-tabs" id="asset-list"
@@ -383,8 +383,16 @@
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
               <h4 class="modal-title" style="font-size: 20px">Update thumbnail</h4>
           </div>
-          <div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;">
-            <!-- <div id="thumb-content">Update your thumb!</div> -->
+          <div class="modal-body" style="padding-top: 0;max-height:calc(100vh - 120px);">
+            <h3>Show off your work on the RCloud Discover Page!</h3>
+            <p>Drop or paste a PNG from the clipboard.</p>
+            <div id="thumb-drop-overlay" class="drop-asset-body">
+              <h1>Drop a PNG here</h1>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <span class="btn btn-cancel">Cancel</span>
+            <span class="btn btn-primary">Update</span>
           </div>
       </div>
   </div>

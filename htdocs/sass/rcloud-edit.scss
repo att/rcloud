@@ -1208,6 +1208,21 @@ a.accordion-toggle.right > i {
         padding-top: 5%;
         color: lightslategray;
     }
+
+    &#thumb-drop-overlay {
+        display: block;
+        position: static;
+        height: 120px;
+        opacity: 0.4;
+
+        &.active {
+            opacity: 1.0;
+        }
+
+        h1 {
+
+        }
+    }
 }
 
 /******************************************************************************/

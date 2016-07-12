@@ -51,11 +51,21 @@ RCloud.UI.scratchpad = (function() {
                 $("#collapse-assets").on("shown.bs.collapse panel-resize", function() {
                     widget.resize();
                 });
+
+                RCloud.UI.thumb_dialog.init();
+
+                $('#update-thumb').click(function() {
+                    RCloud.UI.thumb_dialog.show();
+                });
             }
             function setup_asset_drop() {
                 var showOverlay_;
                 //prevent drag in rest of the page except asset pane and enable overlay on asset pane
                 $(document).on('dragstart dragenter dragover', function (e) {
+
+                    if(RCloud.UI.thumb_dialog.is_visible()) 
+                        return;
+
                     var dt = e.originalEvent.dataTransfer;
                     if(!dt)
                         return;
