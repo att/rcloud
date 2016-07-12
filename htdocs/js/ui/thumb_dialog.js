@@ -2,7 +2,28 @@ RCloud.UI.thumb_dialog = (function() {
 
     var $dialog_ = $('#thumb-dialog'),
         $drop_zone_ = $('#thumb-drop-overlay'),
-        $drop_zone_message_ = $drop_zone_.find('h1');
+        $drop_zone_message_ = $drop_zone_.find('h1'),
+        $drop_zone_remove = $drop_zone_.find('.icon-remove'),
+        $current_thumb_ = $('#current-thumb'),
+        show_current_ = false,
+        dropped_file_ = null,
+        thumb_filename_ = 'thumb.png';
+
+    var add_image = function(selector, img_src) {
+        if(selector.find('img').length === 0) {
+            selector.append($('<img/>'));
+        }
+
+        selector.find('img').attr({
+            'src' : img_src
+        });
+
+        return selector;
+    };
+
+    var set_no_current_thumb = function() {
+        $current_thumb_.children().remove().end().hide();
+    };
 
     var result = {
         init: function() {
@@ -13,12 +34,30 @@ RCloud.UI.thumb_dialog = (function() {
             $dialog_.find('.btn-primary').on('click', function() { 
                 $dialog_.modal('hide'); 
 
-                // todo: update the thumb.png asset:
+                if(dropped_file_) {
+                    //dropped_file_.name = 'thumb.png';
+                    RCloud.UI.upload_with_alerts(true, {files: [dropped_file_] })
+                        .catch(function() {}); // we have special handling for upload errors
+                }
+            });
+
+            $drop_zone_remove.click(function() {
+                $drop_zone_.removeClass('dropped');
+                $drop_zone_.find('img').remove();
+                dropped_file_ = null;
             });
 
             this.setup_asset_drop();
         },
         show: function() {
+
+            // if there is already a thumb asset:
+            if(!_.isUndefined(shell.notebook.model.get_asset(thumb_filename_))) {
+                add_image($current_thumb_, 'http://ngcblog.naturesgardencandles.com/wp-content/uploads/2015/11/Black-Currant-Original-Fragrance-Oil.png')
+                    .show();
+            } else {
+                set_no_current_thumb();
+            }
 
             $drop_zone_.removeClass('active');
 
@@ -34,7 +73,6 @@ RCloud.UI.thumb_dialog = (function() {
             var that = this,
                 showOverlay_;
 
-            //prevent drag in rest of the page except asset pane and enable overlay on asset pane
             $(document).on('dragstart dragenter dragover', function (e) {
 
                 if(!that.is_visible())
@@ -85,7 +123,15 @@ RCloud.UI.thumb_dialog = (function() {
 
                     if(files.length === 1 && files[0].type === 'image/png') {
                         // process:
-                        console.log(files[0]);
+                        dropped_file_ = files[0];
+
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            $drop_zone_.addClass('dropped');
+                            add_image($drop_zone_, e.target.result);
+                        }
+
+                        reader.readAsDataURL(dropped_file_);
                     }
                 },
                 "dragenter dragover": function(e) {
