@@ -1167,8 +1167,6 @@ a.accordion-toggle.right > i {
     color: #428bca
 }
 
-
-
 /*****************************************************************************/
 /* Fix that awful select from webkit */
 
@@ -1211,17 +1209,86 @@ a.accordion-toggle.right > i {
 
     &#thumb-drop-overlay {
         display: block;
-        position: static;
+        position: relative;
         height: 120px;
+        width: 300px;
         opacity: 0.4;
+        float: left;
 
         &.active {
             opacity: 1.0;
         }
 
         h1 {
-
+            text-align: center;
+            width: 150px;
+            vertical-align: middle;
+            color: lightslategray;
+            font-size: 15pt;
+            top: 50%;
+            position: absolute;
+            margin-top: -32px;
+            left: 50%;
+            margin-left: -75px;
+            text-align: center;
         }
+    }
+}
+
+#thumb-dialog {
+
+    .images {
+        margin-bottom: 20px;
+    }
+
+    #current-thumb, #thumb-drop-overlay {
+        width: 250px;
+        height: 250px;
+        float: left;
+    }
+
+    #current-thumb {
+        margin-right: 10px;
+
+        img {
+            width: 100%;
+        }
+    }
+
+    .modal-body {
+
+    }
+
+    #thumb-drop-overlay {
+        .icon-remove {
+            display: none;
+            position: absolute;
+            top: 6px;
+            right: 3px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        &.dropped {
+            .icon-remove {
+                display: block;
+            }
+
+            outline: none;
+            opacity: 1.0;
+
+            & img {
+                max-width: 100%;
+            }
+
+            & h1 {
+                display: none;
+            }
+        }
+    }
+
+    .modal-footer {
+        clear: left;
     }
 }
 
