@@ -21,6 +21,12 @@ RCloud.UI.thumb_dialog = (function() {
         return selector;
     };
 
+    var reset = function() {
+        // remove selected thumb
+        $drop_zone_.removeClass('active dropped');
+        $drop_zone_.find('img').remove();
+    };
+
     var set_no_current_thumb = function() {
         $current_thumb_.children().remove().end().hide();
     };
@@ -29,6 +35,7 @@ RCloud.UI.thumb_dialog = (function() {
         init: function() {
             $dialog_.find('.btn-cancel').on('click', function() { 
                 $dialog_.modal('hide'); 
+                reset();
             });
 
             $dialog_.find('.btn-primary').on('click', function() { 
@@ -39,6 +46,8 @@ RCloud.UI.thumb_dialog = (function() {
                     RCloud.UI.upload_with_alerts(true, {files: [dropped_file_] })
                         .catch(function() {}); // we have special handling for upload errors
                 }
+
+                reset();
             });
 
             $drop_zone_remove.click(function() {
@@ -53,8 +62,8 @@ RCloud.UI.thumb_dialog = (function() {
 
             // if there is already a thumb asset:
             if(!_.isUndefined(shell.notebook.model.get_asset(thumb_filename_))) {
-                add_image($current_thumb_, 'http://ngcblog.naturesgardencandles.com/wp-content/uploads/2015/11/Black-Currant-Original-Fragrance-Oil.png')
-                    .show();
+                //add_image($current_thumb_, 'http://ngcblog.naturesgardencandles.com/wp-content/uploads/2015/11/Black-Currant-Original-Fragrance-Oil.png')
+                    //.show();
             } else {
                 set_no_current_thumb();
             }
