@@ -62,8 +62,8 @@ RCloud.UI.thumb_dialog = (function() {
 
             // if there is already a thumb asset:
             if(!_.isUndefined(shell.notebook.model.get_asset(thumb_filename_))) {
-                //add_image($current_thumb_, 'http://ngcblog.naturesgardencandles.com/wp-content/uploads/2015/11/Black-Currant-Original-Fragrance-Oil.png')
-                    //.show();
+                add_image($current_thumb_, ['notebook.R', shell.gistname(), thumb_filename_].join('/'))
+                    .show();
             } else {
                 set_no_current_thumb();
             }
