@@ -2,10 +2,8 @@ RCloud.UI.thumb_dialog = (function() {
 
     var $dialog_ = $('#thumb-dialog'),
         $drop_zone_ = $('#thumb-drop-overlay'),
-        $drop_zone_message_ = $drop_zone_.find('h1'),
         $drop_zone_remove = $drop_zone_.find('.icon-remove'),
         $current_thumb_ = $('#current-thumb'),
-        show_current_ = false,
         dropped_file_ = null,
         thumb_filename_ = 'thumb.png';
 
@@ -122,13 +120,11 @@ RCloud.UI.thumb_dialog = (function() {
                 }, 100);
             });
 
-            //allow asset drag from local to asset pane and highlight overlay for drop area in asset pane
             $drop_zone_.bind({
                 drop: function (e) {
 
                     e = e.originalEvent || e;
                     var files = (e.files || e.dataTransfer.files);
-                    var dt = e.dataTransfer;
 
                     if(files.length === 1 && files[0].type === 'image/png') {
                         // process:
