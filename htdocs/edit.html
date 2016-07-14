@@ -381,19 +381,27 @@
     <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
           <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
               <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-              <h4 class="modal-title" style="font-size: 20px">Update thumbnail</h4>
+              <h3 class="modal-title">Update thumbnail</h3>
           </div>
-          <div class="modal-body" style="padding-top: 0;max-height:calc(100vh - 120px);">
-            <h3>Show off your work on the RCloud Discover Page.</h3>
-            <div id="current-thumb">
+          <div class="modal-body" style="max-height:calc(100vh - 200px);">
+            <p>Show off your work on the RCloud Discover Page by uploading an image that will be shown alongside your notebook details.</p>
+            
+            <div class="preview">
+              <p>Your current thumb:</p>
+              <div id="current-thumb"></div>
+            </div>
 
+            <div class="preview">
+              <p>New thumb:</p>
+              <div id="thumb-drop-overlay" class="drop-asset-body" data-height="250">
+                <h1>Drop a PNG here</h1>
+                <i class="icon-remove-sign"></i>
+              </div>
             </div>
-            <div id="thumb-drop-overlay" class="drop-asset-body" data-height="250">
-              <h1>Drop a PNG here</h1>
-              <i class="icon-remove-sign"></i>
-            </div>
+
             <br style="clear:both" />
           </div>
+
           <div class="modal-footer">
             <span class="btn btn-cancel">Cancel</span>
             <span class="btn btn-primary">Update</span>

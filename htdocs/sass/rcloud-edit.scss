@@ -1241,10 +1241,14 @@ a.accordion-toggle.right > i {
         margin-bottom: 20px;
     }
 
+    .preview {
+        float: left;
+        font-size: 13px;
+    }
+
     #current-thumb, #thumb-drop-overlay {
         width: 250px;
         min-height: 250px;
-        float: left;
     }
 
     #current-thumb {
@@ -1257,7 +1261,9 @@ a.accordion-toggle.right > i {
     }
 
     .modal-body {
-
+        overflow: auto;
+        padding: 20px;
+        font-size: 13px;
     }
 
     #thumb-drop-overlay {
@@ -1282,6 +1288,7 @@ a.accordion-toggle.right > i {
 
             outline: none;
             opacity: 1.0;
+            height: auto;
 
             & img {
                 max-width: 100%;
@@ -1295,6 +1302,7 @@ a.accordion-toggle.right > i {
 
     .modal-footer {
         clear: left;
+        margin-top: 0;
     }
 }
 
