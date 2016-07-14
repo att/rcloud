@@ -63,8 +63,8 @@ RCloud.UI.thumb_dialog = (function() {
 
             // if there is already a thumb asset:
             if(!_.isUndefined(shell.notebook.model.get_asset(thumb_filename_))) {
-                add_image($current_thumb_, ['notebook.R', shell.gistname(), thumb_filename_].join('/'))
-                    .show();
+                add_image($current_thumb_, ['notebook.R', shell.gistname(), thumb_filename_].join('/'));
+                $current_thumb_.closest('.preview').show();
             } else {
                 set_no_current_thumb();
             }
