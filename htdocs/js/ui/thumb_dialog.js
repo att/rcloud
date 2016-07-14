@@ -2,7 +2,7 @@ RCloud.UI.thumb_dialog = (function() {
 
     var $dialog_ = $('#thumb-dialog'),
         $drop_zone_ = $('#thumb-drop-overlay'),
-        $drop_zone_remove = $drop_zone_.find('.icon-remove'),
+        $drop_zone_remove = $drop_zone_.find('.icon-remove-sign'),
         $current_thumb_ = $('#current-thumb'),
         dropped_file_ = null,
         thumb_filename_ = 'thumb.png';
@@ -23,6 +23,10 @@ RCloud.UI.thumb_dialog = (function() {
         // remove selected thumb
         $drop_zone_.removeClass('active dropped');
         $drop_zone_.find('img').remove();
+        dropped_file_ = null;
+
+        // reset size of drop zone:
+        $drop_zone_.css('height', +$drop_zone_.data('height') + 'px');
     };
 
     var set_no_current_thumb = function() {
@@ -49,9 +53,7 @@ RCloud.UI.thumb_dialog = (function() {
             });
 
             $drop_zone_remove.click(function() {
-                $drop_zone_.removeClass('dropped');
-                $drop_zone_.find('img').remove();
-                dropped_file_ = null;
+                reset();
             });
 
             this.setup_asset_drop();
@@ -133,6 +135,15 @@ RCloud.UI.thumb_dialog = (function() {
                         var reader = new FileReader();
                         reader.onload = function(e) {
                             $drop_zone_.addClass('dropped');
+
+                            // ascertain the size of the image:
+                            var image = new Image();
+                            image.onload = function() {
+                                console.log(image.width, ' x ', image.height);
+                            };
+
+                            image.src = e.target.result;
+
                             add_image($drop_zone_, e.target.result);
                         }
 

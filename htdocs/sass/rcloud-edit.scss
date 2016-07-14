@@ -1243,7 +1243,7 @@ a.accordion-toggle.right > i {
 
     #current-thumb, #thumb-drop-overlay {
         width: 250px;
-        height: 250px;
+        min-height: 250px;
         float: left;
     }
 
@@ -1252,7 +1252,7 @@ a.accordion-toggle.right > i {
         border: 1px solid #999;
 
         img {
-            width: 100%;
+            max-width: 100%;
         }
     }
 
@@ -1261,18 +1261,23 @@ a.accordion-toggle.right > i {
     }
 
     #thumb-drop-overlay {
-        .icon-remove {
+        .icon-remove-sign {
             display: none;
             position: absolute;
             top: 2px;
             right: 3px;
             font-size: 24px;
             cursor: pointer;
+            color: rgba(255, 255, 255, 0.4);
         }
 
         &.dropped {
-            .icon-remove {
+            .icon-remove-sign {
                 display: block;
+
+                &:hover {
+                    color: rgba(255, 255, 255, 0.7);
+                }
             }
 
             outline: none;
