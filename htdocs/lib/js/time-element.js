@@ -1,7 +1,11 @@
+/* This file derived from the Basecamp Local Time library
+ Copyright 2015 Javan Makhmali, Basecamp
+ MIT license
+ https://github.com/basecamp/local_time/blob/master/app/assets/javascripts/local_time.js.coffee
+*/
 (function() {
   'use strict';
 
-  // Shout out to https://github.com/basecamp/local_time/blob/master/app/assets/javascripts/local_time.js.coffee
   var weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
