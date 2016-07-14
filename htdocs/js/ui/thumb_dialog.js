@@ -26,11 +26,12 @@ RCloud.UI.thumb_dialog = (function() {
         dropped_file_ = null;
 
         // reset size of drop zone:
-        $drop_zone_.css('height', +$drop_zone_.data('height') + 'px');
+        $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
     };
 
     var set_no_current_thumb = function() {
-        $current_thumb_.children().remove().end().hide();
+        $current_thumb_.children().remove();
+        $current_thumb_.closest('.preview').hide();
     };
 
     var result = {
@@ -135,15 +136,6 @@ RCloud.UI.thumb_dialog = (function() {
                         var reader = new FileReader();
                         reader.onload = function(e) {
                             $drop_zone_.addClass('dropped');
-
-                            // ascertain the size of the image:
-                            var image = new Image();
-                            image.onload = function() {
-                                console.log(image.width, ' x ', image.height);
-                            };
-
-                            image.src = e.target.result;
-
                             add_image($drop_zone_, e.target.result);
                         }
 
