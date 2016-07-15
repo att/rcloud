@@ -248,6 +248,16 @@ RCloud.UI.cell_commands = (function() {
                         });
                     }
                 },
+                remove: {
+                    area: 'cell',
+                    sort: 5000,
+                    enable_flags: ['modify'],
+                    create: function(cell_model) {
+                        return that.create_button("icon-trash", "remove", function() {
+                            cell_model.parent_model.controller.remove_cell(cell_model);
+                        });
+                    }
+                },
                 selection: {
                     area: 'left',
                     sort: 1250,
