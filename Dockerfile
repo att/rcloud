@@ -1,7 +1,7 @@
 FROM rocker/drd
 
 ## This handle reaches Me
-MAINTAINER "Prateek Baranwal" prateek.baranwal@gmail.com
+MAINTAINER "Prateek Baranwal"
 
 ENV DEBIAN-FRONTEND noninteractive
 ENV ROOT /data/rcloud
