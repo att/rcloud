@@ -364,12 +364,14 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
     content <- .gist.binary.process.outgoing(NULL, content)
 
     res <- create.gist(content, ctx = .rcloud.get.gist.context())
-    if (res$ok && is.current) {
+    if (res$ok) {
         rcloud.discovery.set.recently.modified.notebook(res$content$id, res$content$updated_at)
         if ("thumb.png.b64" %in% names(content$files))
-            rcloud.discovery.set.thumb(id = res$content$id, thumb_png = content$files$thumb.png.b64$content)
-        .session$current.notebook <- res
-        rcloud.reset.session()
+          rcloud.discovery.set.thumb(id = res$content$id, thumb_png = content$files$thumb.png.b64$content)
+        if(is.current) {
+          .session$current.notebook <- res
+          rcloud.reset.session()
+        }
     }
     rcloud.augment.notebook(res)
 }
