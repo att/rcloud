@@ -8695,6 +8695,7 @@ RCloud.UI.menus = (function() {
                     type: 'link',
                     href: '/discover.html',
                     text: 'Discover',
+                    target: '_blank',
                     modes: ['edit']
                 },
                 logout_divider: {
