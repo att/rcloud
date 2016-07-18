@@ -20,14 +20,13 @@ RUN apt-get update \
   git \
   libapparmor1 \
   libedit2 \
-  libssl1.0.0 \
   libssl-dev \
   sudo \
   curl \
   python-dev \
   python-zmq \
   ipython \
-  python-matplotlob
+  python-matplotlib
 
 
 
