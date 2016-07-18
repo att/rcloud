@@ -18,6 +18,7 @@ RUN apt-get update \
   ca-certificates \
   file \
   git \
+  libssl1.0.2 \
   libapparmor1 \
   libedit2 \
   libssl-dev \
@@ -78,7 +79,7 @@ ADD docker           /data/rcloud/docker
 
 ## Get rcloud extention modules
 RUN cd /data/rcloud/rcloud.packages \
-    git clone https://github.com/att/rcloud.shiny.git \
+    && git clone https://github.com/att/rcloud.shiny.git \
     && git clone https://github.com/att/rcloud.params.git \
     && git clone https://github.com/att/rcloud.logo.git \
     && git clone https://github.com/att/rcloud.dcplot.git \
