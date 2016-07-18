@@ -47,6 +47,13 @@ RUN mkdir -p /data/rcloud
 RUN mkdir -p /data/rcloud/data/gists
 RUN chmod -R a+rwx /data/rcloud/data
 
+## Get Pandoc
+RUN cd /tmp \
+    && wget https://s3.amazonaws.com/rstudio-buildtools/pandoc-1.13.1.zip \
+    && unzip ./pandoc-1.13.1.zip \
+    && cp pandoc-1.13.1/linux/debian/x86_64/* /usr/local/bin/ \
+    && rm -rf pandoc-1.13.1
+
 ADD conf             /data/rcloud/conf
 ADD htdocs           /data/rcloud/htdocs
 ADD packages         /data/rcloud/packages
