@@ -27,10 +27,13 @@ RCloud.UI.cell_commands = (function() {
                         commands_.map[cmd.key].disable();
                     else
                         commands_.map[cmd.key].enable();
-                    if(!_.every(cmd.display_flags, checkf))
-                        commands_.map[cmd.key].control.hide();
-                    else
-                        commands_.map[cmd.key].control.show();
+
+                    if(cmd.display_flags) {
+                        if(!_.every(cmd.display_flags, checkf))
+                            commands_.map[cmd.key].control.hide();
+                        else
+                            commands_.map[cmd.key].control.show();
+                    }
                 });
             }
         };
