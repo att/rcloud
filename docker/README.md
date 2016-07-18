@@ -6,7 +6,7 @@
 ### Installation instructions for docker application containers ###
 
 > ##### 1. Linux - Launch Containers
-> `docker run -d -p 8080:8080 att/rcloud`
+> `docker run -d -p 8080:8080 rcl0ud/rcloud`
 
 > ##### 2. Mac/Windows Get Kinematic `https://www.docker.com/products/docker-toolbox`  #####
 > Search for rcloud and Launch Container
