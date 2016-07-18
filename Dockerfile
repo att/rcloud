@@ -23,7 +23,13 @@ RUN apt-get update \
   libssl1.0.0 \
   libssl-dev \
   sudo \
-  curl
+  curl \
+  python-dev \
+  python-zmq \
+  ipython \
+  python-matplotlob
+
+
 
 
 ## A default user system configuration. For historical reasons,
@@ -78,7 +84,7 @@ RUN cd /data/rcloud/rcloud.packages \
     git clone https://github.com/att/rcloud.params.git \
     git clone https://github.com/att/rcloud.logo.git \
     git clone https://github.com/att/rcloud.dcplot.git \
-    R -e "install.packages(c('rcloud.shiny','rpython'),repos=c('http://rforge.net','http://r.research.att.com')"
+    R -e "install.packages(c('rcloud.shiny','rpython2'),repos=c('http://rforge.net','http://r.research.att.com')"
 
 RUN cd /data/rcloud && git apply docker/domainCookie.patch
 RUN cd /data/rcloud \
