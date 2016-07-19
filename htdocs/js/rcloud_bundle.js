@@ -1948,7 +1948,7 @@ function create_cell_html_view(language, cell_model) {
     var current_error_; // text is aggregated
     var change_content_;
     var cell_status_;
-    var above_between_controls_, cell_controls_, left_controls_;
+    var above_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
@@ -1997,7 +1997,7 @@ function create_cell_html_view(language, cell_model) {
         cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
         var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
-        above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
+        above_controls_ = RCloud.UI.cell_commands.decorate('above', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
 
         cell_status_.click(function(e) {
@@ -2636,7 +2636,7 @@ function create_cell_html_view(language, cell_model) {
             am_read_only_ = readonly;
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly );
-            [cell_controls_, above_between_controls_, left_controls_].forEach(function(controls) {
+            [cell_controls_, above_controls_, left_controls_].forEach(function(controls) {
                 if(controls)
                     controls.set_flag('modify', !readonly);
             });
@@ -2851,8 +2851,8 @@ function create_cell_html_view(language, cell_model) {
             return this;
         },
         check_buttons: function() {
-            if(above_between_controls_)
-                above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            if(above_controls_)
+                above_controls_.set_flag('first', !cell_model.parent_model.prior_cell(cell_model));
             return this;
         },
         change_highlights: function(ranges) {
@@ -5017,25 +5017,17 @@ RCloud.UI.cell_commands = (function() {
             extension_ = RCloud.extension.create({
                 defaults: {},
                 sections: {
-                    above_between: {
-                        filter: function(command) {
-                            return command.area === 'above' || command.area === 'between';
-                        }
+                    above: {
+                        filter: RCloud.extension.filter_field('area', 'above')
                     },
                     cell: {
-                        filter: function(command) {
-                            return command.area === 'cell';
-                        }
+                        filter: RCloud.extension.filter_field('area', 'cell')
                     },
                     prompt: {
-                        filter: function(command) {
-                            return command.area === 'prompt';
-                        }
+                        filter: RCloud.extension.filter_field('area', 'prompt')
                     },
                     left: {
-                        filter: function(command) {
-                            return command.area === 'left';
-                        }
+                        filter: RCloud.extension.filter_field('area', 'left')
                     }
                 }
             });
@@ -5056,9 +5048,10 @@ RCloud.UI.cell_commands = (function() {
                     }
                 },
                 join: {
-                    area: 'between',
+                    area: 'above',
                     sort: 2000,
                     enable_flags: ['modify'],
+                    display_flags: ['!first'],
                     create: function(cell_model) {
                         return that.create_button("icon-link", "join cells", function() {
                             shell.join_prior_cell(cell_model);
@@ -5206,25 +5199,7 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         decorate: function(area, div, cell_model, cell_view) {
-            var result = create_command_set(area, div, cell_model, cell_view);
-            switch(area) {
-            case 'above_between':
-                _.extend(result, {
-                    betweenness: function(between) {
-                        extension_.entries('above_between').forEach(function(cmd) {
-                            if(cmd.area === 'between') {
-                                if(between)
-                                    result.controls[cmd.key].control.show();
-                                else
-                                    result.controls[cmd.key].control.hide();
-                            }
-                        });
-                    }
-                });
-                break;
-            default:
-            }
-            return result;
+            return create_command_set(area, div, cell_model, cell_view);
         }
     };
     return result;
@@ -10218,7 +10193,12 @@ RCloud.UI.scratchpad = (function() {
             }
             $("#new-asset > a").click(function() {
                 // FIXME prompt, yuck. I know, I know.
-                var filename = prompt("Choose a filename for your asset").trim();
+                var filename = prompt("Choose a filename for your asset");
+                if (!filename)
+                    return;
+
+                filename = filename.trim();
+
                 if (!filename)
                     return;
                 if (Notebook.is_part_name(filename)) {
