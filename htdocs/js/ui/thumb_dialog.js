@@ -3,7 +3,9 @@ RCloud.UI.thumb_dialog = (function() {
     var $dialog_ = $('#thumb-dialog'),
         $drop_zone_ = $('#thumb-drop-overlay'),
         $footer_ = $dialog_.find('.modal-footer'),
-        $drop_zone_remove = $drop_zone_.find('.icon-remove-sign'),
+        $drop_zone_remove_ = $drop_zone_.find('.icon-remove-sign'),
+        $thumb_upload_ = $('#thumb-upload'),
+        $selected_file_ = $('#selected-file'),
         dropped_file_ = null,
         thumb_filename_ = 'thumb.png';
 
@@ -48,8 +50,12 @@ RCloud.UI.thumb_dialog = (function() {
                 reset();
             });
 
-            $drop_zone_remove.click(function() {
+            $drop_zone_remove_.click(function() {
                 reset();
+            });
+
+            $thumb_upload_.click(function() {
+                $selected_file_.click();
             });
 
             this.setup_asset_drop();
