@@ -598,18 +598,20 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
-ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _) {
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _, on_complete) {
     if(_ === undefined)
         return;
     var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
-        elemtop = 0;
-    for(var i = 3; i<arguments.length; ++i)
+        elemtop = 0,
+        options = on_complete ? { animation: { complete : on_complete }} : {};
+
+    for(var i = 3; i < arguments.length - 1; ++i)
         elemtop += arguments[i].position().top;
     if(elemtop > height)
-        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
+        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
     else if(elemtop < 0)
-        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer);
+        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer, options);
 };
 
 ui_utils.prevent_backspace = function($doc) {

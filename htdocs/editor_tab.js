@@ -845,6 +845,17 @@ var editor = function () {
         ui_utils.scroll_into_view($tree_.parent(), 50, 100, $(node.element));
     }
 
+    function highlight_imported(node) {
+        var p = node.parent;
+        while(p.sort_order===ordering.NOTEBOOK) {
+            $tree_.tree('openNode', p);
+            p = p.parent;
+        }
+        ui_utils.scroll_into_view($tree_.parent(), 150, 150, $(node.element), function() {
+            $(node.element).closest('.jqtree_common').effect('highlight', { color: '#fd0' }, 3000);
+        });
+    }
+
     function select_node(node) {
         $tree_.tree('selectNode', node);
         scroll_into_view(node);
@@ -1476,6 +1487,10 @@ var editor = function () {
                         promise = promise.then(open_last_loadable);
                     return promise;
                 });
+        },
+        highlight_imported_notebook: function(notebook_id) {
+            var select_node = $tree_.tree('getNodeById', '/interests/' + username_ + '/' + notebook_id);
+            highlight_imported(select_node);
         },
         set_notebook_visibility: function(gistname, visible) {
             var promise = set_visibility(gistname, visible);
