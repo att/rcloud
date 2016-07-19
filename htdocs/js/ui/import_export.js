@@ -142,6 +142,9 @@ RCloud.UI.import_export = (function() {
                                     rcloud.create_notebook(notebook, false).then(function(notebook) {
                                         editor.star_notebook(true, {notebook: notebook}).then(function() {
                                             editor.set_notebook_visibility(notebook.id, true);
+
+                                            // highlight the node:
+                                            editor.highlight_imported_notebook(notebook.id);
                                         });
                                     });
 
