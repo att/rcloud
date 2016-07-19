@@ -387,10 +387,14 @@
             <p>Show off your work on the RCloud Discover Page by uploading an image that will be shown alongside your notebook details.</p>
 
             <div id="thumb-drop-overlay" class="drop-asset-body" data-height="250">
-              <h1>Drop a PNG here</h1>
+              <div class="inner">
+                <h1>Drop a PNG here</h1>
+                <h3>or</h3>
+                <input type="file" id="selectedFile" style="display: none;" />
+                <input type="button" class="btn btn-primary" value="Browse..." onclick="document.getElementById('selectedFile').click();" />
+              </div>
               <i class="icon-remove-sign"></i>
             </div>
-
           </div>
 
           <div class="modal-footer">

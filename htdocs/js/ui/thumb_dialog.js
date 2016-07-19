@@ -2,6 +2,7 @@ RCloud.UI.thumb_dialog = (function() {
 
     var $dialog_ = $('#thumb-dialog'),
         $drop_zone_ = $('#thumb-drop-overlay'),
+        $footer_ = $dialog_.find('.modal-footer'),
         $drop_zone_remove = $drop_zone_.find('.icon-remove-sign'),
         dropped_file_ = null,
         thumb_filename_ = 'thumb.png';
@@ -30,12 +31,12 @@ RCloud.UI.thumb_dialog = (function() {
 
     var result = {
         init: function() {
-            $dialog_.find('.btn-cancel').on('click', function() { 
+            $footer_.find('.btn-cancel').on('click', function() { 
                 $dialog_.modal('hide'); 
                 reset();
             });
 
-            $dialog_.find('.btn-primary').on('click', function() { 
+            $footer_.find('.btn-primary').on('click', function() { 
                 $dialog_.modal('hide'); 
 
                 if(dropped_file_) {
