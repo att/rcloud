@@ -127,9 +127,9 @@ RCloud.UI.cell_commands = (function() {
             extension_ = RCloud.extension.create({
                 defaults: {},
                 sections: {
-                    above_between: {
+                    above: {
                         filter: function(command) {
-                            return command.area === 'above' || command.area === 'between';
+                            return command.area === 'above';
                         }
                     },
                     cell: {
@@ -166,9 +166,10 @@ RCloud.UI.cell_commands = (function() {
                     }
                 },
                 join: {
-                    area: 'between',
+                    area: 'above',
                     sort: 2000,
                     enable_flags: ['modify'],
+                    display_flags: ['!first'],
                     create: function(cell_model) {
                         return that.create_button("icon-link", "join cells", function() {
                             shell.join_prior_cell(cell_model);
@@ -316,25 +317,7 @@ RCloud.UI.cell_commands = (function() {
             return this;
         },
         decorate: function(area, div, cell_model, cell_view) {
-            var result = create_command_set(area, div, cell_model, cell_view);
-            switch(area) {
-            case 'above_between':
-                _.extend(result, {
-                    betweenness: function(between) {
-                        extension_.entries('above_between').forEach(function(cmd) {
-                            if(cmd.area === 'between') {
-                                if(between)
-                                    result.controls[cmd.key].control.show();
-                                else
-                                    result.controls[cmd.key].control.hide();
-                            }
-                        });
-                    }
-                });
-                break;
-            default:
-            }
-            return result;
+            return create_command_set(area, div, cell_model, cell_view);
         }
     };
     return result;
