@@ -1190,7 +1190,7 @@ a.accordion-toggle.right > i {
 .drop-asset-body {
     display: none;
     opacity: .9;
-    outline: 5px dashed lightslategray;
+    outline: 3px dashed lightslategray;
     outline-offset:-20px;
     border: 1px solid #999;
     background-color: whitesmoke;
@@ -1212,26 +1212,10 @@ a.accordion-toggle.right > i {
         position: relative;
         height: 120px;
         width: 300px;
-        opacity: 0.4;
         float: left;
 
         &.active {
             opacity: 1.0;
-        }
-
-        h1 {
-            text-align: center;
-            width: 150px;
-            vertical-align: middle;
-            color: lightslategray;
-            font-size: 22pt;
-            top: 50%;
-            position: absolute;
-            margin-top: -62px;
-            left: 50%;
-            line-height: 30pt;
-            margin-left: -75px;
-            text-align: center;
         }
     }
 }
@@ -1242,10 +1226,41 @@ a.accordion-toggle.right > i {
         margin-bottom: 20px;
     }
 
-    #thumb-drop-overlay {
+    .drop-asset-body {
+        outline: 5px dashed rgba(0, 0, 0, 0.2);
+    }
+
+    & #thumb-drop-overlay {
         width: 350px;
         min-height: 350px;
         margin: 15px;
+
+        .inner {
+            text-align: center;
+            width: 150px;
+            top: 50%;
+            position: absolute;
+            margin-top: -112px;
+            left: 50%;
+            line-height: 30pt;
+            margin-left: -75px;
+
+            h1 {
+                text-align: center;
+                vertical-align: middle;
+                color: lightslategray;
+                font-size: 22pt;
+                text-align: center;
+            }
+        }
+
+        &.active {
+            outline: 5px dashed rgba(0, 0, 0, 0.4);
+
+            & .inner {
+                opacity: 0.5;
+            }
+        }
     }
 
     .modal-dialog {
@@ -1286,7 +1301,7 @@ a.accordion-toggle.right > i {
                 max-width: 100%;
             }
 
-            & h1 {
+            & .inner {
                 display: none;
             }
         }
