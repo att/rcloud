@@ -128,24 +128,16 @@ RCloud.UI.cell_commands = (function() {
                 defaults: {},
                 sections: {
                     above: {
-                        filter: function(command) {
-                            return command.area === 'above';
-                        }
+                        filter: RCloud.extension.filter_field('area', 'above')
                     },
                     cell: {
-                        filter: function(command) {
-                            return command.area === 'cell';
-                        }
+                        filter: RCloud.extension.filter_field('area', 'cell')
                     },
                     prompt: {
-                        filter: function(command) {
-                            return command.area === 'prompt';
-                        }
+                        filter: RCloud.extension.filter_field('area', 'prompt')
                     },
                     left: {
-                        filter: function(command) {
-                            return command.area === 'left';
-                        }
+                        filter: RCloud.extension.filter_field('area', 'left')
                     }
                 }
             });
