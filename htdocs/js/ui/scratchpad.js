@@ -55,6 +55,14 @@ RCloud.UI.scratchpad = (function() {
                 RCloud.UI.thumb_dialog.init();
 
                 $('#update-thumb').click(function() {
+
+                    // select the thumb in the assets:
+                    var thumb = shell.notebook.model.get_asset('thumb.png');
+
+                    if(thumb) {
+                        thumb.controller.select();
+                    }
+
                     RCloud.UI.thumb_dialog.show();
                 });
             }
