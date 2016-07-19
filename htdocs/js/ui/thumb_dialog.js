@@ -6,7 +6,7 @@ RCloud.UI.thumb_dialog = (function() {
         $drop_zone_remove_ = $drop_zone_.find('.icon-remove-sign'),
         $thumb_upload_ = $('#thumb-upload'),
         $selected_file_ = $('#selected-file'),
-        dropped_file_ = null,
+        added_file_ = null,
         thumb_filename_ = 'thumb.png';
 
     var add_image = function(selector, img_src) {
@@ -25,10 +25,23 @@ RCloud.UI.thumb_dialog = (function() {
         // remove selected thumb
         $drop_zone_.removeClass('active dropped');
         $drop_zone_.find('img').remove();
-        dropped_file_ = null;
+        added_file_ = null;
 
         // reset size of drop zone:
         $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
+    };
+
+    var upload = function(file) {
+        // process:
+        added_file_ = file;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $drop_zone_.addClass('dropped');
+            add_image($drop_zone_, e.target.result);
+        }
+
+        reader.readAsDataURL(dropped_file_);
     };
 
     var result = {
@@ -41,9 +54,9 @@ RCloud.UI.thumb_dialog = (function() {
             $footer_.find('.btn-primary').on('click', function() { 
                 $dialog_.modal('hide'); 
 
-                if(dropped_file_) {
-                    //dropped_file_.name = 'thumb.png';
-                    RCloud.UI.upload_with_alerts(true, {files: [dropped_file_] })
+                if(added_file_) {
+                    //added_file_.name = 'thumb.png';
+                    RCloud.UI.upload_with_alerts(true, {files: [added_file_] })
                         .catch(function() {}); // we have special handling for upload errors
                 }
 
@@ -56,6 +69,13 @@ RCloud.UI.thumb_dialog = (function() {
 
             $thumb_upload_.click(function() {
                 $selected_file_.click();
+            });
+
+            $selected_file_.change(function(evt) {
+                console.log(evt);
+                upload(evt.target.files[0]);
+                // reset so identical file next time would trigger a change:
+                $selected_file_.val('');
             });
 
             this.setup_asset_drop();
@@ -123,16 +143,7 @@ RCloud.UI.thumb_dialog = (function() {
                     var files = (e.files || e.dataTransfer.files);
 
                     if(files.length === 1 && files[0].type === 'image/png') {
-                        // process:
-                        dropped_file_ = files[0];
-
-                        var reader = new FileReader();
-                        reader.onload = function(e) {
-                            $drop_zone_.addClass('dropped');
-                            add_image($drop_zone_, e.target.result);
-                        }
-
-                        reader.readAsDataURL(dropped_file_);
+                        upload(files[0]);
                     }
                 },
                 "dragenter dragover": function(e) {
