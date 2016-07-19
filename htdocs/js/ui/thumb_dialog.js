@@ -3,7 +3,6 @@ RCloud.UI.thumb_dialog = (function() {
     var $dialog_ = $('#thumb-dialog'),
         $drop_zone_ = $('#thumb-drop-overlay'),
         $drop_zone_remove = $drop_zone_.find('.icon-remove-sign'),
-        $current_thumb_ = $('#current-thumb'),
         dropped_file_ = null,
         thumb_filename_ = 'thumb.png';
 
@@ -27,11 +26,6 @@ RCloud.UI.thumb_dialog = (function() {
 
         // reset size of drop zone:
         $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
-    };
-
-    var set_no_current_thumb = function() {
-        $current_thumb_.children().remove();
-        $current_thumb_.closest('.preview').hide();
     };
 
     var result = {
@@ -60,14 +54,6 @@ RCloud.UI.thumb_dialog = (function() {
             this.setup_asset_drop();
         },
         show: function() {
-
-            // if there is already a thumb asset:
-            if(!_.isUndefined(shell.notebook.model.get_asset(thumb_filename_))) {
-                add_image($current_thumb_, ['notebook.R', shell.gistname(), thumb_filename_].join('/'));
-                $current_thumb_.closest('.preview').show();
-            } else {
-                set_no_current_thumb();
-            }
 
             $drop_zone_.removeClass('active');
 
