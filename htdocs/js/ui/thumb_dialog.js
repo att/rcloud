@@ -2,6 +2,7 @@ RCloud.UI.thumb_dialog = (function() {
 
     var $dialog_ = $('#thumb-dialog'),
         $drop_zone_ = $('#thumb-drop-overlay'),
+        $instruction_ = $drop_zone_.find('.inner'),
         $footer_ = $dialog_.find('.modal-footer'),
         $drop_zone_remove_ = $('#thumb-remove'),
         $thumb_upload_ = $('#thumb-upload'),
@@ -30,6 +31,16 @@ RCloud.UI.thumb_dialog = (function() {
 
         // reset size of drop zone:
         $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
+    };
+
+    var verify = function(selected_file) {
+        var valid = selected_file.length === 1 && selected_file[0].type === 'image/png';
+
+        if(!valid) {
+            $instruction_.effect('shake');
+        }
+
+        return valid;
     };
 
     var upload = function(file) {
@@ -94,10 +105,11 @@ RCloud.UI.thumb_dialog = (function() {
             });
 
             $selected_file_.change(function(evt) {
-                console.log(evt);
-                upload(evt.target.files[0]);
-                // reset so identical file next time would trigger a change:
-                $selected_file_.val('');
+                if(verify(evt.target.files)) {
+                    upload(evt.target.files[0]);
+                    // reset so identical file next time would trigger a change:
+                    $selected_file_.val('');
+                }
             });
 
             this.setup_asset_drop();
@@ -164,7 +176,7 @@ RCloud.UI.thumb_dialog = (function() {
                     e = e.originalEvent || e;
                     var files = (e.files || e.dataTransfer.files);
 
-                    if(files.length === 1 && files[0].type === 'image/png') {
+                    if(verify(files)) {
                         upload(files[0]);
                     }
                 },
