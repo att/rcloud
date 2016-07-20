@@ -89,8 +89,10 @@ RCloud.UI.thumb_dialog = (function() {
 
                 if(added_file_) {
                     //added_file_.name = 'thumb.png';
-                    RCloud.UI.upload_with_alerts(true, {files: [added_file_] })
-                        .catch(function() {}); // we have special handling for upload errors
+                    RCloud.UI.upload_with_alerts(true, {
+                        files: [added_file_],
+                        filenames: [thumb_filename_]
+                    }).catch(function() {}); // we have special handling for upload errors
                 }
 
                 reset();
