@@ -63,6 +63,11 @@ RCloud.UI.thumb_dialog = (function() {
 
     var result = {
         init: function() {
+
+            $dialog_.on('hidden.bs.modal', function() {
+                reset();
+            });
+
             $footer_.find('.btn-cancel').on('click', function() { 
                 $dialog_.modal('hide'); 
                 reset();
