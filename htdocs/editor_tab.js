@@ -320,12 +320,17 @@ var editor = function () {
     }
 
     function get_notebooks_by_user(username) {
+        var already_know = _.pick(notebook_info_, _.filter(Object.keys(notebook_info_), function(id) {
+            return notebook_info_[id].username === username;
+        }));
         return rcloud.config.all_user_notebooks(username)
             .then(get_infos_and_counts)
             .then(function(notebooks_stars) {
                 // merge these notebooks and stars
                 _.extend(notebook_info_, notebooks_stars.notebooks);
                 _.extend(num_stars_, notebooks_stars.num_stars);
+                // additionally, merge any notebooks we already knew about back into the list
+                _.extend(notebooks_stars.notebooks, already_know);
                 return notebooks_stars.notebooks;
             });
     }
