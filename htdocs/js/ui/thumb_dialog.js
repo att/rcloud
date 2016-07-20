@@ -6,6 +6,7 @@ RCloud.UI.thumb_dialog = (function() {
         $drop_zone_remove_ = $('#thumb-remove'),
         $thumb_upload_ = $('#thumb-upload'),
         $selected_file_ = $('#selected-file'),
+        $upload_success_ = $('#upload-success'),
         added_file_ = null,
         thumb_filename_ = 'thumb.png';
 
@@ -39,6 +40,22 @@ RCloud.UI.thumb_dialog = (function() {
         reader.onload = function(e) {
             $drop_zone_.addClass('dropped');
             add_image($drop_zone_, e.target.result);
+
+            // show the complete:
+            $upload_success_.show();
+
+            setTimeout(function() {
+
+                $upload_success_.animate({
+                    'margin-top': '0px', 'opacity' : '0'
+                    }, {
+                        duration: 'fast', 
+                        complete: function() {
+                            $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
+                    }
+                });
+
+            }, 1500);
         }
 
         reader.readAsDataURL(added_file_);
