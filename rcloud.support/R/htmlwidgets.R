@@ -235,3 +235,9 @@ add.iframe.htmlwidget <- function(widget) {
 isEditMode <- function() {
   identical(.session$mode, "IDE")
 }
+
+# you may need this if your widgets insist on spawning in a separate tab
+rcloud.view.recalcitrant.widget <- function(widget) {
+  class(widget) <- setdiff(class(widget), "suppress_viewer")
+  widget
+}
