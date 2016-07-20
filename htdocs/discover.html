@@ -45,7 +45,7 @@
             <% if(notebook.folder_path) { %>
                 <h3><%=notebook.folder_path%></span>
             <% } %>
-            <h2><%=notebook.last_commit%> by <%=notebook.username%></h2>
+            <h2><time-ago datetime="<%=notebook.last_commit%>"><%=notebook.last_commit_date%></time-ago> by <%=notebook.username%></h2>
             <div class="buttons">
               <button class="fork" title="Fork count" type="button" class="btn btn-link navbar-btn">
                 <i class="icon-code-fork"></i><sub><%=notebook.forks%></sub>

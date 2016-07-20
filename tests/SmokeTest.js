@@ -1,4 +1,4 @@
-casper.test.begin("Smoke Test case which covers basic features", 30, function suite(test) {
+casper.test.begin("Smoke Test case which covers basic features", 26, function suite(test) {
 
     var x = require('casper').selectXPath;//required if we detect an element using xpath
     var github_username = casper.cli.options.username;//user input github username
@@ -7,7 +7,12 @@ casper.test.begin("Smoke Test case which covers basic features", 30, function su
     var functions = require(fs.absolute('basicfunctions.js'));//invoke the common functions present in basicfunctions.js
     var notebook_id = '50de72ea14b86aa176c4';//Notebook which consists all the cells like "R, Python, Markdown, Shell"
     var Notebook_name = "TEST_NOTEBOOK";// Notebook name of the importing/Load Notebook
-    var fileName = '/home/travis/build/att/rcloud/tests/PHONE.csv';// File path directory
+    var fileName = "SampleFiles/PHONE.csv";
+    var system = require('system');
+    var currentFile = require('system').args[4];
+    var curFilePath = fs.absolute(currentFile);
+    var curFilePath = curFilePath.replace(currentFile, '');
+    fileName = curFilePath + fileName;
 
     //Notebook paths to check for sharable links
     var Notebook_R = 'http://127.0.0.1:8080/notebook.R/564af357b532422620a6';
@@ -18,7 +23,7 @@ casper.test.begin("Smoke Test case which covers basic features", 30, function su
     var URL, url, NB_ID, URL1;
 
     casper.start(rcloud_url, function () {
-        casper.page.injectJs('jquery-1.10.2.js');//inject jquery codes
+        functions.inject_jquery(casper);
     });
 
     casper.viewport(1024, 768).then(function () {
@@ -27,17 +32,14 @@ casper.test.begin("Smoke Test case which covers basic features", 30, function su
     });
 
     casper.then(function () {
-        test.comment('⌚️  Validating page...');
-        console.log('Validating that the Main page has got loaded properly by \n\
-detecting if some of its elements are visible. Here we are checking for Shareable Link and Logout options');
+        test.comment('⌚️  Validating page for the RCloud page with Shareable link icon and cell trash icon...');
         functions.validation(casper);
     });
 
     //creating new notebok
     casper.then(function () {
         test.comment('⌚️  Creating New Notebook...');
-        this.click("#new-notebook > span:nth-child(1) > i:nth-child(1)");
-        this.wait(5000);
+        functions.create_notebook(casper);
         console.log("Verified that new notebook can be created");
     });
 
@@ -45,6 +47,9 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         test.comment('⌚️  Creating new cell and adding contents to the cell...');
         this.wait(3000);
         functions.addnewcell(casper);
+    });
+
+    casper.wait(2000).then(function () {
         functions.addcontentstocell(casper, content);
     });
 
@@ -102,9 +107,9 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
                 console.log("There is no comment to delete");
             }
         });
-        casper.wait(4000);
-        casper.then(function () {
-            this.test.assertDoesntExist(x(".//*[@id='comments-container']/div/div[2]/div/div"),'Confirmed that entered commment is deleted');
+
+        casper.wait(4000).then(function () {
+            this.test.assertDoesntExist(x(".//*[@id='comments-container']/div/div[2]/div/div"), 'Confirmed that entered commment is deleted');
         });
     });
 
@@ -115,38 +120,42 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
             this.thenOpen(url2);
             this.wait(8000);
         });
+    });
 
-        //Verifying for Load Notebook ID
-        this.then(function () {
-            test.comment('⌚️  Opening notebook using Load Notebook by ID feature...');
-            functions.open_advanceddiv(casper);
-            console.log("Clicking on advanced dropdown");
-            this.wait(2999);
-            casper.setFilter("page.prompt", function (msg, currentValue) {
-                if (msg === "Enter notebook ID or github URL:") { // message between quotes is the alerts message
-                    return notebook_id;
-                }
-            });
-            this.click("#open_from_github");
-            console.log("Using Load Notebook ID we are opening that particular Notebook");
-            this.wait(8000);
+    functions.open_advanceddiv(casper);
+
+    //Verifying for Load Notebook ID
+    casper.wait(2000).then(function () {
+        test.comment('⌚️  Opening notebook using Load Notebook by ID feature...');
+
+        console.log("Clicking on advanced dropdown");
+        this.wait(2999);
+        casper.setFilter("page.prompt", function (msg, currentValue) {
+            if (msg === "Enter notebook ID or github URL:") { // message between quotes is the alerts message
+                return notebook_id;
+            }
         });
+        this.click("#open_from_github");
+        console.log("Using Load Notebook ID we are opening that particular Notebook");
+        this.wait(8000);
+    });
 
-        //Verifying for the notebook name
-        casper.waitForSelector(x(".//*[@id='notebook-title']"), function () {
+    //Verifying for the notebook name
+    casper.then(function () {
+        this.waitForSelector(x(".//*[@id='notebook-title']"), function () {
             var title = this.fetchText(".jqtree-selected > div:nth-child(1) > span:nth-child(1)");
             console.log(title);
             this.test.assertEquals(title, Notebook_name, "Confirmed that User can load Notebook by ID");
         });
     });
 
+
     // Notebook reload
     casper.then(function () {
         var url1 = this.getCurrentUrl();
         this.thenOpen(url1);
-        this.wait(5000);
+        this.wait(8000);
         console.log('Validation of the notebook loading by checking for elements- Shareable link and Logout option ')
-        // functions.validation(casper);
     });
 
     // Click on RunAll and verify the output
@@ -156,8 +165,8 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
     });
 
     //verifying output for the each and ever single cell
-    casper.then(function () {
-        this.wait(10000).then(function () {
+    casper.wait(10000).then(function () {
+        this.then(function () {
             console.log(" Output of various cells ");
             this.test.assertExists(x(".//*[@id='part1.R']/div[3]/div[2]/pre/code"), "R Cell has been executed and Output div is visible");
             this.test.assertSelectorHasText(x(".//*[@id='part1.R']/div[3]/div[2]/pre/code"), "TRUE", "R cell has been produced expected output");
@@ -175,7 +184,7 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         });
     });
 
-    //Verifying for workspace div
+//Verifying for workspace div
     casper.then(function () {
         test.comment('⌚️  Verifying for Workspace and Dataframe Divs contents...');
         this.click('#accordion-right > div:nth-child(3) > div:nth-child(1)');
@@ -186,7 +195,7 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         });
     });
 
-    //Verify for dataframe div
+//Verify for dataframe div
     casper.then(function () {
         console.log("Clicking on dataframe, from the workspace div");
         this.click('#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)');
@@ -197,7 +206,7 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         });
     });
 
-    //Now uploading a binary file to the Notebook
+//Now uploading a binary file to the Notebook
     casper.then(function () {
         this.thenOpen(URL);
         test.comment('⌚️  Uploading binary file to the Notebook ...');
@@ -233,9 +242,7 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         });
     });
 
-    casper.wait(10000);
-
-    casper.then(function () {
+    casper.wait(10000).then(function () {
         console.log(" Verifying file has been uploaded to Notebook or not ");
         this.then(function () {
             this.test.assertSelectorHasText("#asset-list", 'PHONE.csv', 'Uploaded file is present in assets');
@@ -304,7 +311,7 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         })
     });
 
-    //Open Notebook in GitHub
+//Open Notebook in GitHub
     test.comment('⌚️  Opening Notebook in GitHub ...');
     casper.viewport(1366, 768).then(function () {
         this.waitForSelector({type: 'css', path: '#open_in_github'}, function () {
@@ -393,11 +400,8 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         this.wait(5000);
     });
 
-    casper.wait(10000);
-
     //validate if notebook has become private
-    casper.then(function () {
-        functions.validation(casper);
+    casper.wait(10000).then(function () {
         this.mouse.move('.jqtree-selected > div:nth-child(1)');
         this.wait(2000);
         this.waitUntilVisible(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)", function () {
@@ -405,8 +409,7 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
             console.log("Clicking on notebook info");
         });
 
-        this.then(function () {
-            this.wait(3000);
+        this.wait(5000).then(function () {
             status = this.fetchText('.group-link > a:nth-child(1)');
             console.log("notebook is " + status);
             this.test.assertEquals(status, 'private', "The notebook has been converted to private successfully");
@@ -425,16 +428,30 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         this.click('#main-div > p:nth-child(2) > a:nth-child(2)')
     });
     casper.then(function () {
-        this.wait(7000);
+        this.wait(5000);
         this.click('.btn');
         this.wait(4000);
     });
 
     //Open Notebook.R
     casper.thenOpen(Notebook_R, function () {
-        this.echo('Opening Notebook.R as anonymous user ...');
-        this.wait(8000).waitForSelector("body > form:nth-child(1) > input:nth-child(5)");
-        this.wait(8000).test.assertExists("body > form:nth-child(1) > input:nth-child(5)", "Notebook.R opened");
+        if (this.visible('.modal-body')) {
+            console.log('Session reconnect');
+            this.click("button.btn:nth-child(3)");
+            this.then(function () {
+                this.wait(8000);
+                console.log('after clicking Reconnect, validating for Notebook.R');
+                this.echo('Opening Notebook.R as anonymous user ...');
+                this.wait(8000).waitForSelector("body > form:nth-child(1) > input:nth-child(5)");
+                this.wait(8000).test.assertExists("body > form:nth-child(1) > input:nth-child(5)", "Notebook.R opened");
+            });
+        }
+        else {
+            console.log('validating for Notebook.R');
+            this.wait(8000).waitForSelector("body > form:nth-child(1) > input:nth-child(5)");
+            console.log("Session reconnect didnt appear, so the Notebook.R page opened");
+            this.wait(8000).test.assertExists("body > form:nth-child(1) > input:nth-child(5)", "Notebook.R opened");
+        }
     });
 
     //Open View
@@ -456,9 +473,7 @@ detecting if some of its elements are visible. Here we are checking for Shareabl
         }
     }, 5000);
 
-    casper.wait(10000);
-
-    casper.then(function () {
+    casper.wait(10000).then(function () {
         if (this.test.assertVisible(x(".//*[@id='part1.R']/div[2]/div[2]/pre/code"), "Checking for the cell output")) {
             console.log("Cell output is visible");
         }

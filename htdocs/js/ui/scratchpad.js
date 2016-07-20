@@ -130,7 +130,12 @@ RCloud.UI.scratchpad = (function() {
             }
             $("#new-asset > a").click(function() {
                 // FIXME prompt, yuck. I know, I know.
-                var filename = prompt("Choose a filename for your asset").trim();
+                var filename = prompt("Choose a filename for your asset");
+                if (!filename)
+                    return;
+
+                filename = filename.trim();
+
                 if (!filename)
                     return;
                 if (Notebook.is_part_name(filename)) {
