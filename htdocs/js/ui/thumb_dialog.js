@@ -41,7 +41,7 @@ RCloud.UI.thumb_dialog = (function() {
             add_image($drop_zone_, e.target.result);
         }
 
-        reader.readAsDataURL(dropped_file_);
+        reader.readAsDataURL(added_file_);
     };
 
     var result = {
