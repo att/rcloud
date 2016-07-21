@@ -77,7 +77,9 @@ Notebook.Asset.create_html_view = function(asset_model)
     anchor.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
-        
+        //ugly fix, but desperate times call for desperate measures.        
+        //$('#scratchpad-binary object').css('position', 'static')      
+         //   .css('position', 'absolute');
     });
     remove.click(function() {
         asset_model.controller.remove();
