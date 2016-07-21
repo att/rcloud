@@ -780,6 +780,7 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
     bottom: 1ex;
     z-index: 999;
     display: none;
+    text-decoration: none;
     text-shadow:
     0 0 0.9em #eee,
     0 0 0.9em #eee,
@@ -801,7 +802,7 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
 }
 
 #asset-link:hover {
-    text-decoration: none;
+    //text-decoration: none;
     font-weight: 500;
 }
 
