@@ -71,7 +71,6 @@
                     .then(function(content) {
                         if(_.isString(content) && Notebook.empty_for_github(content))
                             throw new Error("empty");
-                        //return upload_asset(file.name, content);
                         return upload_asset(use_filenames ? replace_filenames[file.name] : file.name, content);
                     });
             });
