@@ -1729,16 +1729,23 @@ Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
     var anchor = $("<a href='#'></a>");
-    var filename_span = $("<span  style='cursor:pointer'>" + asset_model.filename() + "</span>");
+    var filename_span = $("<span style='cursor:pointer'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
                                         'left': '2px',
                                         'opacity': '0.75'
                                     }, true);
+    var thumb_camera = $('<i class="icon-camera" style="padding-left: 4px; cursor: help;" title="Shown as your notebook\'s thumbnail on the Discover page"></i>');
     anchor.append(filename_span);
     filename_div.append(anchor);
+
+    if(is_thumb(asset_model.filename())) {
+        anchor.append(thumb_camera);
+    }
+
     anchor.append(remove);
     var old_asset_name = filename_span.text();
+
     var rename_file = function(v) {
         // this is massively inefficient - actually three round-trips to the server when
         // we could have one!  save, create new asset, delete old one
@@ -1764,6 +1771,14 @@ Notebook.Asset.create_html_view = function(asset_model)
                         .spread(function(_, new_controller) {
                             new_controller.select();
                             asset_model.controller.remove(true);
+
+                            if(!is_thumb(old_asset_name) && is_thumb(new_asset_name)) {
+                                // wasn't, but now is:
+                                thumb_camera.insertBefore(remove);
+                            } else if(is_thumb(old_asset_name) && !is_thumb(new_asset_name)) {
+                                // was, but now isn't
+                                thumb_camera.remove();
+                            }
                         });
                 }
             }
@@ -1778,6 +1793,9 @@ Notebook.Asset.create_html_view = function(asset_model)
         range.setEnd(el.firstChild, (text.lastIndexOf('.')>0?text.lastIndexOf('.'):text.length));
         return range;
     }
+    function is_thumb(filename) {
+        return filename === 'thumb.png';
+    }
     var editable_opts = {
         change: rename_file,
         select: select,
@@ -1786,9 +1804,6 @@ Notebook.Asset.create_html_view = function(asset_model)
     anchor.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
-        //ugly fix, but desperate times call for desperate measures.
-        $('#scratchpad-binary object').css('position', 'static')
-                .css('position', 'absolute');
     });
     remove.click(function() {
         asset_model.controller.remove();
@@ -4709,6 +4724,15 @@ RCloud.language = (function() {
                 controller.select();
             });
         }
+
+        var use_filenames = false, replace_filenames = {};
+        if(options.filenames && options.files.length === options.filenames.length) {
+            use_filenames = true;
+            for(var loop = 0; loop < options.filenames.length; loop++) {
+                replace_filenames[options.files[loop].name] = options.filenames[loop];
+            }
+        }
+
         return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
@@ -4718,7 +4742,7 @@ RCloud.language = (function() {
                     .then(function(content) {
                         if(_.isString(content) && Notebook.empty_for_github(content))
                             throw new Error("empty");
-                        return upload_asset(file.name, content);
+                        return upload_asset(use_filenames ? replace_filenames[file.name] : file.name, content);
                     });
             });
     };
@@ -9352,7 +9376,11 @@ RCloud.UI.selection_bar = (function() {
         $selection_checkbox,
         $dropdown_toggle,
         $delete_button,
-        $cell_selection;
+        $crop_button,
+        $cell_selection,
+        $selected_details,
+        $selected_count,
+        $cell_count;
 
     var reset = function() {
         $selection_checkbox.prop('checked', false);
@@ -9369,6 +9397,9 @@ RCloud.UI.selection_bar = (function() {
             $delete_button = $selection_bar.find('#selection-bar-delete');
             $crop_button = $selection_bar.find('#selection-bar-crop');
             $cell_selection = $selection_bar.find('.cell-selection');
+            $selected_details = $delete_button.find('span');
+            $selected_count = $selection_bar.find('#selected-count');
+            $cell_count = $selection_bar.find('#cell-count');
 
             $selection_bar
                 .find('.btn-default input[type="checkbox"]').click(function(e) {
@@ -9425,6 +9456,11 @@ RCloud.UI.selection_bar = (function() {
             // delete/crop buttons' enabled status based on selection count:
             $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
             $crop_button[shell.notebook.controller.can_crop_cells() ? 'removeClass' : 'addClass']('disabled');
+
+            // delete details:
+            $selected_count.text(selected_count);
+            $cell_count.text(cell_count);
+            $selected_details[selected_count !== 0 ? 'show' : 'hide']();
         },
         hide: function() {
             $('#selection-bar').hide();
@@ -10132,11 +10168,29 @@ RCloud.UI.scratchpad = (function() {
                 $("#collapse-assets").on("shown.bs.collapse panel-resize", function() {
                     widget.resize();
                 });
+
+                RCloud.UI.thumb_dialog.init();
+
+                $('#update-thumb').click(function() {
+
+                    // select the thumb in the assets:
+                    var thumb = shell.notebook.model.get_asset('thumb.png');
+
+                    if(thumb) {
+                        thumb.controller.select();
+                    }
+
+                    RCloud.UI.thumb_dialog.show();
+                });
             }
             function setup_asset_drop() {
                 var showOverlay_;
                 //prevent drag in rest of the page except asset pane and enable overlay on asset pane
                 $(document).on('dragstart dragenter dragover', function (e) {
+
+                    if(RCloud.UI.thumb_dialog.is_visible())
+                        return;
+
                     var dt = e.originalEvent.dataTransfer;
                     if(!dt)
                         return;
@@ -10320,10 +10374,8 @@ RCloud.UI.scratchpad = (function() {
             if(!shell.is_view_mode()) {
                 if(this.widget && !binary_mode_)
                     ui_utils.set_ace_readonly(this.widget, readonly);
-                if(readonly)
-                    $('#new-asset').hide();
-                else
-                    $('#new-asset').show();
+
+                $('#new-asset, #update-thumb')[readonly ? 'hide' : 'show']();
             }
         }, update_asset_url: function() {
             if(this.current_model)
@@ -11277,6 +11329,231 @@ RCloud.UI.upload_frame = {
     }
 };
 
+
+RCloud.UI.thumb_dialog = (function() {
+
+    var $dialog_ = $('#thumb-dialog'),
+        $drop_zone_ = $('#thumb-drop-overlay'),
+        $instruction_ = $drop_zone_.find('.inner'),
+        $footer_ = $dialog_.find('.modal-footer'),
+        $drop_zone_remove_ = $('#thumb-remove'),
+        $thumb_upload_ = $('#thumb-upload'),
+        $selected_file_ = $('#selected-file'),
+        $upload_success_ = $('#upload-success'),
+        added_file_ = null,
+        thumb_filename_ = 'thumb.png';
+
+    var utils = {
+        is_visible: function() {
+            return $dialog_.is(':visible');
+        },
+        add_image: function(selector, img_src) {
+            if(selector.find('img').length === 0) {
+                selector.append($('<img/>'));
+            }
+
+            selector.find('img').attr({
+                'src' : img_src
+            });
+
+            return selector;
+        },
+        reset: function() {
+            // remove selected thumb
+            $drop_zone_.removeClass('active dropped');
+            $drop_zone_.find('img').remove();
+            added_file_ = null;
+
+            // reset size of drop zone:
+            $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
+        },
+        verify: function(selected_file) {
+            var valid = selected_file.length === 1 && selected_file[0].type === 'image/png';
+
+            if(!valid) {
+                $instruction_.effect('shake');
+            }
+
+            return valid;
+        },
+        upload: function(file) {
+            // process:
+            added_file_ = file;
+            var that = this;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $drop_zone_.addClass('dropped');
+                that.add_image($drop_zone_, e.target.result);
+
+                // show the complete:
+                $upload_success_.show();
+
+                setTimeout(function() {
+
+                    $upload_success_.animate({
+                        'margin-top': '0px', 'opacity' : '0'
+                        }, {
+                            duration: 'fast',
+                            complete: function() {
+                                $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
+                        }
+                    });
+
+                }, 1500);
+            };
+
+            reader.readAsDataURL(added_file_);
+        },
+        setup_paste: function() {
+
+            var that = this;
+
+            $(document).on('paste', function(event){
+
+                if(!that.is_visible())
+                    return;
+
+                var items = (event.clipboardData || event.originalEvent.clipboardData).items;
+
+                var thumb = _.find(items, function(item) {
+                    return item.kind === 'file';
+                });
+
+                if(thumb && that.verify([thumb])) {
+                    that.upload(thumb.getAsFile());
+                }
+            });
+        },
+        setup_asset_drop: function() {
+
+            var showOverlay_, that = this;
+
+            $(document).on('dragstart dragenter dragover', function (e) {
+
+                if(!that.is_visible())
+                    return;
+
+                var dt = e.originalEvent.dataTransfer;
+
+                if(!dt)
+                    return;
+
+                if (dt.types !== null && (dt.types.indexOf ?
+                     (dt.types.indexOf('Files') != -1 && dt.types.indexOf('text/html') == -1) :
+                     dt.types.contains('application/x-moz-file'))) {
+                    if (!shell.notebook.model.read_only()) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        $drop_zone_.addClass('active');
+                        showOverlay_ = true;
+                    } else {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            });
+
+            $(document).on('drop dragleave', function (e) {
+
+                if(!that.is_visible())
+                    return;
+
+                e.stopPropagation();
+                e.preventDefault();
+                showOverlay_ = false;
+                setTimeout(function() {
+                    if(!showOverlay_) {
+                        $drop_zone_.removeClass('active');
+                    }
+                }, 100);
+            });
+
+            $drop_zone_.bind({
+                drop: function (e) {
+
+                    e = e.originalEvent || e;
+                    var files = (e.files || e.dataTransfer.files);
+
+                    if(that.verify(files)) {
+                        that.upload(files[0]);
+                    }
+                },
+                "dragenter dragover": function(e) {
+                    var dt = e.originalEvent.dataTransfer;
+                    if(!shell.notebook.model.read_only())
+                        dt.dropEffect = 'copy';
+                }
+            });
+        },
+        init: function() {
+
+            var that = this;
+
+            $dialog_.on('hidden.bs.modal', function() {
+                that.reset();
+            });
+
+            $footer_.find('.btn-cancel').on('click', function() {
+                $dialog_.modal('hide');
+                that.reset();
+            });
+
+            $footer_.find('.btn-primary').on('click', function() {
+                $dialog_.modal('hide');
+
+                if(added_file_) {
+                    //added_file_.name = 'thumb.png';
+                    RCloud.UI.upload_with_alerts(true, {
+                        files: [added_file_],
+                        filenames: [thumb_filename_]
+                    }).catch(function() {}); // we have special handling for upload errors
+                }
+
+                that.reset();
+            });
+
+            $drop_zone_remove_.click(function() {
+                that.reset();
+            });
+
+            $thumb_upload_.click(function() {
+                $selected_file_.click();
+            });
+
+            $selected_file_.change(function(evt) {
+                if(that.verify(evt.target.files)) {
+                    that.upload(evt.target.files[0]);
+                    // reset so identical file next time would trigger a change:
+                    $selected_file_.val('');
+                }
+            });
+
+            this.setup_asset_drop();
+            this.setup_paste();
+        },
+        show: function() {
+
+            $drop_zone_.removeClass('active');
+
+            $dialog_.modal({
+                keyboard: true
+            });
+        }
+    };
+
+    return {
+        init: function() {
+            utils.init();
+        },
+        show: function() {
+            utils.show();
+        },
+        is_visible: function() {
+            return utils.is_visible();
+        }
+    };
+})();
 
 RCloud.UI.notebook_protection_logger = {
     timeout: 0,
