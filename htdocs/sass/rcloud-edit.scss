@@ -328,6 +328,11 @@ rect.frame {
         &:hover i {
             text-decoration: none;
         }
+
+        /* currently selected */        
+        & span {
+            display: none;
+        }
     }
 
     .cell-selection {
