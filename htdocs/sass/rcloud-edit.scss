@@ -311,54 +311,50 @@ rect.frame {
     color: rgb(221, 221, 221);
     display: none;
     margin-bottom: 1px;
-}
 
-#selection-bar .btn {
-    height: 19px;
-}
+    .btn {
+        height: 19px;
+    }
 
-#selection-bar .btn input[type="checkbox"] {
-    /*margin: 0 2px;*/
-}
+    #selection-menu {
+        padding-left: 14px;
+    }
 
-#selection-bar #selection-menu {
-    padding-left: 14px;
-}
+    > button {
+        margin: 0 0.2em;
+        color: #454545;
+        padding: 0;
 
-#selection-bar > button {
-    margin: 0 0.2em;
-    color: #454545;
-    padding: 0;
-}
+        &:hover i {
+            text-decoration: none;
+        }
+    }
 
-#selection-bar > button:hover i {
-    text-decoration: none;
-}
+    .cell-selection {
+        position: relative;
+        padding: 3px 8px;
 
-#selection-bar .cell-selection {
-    position: relative;
-    padding: 3px 8px;
-}
+        span {
+            position: absolute;
+            display: none;
+            top: 0px;
+            left: 11px;
+            font-weight: bold;
+            pointer-events: none;
+        }
 
-#selection-bar .cell-selection span {
-    position: absolute;
-    display: none;
-    top: 0px;
-    left: 11px;
-    font-weight: bold;
-    pointer-events: none;
-}
+        input[type="checkbox"] {
+            margin-top: -1px;
+        }
+    }
 
-#selection-bar i {
-    font-size: 130%;
-}
+    i {
+        font-size: 130%;
+    }
 
-#selection-bar .dropdown-menu {
-    font-size: 100%;
-}
-
-.cell-selection input[type="checkbox"] {
-    margin-top: -1px;
+    .dropdown-menu {
+        font-size: 100%;
+    }
 }
 
 .active.edit-markdown {
