@@ -5,7 +5,10 @@ RCloud.UI.selection_bar = (function() {
         $dropdown_toggle,
         $delete_button,
         $crop_button,
-        $cell_selection;
+        $cell_selection,
+        $selected_details,
+        $selected_count,
+        $cell_count;
 
     var reset = function() {
         $selection_checkbox.prop('checked', false);
@@ -22,6 +25,9 @@ RCloud.UI.selection_bar = (function() {
             $delete_button = $selection_bar.find('#selection-bar-delete');
             $crop_button = $selection_bar.find('#selection-bar-crop');
             $cell_selection = $selection_bar.find('.cell-selection');
+            $selected_details = $delete_button.find('span');
+            $selected_count = $selection_bar.find('#selected-count');
+            $cell_count = $selection_bar.find('#cell-count');
 
             $selection_bar
                 .find('.btn-default input[type="checkbox"]').click(function(e) {
@@ -80,7 +86,9 @@ RCloud.UI.selection_bar = (function() {
             $crop_button[shell.notebook.controller.can_crop_cells() ? 'removeClass' : 'addClass']('disabled');
 
             // delete details:
-
+            $selected_count.text(selected_count);
+            $cell_count.text(cell_count);
+            $selected_details[selected_count !== 0 ? 'show' : 'hide']();
         },
         hide: function() {
             $('#selection-bar').hide();
