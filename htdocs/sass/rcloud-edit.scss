@@ -324,14 +324,15 @@ rect.frame {
         margin: 0 0.2em;
         color: #454545;
         padding: 0;
-
-        &:hover i {
-            text-decoration: none;
-        }
+        text-decoration: none;
 
         /* currently selected */        
         & span {
             display: none;
+        }
+
+        & i.icon-trash {
+            padding-right: 4px;
         }
     }
 
