@@ -62,14 +62,14 @@ RCloud.UI.thumb_dialog = (function() {
                     $upload_success_.animate({
                         'margin-top': '0px', 'opacity' : '0'
                         }, {
-                            duration: 'fast', 
+                            duration: 'fast',
                             complete: function() {
                                 $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
                         }
                     });
 
                 }, 1500);
-            }
+            };
 
             reader.readAsDataURL(added_file_);
         },
@@ -78,7 +78,7 @@ RCloud.UI.thumb_dialog = (function() {
             var that = this;
 
             $(document).on('paste', function(event){
-                
+
                 if(!that.is_visible())
                     return;
 
@@ -162,13 +162,13 @@ RCloud.UI.thumb_dialog = (function() {
                 that.reset();
             });
 
-            $footer_.find('.btn-cancel').on('click', function() { 
-                $dialog_.modal('hide'); 
+            $footer_.find('.btn-cancel').on('click', function() {
+                $dialog_.modal('hide');
                 that.reset();
             });
 
-            $footer_.find('.btn-primary').on('click', function() { 
-                $dialog_.modal('hide'); 
+            $footer_.find('.btn-primary').on('click', function() {
+                $dialog_.modal('hide');
 
                 if(added_file_) {
                     //added_file_.name = 'thumb.png';
@@ -212,7 +212,7 @@ RCloud.UI.thumb_dialog = (function() {
 
     return {
         init: function() {
-            utils.init();            
+            utils.init();
         },
         show: function() {
             utils.show();

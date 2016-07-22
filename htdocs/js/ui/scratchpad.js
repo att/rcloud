@@ -71,7 +71,7 @@ RCloud.UI.scratchpad = (function() {
                 //prevent drag in rest of the page except asset pane and enable overlay on asset pane
                 $(document).on('dragstart dragenter dragover', function (e) {
 
-                    if(RCloud.UI.thumb_dialog.is_visible()) 
+                    if(RCloud.UI.thumb_dialog.is_visible())
                         return;
 
                     var dt = e.originalEvent.dataTransfer;

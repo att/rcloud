@@ -456,7 +456,7 @@ rect.frame {
     padding-bottom: 2.5em; /* must be .footer height + 2 * .footer.padding */
 }
 
-#middle-column { 
+#middle-column {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -1335,7 +1335,7 @@ a.accordion-toggle.right > i {
 
 /* from http://en.wikipedia.org/wiki/ANSI_escape_code
    We're using Windows XP colors. They're ugly but they're darker, so they
-   work better in our bright-background cells. 
+   work better in our bright-background cells.
 */
 .vt100 .color-30 { color: black; }
 .vt100 .color-31 { color: rgb(128,0,0); }
