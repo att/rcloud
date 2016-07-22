@@ -1086,6 +1086,11 @@ a.accordion-toggle.right > i {
             color: white;
             text-decoration: none;
             outline: none;
+            border: 1px solid transparent;
+
+            &:hover {
+                border-color: #aaa;
+            }
         }
     }
 }

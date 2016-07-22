@@ -22,6 +22,7 @@ RCloud.UI.panel_loader = (function() {
                                   icon, '\u00a0', title_span);
 
         var heading_content = opts.panel.heading_content ? opts.panel.heading_content() : null;
+
         var heading;
         if(opts.side==='left') {
             heading = $.el.div(heading_attrs,
@@ -29,7 +30,8 @@ RCloud.UI.panel_loader = (function() {
                                heading_content);
         }
         else if(opts.side==='right') {
-            heading = $.el.div(heading_attrs,
+            heading = $.el.div(
+                               heading_attrs,
                                heading_content,
                                heading_link);
         }

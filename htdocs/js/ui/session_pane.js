@@ -1,5 +1,6 @@
 RCloud.UI.session_pane = {
     error_dest_: null,
+    clear_session_: null,
     allow_clear: true,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
@@ -23,6 +24,16 @@ RCloud.UI.session_pane = {
                 that.clear();
             }
         });
+
+        // manual clearing:
+        this.clear_session_ = $('#clear-session');
+        if(this.clear_session_.length) {
+            this.clear_session_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                that.clear();
+            });            
+        }
 
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
