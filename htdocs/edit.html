@@ -178,10 +178,15 @@
 <script type="text/html" id="assets-snippet">
   <div id="scratchpad-wrapper" class="panel-body" style="padding:0;border:0;position:relative;z-index:1;">
     <div id="asset-drop-overlay" class="drop-asset-body">
-      <h1 style="vertical-align:middle;position:relative;text-align:center;padding-top:5%;color: lightslategray">Drop File to Asset</h1>
+      <h1>Drop File to Asset</h1>
     </div>
     <div id="asset-area">
       <div id="asset-list-wrapper">
+
+        <div id="manage-thumb">
+          <button id="update-thumb" class="btn btn-primary" style="display:none"><i class="icon-camera"></i></button>
+        </div>
+        
         <ul class="nav nav-tabs" id="asset-list"
             style="background-color:white; padding-top:5px;
                    padding-left: 5px"><li id="new-asset"><a href="#">[New Asset]</a></li></ul>
@@ -190,7 +195,7 @@
         <div id="scratchpad-editor" class="widget-vsize">
         </div>
         <div id="scratchpad-binary"></div>
-        <a id="asset-link" target="_blank" href="#">link</a>
+        <a id="asset-link" target="_blank" href="#">link <i class="icon-share"></i></a>
       </div>
     </div>
   </div>
@@ -370,6 +375,41 @@
     </div>
   </div>
 </script>
+
+<div id="thumb-dialog" class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
+          <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+              <h3 class="modal-title">Update thumbnail</h3>
+          </div>
+          <div class="modal-body" style="max-height:calc(100vh - 200px);">
+            <p>Show off your work on the RCloud Discover Page by uploading an image that will be shown alongside your notebook details.</p>
+
+            <div id="thumb-drop-overlay" class="drop-asset-body" data-height="250">
+              <div class="inner">
+                <h1>Drop a PNG here</h1>
+                <h3>or</h3>
+                <input type="file" id="selected-file" style="display: none;" />
+                <input type="button" class="btn btn-primary" id="thumb-upload" value="Browse..." />
+              </div>
+
+              <div id="upload-success">
+                <i class="icon-ok-circle"></i>
+                <h3>That looks awesome!</h3>
+              </div>
+
+              <i class="icon-remove" id="thumb-remove"></i>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <span class="btn btn-cancel">Cancel</span>
+            <span class="btn btn-primary">Update</span>
+          </div>
+      </div>
+  </div>
+</div>
 
 <div id="shortcut-dialog" class="modal fade">
     <div class="modal-dialog">

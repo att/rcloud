@@ -51,11 +51,29 @@ RCloud.UI.scratchpad = (function() {
                 $("#collapse-assets").on("shown.bs.collapse panel-resize", function() {
                     widget.resize();
                 });
+
+                RCloud.UI.thumb_dialog.init();
+
+                $('#update-thumb').click(function() {
+
+                    // select the thumb in the assets:
+                    var thumb = shell.notebook.model.get_asset('thumb.png');
+
+                    if(thumb) {
+                        thumb.controller.select();
+                    }
+
+                    RCloud.UI.thumb_dialog.show();
+                });
             }
             function setup_asset_drop() {
                 var showOverlay_;
                 //prevent drag in rest of the page except asset pane and enable overlay on asset pane
                 $(document).on('dragstart dragenter dragover', function (e) {
+
+                    if(RCloud.UI.thumb_dialog.is_visible()) 
+                        return;
+
                     var dt = e.originalEvent.dataTransfer;
                     if(!dt)
                         return;
@@ -239,10 +257,8 @@ RCloud.UI.scratchpad = (function() {
             if(!shell.is_view_mode()) {
                 if(this.widget && !binary_mode_)
                     ui_utils.set_ace_readonly(this.widget, readonly);
-                if(readonly)
-                    $('#new-asset').hide();
-                else
-                    $('#new-asset').show();
+
+                $('#new-asset, #update-thumb')[readonly ? 'hide' : 'show']();
             }
         }, update_asset_url: function() {
             if(this.current_model)

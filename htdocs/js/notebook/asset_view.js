@@ -2,16 +2,23 @@ Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
     var anchor = $("<a href='#'></a>");
-    var filename_span = $("<span  style='cursor:pointer'>" + asset_model.filename() + "</span>");
+    var filename_span = $("<span style='cursor:pointer'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
                                         'left': '2px',
                                         'opacity': '0.75'
                                     }, true);
+    var thumb_camera = $('<i class="icon-camera" style="padding-left: 4px; cursor: help;" title="Shown as your notebook\'s thumbnail on the Discover page"></i>');
     anchor.append(filename_span);
     filename_div.append(anchor);
+
+    if(is_thumb(asset_model.filename())) {
+        anchor.append(thumb_camera);
+    }
+
     anchor.append(remove);
     var old_asset_name = filename_span.text();
+
     var rename_file = function(v) {
         // this is massively inefficient - actually three round-trips to the server when
         // we could have one!  save, create new asset, delete old one
@@ -37,6 +44,14 @@ Notebook.Asset.create_html_view = function(asset_model)
                         .spread(function(_, new_controller) {
                             new_controller.select();
                             asset_model.controller.remove(true);
+
+                            if(!is_thumb(old_asset_name) && is_thumb(new_asset_name)) {
+                                // wasn't, but now is:
+                                thumb_camera.insertBefore(remove);
+                            } else if(is_thumb(old_asset_name) && !is_thumb(new_asset_name)) {
+                                // was, but now isn't
+                                thumb_camera.remove();
+                            }
                         });
                 }
             }
@@ -51,6 +66,9 @@ Notebook.Asset.create_html_view = function(asset_model)
         range.setEnd(el.firstChild, (text.lastIndexOf('.')>0?text.lastIndexOf('.'):text.length));
         return range;
     }
+    function is_thumb(filename) {
+        return filename === 'thumb.png';
+    }
     var editable_opts = {
         change: rename_file,
         select: select,
@@ -59,9 +77,9 @@ Notebook.Asset.create_html_view = function(asset_model)
     anchor.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
-        //ugly fix, but desperate times call for desperate measures.
-        $('#scratchpad-binary object').css('position', 'static')
-                .css('position', 'absolute');
+        //ugly fix, but desperate times call for desperate measures.        
+        //$('#scratchpad-binary object').css('position', 'static')      
+         //   .css('position', 'absolute');
     });
     remove.click(function() {
         asset_model.controller.remove();

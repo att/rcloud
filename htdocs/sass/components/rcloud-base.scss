@@ -575,14 +575,14 @@ ul.recent-notebooks-list li a {
 }
 
 #scratchpad-binary {
-    position: relative;
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 #scratchpad-binary object {
-    position: absolute;
+    display: block;
 }
 
 body .modal-dialog.full {

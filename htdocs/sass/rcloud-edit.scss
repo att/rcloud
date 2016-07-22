@@ -750,6 +750,16 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
 
 #asset-list-wrapper {
     display: table-row;
+
+    #manage-thumb {
+        background: white;
+        position: relative;
+
+        #update-thumb {
+            float: right;
+            margin: 2px;
+        }
+    }
 }
 
 #scratchpad-editor-wrapper {
@@ -768,8 +778,9 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
     position: absolute;
     left: 1ex;
     bottom: 1ex;
-    z-index: 10000;
+    z-index: 999;
     display: none;
+    text-decoration: none;
     text-shadow:
     0 0 0.9em #eee,
     0 0 0.9em #eee,
@@ -791,7 +802,7 @@ ul.jqtree-tree .jqtree-title.foreign-notebook {
 }
 
 #asset-link:hover {
-    text-decoration: none;
+    //text-decoration: none;
     font-weight: 500;
 }
 
@@ -1157,8 +1168,6 @@ a.accordion-toggle.right > i {
     color: #428bca
 }
 
-
-
 /*****************************************************************************/
 /* Fix that awful select from webkit */
 
@@ -1181,15 +1190,145 @@ a.accordion-toggle.right > i {
 
 .drop-asset-body {
     display: none;
-    opacity:.8;
-    outline: 2px dashed lightslategray;
+    opacity: .9;
+    outline: 3px dashed lightslategray;
     outline-offset:-20px;
     border: 1px solid #999;
     background-color: whitesmoke;
     position:absolute;
-    z-index:999;
+    z-index: 1000;
     height:100%;
     width:100%;
+
+    h1 {
+        vertical-align: middle;
+        position: relative;
+        text-align: center;
+        padding-top: 5%;
+        color: lightslategray;
+    }
+
+    &#thumb-drop-overlay {
+        display: block;
+        position: relative;
+        height: 120px;
+        width: 300px;
+        float: left;
+
+        &.active {
+            opacity: 1.0;
+        }
+    }
+}
+
+#thumb-dialog {
+
+    .images {
+        margin-bottom: 20px;
+    }
+
+    .drop-asset-body {
+        outline: 5px dashed rgba(0, 0, 0, 0.2);
+    }
+
+    & #thumb-drop-overlay {
+        width: 350px;
+        min-height: 350px;
+        margin: 15px;
+
+        .inner {
+            text-align: center;
+            width: 150px;
+            top: 50%;
+            position: absolute;
+            margin-top: -112px;
+            left: 50%;
+            line-height: 30pt;
+            margin-left: -75px;
+
+            h1 {
+                text-align: center;
+                vertical-align: middle;
+                color: lightslategray;
+                font-size: 22pt;
+                text-align: center;
+            }
+        }
+
+        &.active {
+            outline: 5px dashed rgba(0, 0, 0, 0.4);
+
+            & .inner {
+                opacity: 0.5;
+            }
+        }
+    }
+
+    .modal-dialog {
+        width: 450px;
+    }
+
+    .modal-body {
+        overflow: auto;
+        padding: 20px;
+        font-size: 13px;
+    }
+
+    #thumb-drop-overlay {
+        .icon-remove {
+            display: none;
+            position: absolute;
+            top: 2px;
+            right: 3px;
+            font-size: 24px;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0px 0px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        #upload-success {
+            text-align: center;
+            margin: 35px 45px;
+            width: 260px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            position: absolute;
+            color: white;
+
+            & i {
+                font-size: 185px;
+                color: white;
+            }
+        }
+
+        &.dropped {
+            .icon-remove {
+                display: block;
+
+                &:hover {
+                    color: rgba(255, 255, 255, 0.7);
+                }
+            }
+
+            outline: none;
+            opacity: 1.0;
+            height: auto;
+
+            & img {
+                max-width: 100%;
+            }
+
+            & .inner {
+                display: none;
+            }
+        }
+    }
+
+    .modal-footer {
+        clear: left;
+        margin-top: 0;
+    }
 }
 
 /******************************************************************************/
