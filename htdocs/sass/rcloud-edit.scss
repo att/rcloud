@@ -1078,6 +1078,16 @@ a.accordion-toggle.right > i {
 
 .panel-heading {
     border-radius: 0;
+
+    .heading-controls { 
+        display: inline;
+
+        button {
+            color: white;
+            text-decoration: none;
+            outline: none;
+        }
+    }
 }
 
 .panel-collapse {

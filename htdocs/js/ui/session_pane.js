@@ -101,5 +101,8 @@ RCloud.UI.session_pane = {
         }
         console.log(msg);
         this.post_error(msg, undefined, true);
+    },
+    heading_content: function() {
+        return RCloud.UI.panel_loader.load_snippet('session-info-tmp');
     }
 };
