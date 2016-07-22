@@ -4,6 +4,7 @@ RCloud.UI.selection_bar = (function() {
         $selection_checkbox,
         $dropdown_toggle,
         $delete_button,
+        $crop_button,
         $cell_selection;
 
     var reset = function() {
@@ -77,6 +78,9 @@ RCloud.UI.selection_bar = (function() {
             // delete/crop buttons' enabled status based on selection count:
             $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
             $crop_button[shell.notebook.controller.can_crop_cells() ? 'removeClass' : 'addClass']('disabled');
+
+            // delete details:
+
         },
         hide: function() {
             $('#selection-bar').hide();
