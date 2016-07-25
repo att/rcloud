@@ -209,52 +209,60 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
 
     //Now uploading a binary file to the Notebook
     casper.then(function () {
-        this.thenOpen(URL);
-        test.comment('⌚️  Uploading binary file to the Notebook ...');
+        casper.then(function () {
+            this.thenOpen(URL);
+            test.comment('⌚️  Uploading binary file to the Notebook ...');
+            this.wait(10000);
+        });
 
         //Verifying whether file upload div is open or not
-        casper.wait(8000).then(function () {
-            if (this.visible(x(".//*[@id='collapse-file-upload']/div"))) {
-                console.log('File Upload pane div is open');
+        casper.wait(2000).then(function () {
+            if (this.visible(x(".//*[@id='file']"))) {
+                this.echo('File Upload pane div is open');
                 this.wait(5000);
             }
             else {
-                console.log('File upload div is not open,hence opening it');
+                this.echo('File upload div is not open,hence opening it');
+                this.wait(6000);
                 this.click(x(".//*[@id='accordion-right']/div[2]/div[1]"));
                 this.wait(5000);
             }
         });
 
-        //File Upload
+        //Uploading file
         casper.then(function () {
-            this.evaluate(function (fileName) {
-                __utils__.findOne('input[type="file"]').setAttribute('value', fileName)
-            }, {fileName: fileName});
-            this.page.uploadFile('input[type="file"]', fileName);
-            console.log('Selecting file');
+            casper.page.uploadFile("#file", fileName);
+            console.log('Selecting file from directory');
         });
 
         casper.then(function () {
-            casper.evaluate(function () {
-                $('#upload-to-notebook').click();
+            this.wait(5000, function () {
+                this.click("#upload-to-notebook");
+                console.log("Clicking on 'Upload to notebook' check box");
+                this.click("#upload-submit");
+                console.log("Clicking on Submit icon");
             });
-            console.log("Clicking on Upload to notebook check box");
-            this.click(x(".//*[@id='upload-submit']"));
-            console.log("Clicking on Submit icon");
-        });
-    });
-
-    casper.wait(10000).then(function () {
-        console.log(" Verifying file has been uploaded to Notebook or not ");
-        this.then(function () {
-            this.test.assertSelectorHasText("#asset-list", 'PHONE.csv', 'Uploaded file is present in assets');
-            console.log("Verified that files can be uploaded to the Notebook");
         });
 
-        this.then(function () {
-            console.log("Deleting Uploaded asset from the Notebook");
-            this.click(x(".//*[@id='asset-list']/li[3]/a/span[2]/i"));
-            this.test.assertSelectorDoesntHaveText("#asset-list", "PHONE.csv", "Confirmed that Asset has been successfully removed");
+        casper.then(function () {
+            this.wait(5000);
+            this.waitUntilVisible(x('//*[contains(text(), "added")]'), function then() {
+                console.log("File has been uploaded");
+            });
+        });
+
+        casper.wait(10000).then(function () {
+            console.log(" Verifying file has been uploaded to Notebook or not ");
+            this.then(function () {
+                this.test.assertSelectorHasText("#asset-list", 'PHONE.csv', 'Uploaded file is present in assets');
+                console.log("Confirmed. File can be uploaded to the Notebook");
+            });
+
+            this.then(function () {
+                console.log("Deleting Uploaded asset from the Notebook");
+                this.click(x(".//*[@id='asset-list']/li[3]/a/span[2]/i"));
+                this.test.assertSelectorDoesntHaveText("#asset-list", "PHONE.csv", "Confirmed that Asset has been successfully removed");
+            });
         });
     });
 

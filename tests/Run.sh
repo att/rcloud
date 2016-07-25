@@ -18,7 +18,7 @@ cd /home/travis/build/att/rcloud/tests
 #sudo apt-get install xvfb
 pwd
 echo "Executing testscripts from $1"
-sudo xvfb-run -a casperjs test --ssl-protocol=any --engine=slimerjs $1 --username=iPrateek032 --password=musigma12 --url=http://127.0.0.1:8080/login.R --xunit=Reports/report.xml
+sudo xvfb-run -a casperjs test --ssl-protocol=any --engine=slimerjs $1 --username=RCloudatt --password=musigma12 --url=http://127.0.0.1:8080/login.R --xunit=Reports/report.xml
 Rscript parse.R
 
 if [ $? -eq 0 ]
