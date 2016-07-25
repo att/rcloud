@@ -1,6 +1,12 @@
 .navbar {
     margin-bottom: 0;
     border-radius: 0;
+
+    .navbar-brand {
+        &:visited, &:active {
+            color: #999;
+        }
+    }
 }
 
 body {
