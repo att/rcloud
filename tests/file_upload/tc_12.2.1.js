@@ -52,10 +52,7 @@ casper.test.begin("Upload a new File to Notebook", 3, function suite(test) {
 
     //File Upload 
     casper.wait(2000).then(function () {
-        this.evaluate(function (fileName) {
-            __utils__.findOne('input[type="file"]').setAttribute('value', fileName)
-        }, {fileName: fileName});
-        this.page.uploadFile('input[type="file"]', fileName);
+        casper.page.uploadFile("#file", fileName);
         console.log('Selecting a file');
     });
 

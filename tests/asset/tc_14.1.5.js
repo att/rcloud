@@ -11,7 +11,7 @@ casper.test.begin("Upload a file to another user's notebook after forking it ", 
     var github_password = casper.cli.options.password;
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
-    var new_username = 'InsertDelete';
+    var new_username = 'att-Musigma';
     var new_user_password = 'musigma12';
     var notebook_id, URL, before_forking ;
     var res1 = 'disabled';// to compare with res
@@ -109,10 +109,7 @@ casper.test.begin("Upload a file to another user's notebook after forking it ", 
     functions.fork(casper);
 
     casper.then(function () {
-        this.evaluate(function (fileName) {
-            __utils__.findOne('input[type="file"]').setAttribute('value', fileName)
-        }, {fileName: fileName});
-        this.page.uploadFile('input[type="file"]', fileName);
+        casper.page.uploadFile("#file", fileName);
         console.log('Selecting a file');
     });
 
