@@ -608,10 +608,17 @@ ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _, on
 
     for(var i = 3; i < arguments.length - 1; ++i)
         elemtop += arguments[i].position().top;
+
     if(elemtop > height)
         $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
     else if(elemtop < 0)
         $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer, options);
+    else {
+        // no scrolling, so automatically call on_complete if it's defined:
+        if(on_complete) {
+            on_complete();
+        }
+    }
 };
 
 ui_utils.prevent_backspace = function($doc) {
