@@ -1,10 +1,15 @@
 .navbar {
     margin-bottom: 0;
     border-radius: 0;
+}
 
+.navbar-inverse {
     .navbar-brand {
-        &:visited, &:active {
+        &:visited {
             color: #999;
+        }
+        &:hover {
+            color: white;
         }
     }
 }
