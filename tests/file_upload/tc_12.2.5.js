@@ -10,7 +10,7 @@ casper.test.begin("Can't upload file to Unforked Notebook", 5, function suite(te
     var github_password = casper.cli.options.password;
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
-    var new_username = 'InsertDelete';
+    var new_username = 'att-Musigma';
     var new_user_password = 'musigma12';
     var notebook_id, URL, before_forking;
     var res1 = 'disabled';// to compare with res

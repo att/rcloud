@@ -54,10 +54,7 @@ casper.test.begin(".Re-upload the previously modified file", 5, function suite(t
 
     //Uploading file
     casper.then(function () {
-        this.evaluate(function (fileName) {
-            __utils__.findOne('input[type="file"]').setAttribute('value', fileName)
-        }, {fileName: fileName});
-        this.page.uploadFile('input[type="file"]', fileName);
+        casper.page.uploadFile("#file", fileName);
         console.log('Selecting a file');
     });
 

@@ -53,10 +53,7 @@ casper.test.begin("Upload a new File to Notebook", 4, function suite(test) {
     });
 
     casper.then(function () {
-        this.evaluate(function (fileName) {
-            __utils__.findOne('input[type="file"]').setAttribute('value', fileName)
-        }, {fileName: fileName});
-        this.page.uploadFile('input[type="file"]', fileName);
+        casper.page.uploadFile("#file", fileName);
         console.log('Selecting a file');
     });
 
@@ -70,10 +67,7 @@ casper.test.begin("Upload a new File to Notebook", 4, function suite(test) {
     });
 
     casper.then(function () {
-        this.evaluate(function (fileName) {
-            __utils__.findOne('input[type="file"]').setAttribute('value', fileName1)
-        }, {fileName1: fileName1});
-        this.page.uploadFile('input[type="file"]', fileName1);
+        casper.page.uploadFile("#file", fileName1);
         console.log('Selecting a file');
     });
 

@@ -33,23 +33,23 @@ casper.test.begin("Create a new asset directly in Assets div", 3, function suite
     casper.then(function () {
         var url = this.getCurrentUrl();
         this.thenOpen(url);
-        this.wait(3000);
+        this.wait(5000);
     });
 
-    casper.then(function () {
+    casper.wait(2000).then(function () {
         console.log('Clicking on new asset to create an new asset');
         casper.setFilter("page.prompt", function (msg, currentValue) {
             if (msg === "Choose a filename for your asset") {
                 return asset_name;
             }
         });
-        this.click("#new-asset>a");
+        this.click("#new-asset > a:nth-child(1)");
         this.echo("Creating a new asset");
         this.wait(2000);
     });
     
     casper.then(function () {
-		this.exists('.active>a>span');
+		this.exists('.active > a:nth-child(1) > span:nth-child(1)');
 		console.log('Newly created asset exists');
 	});
 	
