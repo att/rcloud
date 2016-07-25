@@ -56,7 +56,7 @@ RCloud.UI.navbar = (function() {
         init: function() {
             // display brand now (won't wait for load/session)
             var header = $('#rcloud-navbar-header');
-            header.empty().append('<a class="navbar-brand" href="#">RCloud</a>');
+            header.empty().append('<a class="navbar-brand" href="/edit.html">RCloud</a>');
             var cmd_filter = RCloud.extension.filter_field('area', 'commands'),
                 view_filter = RCloud.UI.menu.filter_mode('view'),
                 edit_filter = RCloud.UI.menu.filter_mode('edit');
