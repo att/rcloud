@@ -4,6 +4,7 @@ RCloud.UI.find_replace = (function() {
         find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
+        find_next_func_, find_previous_func_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
@@ -37,8 +38,7 @@ RCloud.UI.find_replace = (function() {
         return matches_.length !== 0 && !isNaN(active_match_);
     }
 
-    function toggle_find_replace(replace) {
-
+    function toggle_find_replace(replace, opts) {
         if(!find_dialog_) {
 
             var markup = $(_.template(
@@ -107,6 +107,8 @@ RCloud.UI.find_replace = (function() {
                 active_transition('activate');
             }
 
+            find_next_func_ = find_next;
+
             function find_previous() {
                 active_transition('deactivate');
                 
@@ -119,6 +121,8 @@ RCloud.UI.find_replace = (function() {
                 
                 active_transition('activate');
             }
+
+            find_previous_func_ = find_previous;
 
             find_next_.click(function(e) {
                 e.preventDefault();
@@ -257,6 +261,17 @@ RCloud.UI.find_replace = (function() {
                 replace_input_.focus();
             } else {
                 find_input_.focus();
+            }
+        }
+
+        // find next/last
+        if(opts) {
+            if(opts.next && shown_) {
+                // move to the next item:
+                find_next_func_();
+            } else if(opts.previous && shown_) {
+                // straight to the last item:
+                find_previous_func_();
             }
         }
 
@@ -441,8 +456,8 @@ RCloud.UI.find_replace = (function() {
                 }
             }, {
                 category: 'Notebook Management',
-                id: 'notebook_find_again',
-                description: 'Find text (again)',
+                id: 'notebook_find_next',
+                description: 'Find text (next)',
                 keys: {
                     mac: [
                         ['command', 'g']
@@ -453,12 +468,14 @@ RCloud.UI.find_replace = (function() {
                     ]
                 },
                 action: function() {
-                    console.log('find text (again)');
+                    toggle_find_replace(false, {
+                        next: true
+                    });
                 }
             }, {
                 category: 'Notebook Management',
-                id: 'notebook_find_last',
-                description: 'Find text (last)',
+                id: 'notebook_find_previous',
+                description: 'Find text (previous)',
                 keys: {
                     mac: [
                         ['command', 'shift', 'g']
@@ -469,7 +486,9 @@ RCloud.UI.find_replace = (function() {
                     ]
                 },
                 action: function() {
-                   console.log('find text (last)');
+                   toggle_find_replace(false, {
+                        previous: true
+                   });
                 }
             }, {
                 category: 'Notebook Management',
