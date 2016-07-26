@@ -1353,18 +1353,27 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
-ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _) {
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _, on_complete) {
     if(_ === undefined)
         return;
     var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
-        elemtop = 0;
-    for(var i = 3; i<arguments.length; ++i)
+        elemtop = 0,
+        options = on_complete ? { animation: { complete : on_complete }} : {};
+
+    for(var i = 3; i < arguments.length - 1; ++i)
         elemtop += arguments[i].position().top;
+
     if(elemtop > height)
-        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
+        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
     else if(elemtop < 0)
-        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer);
+        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer, options);
+    else {
+        // no scrolling, so automatically call on_complete if it's defined:
+        if(on_complete) {
+            on_complete();
+        }
+    }
 };
 
 ui_utils.prevent_backspace = function($doc) {
@@ -7899,6 +7908,7 @@ RCloud.UI.import_export = (function() {
                             var url = $('#import-source').val(),
                                 notebooks = $('#import-gists').val(),
                                 prefix = $('#import-prefix').val();
+
                             notebooks = _.without(notebooks.split(/[\s,;]+/), "");
                             rcloud.port_notebooks(url, notebooks, prefix)
                                 .then(function(result) {
@@ -7911,11 +7921,19 @@ RCloud.UI.import_export = (function() {
                                         else
                                             failed.push(res);
                                     }
+
+                                    var promises = [];
+
                                     succeeded.forEach(function(notebook) {
-                                        editor.star_notebook(true, {notebook: notebook}).then(function() {
-                                            editor.set_notebook_visibility(notebook.id, true);
-                                        });
+                                        promises.push(editor.star_notebook(true, {notebook: notebook}).then(function() {
+                                            return editor.set_notebook_visibility(notebook.id, true, function(){});
+                                        }));
                                     });
+
+                                    Promise.all(promises).then(function() {
+                                        editor.highlight_imported_notebooks(succeeded);
+                                    });
+                                    
                                     if(failed.length)
                                         RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
                                 });
@@ -8025,6 +8043,9 @@ RCloud.UI.import_export = (function() {
                                     rcloud.create_notebook(notebook, false).then(function(notebook) {
                                         editor.star_notebook(true, {notebook: notebook}).then(function() {
                                             editor.set_notebook_visibility(notebook.id, true);
+
+                                            // highlight the node:
+                                            editor.highlight_imported_notebooks(notebook);
                                         });
                                     });
 
@@ -8897,7 +8918,7 @@ RCloud.UI.navbar = (function() {
         init: function() {
             // display brand now (won't wait for load/session)
             var header = $('#rcloud-navbar-header');
-            header.empty().append('<a class="navbar-brand" href="#">RCloud</a>');
+            header.empty().append('<a class="navbar-brand" href="/edit.html">RCloud</a>');
             var cmd_filter = RCloud.extension.filter_field('area', 'commands'),
                 view_filter = RCloud.UI.menu.filter_mode('view'),
                 edit_filter = RCloud.UI.menu.filter_mode('edit');
@@ -9713,6 +9734,7 @@ RCloud.UI.panel_loader = (function() {
                                   icon, '\u00a0', title_span);
 
         var heading_content = opts.panel.heading_content ? opts.panel.heading_content() : null;
+
         var heading;
         if(opts.side==='left') {
             heading = $.el.div(heading_attrs,
@@ -9720,7 +9742,8 @@ RCloud.UI.panel_loader = (function() {
                                heading_content);
         }
         else if(opts.side==='right') {
-            heading = $.el.div(heading_attrs,
+            heading = $.el.div(
+                               heading_attrs,
                                heading_content,
                                heading_link);
         }
@@ -10727,6 +10750,7 @@ return {
 
 RCloud.UI.session_pane = {
     error_dest_: null,
+    clear_session_: null,
     allow_clear: true,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
@@ -10750,6 +10774,16 @@ RCloud.UI.session_pane = {
                 that.clear();
             }
         });
+
+        // manual clearing:
+        this.clear_session_ = $('#clear-session');
+        if(this.clear_session_.length) {
+            this.clear_session_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                that.clear();
+            });            
+        }
 
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
@@ -10828,6 +10862,9 @@ RCloud.UI.session_pane = {
         }
         console.log(msg);
         this.post_error(msg, undefined, true);
+    },
+    heading_content: function() {
+        return RCloud.UI.panel_loader.load_snippet('session-info-tmp');
     }
 };
 

@@ -869,6 +869,15 @@ a.accordion-toggle.right > i {
 
 .panel-heading {
   border-radius: 0; }
+  .panel-heading .heading-controls {
+    display: inline; }
+    .panel-heading .heading-controls button {
+      color: white;
+      text-decoration: none;
+      outline: none;
+      border: 1px solid transparent; }
+      .panel-heading .heading-controls button:hover {
+        border-color: #aaa; }
 
 .panel-collapse {
   padding-top: 5px;

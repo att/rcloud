@@ -9145,6 +9145,12 @@ pre code.py.hljs .hljs-string {
   margin-bottom: 0;
   border-radius: 0; }
 
+.navbar-inverse .navbar-brand:visited {
+  color: #999; }
+
+.navbar-inverse .navbar-brand:hover {
+  color: white; }
+
 body {
   margin: 0; }
 
