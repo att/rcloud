@@ -427,6 +427,38 @@ RCloud.UI.find_replace = (function() {
                 }
             }, {
                 category: 'Notebook Management',
+                id: 'notebook_find_again',
+                description: 'Find text (again)',
+                keys: {
+                    mac: [
+                        ['command', 'g']
+                    ],
+                    win: [
+                        ['ctrl', 'g'],
+                        ['f3']
+                    ]
+                },
+                action: function() {
+                    console.log('find text (again)');
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_find_last',
+                description: 'Find text (last)',
+                keys: {
+                    mac: [
+                        ['command', 'shift', 'g']
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'g'],
+                        ['shift', 'f3']
+                    ]
+                },
+                action: function() {
+                   console.log('find text (last)');
+                }
+            }, {
+                category: 'Notebook Management',
                 id: 'notebook_replace',
                 description: 'Replace text',
                 keys: {
