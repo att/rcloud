@@ -9610,6 +9610,8 @@ ul.recent-notebooks-list li a {
   width: 100%;
   overflow-x: hidden;
   overflow-y: auto; }
+  #scratchpad-binary div {
+    height: 0; }
 
 #scratchpad-binary object {
   display: block; }
