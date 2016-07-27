@@ -204,9 +204,9 @@ RCloud.UI.scratchpad = (function() {
                 // PDF seems not to be supported properly by browsers
                 var sbin = $('#scratchpad-binary');
                 if(/\.pdf$/i.test(this.current_model.filename()))
-                    sbin.html('<p>PDF preview not supported</p>');
+                    sbin.html('<div><p>PDF preview not supported</p></div>');
                 else
-                    sbin.html('<object data="' + this.current_model.asset_url(true) + '"></object>');
+                    sbin.html('<div><object data="' + this.current_model.asset_url(true) + '"></object></div>');
                 sbin.show();
             }
             else {

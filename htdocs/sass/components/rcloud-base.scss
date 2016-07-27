@@ -590,6 +590,10 @@ ul.recent-notebooks-list li a {
     width: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+
+    & div {
+        height: 0;
+    }
 }
 
 #scratchpad-binary object {
