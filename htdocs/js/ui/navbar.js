@@ -128,7 +128,7 @@ RCloud.UI.navbar = (function() {
                         var star_, unstar_, icon_, count_;
                         var button = $.el.button({
                             id: 'star-notebook',
-                            title: 'Add to Interests',
+                            title: 'Star Notebook',
                             type: 'button',
                             class: 'btn btn-link navbar-btn',
                             style: 'padding-left: 3px'
@@ -150,6 +150,7 @@ RCloud.UI.navbar = (function() {
                             },
                             set_fill: function(filled) {
                                 icon_.set_state(filled);
+                                $(this.control).attr('title', filled ? 'Unstar Notebook' : 'Star Notebook');
                                 return this;
                             },
                             set_count: function(count) {
