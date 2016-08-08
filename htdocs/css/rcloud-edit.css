@@ -444,10 +444,10 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
 .jqtree-title.jqtree_common.history {
   color: #7CB9E8; }
 
-ul.jqtree-tree .jqtree-title.hidden-notebook {
+ul.jqtree-tree .jqtree-title.hidden-notebook, .hidden-notebook {
   color: #aaa; }
 
-ul.jqtree-tree .jqtree-title.foreign-notebook {
+ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
   color: #66bb44; }
 
 .notebook-time {

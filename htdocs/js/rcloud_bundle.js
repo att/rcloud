@@ -1069,6 +1069,7 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
         highlightGutterLine: !readonly
     });
     widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+    widget.textInput.getElement().disabled = readonly;
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
@@ -1353,15 +1354,17 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
-ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _, on_complete) {
-    if(_ === undefined)
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_complete /* , $elem-offset, $elem-offset ... */) {
+    if(arguments.length < 5) {
+        console.warn('scroll_into_view needs offset elements');
         return;
+    }
     var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
         elemtop = 0,
         options = on_complete ? { animation: { complete : on_complete }} : {};
 
-    for(var i = 3; i < arguments.length - 1; ++i)
+    for(var i = 4; i < arguments.length; ++i)
         elemtop += arguments[i].position().top;
 
     if(elemtop > height)
@@ -2775,7 +2778,7 @@ function create_cell_html_view(language, cell_model) {
             var config = renderer.layerConfig;
             var top = pos.top - config.offset;
 
-            // shouldScoll  = true  = ^
+            // shouldScroll  = true  = ^
             // shouldScroll = false = v
             if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
                 shouldScroll = true;
@@ -2845,7 +2848,7 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
-            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, input_div_);
+            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {
@@ -2896,7 +2899,7 @@ function create_cell_html_view(language, cell_model) {
                             window.setTimeout(function() {
                                 var hl = ace_div.find('.find-highlight.' + range.kind);
                                 if(hl.size())
-                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, ace_div, hl);
+                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, ace_div, hl);
                             }, 0);
                         }
                     });
@@ -2905,7 +2908,7 @@ function create_cell_html_view(language, cell_model) {
                 assign_code();
                 var $active = code_div_.find('.find-highlight.active, .find-highlight.activereplaced');
                 if($active.size())
-                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, code_div_, $active);
+                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, code_div_, $active);
 
             }
             return this;
@@ -5464,6 +5467,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
+            $(sel_collapser).attr('title', 'Expand Pane');
             collapsed_ = true;
             this.resize(skip_calc);
             if(persist && rcloud.config)
@@ -5481,6 +5485,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
             });
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
+            $(sel_collapser).attr('title', 'Collapse Pane');
             collapsed_ = false;
             this.resize(skip_calc);
             if(persist && rcloud.config)
@@ -7743,7 +7748,7 @@ RCloud.UI.image_manager = (function() {
                 });
         }
         function save_button() {
-            var save_dropdown = $('<div class="dropdown"></div>');
+            var save_dropdown = $('<span class="dropdown"></div>');
             // i couldn't figure out how to get fa_button('icon-save', 'save image', 'btn dropdown-toggle')
             // to open a dropdown
             var save_button = $('<span class="dropdown-toggle fontawesome-button" type="button" data-toggle="dropdown" aria-expanded="true"></span>');
@@ -7766,6 +7771,14 @@ RCloud.UI.image_manager = (function() {
             save_dropdown.append(save_button, save_menu);
             return save_dropdown;
         }
+        function thumb_button() {
+            var thumb_button = ui_utils.fa_button("icon-camera", "set as thumb");
+            thumb_button.click(function() {
+                RCloud.UI.scratchpad.update_thumb();
+                RCloud.UI.thumb_dialog.display_image(url);
+            });
+            return thumb_button;
+        }
 
         function update_dims(dims) {
             if(dims) {
@@ -7787,6 +7800,7 @@ RCloud.UI.image_manager = (function() {
             scroller_div_.append(image_div_, $('<br/>'));
             image_div_.append($image);
             var image_commands = $('<span class="live-plot-commands"></div>');
+            image_commands.append(thumb_button());
             image_commands.append(save_button());
             image_commands.hide();
             plot.hover(function() {
@@ -8990,7 +9004,7 @@ RCloud.UI.navbar = (function() {
                         var star_, unstar_, icon_, count_;
                         var button = $.el.button({
                             id: 'star-notebook',
-                            title: 'Add to Interests',
+                            title: 'Star Notebook',
                             type: 'button',
                             class: 'btn btn-link navbar-btn',
                             style: 'padding-left: 3px'
@@ -9012,6 +9026,7 @@ RCloud.UI.navbar = (function() {
                             },
                             set_fill: function(filled) {
                                 icon_.set_state(filled);
+                                $(this.control).attr('title', filled ? 'Unstar Notebook' : 'Star Notebook');
                                 return this;
                             },
                             set_count: function(count) {
@@ -9652,11 +9667,11 @@ RCloud.UI.notebooks_frame = {
         return RCloud.UI.panel_loader.load_snippet('notebooks-snippet');
     },
     heading_content: function() {
-        var notebook_inner_panel = RCloud.UI.panel_loader.load_snippet('notebooks-panel-tmp');
+        var notebook_inner_panel = RCloud.UI.panel_loader.load_snippet('notebooks-panel-heading');
         return notebook_inner_panel;
     },
     heading_content_selector: function() {
-        return $('#notebooks-panel-inner');
+        return $('#notebooks-panel-controls');
     }
 };
 
@@ -10194,17 +10209,7 @@ RCloud.UI.scratchpad = (function() {
 
                 RCloud.UI.thumb_dialog.init();
 
-                $('#update-thumb').click(function() {
-
-                    // select the thumb in the assets:
-                    var thumb = shell.notebook.model.get_asset('thumb.png');
-
-                    if(thumb) {
-                        thumb.controller.select();
-                    }
-
-                    RCloud.UI.thumb_dialog.show();
-                });
+                $('#update-thumb').click(RCloud.UI.scratchpad.update_thumb);
             }
             function setup_asset_drop() {
                 var showOverlay_;
@@ -10403,6 +10408,15 @@ RCloud.UI.scratchpad = (function() {
         }, update_asset_url: function() {
             if(this.current_model)
                 $('#asset-link').attr('href', this.current_model.asset_url());
+        }, update_thumb: function() {
+            // select the thumb in the assets:
+            var thumb = shell.notebook.model.get_asset('thumb.png');
+
+            if(thumb) {
+                thumb.controller.select();
+            }
+
+            RCloud.UI.thumb_dialog.show();
         }, clear: function() {
             if(!this.exists)
                 return;
@@ -10782,7 +10796,7 @@ RCloud.UI.session_pane = {
                 e.preventDefault();
                 e.stopPropagation();
                 that.clear();
-            });            
+            });
         }
 
         //////////////////////////////////////////////////////////////////////
@@ -10804,6 +10818,16 @@ RCloud.UI.session_pane = {
         if(this.allow_clear)
             $("#session-info").empty();
     },
+    should_scroll: function() {
+        var scroll_bottom = $('#session-info-panel').scrollTop() + $('#session-info-panel').height() - $('#session-info-out').height();
+        console.log('scroll bottom', scroll_bottom);
+        return scroll_bottom > -10;
+    },
+    scroll_to_end: function() {
+        ui_utils.on_next_tick(function() {
+            ui_utils.scroll_to_after($("#session-info"));
+        });
+    },
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
         if(!$('#session-info').length) {
@@ -10815,11 +10839,11 @@ RCloud.UI.session_pane = {
         // not trivial to maintain each output in some separate structure
         if (!document.getElementById("session-info-out"))
             $("#session-info").append($("<pre id='session-info-out'></pre>"));
+        var scroll = this.should_scroll();
         $("#session-info-out").append(msg);
         RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
-        ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#session-info"));
-        });
+        if(scroll)
+            this.scroll_to_end();
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
@@ -10837,12 +10861,12 @@ RCloud.UI.session_pane = {
             }
             else if (typeof msg !== 'object')
                 throw new Error("post_error expects a string or a jquery div");
+            var scroll = this.should_scroll();
             msg.addClass(errclass);
             dest.append(msg);
             this.show_error_area();
-            ui_utils.on_next_tick(function() {
-                ui_utils.scroll_to_after($("#session-info"));
-            });
+            if(scroll)
+                this.scroll_to_end();
         }
         if(!logged) {
             if(typeof msg === 'object')
@@ -10864,7 +10888,10 @@ RCloud.UI.session_pane = {
         this.post_error(msg, undefined, true);
     },
     heading_content: function() {
-        return RCloud.UI.panel_loader.load_snippet('session-info-tmp');
+        return RCloud.UI.panel_loader.load_snippet('session-info-panel-heading');
+    },
+    heading_content_selector: function() {
+        return $('#session-panel-controls');
     }
 };
 
@@ -11373,6 +11400,7 @@ RCloud.UI.thumb_dialog = (function() {
         $drop_zone_ = $('#thumb-drop-overlay'),
         $instruction_ = $drop_zone_.find('.inner'),
         $footer_ = $dialog_.find('.modal-footer'),
+        $update_ok_ = $footer_.find('.btn-primary'),
         $drop_zone_remove_ = $('#thumb-remove'),
         $thumb_upload_ = $('#thumb-upload'),
         $selected_file_ = $('#selected-file'),
@@ -11384,7 +11412,8 @@ RCloud.UI.thumb_dialog = (function() {
         is_visible: function() {
             return $dialog_.is(':visible');
         },
-        add_image: function(selector, img_src) {
+        set_image: function(img_src) {
+            var selector = $drop_zone_;
             if(selector.find('img').length === 0) {
                 selector.append($('<img/>'));
             }
@@ -11400,6 +11429,7 @@ RCloud.UI.thumb_dialog = (function() {
             $drop_zone_.removeClass('active dropped');
             $drop_zone_.find('img').remove();
             added_file_ = null;
+            ui_utils.disable_bs_button($update_ok_);
 
             // reset size of drop zone:
             $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
@@ -11413,31 +11443,35 @@ RCloud.UI.thumb_dialog = (function() {
 
             return valid;
         },
+        display_image: function(data_url) {
+            $drop_zone_.addClass('dropped');
+            this.set_image(data_url);
+
+            // show the complete:
+            $upload_success_.show();
+
+            setTimeout(function() {
+
+                $upload_success_.animate({
+                    'margin-top': '0px', 'opacity' : '0'
+                }, {
+                    duration: 'fast',
+                    complete: function() {
+                        $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
+                    }
+                });
+
+            }, 1500);
+        },
         upload: function(file) {
             // process:
             added_file_ = file;
+            ui_utils.enable_bs_button($update_ok_);
             var that = this;
 
             var reader = new FileReader();
             reader.onload = function(e) {
-                $drop_zone_.addClass('dropped');
-                that.add_image($drop_zone_, e.target.result);
-
-                // show the complete:
-                $upload_success_.show();
-
-                setTimeout(function() {
-
-                    $upload_success_.animate({
-                        'margin-top': '0px', 'opacity' : '0'
-                        }, {
-                            duration: 'fast',
-                            complete: function() {
-                                $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
-                        }
-                    });
-
-                }, 1500);
+                that.display_image(e.target.result);
             };
 
             reader.readAsDataURL(added_file_);
@@ -11536,11 +11570,11 @@ RCloud.UI.thumb_dialog = (function() {
                 that.reset();
             });
 
-            $footer_.find('.btn-primary').on('click', function() {
+            ui_utils.disable_bs_button($update_ok_);
+            $update_ok_.on('click', function() {
                 $dialog_.modal('hide');
 
                 if(added_file_) {
-                    //added_file_.name = 'thumb.png';
                     RCloud.UI.upload_with_alerts(true, {
                         files: [added_file_],
                         filenames: [thumb_filename_]
@@ -11579,6 +11613,16 @@ RCloud.UI.thumb_dialog = (function() {
         }
     };
 
+    // http://stackoverflow.com/a/30407840
+    function dataURLtoBlob(dataurl) {
+        var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], {type:mime});
+    }
+
     return {
         init: function() {
             utils.init();
@@ -11588,6 +11632,11 @@ RCloud.UI.thumb_dialog = (function() {
         },
         is_visible: function() {
             return utils.is_visible();
+        },
+        display_image: function(data_url) {
+            utils.display_image(data_url);
+            added_file_ = dataURLtoBlob(data_url);
+            ui_utils.enable_bs_button($update_ok_);
         }
     };
 })();
