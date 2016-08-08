@@ -598,15 +598,17 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
-ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _, on_complete) {
-    if(_ === undefined)
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_complete /* , $elem-offset, $elem-offset ... */) {
+    if(arguments.length < 5) {
+        console.warn('scroll_into_view needs offset elements');
         return;
+    }
     var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
         elemtop = 0,
         options = on_complete ? { animation: { complete : on_complete }} : {};
 
-    for(var i = 3; i < arguments.length - 1; ++i)
+    for(var i = 4; i < arguments.length; ++i)
         elemtop += arguments[i].position().top;
 
     if(elemtop > height)

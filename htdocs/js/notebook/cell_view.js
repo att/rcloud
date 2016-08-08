@@ -898,7 +898,7 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
-            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, input_div_);
+            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {
@@ -949,7 +949,7 @@ function create_cell_html_view(language, cell_model) {
                             window.setTimeout(function() {
                                 var hl = ace_div.find('.find-highlight.' + range.kind);
                                 if(hl.size())
-                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, ace_div, hl);
+                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, ace_div, hl);
                             }, 0);
                         }
                     });
@@ -958,7 +958,7 @@ function create_cell_html_view(language, cell_model) {
                 assign_code();
                 var $active = code_div_.find('.find-highlight.active, .find-highlight.activereplaced');
                 if($active.size())
-                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, code_div_, $active);
+                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, code_div_, $active);
 
             }
             return this;

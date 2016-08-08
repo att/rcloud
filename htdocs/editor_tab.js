@@ -847,7 +847,7 @@ var editor = function () {
             $tree_.tree('openNode', p);
             p = p.parent;
         }
-        ui_utils.scroll_into_view($tree_.parent(), 50, 100, $(node.element));
+        ui_utils.scroll_into_view($tree_.parent(), 50, 100, null, $(node.element));
     }
 
     function highlight_imported(node) {
@@ -858,11 +858,11 @@ var editor = function () {
                     $tree_.tree('openNode', p);
                     p = p.parent;
                 }
-                ui_utils.scroll_into_view($tree_.parent(), 150, 150, $(node.element), function() {
+                ui_utils.scroll_into_view($tree_.parent(), 150, 150, function() {
                     $(node.element).closest('.jqtree_common').effect('highlight', { color: '#fd0' }, 1500, function() {
                         resolve();
                     });
-                });
+                }, $(node.element));
             });
         };
     }
