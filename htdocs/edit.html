@@ -51,11 +51,11 @@
 
 <script type="text/html" id="notebooks-panel-heading">
   <span style="float: right; position: relative" id="notebooks-panel-controls">
-    <a class="header-button" id="new-notebook" href="#" style="">
+    <a class="header-button" id="new-notebook" title="New Notebook" href="#" style="">
       <span><i class="icon-plus"></i>
       </span>
     </a>
-    <div class="dropdown recent-notebooks-dropdown">
+    <div class="dropdown recent-notebooks-dropdown" title="Recent Notebooks">
       <a href="#" class="dropdown-toggle recent-btn" data-toggle="dropdown">Recent<b class="caret"></b></a>
       <ul class="dropdown-menu recent-notebooks-list">
       </ul>
@@ -72,8 +72,8 @@
           <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
           <span id="match-status"><span id="match-index"></span> of <span id="match-total"></span></span>
         </span>
-        <button id="find-last" class="btn"><i class="icon-arrow-left"></i></button>
-        <button id="find-next" class="btn btn-primary"><i class="icon-arrow-right"></i></button>
+        <button id="find-last" class="btn" title="Find Previous"><i class="icon-arrow-left"></i></button>
+        <button id="find-next" class="btn btn-primary" title="Find Next"><i class="icon-arrow-right"></i></button>
       </div>
       <div class="replace" style="display:none">
         <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
@@ -135,7 +135,7 @@
 
 <script type="text/html" id="help-snippet">
   <div id="help-wrapper" class="panel-body widget-vsize">
-    <a href="#" id="show-shortcuts">
+    <a href="#" id="show-shortcuts" title="Show Keyboard Shortcuts">
       <i class="icon-keyboard"></i>Keyboard
     </a>
     <div id="help-header">
@@ -143,7 +143,7 @@
         <div class="input-group input-group-sm" style="width: 160px;padding-left: 8px;">
           <input type="text" class="form-control-ext" id="input-text-help" placeholder="..Get help on" style="width: 128px;"></input>
           <div class="input-group-btn">
-            <button class="btn btn-default-ext" type="submit">
+            <button class="btn btn-default-ext" type="submit" title="Search Help">
               <i class="icon-question"></i>
             </button>
           </div>
@@ -157,7 +157,7 @@
 <script type="text/html" id="selection-bar-snippet">
   <div id="selection-bar">
     <div class="btn-group">
-      <div type="button" class="btn btn-default cell-selection">
+      <div type="button" class="btn btn-default cell-selection" title="Select All/None">
           <input type="checkbox" /><span>&ndash;</span>
       </div>
       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
@@ -186,7 +186,7 @@
       <div id="asset-list-wrapper">
 
         <div id="manage-thumb">
-          <button id="update-thumb" class="btn btn-primary" style="display:none"><i class="icon-camera"></i></button>
+          <button id="update-thumb" class="btn btn-primary" style="display:none" title="Change Thumbnail"><i class="icon-camera"></i></button>
         </div>
 
         <ul class="nav nav-tabs" id="asset-list"
@@ -216,7 +216,7 @@
               <span>Upload to notebook</span>
 	    </label>
           </span>
-          <button id="upload-submit" class="btn btn-default-ext" type="submit" style="float: right;width: 33px;">
+          <button id="upload-submit" class="btn btn-default-ext" type="submit" title="Upload File(s)" style="float: right;width: 33px;">
             <i class="icon-upload-alt"></i>
           </button>
           <div class="progress" style="display:none">
@@ -241,7 +241,7 @@
         <div id="comments-container"></div>
         <div id="comment-entry" class="btn-group-sm">
           <textarea id="comment-entry-body" class="form-control-ext"></textarea>
-          <button id="comment-submit" class="btn btn-default-ext" type="submit" style="width: 33px; vertical-align: top;">
+          <button id="comment-submit" class="btn btn-default-ext" type="submit" title="Add Comment" style="width: 33px; vertical-align: top;">
             <i class="icon-comment"></i>
           </button>
         </div>
@@ -261,7 +261,7 @@
 
 <script type="text/html" id="session-info-panel-heading">
   <div class="heading-controls" id="session-panel-controls">
-    <button class="btn-link" id="clear-session" title="Clear the session pane's contents">
+    <button class="btn-link" id="clear-session" title="Clear Session Pane">
       <i class="icon-eraser"></i>
     </button>
   </div>
@@ -285,7 +285,7 @@
     <svg height="20" width="20" id="notebook-clicker" style="position:absolute; left:0; top:0px">
       <polygon points="0,0 20,0 0,20" style="fill:#222;stroke:none"/>
     </svg>
-    <a id="left-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; left:2px; top:1px; cursor:pointer"></i> </a>
+    <a id="left-pane-collapser" title="Collapse Pane"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; left:2px; top:1px; cursor:pointer"></i> </a>
   </div>
 </script>
 
@@ -294,7 +294,7 @@
     <svg height="20" width="20" id="notebook-clicker" style="position:absolute; right:0; top:0px">
       <polygon points="0,0 20,0 20,20" style="fill:#222;stroke:none"/>
     </svg>
-    <a id="right-pane-collapser"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; right:2px; top:1px; cursor:pointer"></i> </a>
+    <a id="right-pane-collapser" title="Collapse Pane"><i class="icon-minus" style="font-size:0.8em; color:#999; position:absolute; right:2px; top:1px; cursor:pointer"></i> </a>
   </div>
 </script>
 
