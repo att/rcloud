@@ -828,7 +828,7 @@ function create_cell_html_view(language, cell_model) {
             var config = renderer.layerConfig;
             var top = pos.top - config.offset;
 
-            // shouldScoll  = true  = ^
+            // shouldScroll  = true  = ^
             // shouldScroll = false = v
             if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
                 shouldScroll = true;
