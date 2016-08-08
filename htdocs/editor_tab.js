@@ -321,7 +321,7 @@ var editor = function () {
 
     function get_notebooks_by_user(username) {
         var already_know = _.pick(notebook_info_, _.filter(Object.keys(notebook_info_), function(id) {
-            return notebook_info_[id].username === username;
+            return notebook_info_[id].username === username && !notebook_info_[id].recent_only;
         }));
         return rcloud.config.all_user_notebooks(username)
             .then(get_infos_and_counts)
@@ -521,7 +521,14 @@ var editor = function () {
                 path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
                 _.extend(notebook_info_, starred_info.notebooks);
-                _.extend(notebook_info_, recent_info.notebooks);
+                for(var r in recent_info.notebooks) {
+                    // add a special flag for notebooks that we only know about from recent list
+                    // we won't show them in the tree until they're opened
+                    if(!notebook_info_[r]) {
+                        notebook_info_[r] = recent_info.notebooks[r];
+                        notebook_info_[r].recent_only = true;
+                    }
+                }
                 _.extend(num_stars_, recent_info.num_stars); // (not currently needed)
                 all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
                 var root_data = [];
