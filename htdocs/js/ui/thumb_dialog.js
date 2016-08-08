@@ -4,6 +4,7 @@ RCloud.UI.thumb_dialog = (function() {
         $drop_zone_ = $('#thumb-drop-overlay'),
         $instruction_ = $drop_zone_.find('.inner'),
         $footer_ = $dialog_.find('.modal-footer'),
+        $update_ok_ = $footer_.find('.btn-primary'),
         $drop_zone_remove_ = $('#thumb-remove'),
         $thumb_upload_ = $('#thumb-upload'),
         $selected_file_ = $('#selected-file'),
@@ -32,6 +33,7 @@ RCloud.UI.thumb_dialog = (function() {
             $drop_zone_.removeClass('active dropped');
             $drop_zone_.find('img').remove();
             added_file_ = null;
+            ui_utils.disable_bs_button($update_ok_);
 
             // reset size of drop zone:
             $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
@@ -68,6 +70,7 @@ RCloud.UI.thumb_dialog = (function() {
         upload: function(file) {
             // process:
             added_file_ = file;
+            ui_utils.enable_bs_button($update_ok_);
             var that = this;
 
             var reader = new FileReader();
@@ -171,11 +174,11 @@ RCloud.UI.thumb_dialog = (function() {
                 that.reset();
             });
 
-            $footer_.find('.btn-primary').on('click', function() {
+            ui_utils.disable_bs_button($update_ok_);
+            $update_ok_.on('click', function() {
                 $dialog_.modal('hide');
 
                 if(added_file_) {
-                    //added_file_.name = 'thumb.png';
                     RCloud.UI.upload_with_alerts(true, {
                         files: [added_file_],
                         filenames: [thumb_filename_]
@@ -237,6 +240,7 @@ RCloud.UI.thumb_dialog = (function() {
         display_image: function(data_url) {
             utils.display_image(data_url);
             added_file_ = dataURLtoBlob(data_url);
+            ui_utils.enable_bs_button($update_ok_);
         }
     };
 })();
