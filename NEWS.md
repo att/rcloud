@@ -42,8 +42,8 @@
 
 * Cells could overlap tall plots. (#1841)
 
-* Starred deleted notebooks were not shown in the All Notebooks tree. (#2165 /
-  #2160 / #2194)
+* Starred deleted notebooks were not shown in the All Notebooks tree.
+  (#2165 / #2160 / #2194)
 
 * Image assets could overflow the div in Firefox (#2201)
 
