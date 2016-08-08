@@ -15,7 +15,8 @@ RCloud.UI.thumb_dialog = (function() {
         is_visible: function() {
             return $dialog_.is(':visible');
         },
-        add_image: function(selector, img_src) {
+        set_image: function(img_src) {
+            var selector = $drop_zone_;
             if(selector.find('img').length === 0) {
                 selector.append($('<img/>'));
             }
@@ -44,6 +45,26 @@ RCloud.UI.thumb_dialog = (function() {
 
             return valid;
         },
+        display_image: function(data_url) {
+            $drop_zone_.addClass('dropped');
+            this.set_image(data_url);
+
+            // show the complete:
+            $upload_success_.show();
+
+            setTimeout(function() {
+
+                $upload_success_.animate({
+                    'margin-top': '0px', 'opacity' : '0'
+                }, {
+                    duration: 'fast',
+                    complete: function() {
+                        $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
+                    }
+                });
+
+            }, 1500);
+        },
         upload: function(file) {
             // process:
             added_file_ = file;
@@ -51,24 +72,7 @@ RCloud.UI.thumb_dialog = (function() {
 
             var reader = new FileReader();
             reader.onload = function(e) {
-                $drop_zone_.addClass('dropped');
-                that.add_image($drop_zone_, e.target.result);
-
-                // show the complete:
-                $upload_success_.show();
-
-                setTimeout(function() {
-
-                    $upload_success_.animate({
-                        'margin-top': '0px', 'opacity' : '0'
-                        }, {
-                            duration: 'fast',
-                            complete: function() {
-                                $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
-                        }
-                    });
-
-                }, 1500);
+                that.display_image(e.target.result);
             };
 
             reader.readAsDataURL(added_file_);
@@ -210,6 +214,16 @@ RCloud.UI.thumb_dialog = (function() {
         }
     };
 
+    // http://stackoverflow.com/a/30407840
+    function dataURLtoBlob(dataurl) {
+        var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], {type:mime});
+    }
+
     return {
         init: function() {
             utils.init();
@@ -219,6 +233,10 @@ RCloud.UI.thumb_dialog = (function() {
         },
         is_visible: function() {
             return utils.is_visible();
+        },
+        display_image: function(data_url) {
+            utils.display_image(data_url);
+            added_file_ = dataURLtoBlob(data_url);
         }
     };
 })();

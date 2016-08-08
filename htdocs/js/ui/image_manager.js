@@ -65,7 +65,7 @@ RCloud.UI.image_manager = (function() {
                 });
         }
         function save_button() {
-            var save_dropdown = $('<div class="dropdown"></div>');
+            var save_dropdown = $('<span class="dropdown"></div>');
             // i couldn't figure out how to get fa_button('icon-save', 'save image', 'btn dropdown-toggle')
             // to open a dropdown
             var save_button = $('<span class="dropdown-toggle fontawesome-button" type="button" data-toggle="dropdown" aria-expanded="true"></span>');
@@ -88,6 +88,14 @@ RCloud.UI.image_manager = (function() {
             save_dropdown.append(save_button, save_menu);
             return save_dropdown;
         }
+        function thumb_button() {
+            var thumb_button = ui_utils.fa_button("icon-camera", "set as thumb");
+            thumb_button.click(function() {
+                RCloud.UI.scratchpad.update_thumb();
+                RCloud.UI.thumb_dialog.display_image(url);
+            });
+            return thumb_button;
+        }
 
         function update_dims(dims) {
             if(dims) {
@@ -109,6 +117,7 @@ RCloud.UI.image_manager = (function() {
             scroller_div_.append(image_div_, $('<br/>'));
             image_div_.append($image);
             var image_commands = $('<span class="live-plot-commands"></div>');
+            image_commands.append(thumb_button());
             image_commands.append(save_button());
             image_commands.hide();
             plot.hover(function() {

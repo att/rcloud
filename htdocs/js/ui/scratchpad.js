@@ -54,17 +54,7 @@ RCloud.UI.scratchpad = (function() {
 
                 RCloud.UI.thumb_dialog.init();
 
-                $('#update-thumb').click(function() {
-
-                    // select the thumb in the assets:
-                    var thumb = shell.notebook.model.get_asset('thumb.png');
-
-                    if(thumb) {
-                        thumb.controller.select();
-                    }
-
-                    RCloud.UI.thumb_dialog.show();
-                });
+                $('#update-thumb').click(RCloud.UI.scratchpad.update_thumb);
             }
             function setup_asset_drop() {
                 var showOverlay_;
@@ -263,6 +253,15 @@ RCloud.UI.scratchpad = (function() {
         }, update_asset_url: function() {
             if(this.current_model)
                 $('#asset-link').attr('href', this.current_model.asset_url());
+        }, update_thumb: function() {
+            // select the thumb in the assets:
+            var thumb = shell.notebook.model.get_asset('thumb.png');
+
+            if(thumb) {
+                thumb.controller.select();
+            }
+
+            RCloud.UI.thumb_dialog.show();
         }, clear: function() {
             if(!this.exists)
                 return;
