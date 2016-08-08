@@ -114,6 +114,9 @@ RCloud.UI.session_pane = {
         this.post_error(msg, undefined, true);
     },
     heading_content: function() {
-        return RCloud.UI.panel_loader.load_snippet('session-info-tmp');
+        return RCloud.UI.panel_loader.load_snippet('session-info-panel-heading');
+    },
+    heading_content_selector: function() {
+        return $('#session-panel-controls');
     }
 };
