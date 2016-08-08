@@ -1668,11 +1668,17 @@ var editor = function () {
                 var currentNotebook = get_notebook_info(sorted[i][0]);
                 var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
+                var $desc;
 
                 anchor.addClass('ui-all')
                     .append($('<span class="username">'+currentNotebook.username+'</span>'))
-                    .append($('<span class="description">'+desc+'</span>'))
+                    .append($desc = $('<span class="description">'+desc+'</span>'))
                     .appendTo(li);
+
+                if(currentNotebook.source)
+                    $desc.addClass('foreign-notebook');
+                else if(!currentNotebook.visible)
+                    $desc.addClass('hidden-notebook');
 
                 anchor.click(click_recent);
             }
