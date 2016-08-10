@@ -22,11 +22,16 @@ var lastWidths = { };
 function size_this(div, reset) {
     // Check if the widget has a <body> already. If not, we need to wait
     // a bit
+
     var Di = $(div).find('iframe').contents();
     var D = Di[0];
 
-    if (!D || !D.body) {
-        setTimeout(function() { size_this($(div), reset); }, 100);
+    if (!div.id) {
+        // Do nothing if the div is not there at all
+
+    } else if (!D || !D.body) {
+        setTimeout(function() { size_this(div, reset); }, 100);
+
     } else {
         // Check if the width of the iframe is different. If not, then
         // we don't need to do anything.
@@ -84,6 +89,7 @@ $(document).ready(function() {
 
 function initWidget(div, html, k) {
     $(div).html(html)
+
     setTimeout(function() { size_this($(div), true); }, 100);
     k(null, div);
 }
