@@ -27,6 +27,7 @@ S3method(print, deferred_result)
 
 export(print.htmlwidget)
 S3method(print, htmlwidget)
+S3method(as.character, htmlwidget)
 
 import(gist)
 import(knitr)
