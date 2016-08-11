@@ -184,16 +184,6 @@ htmlwidgets.install.ocap <- function() {
 }
 
 as.character.htmlwidget <- function(x, ocaps = TRUE, ...) {
-  TODO
-}
-
-# you may need this if your widgets insist on spawning in a separate tab
-rcloud.view.recalcitrant.widget <- function(widget) {
-  class(widget) <- setdiff(class(widget), "suppress_viewer")
-  widget
-}
-
-print.htmlwidget <- function(x, ..., view = interactive()) {
 
   html <- htmlwidgets:::toHTML(x, standalone = TRUE)
   deps <- lapply(htmltools::htmlDependencies(html), rcloudHTMLDependency)
@@ -211,6 +201,24 @@ print.htmlwidget <- function(x, ..., view = interactive()) {
     rendered$html, "</body>", "</html>"
   )
 
+  if (ocaps) htmlwidgets.install.ocap()
+
+  paste(
+    sep = "",
+    "<iframe frameBorder=\"0\" width=\"100%\" height=\"400\" srcdoc=\"",
+    gsub("\"", "&quot;", paste(html, collapse = "\n")),
+    "\"></iframe>"
+  )
+}
+
+# you may need this if your widgets insist on spawning in a separate tab
+rcloud.view.recalcitrant.widget <- function(widget) {
+  class(widget) <- setdiff(class(widget), "suppress_viewer")
+  widget
+}
+
+print.htmlwidget <- function(x, ..., view = interactive()) {
+
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
   rcloud.html.out(paste0(
     "<div class=\"rcloud-htmlwidget\">",
@@ -218,18 +226,13 @@ print.htmlwidget <- function(x, ..., view = interactive()) {
     "</div>"))
   where <- paste0("#", where)
 
-  ocaps <- htmlwidgets.install.ocap()
+  widget <- as.character(x, ..., ocaps = FALSE)
 
-  widget <- paste(
-    sep = "",
-    "<iframe frameBorder=\"0\" width=\"100%\" height=\"400\" srcdoc=\"",
-    gsub("\"", "&quot;", paste(html, collapse = "\n")),
-    "\"></iframe>"
-  )
+  ocaps <- htmlwidgets.install.ocap()
 
   ocaps$create(where, widget)
 
-  invisible(NULL)
+  invisible(x)
 }
 
 rcloudHTMLDependency <- function(dep) {
