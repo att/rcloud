@@ -1,5 +1,5 @@
 ---
-title: RCloud&#58; 1.3 What's New!
+title: RCloud 1.3&#58; What's New!
 layout: default
 ---
 
@@ -9,7 +9,9 @@ layout: default
 
 </div>
 
-2015-02-14
+Created 2015-02-14. **What's New!** contains a list of new features, GUI enhancements and bug fixes.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
+
+<div class="frmttng">
 
 ## Table of Contents
 
@@ -50,6 +52,8 @@ layout: default
     * [shared.R](#sharedr)
     * [Redis Database Number and Password](#redisdatabasenumberandpassword)
 1. [Bug Fixes/Improvements](#bugfixes)
+
+</div>
 
 <a name="functional" ></a>
 

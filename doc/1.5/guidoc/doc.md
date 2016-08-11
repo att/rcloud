@@ -1,5 +1,5 @@
 ---
-title: RCloud&#58; 1.5 GUI Documentation
+title: RCloud 1.5&#58; GUI Documentation
 layout: default
 ---
 
@@ -11,11 +11,9 @@ layout: default
 
 </div>
 
-Created: 2015-10-14. RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
+Created: 2015-10-14. **GUI Documentation** contains an in-depth description of all the features in the RCloud GUI.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
-## What's New
-
-Please see [1.5 What's New](/rcloud/doc/1.5/whatsnew/doc.html) for a list of new features, enhancements, and bug fixes.
+<div class="frmttng">
 
 ## Table of Contents
 
@@ -97,6 +95,8 @@ Please see [1.5 What's New](/rcloud/doc/1.5/whatsnew/doc.html) for a list of new
 1. [Dataframe](#dataframe)
 1. [Session](#session)
 1. [RStudio Shiny Support](#rstudioshinysupport)
+
+</div>
 
 <a name="gettingstarted"></a>
 

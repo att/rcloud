@@ -1,5 +1,5 @@
 ---
-title: RCloud&#58; 1.5 What's New
+title: RCloud 1.5&#58; What's New!
 layout: default
 ---
 
@@ -11,11 +11,9 @@ layout: default
 
 </div>
 
-Created: 2015-10-14. RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
+Created: 2015-10-14. **What's New!** contains a list of new features, GUI enhancements and bug fixes.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
-## Comprehensive Documentation
-
-Please see [1.5 Current GUI Documentation](/rcloud/doc/1.5/guidoc/doc.html) for comprehensive documentation of the RCloud GUI, including the new features below.
+<div class="frmttng">
 
 ## Table of Contents
 
@@ -30,6 +28,8 @@ Please see [1.5 Current GUI Documentation](/rcloud/doc/1.5/guidoc/doc.html) for 
     * [User Extensions](#userextensions)
     * [Error Messages](#errormessages)
 1. [Bug Fixes](#bugfixes)
+
+</div>
 
 [Top](#top)
 

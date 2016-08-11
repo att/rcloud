@@ -1,98 +1,18 @@
+---
+title: RCloud 1.6&#58; GUI Documentation
+layout: default
+---
+
 <a name="TOP"></a>
 
-# RCloud GUI Documentation
+<div class="frmttng">
 
+<h1> {{page.title}} </h1>
 
-Created 2016-07-18. RCloud GUI documentation is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis.
+</div>
 
-## What's New
+Created 2016-07-18. **GUI Documentation** contains an in-depth description of all the features in the RCloud GUI. RCloud documentation is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis. 
 
-Please see [1.6 What's New](../1.6/whatsnew/doc.md) for a list of new features, enhancements, and bug fixes.
-
-## Table of Contents
-
-1. [Getting Started](#gettingstarted)
-1. [Parts of the GUI](#partsofthegui)
-    * [GUI Navigation](#guinavigation)
-        * [Opening and Closing Panels](#openingandclosingpanels)
-        * [Opening and Closing All Panels](#openingandclosingallpanels)
-        * [Changing Panel Width](#changingpanelwidth)
-1. [The Header Bar](#theheaderbar)
-1. [Cells](#cells)
-    * [Prompt Cells](#rpromptcells)
-        * [Terminology](#terminology)
-    * [Markdown Cells](#Markdowncells)
-        * [Adding R Code](#addingrcode)
-        * [Markdown](#markdown)
-    * [Editing and Viewing Results](#editingandviewingresults)
-    * [Adding and Deleting Markdown Cells](#addinganddeletingcells)
-    * [Cell Run-State Indicator](#cellrunstateindicator)
-    * [Stopping Cell Execution](#stoppingcellexecution)
-    * [Rearranging Cells](#rearrangingcells)
-    * [Joining Cells](#joiningcells)
-    * [Markdown Vs. RMarkdown Cells](#markdownvsrmarkdowncells)
-    * [Saving Plots](#savingplots)
-    * [Locators](#locators)
-1. [Notebooks](#notebooks)
-    * [Creating a Notebook](#creatinganotebook)
-    * [Running a Notebook](#runninganotebook)
-        * [Partial Notebook Runs] (#partialnotebookruns)
-    * [Long-Running Notebooks](#longrunningnotebooks)
-    * [Forking (Copying) a Notebook](#forkingcopyinganotebook)
-    * [Saving Your Work](#savingyourwork)
-        * [Manual Saving](#manualsaving)
-        * [Versioning](#versioning)
-            * [Version Tagging](#versiontagging)
-            * [Reverting to a Previous Version](#revert)
-    * [Hidden Notebooks](#hiddennotebooks)
-        * [Toggle Hidden](#togglehidden)
-        * [Toggle Show](#toggleshow)
-    * [Protecting Your Notebooks](#protectingyournotebooks)
-        * [Notebook Permissions](#notebookpermissions)
-        * [Groups](#groups)
-    * [Deleting Notebooks](#deletingnotebooks)
-    * [Sharing Your Notebooks](#sharingyournotebooks)
-        * [view.html](#view.html)
-            * [Hiding UI Elements](#hidinguielements)
-        * [notebook.R](#notebook.R)
-        * [mini.html](#mini.html)
-        * [shiny.html](#shiny.html)
-    * [Who Starred my Notebook?](#whostarredmynotebook)
-    * [Deleting Notebook Cells](#deletingnotebookcells)
-    * [Find/Find Replace](#findreplace)
-    * [Recent](#recent)
-1. [Data Access](#dataaccess)
-    * [File Upload](#fileupload)
-    * [Upload to Notebook](#uploadtonotebook)
-1. [Notebook Assets](#notebookassets)
-    * [Data as an Asset](#dataasanasset)
-    * [Uploading Assets](#uploadingasset)
-    * [Asset Links](#assetlinks)
-    * [Cascading Style Sheets (CSS)](#usingcss)
-    * [JavaScript](#jsmode)
-    * [HTML](#htmlmode)
-    * [Renaming Assets](#assetrename)
-    * [Binary Assets](#binaryassets)
-    * [Asset Size](#assetsize)
-1. [notebook.R URLs](#notebookrurls)
-1. [shared.R URLs](#sharedrurls)
-1. [Search](#search)
-    * [Complex Searches](#complexsearches)
-1. [Settings](#settings)
-    * [Show Command Prompt](#showcommandprompt)
-    * [Show Terse Version Dates](#showterseversiondates)
-    * [Show Cell Numbers](#showcellnumbers)
-    * [Extensions](#extensions)
-    * [New Notebook Prefixes](#newnotebookprefixes)
-1. [Comments](#comments)
-    * [Editing Comments](#editingcomments)
-    * [Deleting Comments](#deletingcomments)
-1. [Help](#help)
-1. [Workspace](#workspace)
-1. [Dataframe](#dataframe)
-1. [Session](#session)
-1. [RStudio Shiny Support](#rstudioshinysupport)
-1. [Keyboard Shortcuts](#keyboardshortcuts)
 
 <a name="gettingstarted"></a>
 

@@ -1,5 +1,5 @@
 ---
-title: RCloud&#58; 1.4 GUI Documentation
+title: RCloud 1.4&#58; GUI Documentation
 layout: default
 ---
 
@@ -12,7 +12,7 @@ layout: default
 
 </div>
 
-Created: 2015-07-03. RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
+Created: 2015-07-03. **GUI Documentation** contains an in-depth description of all the features in the RCloud GUI.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
 
 ## Table of Contents

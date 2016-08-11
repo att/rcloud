@@ -1,40 +1,18 @@
+---
+title: RCloud 1.6&#58; What's New!
+layout: default
+---
+
 <a name="top"></a>
 
-# RCloud 1.6: What's New
+<div class="frmttng">
 
-Created: 2016-07-18. RCloud documentation is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis.
+<h1> {{page.title}} </h1>
 
-## Comprehensive Documentation
+</div>
 
-Please see [1.6 Current GUI Documentation](../guidoc/doc.html) for comprehensive documentation of the RCloud GUI, including the new features below.
+Created 2016-07-18. **What's New!** contains a list of new features, GUI enhancements and bug fixes. It is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis. 
 
-## Table of Contents
-
-1. [GUI Enhancements](#gui)
-    * [Multi-cell Selection](#multicellselection)
-        * [Keyboard Extensions](#keyboardext)
-    * [Keyboard Shortcuts](#keyboardshortcuts)
-    * [Discover](#discover)
-    * [Cell Heights](#cellheights)
-    * [Arrange Panels by Size](#arrangepanelsbysize)
-1. [Functional Enhancements](#functional)
-    * [HTML Widgets](#htmlwidgets)
-    * [Serving Files from User Libraries](#userlibs)
-    * [Partial Notebook Runs](#partialnotebookruns)
-1. [Technical Enhancements and Notes](#tech)
-    * [Local Single-User Installations](#singleuserinstalls)
-    * [edit.html Loading Time](#edithtmlloading)
-    * [Stylesheets](#stylesheets)
-    * [Find and Replace](#findandreplace)
-    * [Navigation](#navigation)
-    * [Mini and Shiny Errors](#minishinyerrors)
-    * [Double Forking](#doubleforking)
-    * [Unsupported Browsers](#unsupportedbrowsers)
-    * [Invalid Sources](#invalidsources)
-    * [notebook.R Headers](#notebookrheaders)
-1. [Bug Fixes](#bugfixes)
-
-[Top](#top)
 
 <a name="gui"></a>
 

@@ -1,5 +1,5 @@
 ---
-title: RCloud&#58; 1.4 What's New
+title: RCloud&#58; 1.4 What's New!
 layout: default
 ---
 
@@ -11,7 +11,9 @@ layout: default
 
 </div>
 
-Created: 2015-07-03. RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
+Created: 2015-07-03. **What's New!** contains a list of new features, GUI enhancements and bug fixes.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
+
+<div class="frmttng">
 
 ## Table of Contents
 
@@ -33,6 +35,8 @@ Created: 2015-07-03. RCloud documentation is currently maintained by <a target="
 1. [Plugins](#plugins)
     * [Workspace Viewer](#workspaceviewer)
 1. [Bug Fixes](#bugfixes)
+
+</div>
 
 [Top](#top)
 
