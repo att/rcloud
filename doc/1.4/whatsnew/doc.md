@@ -13,7 +13,7 @@ layout: default
 
 Created: 2015-07-03. **What's New!** contains a list of new features, GUI enhancements and bug fixes.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
-<div class="frmttng">
+<div markdown="1" class="frmttng">
 
 ## Table of Contents
 

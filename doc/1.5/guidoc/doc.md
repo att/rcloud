@@ -13,7 +13,7 @@ layout: default
 
 Created: 2015-10-14. **GUI Documentation** contains an in-depth description of all the features in the RCloud GUI.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
-<div class="frmttng">
+<div markdown="1" class="frmttng">
 
 ## Table of Contents
 
