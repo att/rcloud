@@ -30,5 +30,5 @@ run <- function(url, query, body, headers) {
   f <- file(fn, "rb")
   r <- readBin(f, raw(), s)
   close(f)
-  list(r, mime::guess_type(base))
+  list(r, mime::guess_type(base), "Cache-Control: max-age=3600")
 }
