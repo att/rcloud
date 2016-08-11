@@ -211,12 +211,6 @@ as.character.htmlwidget <- function(x, ocaps = TRUE, ...) {
   )
 }
 
-# you may need this if your widgets insist on spawning in a separate tab
-rcloud.view.recalcitrant.widget <- function(widget) {
-  class(widget) <- setdiff(class(widget), "suppress_viewer")
-  widget
-}
-
 print.htmlwidget <- function(x, ..., view = interactive()) {
 
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
@@ -234,6 +228,8 @@ print.htmlwidget <- function(x, ..., view = interactive()) {
 
   invisible(x)
 }
+
+print.suppress_viewer <- print.htmlwidget
 
 rcloudHTMLDependency <- function(dep) {
 
