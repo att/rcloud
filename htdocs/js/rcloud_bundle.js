@@ -5315,6 +5315,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(this).attr("height", h);
         });
     }
+    $(sel_accordion).data('collapsible-column', result);
     _.extend(result, {
         init: function() {
             var that = this;
@@ -7800,7 +7801,8 @@ RCloud.UI.image_manager = (function() {
             scroller_div_.append(image_div_, $('<br/>'));
             image_div_.append($image);
             var image_commands = $('<span class="live-plot-commands"></div>');
-            image_commands.append(thumb_button());
+            if(!shell.notebook.model.read_only())
+                image_commands.append(thumb_button());
             image_commands.append(save_button());
             image_commands.hide();
             plot.hover(function() {
@@ -9849,7 +9851,7 @@ RCloud.UI.panel_loader = (function() {
                     colwidth: 2,
                     sort: 4000,
                     panel: RCloud.UI.comments_frame
-                },                
+                },
                 Assets: {
                     side: 'right',
                     name: 'assets',
@@ -9915,6 +9917,7 @@ RCloud.UI.panel_loader = (function() {
                         p.panel.init();
                     if(p.panel.load)
                         p.panel.load();
+                    
                     if(p.panel.panel_sizer)
                         $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
                     if(p.panel.heading_content_selector)
@@ -9965,7 +9968,6 @@ RCloud.UI.panel_loader = (function() {
         }
     };
 })();
-
 
 (function() {
 
@@ -11322,8 +11324,9 @@ RCloud.UI.upload_with_alerts = (function() {
         }
 
         options = upload_ui_opts(options || {});
-        if(options.$result_panel.length)
-            RCloud.UI.right_panel.collapse(options.$result_panel, false);
+        if(options.$result_panel.length && options.show_result !== false)
+            // instead of RCloud.UI.right_panel - this could be better encapsulated!
+            options.$result_panel.parent().parent().data('collapsible-column').collapse(options.$result_panel, false);
 
         var file_error_handler = function(err) {
             var message = err.message;
@@ -11577,7 +11580,8 @@ RCloud.UI.thumb_dialog = (function() {
                 if(added_file_) {
                     RCloud.UI.upload_with_alerts(true, {
                         files: [added_file_],
-                        filenames: [thumb_filename_]
+                        filenames: [thumb_filename_],
+                        show_result: false
                     }).catch(function() {}); // we have special handling for upload errors
                 }
 
