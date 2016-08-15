@@ -92,7 +92,7 @@ RCloud.UI.upload_with_alerts = (function() {
         }
 
         options = upload_ui_opts(options || {});
-        if(options.$result_panel.length)
+        if(options.$result_panel.length && options.show_result !== false)
             // instead of RCloud.UI.right_panel - this could be better encapsulated!
             options.$result_panel.parent().parent().data('collapsible-column').collapse(options.$result_panel, false);
 

@@ -181,7 +181,8 @@ RCloud.UI.thumb_dialog = (function() {
                 if(added_file_) {
                     RCloud.UI.upload_with_alerts(true, {
                         files: [added_file_],
-                        filenames: [thumb_filename_]
+                        filenames: [thumb_filename_],
+                        show_result: false
                     }).catch(function() {}); // we have special handling for upload errors
                 }
 
