@@ -72,6 +72,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(this).attr("height", h);
         });
     }
+    $(sel_accordion).data('collapsible-column', result);
     _.extend(result, {
         init: function() {
             var that = this;
