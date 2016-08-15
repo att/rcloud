@@ -29,5 +29,8 @@ Unlike these other systems, RCloud:
   repository. This is because RCloud notebooks are
   [Github gists](https://gist.github.com)
 
+Deploy with Docker: Read the instruction at [Docker Hub] (https://hub.docker.com/r/rcl0ud/rcloud/)
+
 Interested? Read the [setup guide](doc/INSTALL.md).
+
 
