@@ -206,7 +206,7 @@ stitch.search.result <- function(splitted, type,k) {
   # Create reponse
   res <- list()
   res$id <- id
-  body <- paste(comment.id,':::',comment.content,':::',rcloud.support:::.session$username)
+  body <- paste(comment.id,':::',comment.content,':::',.session$username)
   ## pick set/add depending on the exsitng content
   if(is.null(solr.res$response$docs[[1]]$comments)) {res$comments$set <- body } else { res$comments$add <- body }
 
@@ -220,10 +220,18 @@ stitch.search.result <- function(splitted, type,k) {
 
   query <- list(q=paste0("id:",id),start=0,rows=1000)
   solr.res <- .solr.get(query=query)
-  index <- grep(cid, solr.res$response$docs[[1]]$comments)
-  solr.res$response$docs[[1]]$comments[[index]] <- paste(cid, fromJSON(content)$body, sep=' : ')
-  metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
+
+  cids <- trimws(unlist(lapply(solr.res$response$docs,function(o){lapply(o$comments,function(p){strsplit(p,":")[[1]][1]})})))
+  index <- match(cid,cids)
+  # If comment does not exist in the index create a new entry
+  if(is.na(index)) {.solr.post.comment(id,content,cid)} else {
+  solr.res$response$docs[[1]]$comments[[index]] <- paste(cid, ':::' , fromJSON(content)$body, ':::' , .session$username)
+  res <- list()
+  res$id <- id
+  res$comments$set <- solr.res$response$docs[[1]]$comments
+  metadata <- toJSON(res)
   .solr.post(data=metadata)
+}
 }
 
 .solr.delete.comment <- function(id, cid) {
