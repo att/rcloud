@@ -117,7 +117,8 @@ RCloud.UI.image_manager = (function() {
             scroller_div_.append(image_div_, $('<br/>'));
             image_div_.append($image);
             var image_commands = $('<span class="live-plot-commands"></div>');
-            image_commands.append(thumb_button());
+            if(!shell.notebook.model.read_only())
+                image_commands.append(thumb_button());
             image_commands.append(save_button());
             image_commands.hide();
             plot.hover(function() {
