@@ -195,7 +195,7 @@ stitch.search.result <- function(splitted, type,k) {
 .solr.post.comment <- function(id, content, comment.id) {
 
   ## Post comments to only notebooks with visibility flag true or non encrypted notebooks
-  if(rcloud.is.notebook.visible(notebook$content$id) && !(is.notebook.encrypted(notebook$content$id))){
+  if(rcloud.is.notebook.visible(id) && !(is.notebook.encrypted(id))){
   ## query ID to see if it has existing comments
   query <- list(q=paste0("id:",id),start=0,rows=1000)
   solr.res <- .solr.get(query=query)
