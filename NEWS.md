@@ -17,6 +17,8 @@
 * Docker configuration is included in the source.
 
 ### Improvements
+* HTML Widgets load faster. (#2231)
+
 * By popular demand, the Delete Cell button is replaced. (#2176)
 
 * Clicking on the RCloud logo navigates to the Edit page. (#2186)
