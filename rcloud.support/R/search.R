@@ -196,21 +196,28 @@ stitch.search.result <- function(splitted, type,k) {
 
   ## Post comments to only notebooks with visibility flag true or non encrypted notebooks
   if(rcloud.is.notebook.visible(id) && !(is.notebook.encrypted(id))){
+  
+
   ## query ID to see if it has existing comments
   query <- list(q=paste0("id:",id),start=0,rows=1000)
   solr.res <- .solr.get(query=query)
   comment.content <- fromJSON(content)
 
+  # Create reponse
+  res <- list()
+  res$id <- id
+  body <- paste(comment.id,':::',comment.content,':::',rcloud.support:::.session$username)
   ## pick set/add depending on the exsitng content
-  method <- if(is.null(solr.res$response$docs[[1]]$comments)) "set" else "add"
+  if(is.null(solr.res$response$docs[[1]]$comments)) {res$comments$set <- body } else { res$comments$add <- body }
 
   ## send the update request
-  metadata <- paste0('{"id":"', id, '","comments":{"', method, '":"', paste(comment.id,':::',comment.content,':::',.session$username), '"}}')
+  metadata <- toJSON(res)
   .solr.post(data=metadata)
   }
 }
 
 .solr.modify.comment <- function(id, content, cid) {
+
   query <- list(q=paste0("id:",id),start=0,rows=1000)
   solr.res <- .solr.get(query=query)
   index <- grep(cid, solr.res$response$docs[[1]]$comments)
