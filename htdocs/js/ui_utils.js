@@ -314,6 +314,7 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
         highlightGutterLine: !readonly
     });
     widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
+    widget.textInput.getElement().disabled = readonly;
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
@@ -598,18 +599,29 @@ ui_utils.scroll_to_after = function($sel, duration) {
     $parent.scrollTo(null, y, opts);
 };
 
-ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, _) {
-    if(_ === undefined)
+ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_complete /* , $elem-offset, $elem-offset ... */) {
+    if(arguments.length < 5) {
+        console.warn('scroll_into_view needs offset elements');
         return;
+    }
     var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
-        elemtop = 0;
-    for(var i = 3; i<arguments.length; ++i)
+        elemtop = 0,
+        options = on_complete ? { animation: { complete : on_complete }} : {};
+
+    for(var i = 4; i < arguments.length; ++i)
         elemtop += arguments[i].position().top;
+
     if(elemtop > height)
-        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer);
+        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
     else if(elemtop < 0)
-        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer);
+        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer, options);
+    else {
+        // no scrolling, so automatically call on_complete if it's defined:
+        if(on_complete) {
+            on_complete();
+        }
+    }
 };
 
 ui_utils.prevent_backspace = function($doc) {

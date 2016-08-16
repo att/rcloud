@@ -22,6 +22,7 @@ RCloud.UI.panel_loader = (function() {
                                   icon, '\u00a0', title_span);
 
         var heading_content = opts.panel.heading_content ? opts.panel.heading_content() : null;
+
         var heading;
         if(opts.side==='left') {
             heading = $.el.div(heading_attrs,
@@ -29,7 +30,8 @@ RCloud.UI.panel_loader = (function() {
                                heading_content);
         }
         else if(opts.side==='right') {
-            heading = $.el.div(heading_attrs,
+            heading = $.el.div(
+                               heading_attrs,
                                heading_content,
                                heading_link);
         }
@@ -120,7 +122,7 @@ RCloud.UI.panel_loader = (function() {
                     colwidth: 2,
                     sort: 4000,
                     panel: RCloud.UI.comments_frame
-                },                
+                },
                 Assets: {
                     side: 'right',
                     name: 'assets',
@@ -186,6 +188,7 @@ RCloud.UI.panel_loader = (function() {
                         p.panel.init();
                     if(p.panel.load)
                         p.panel.load();
+                    
                     if(p.panel.panel_sizer)
                         $('#' + collapse_name(p.name)).data("panel-sizer",p.panel.panel_sizer);
                     if(p.panel.heading_content_selector)
@@ -236,4 +239,3 @@ RCloud.UI.panel_loader = (function() {
         }
     };
 })();
-

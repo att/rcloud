@@ -4,8 +4,18 @@ run <- function(url, query, body, headers) {
   pkg <- pex[1]
   pex <- pex[-1]
   if (any(pex == "..")) stop("invalid component in the path URL")
+
+  ## Try _htmlwidgets/pkg/ first
+  fn <- ""
+  if (pkg %in% c("_htmlwidgets")) {
+    path <- c(substring(pkg, 2), pex[-1])
+    fn <- system.file(package = pex[1], do.call(file.path, as.list(path)))
+  }
+
+  ## Otherwise try pkg/www, and finally the user library
   base <- paste(c("www", pex), collapse="/")
-  if (!nzchar(fn <- system.file(base, package=pkg)) && length(pex) > 1) {
+  if (!nzchar(fn) &&
+      !nzchar(fn <- system.file(base, package=pkg)) && length(pex) > 1) {
       ## try to interpret as user/pkg
       usr <- pkg
       pkg <- pex[1]
@@ -20,5 +30,5 @@ run <- function(url, query, body, headers) {
   f <- file(fn, "rb")
   r <- readBin(f, raw(), s)
   close(f)
-  list(r, mime::guess_type(base))
+  list(r, mime::guess_type(base), "Cache-Control: max-age=3600")
 }

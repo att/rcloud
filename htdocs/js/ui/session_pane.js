@@ -1,5 +1,6 @@
 RCloud.UI.session_pane = {
     error_dest_: null,
+    clear_session_: null,
     allow_clear: true,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
@@ -24,6 +25,16 @@ RCloud.UI.session_pane = {
             }
         });
 
+        // manual clearing:
+        this.clear_session_ = $('#clear-session');
+        if(this.clear_session_.length) {
+            this.clear_session_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                that.clear();
+            });
+        }
+
         //////////////////////////////////////////////////////////////////////
         // bluebird unhandled promise handler
         Promise.onPossiblyUnhandledRejection(function(e, promise) {
@@ -43,6 +54,16 @@ RCloud.UI.session_pane = {
         if(this.allow_clear)
             $("#session-info").empty();
     },
+    should_scroll: function() {
+        var scroll_bottom = $('#session-info-panel').scrollTop() + $('#session-info-panel').height() - $('#session-info-out').height();
+        console.log('scroll bottom', scroll_bottom);
+        return scroll_bottom > -10;
+    },
+    scroll_to_end: function() {
+        ui_utils.on_next_tick(function() {
+            ui_utils.scroll_to_after($("#session-info"));
+        });
+    },
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
         if(!$('#session-info').length) {
@@ -54,11 +75,11 @@ RCloud.UI.session_pane = {
         // not trivial to maintain each output in some separate structure
         if (!document.getElementById("session-info-out"))
             $("#session-info").append($("<pre id='session-info-out'></pre>"));
+        var scroll = this.should_scroll();
         $("#session-info-out").append(msg);
         RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
-        ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#session-info"));
-        });
+        if(scroll)
+            this.scroll_to_end();
     },
     post_error: function(msg, dest, logged) { // post error to UI
         $('#loading-animation').hide();
@@ -76,12 +97,12 @@ RCloud.UI.session_pane = {
             }
             else if (typeof msg !== 'object')
                 throw new Error("post_error expects a string or a jquery div");
+            var scroll = this.should_scroll();
             msg.addClass(errclass);
             dest.append(msg);
             this.show_error_area();
-            ui_utils.on_next_tick(function() {
-                ui_utils.scroll_to_after($("#session-info"));
-            });
+            if(scroll)
+                this.scroll_to_end();
         }
         if(!logged) {
             if(typeof msg === 'object')
@@ -101,5 +122,11 @@ RCloud.UI.session_pane = {
         }
         console.log(msg);
         this.post_error(msg, undefined, true);
+    },
+    heading_content: function() {
+        return RCloud.UI.panel_loader.load_snippet('session-info-panel-heading');
+    },
+    heading_content_selector: function() {
+        return $('#session-panel-controls');
     }
 };

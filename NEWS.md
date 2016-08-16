@@ -1,3 +1,61 @@
+## RCloud 1.6.1
+
+### Features
+* `rcloud.download.file` invokes a file download in browsers that support
+  it. See
+  [this notebook](https://rcloud.social/edit.html?notebook=1aafc8129d835a9527e87630109c3df9)
+  for a simple example downloading text from a notebook, and
+  [this notebook](https://rcloud.social/edit.html?notebook=0f7e6a325bb9158ed01a864ca7f4f175)
+  for an example of downloading both text and binary files from a mini.html notebook.
+
+* New, easier methods for adding thumbnail images for the discover
+  page. Thumbnails can be pasted, dragged, uploaded from a file, or selected
+  from any plot in the notebook. (#2078, #2217)
+
+* Button to clear the session pane. (#1734)
+
+* Docker configuration is included in the source.
+
+### Improvements
+* HTML Widgets load faster. (#2231)
+
+* By popular demand, the Delete Cell button is replaced. (#2176)
+
+* Clicking on the RCloud logo navigates to the Edit page. (#2186)
+
+* Times on discovery page are shown relatively (time ago). (#2150)
+
+* `rcloud.view.recalcitrant.widget` utility for htmlwidgets that refuse to
+  display inline (#2169)
+
+* Newly imported notebooks are highlighted in the Notebook Tree. (#1431)
+
+* Discover page launches in a new tab. (#2184)
+
+* Number of cells selected is displayed in the Selection Bar. (#2189)
+
+* Session pane will not autoscroll if it is not currently showing the last
+  line. (#1996)
+
+### Bugfixes
+* Imported notebooks were not showing on discover page. (#2183)
+
+* Clicking "cancel" on the New Asset dialog was throwing an error. (#2171)
+
+* Cells could overlap tall plots. (#1841)
+
+* Starred deleted notebooks were not shown in the All Notebooks tree.
+  (#2165 / #2160 / #2194)
+
+* Image assets could overflow the div in Firefox (#2201)
+
+* Disabled asset pane would still grab the keyboard focus, causing keyboard
+  shortcuts not to work. (#2218)
+
+* Title/tooltips shown for most buttons in the UI, text adapting where
+  appropriate. (#1438 etc.)
+
+
 ## RCloud 1.6
 
 ### Features

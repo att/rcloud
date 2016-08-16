@@ -5,10 +5,10 @@ RCloud.UI.notebooks_frame = {
         return RCloud.UI.panel_loader.load_snippet('notebooks-snippet');
     },
     heading_content: function() {
-        var notebook_inner_panel = RCloud.UI.panel_loader.load_snippet('notebooks-panel-tmp');
+        var notebook_inner_panel = RCloud.UI.panel_loader.load_snippet('notebooks-panel-heading');
         return notebook_inner_panel;
     },
     heading_content_selector: function() {
-        return $('#notebooks-panel-inner');
+        return $('#notebooks-panel-controls');
     }
 };

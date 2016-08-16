@@ -1,0 +1,25 @@
+diff --git a/htdocs/login.R b/htdocs/login.R
+index c15cebf..0a57e38 100644
+--- a/htdocs/login.R
++++ b/htdocs/login.R
+@@ -63,7 +63,7 @@ run <- function(url, query, body, headers)
+       ## so we can generate a token
+       token <- rcloud.support:::generate.token()
+       rcloud.support:::set.token(usr, token)
+-      extra.headers <- c(paste0("Set-Cookie: user=", usr, "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: token=", token, "; domain=", getConf("cookie.domain"),"; path=/;"), extra.headers)
++      extra.headers <- c(paste0("Set-Cookie: user=", usr, "; ","path=/;\r\nSet-Cookie: token=", token, "; "," path=/;"), extra.headers)
+       ## re-create the back-end because the username/token have changed
+       ctx <- create.gist.backend(usr, token)
+       url <- gist::auth.url(redirect, ctx=ctx)
+diff --git a/htdocs/login_successful.R b/htdocs/login_successful.R
+index 8879957..90fa99d 100644
+--- a/htdocs/login_successful.R
++++ b/htdocs/login_successful.R
+@@ -20,6 +20,6 @@ run <- function(url, query, body, headers)
+                "<pre>Welcome, ", username, ".</pre>",
+                "</body></html>", sep=''),
+          "text/html",
+-         paste("Set-Cookie: user=", username, "; domain=", rcloud.config("cookie.domain"), "; path=/;\r\nSet-Cookie: token=", token, "; domain=", rcloud.config("cookie.domain"), "; path=/;\r\nRefresh: 0.1; url=", ret, sep=''))
++         paste("Set-Cookie: user=", username, "; ", "path=/;\r\nSet-Cookie: token=", token, "; "," path=/;\r\nRefresh: 0.1; url=", ret, sep=''))
+   } else list("<html><head></head><body>Invalid token, could not authenticate with the back-end</body></html>", "text/html")
+ }

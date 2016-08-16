@@ -25,7 +25,7 @@ function create_cell_html_view(language, cell_model) {
     var current_error_; // text is aggregated
     var change_content_;
     var cell_status_;
-    var above_between_controls_, cell_controls_, left_controls_;
+    var above_controls_, cell_controls_, left_controls_;
     var edit_mode_; // note: starts neither true nor false
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
@@ -74,7 +74,7 @@ function create_cell_html_view(language, cell_model) {
         cell_controls_ = RCloud.UI.cell_commands.decorate('cell', cell_control_bar, cell_model, result);
 
         var cell_commands_above = $("<div class='cell-controls-above nonselectable'></div>");
-        above_between_controls_ = RCloud.UI.cell_commands.decorate('above_between', cell_commands_above, cell_model, result);
+        above_controls_ = RCloud.UI.cell_commands.decorate('above', cell_commands_above, cell_model, result);
         notebook_cell_div.append(cell_commands_above);
 
         cell_status_.click(function(e) {
@@ -713,7 +713,7 @@ function create_cell_html_view(language, cell_model) {
             am_read_only_ = readonly;
             if(ace_widget_)
                 ui_utils.set_ace_readonly(ace_widget_, readonly );
-            [cell_controls_, above_between_controls_, left_controls_].forEach(function(controls) {
+            [cell_controls_, above_controls_, left_controls_].forEach(function(controls) {
                 if(controls)
                     controls.set_flag('modify', !readonly);
             });
@@ -828,7 +828,7 @@ function create_cell_html_view(language, cell_model) {
             var config = renderer.layerConfig;
             var top = pos.top - config.offset;
 
-            // shouldScoll  = true  = ^
+            // shouldScroll  = true  = ^
             // shouldScroll = false = v
             if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
                 shouldScroll = true;
@@ -898,7 +898,7 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
-            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, input_div_);
+            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {
@@ -928,8 +928,8 @@ function create_cell_html_view(language, cell_model) {
             return this;
         },
         check_buttons: function() {
-            if(above_between_controls_)
-                above_between_controls_.betweenness(!!cell_model.parent_model.prior_cell(cell_model));
+            if(above_controls_)
+                above_controls_.set_flag('first', !cell_model.parent_model.prior_cell(cell_model));
             return this;
         },
         change_highlights: function(ranges) {
@@ -949,7 +949,7 @@ function create_cell_html_view(language, cell_model) {
                             window.setTimeout(function() {
                                 var hl = ace_div.find('.find-highlight.' + range.kind);
                                 if(hl.size())
-                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, ace_div, hl);
+                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, ace_div, hl);
                             }, 0);
                         }
                     });
@@ -958,7 +958,7 @@ function create_cell_html_view(language, cell_model) {
                 assign_code();
                 var $active = code_div_.find('.find-highlight.active, .find-highlight.activereplaced');
                 if($active.size())
-                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, code_div_, $active);
+                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, code_div_, $active);
 
             }
             return this;

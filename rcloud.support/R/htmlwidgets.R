@@ -183,7 +183,35 @@ htmlwidgets.install.ocap <- function() {
   .htmlwidgets.cache$ocaps
 }
 
-rcloud.htmlwidgets.viewer <- function(url, height) {
+as.character.htmlwidget <- function(x, ocaps = TRUE, ...) {
+
+  html <- htmlwidgets:::toHTML(x, standalone = TRUE)
+  deps <- lapply(htmltools::htmlDependencies(html), rcloudHTMLDependency)
+  rendered <- htmltools::renderTags(html)
+
+  background <- "white"
+  html <- c(
+    "<!DOCTYPE html>", "<html>", "<head>", "<meta charset=\"utf-8\"/>",
+    htmltools::renderDependencies(deps, "href"),
+    rendered$head, "</head>",
+    sprintf(
+      "<body style=\"background-color:%s;\">",
+      htmltools::htmlEscape(background)
+    ),
+    rendered$html, "</body>", "</html>"
+  )
+
+  if (ocaps) htmlwidgets.install.ocap()
+
+  paste(
+    sep = "",
+    "<iframe frameBorder=\"0\" width=\"100%\" height=\"400\" srcdoc=\"",
+    gsub("\"", "&quot;", paste(html, collapse = "\n")),
+    "\"></iframe>"
+  )
+}
+
+print.htmlwidget <- function(x, ..., view = interactive()) {
 
   where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
   rcloud.html.out(paste0(
@@ -192,46 +220,77 @@ rcloud.htmlwidgets.viewer <- function(url, height) {
     "</div>"))
   where <- paste0("#", where)
 
+  widget <- as.character(x, ..., ocaps = FALSE)
+
   ocaps <- htmlwidgets.install.ocap()
 
-  htmlwidgets:::pandoc_self_contained_html(url, url)
-  widget <- paste(readLines(url), collapse = "\n")
+  ocaps$create(where, widget)
 
-  ocaps$create(where, add.iframe.htmlwidget(widget))
-
-  invisible()
+  invisible(x)
 }
 
-as.character.htmlwidget <- function(x, ocaps = TRUE, ...) {
-  tmp <- tempfile(fileext=".html")
-  on.exit(unlink(tmp), add = TRUE)
-  htmlwidgets::saveWidget(x, file = tmp, selfcontained = FALSE)
-  htmlwidgets:::pandoc_self_contained_html(tmp, tmp)
+print.suppress_viewer <- print.htmlwidget
 
-  ## Only in mini, not in the notebook
-  if (ocaps && !isEditMode()) htmlwidgets.install.ocap()
+rcloudHTMLDependency <- function(dep) {
 
-  widget <- paste(readLines(tmp), collapse = "\n")
-  where <- paste0("rc_htmlwidget_", as.integer(runif(1)*1e6))
-  res <- paste0(
-    "<div class=\"rcloud-htmlwidget\">",
-    "<div id=\"", where, "\">",
-    add.iframe.htmlwidget(widget),
-    "</div>",
-    "</div>"
-  )
-  res
+  file <- dep$src$file
+
+  lib <- where_in_path(file, .libPaths())
+  if (is.na(lib)) {
+    warning("Cannot find htmlwidgets dependency: ", file)
+    return(dep)
+  }
+
+  rel_path <- path_inside(file, lib)
+  c_rel_path <- path_components(rel_path)
+  pkg <- c_rel_path[1]
+
+  ## strip off pkg/www or pkg/htmlwidgets
+  pkgpath <- paste(tail(c_rel_path, -2), collapse = "/")
+
+  if (length(c_rel_path) < 2) {
+    warning("Invalid htmlwidgets dependency path: ", file)
+    return(dep)
+  } else if (c_rel_path[2] == "htmlwidgets") {
+    dep$src$href <- paste0("/shared.R/_htmlwidgets/", pkg, "/", pkgpath)
+
+  } else if (c_rel_path[2] == "www") {
+    dep$src$href <- paste0("/shared.R/", pkg, "/", pkgpath)
+  }
+
+  dep
 }
 
-add.iframe.htmlwidget <- function(widget) {
-  paste(
-    sep = "",
-    "<iframe frameBorder=\"0\" width=\"100%\" height=\"400\" srcdoc=\"",
-    gsub("\"", "&quot;", widget),
-    "\"></iframe>"
-  )
+where_in_path <- function(path, parents) {
+  for (parent in parents) {
+    if (is_in_path(path, parent)) return(parent)
+  }
+  NA_character_
 }
 
-isEditMode <- function() {
-  identical(.session$mode, "IDE")
+is_in_path <- function(path, parent) {
+
+  path <- normalizePath(path)
+  parent <- normalizePath(parent)
+
+  c_path <- path_components(path)
+  c_parent <- path_components(parent)
+
+  if (length(c_path) < length(c_parent)) {
+    FALSE
+
+  } else {
+    all(c_path[seq_along(c_parent)] == c_parent)
+  }
+}
+
+path_components <- function(path) {
+  strsplit(path, "/+")[[1]]
+}
+
+path_inside <- function(path, parent) {
+  c_path <- path_components(path)
+  c_parent <- path_components(parent)
+
+  paste(tail(c_path, -length(c_parent)), collapse = "/")
 }

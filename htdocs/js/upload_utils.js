@@ -53,6 +53,15 @@
                 controller.select();
             });
         }
+
+        var use_filenames = false, replace_filenames = {};
+        if(options.filenames && options.files.length === options.filenames.length) {
+            use_filenames = true;
+            for(var loop = 0; loop < options.filenames.length; loop++) {
+                replace_filenames[options.files[loop].name] = options.filenames[loop];
+            }
+        }
+
         return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
@@ -62,7 +71,7 @@
                     .then(function(content) {
                         if(_.isString(content) && Notebook.empty_for_github(content))
                             throw new Error("empty");
-                        return upload_asset(file.name, content);
+                        return upload_asset(use_filenames ? replace_filenames[file.name] : file.name, content);
                     });
             });
     };

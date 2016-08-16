@@ -67,7 +67,7 @@ casper.test.begin("Add an asset to a notebook with no assets", 5, function suite
                 return "JustCreatedAsset.R";
             }
         });
-        this.click("#new-asset>a");
+        this.click("#new-asset > a:nth-child(1)");
         this.echo("Creating a new asset");
     });
 

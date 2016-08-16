@@ -11,7 +11,7 @@ casper.test.begin("Upload a file to another user's notebook before forking it", 
     var github_password = casper.cli.options.password;
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
-    var new_username = 'InsertDelete';
+    var new_username = 'att-musigma';
     var new_user_password = 'musigma12';
     var notebook_id, URL, before_forking;
     var res1 = 'disabled';// to compare with res

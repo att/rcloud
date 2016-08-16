@@ -72,6 +72,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             $(this).attr("height", h);
         });
     }
+    $(sel_accordion).data('collapsible-column', result);
     _.extend(result, {
         init: function() {
             var that = this;
@@ -224,6 +225,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             // all collapsible sub-panels that are not "out" and not already collapsed, collapse them
             $(sel_accordion + " > .panel > div.panel-collapse:not(.collapse):not(.out)").collapse('hide');
             $(sel_collapser + " i").removeClass("icon-minus").addClass("icon-plus");
+            $(sel_collapser).attr('title', 'Expand Pane');
             collapsed_ = true;
             this.resize(skip_calc);
             if(persist && rcloud.config)
@@ -241,6 +243,7 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 $(this).collapse($(this).data("would-collapse") ? "hide" : "show");
             });
             $(sel_collapser + " i").removeClass("icon-plus").addClass("icon-minus");
+            $(sel_collapser).attr('title', 'Collapse Pane');
             collapsed_ = false;
             this.resize(skip_calc);
             if(persist && rcloud.config)
