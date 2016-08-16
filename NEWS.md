@@ -27,9 +27,6 @@
 
 * Times on discovery page are shown relatively (time ago). (#2150)
 
-* `rcloud.view.recalcitrant.widget` utility for htmlwidgets that refuse to
-  display inline (#2169)
-
 * Newly imported notebooks are highlighted in the Notebook Tree. (#1431)
 
 * Discover page launches in a new tab. (#2184)
