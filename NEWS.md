@@ -21,6 +21,8 @@
 
 * By popular demand, the Delete Cell button is replaced. (#2176)
 
+* Disconnection in anonymous mode should reload, not attempt to log in (#2237)
+
 * Clicking on the RCloud logo navigates to the Edit page. (#2186)
 
 * Times on discovery page are shown relatively (time ago). (#2150)
