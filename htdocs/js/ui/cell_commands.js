@@ -179,6 +179,7 @@ RCloud.UI.cell_commands = (function() {
                         return that.create_select(languages, function(language) {
                             cell_model.parent_model.controller.change_cell_language(cell_model, language);
                             cell_view.clear_result();
+                            cell_view.edit_source(true);
                         });
                     }
                 },
