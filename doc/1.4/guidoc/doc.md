@@ -12,6 +12,8 @@ layout: default
 
 </div>
 
+# User Guide; v1.4
+
 Created: 2015-07-03. **GUI Documentation** contains an in-depth description of all the features in the RCloud GUI.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
 <div markdown="1" class="frmttng">
@@ -19,7 +21,8 @@ Created: 2015-07-03. **GUI Documentation** contains an in-depth description of a
 ## Table of Contents
 
 1. [Getting Started](#gettingstarted)
-1. [Parts of the GUI](#partsofthegui)
+1. [Graphic User Interface (GUI) Overview](#partsofthegui)
+    * [Parts of the GUI](#partsofthegui)
     * [GUI Navigation](#guinavigation)
         * [Opening and Closing Panels](#openingandclosingpanels)
         * [Opening and Closing All Panels](#openingandclosingallpanels)
@@ -109,11 +112,19 @@ Finally, every installation's networking architecture will be different. Please 
 
 <a name="partsofthegui"></a>
 
-## 2. Parts of the GUI
+## 2. Graphic User Interface (GUI) Overview
+
+### Parts of the GUI
+
+The RCloud GUI consists of:
+* Header Bar located in the banner or navigation section of the browser
+* Left and right Windowshade Panels
+* Prompt and Markdown Cells located in the center of the screen
 
 <a href="img/GUI_Parts.png"><img class="trunc" src="img/GUI_Parts.png" /></a>
 
 [Top](#TOP)
+
 
 <a name="guinavigation"></a>
 
@@ -133,11 +144,11 @@ Clicking on the title of a panel opens and closes (and resizes in some cases) RC
 
 When all RCloud panels are minimized in a column, a "+" sign will appear, as shown here.
 
-![WINDOWSHADEL](img/windowshadeleft.png)
+![Left Windowshade Panel](img/windowshadeleft.png)
 
 Clicking the "+" sign will restore all panels in the column to their previous sizes. Now, a "-" sign will appear, shown below, which will minimize all open panels in a column.
 
-![WINDOWSHADER](img/windowshaderight.png)
+![Right Windowshade Panel](img/windowshaderight.png)
 
 [Top](#TOP)
 
@@ -157,18 +168,18 @@ Here is the RCloud header bar:
 
 <a href="img/header.png"><img class="trunc" src="img/header.png" /></a>
 
-![HEADER_SHARE](img/header_share.png): Please see the [Sharing Your Notebooks](#sharingyournotebooks) section for more information.
+![Header Bar: Share Icon](img/header_share.png): Please see the [Sharing Your Notebooks](#sharingyournotebooks) section for more information.
 
-![HEADER_STAR](img/header_star.png): Click the star icon to toggle the appearance of the current notebook in the My Interests area on the left sidebar. The icon displays the number of RCloud users who have added the notebook to their interests. In the case shown above, five users have done so.
+![Header Bar: Star Icon](img/header_star.png): Click the star icon to toggle the appearance of the current notebook in the My Interests area on the left sidebar. The icon displays the number of RCloud users who have added the notebook to their interests. In the case shown above, five users have done so.
 
-![HEADER_STAR](img/header_fork.png): Click the fork icon to make a new copy of a notebook for editing.
+![Header Bar: Fork Icon](img/header_fork.png): Click the fork icon to make a new copy of a notebook for editing.
 
-![HEADER_SAVE](img/header_save.png): Whenever you run a notebook, RCloud automatically saves a revision in GitHub. If you need to close your RCloud session immediately without waiting for a lengthy run time, click the save icon to save a revision immediately.
+![Header Bar: Save Icon](img/header_save.png): Whenever you run a notebook, RCloud automatically saves a revision in GitHub. If you need to close your RCloud session immediately without waiting for a lengthy run time, click the save icon to save a revision immediately.
 
-![HEADER_PLAY](img/header_play.png): Click the play icon to run all [markdown and prompt cells](#cells) in the current notebook. Cells are executed asynchronously. RCloud displays the output as it becomes available.
+![Header Bar: Play / Run Icon](img/header_play.png): Click the play icon to run all [markdown and prompt cells](#cells) in the current notebook. Cells are executed asynchronously. RCloud displays the output as it becomes available.
 
 <a name="notebooktitle"></a>
-![HEADER_TITLE](img/header_title.png): This is the title of the current notebook. In this case, "Markdown Basics." Click the title to change it.
+![Header Bar: Notebook Title](img/header_title.png): This is the title of the current notebook. In this case, "Markdown Basics." Click the title to change it.
 
 Note that you can create sub-directories simply by adding any number of forward slashes '/', like on a Unix command line. E.g. Cookbook for R/1 - Basics/1.1 - Indexing into a Data Structure. If the sub-directories don't already exist, RCloud will create them on the fly, so there is no need to create individual sub-directories before changing the name of your notebook. Sub-directories allow you to group your notebooks and will be displayed in a tree-like hierarchy in the [Notebooks section](#notebooks) of the left sidebar.
 
@@ -186,7 +197,7 @@ Click the Advanced tab to access more features:
 * **Export Notebook as R Source File**: When selected, your browser will download an R source text file named after your notebook with .R appended.
 * **Publish Notebook**: By default, users who wish to view your notebooks must be logged into RCloud. If the Publish Notebook box is checked, *any* user who has network access to the notebook's URL will be able to view the notebook. Obviously, editing features will be turned off for these users.
 
-![HEADER_LOGOUT](img/header_logout.png): Click Logout to end your RCloud session.
+![Header Bar: Logout](img/header_logout.png): Click Logout to end your RCloud session.
 
 [Top](#TOP)
 
@@ -198,7 +209,7 @@ There are two types of cells in RCloud, both used for inserting code. The first 
 
 Prompt cells support either R or Python, which you can specify in the pull-down menu to the right of each cell:
 
-![CELL FLAVOR](img/python.png)
+![Prompt / Markdown Cell Selection](img/python.png)
 
 Note that "data marshalling," or using objects between cells of different languages, is not supported at this time.
 
@@ -218,7 +229,7 @@ Prompt cells mostly act like an interactive R or Python shell. Type a line of co
 
 For example, here's the result of pressing Enter/Return after typing a command:
 
-![PROMPT CELL RESULT](img/promptcellresult.png)
+![Prompt Cell Result](img/promptcellresult.png)
 
 Note that after executing a command, RCloud presents several icons that allow you to interact with the cell: ![RUN](img/runmarkdown.png), ![EDIT](img/editmarkdown.png), ![SPLIT](img/splitmarkdown.png), and ![DELETE](img/deletecell.png). Here's a brief description of each:
 
@@ -313,7 +324,7 @@ print ("some more text")
 
 #### Running your code
 
-When you're done editing in a markdown cell, click the ![RUN](img/runmarkdown.png) icon to the right of the cell. Here is the result:
+When you're done editing in a markdown cell, click the ![Run Cell](img/runmarkdown.png) icon to the right of the cell. Here is the result:
 
 <a href="img/markdowncellresult.png"><img border="0" width="640" src="img/markdowncellresult.png" /></a>
 
@@ -325,7 +336,7 @@ Full documentation of markdown syntax is available [here](http://daringfireball.
 
 #### Editing and Viewing Results
 
-If you find a typo or would like to otherwise edit your R code, click the ![EDIT](img/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
+If you find a typo or would like to otherwise edit your R code, click the ![Edit Cell](img/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
 
 [Top](#TOP)
 
@@ -333,7 +344,7 @@ If you find a typo or would like to otherwise edit your R code, click the ![EDIT
 
 #### Adding and Deleting Markdown Cells
 
-To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To insert a markdown cell below, click the ![INSERT2](img/addcellbelow.png) icon. To delete a markdown cell altogether, click the ![DELETE](img/deletecell.png) icon.
+To insert a markdown cell above, click the ![Insert Cell: Example 1](img/addcell.png) icon. To insert a markdown cell below, click the ![Insert Cell: Example 2](img/addcellbelow.png) icon. To delete a markdown cell altogether, click the ![Delete Cell](img/deletecell.png) icon.
 
 [Top](#TOP)
 
@@ -343,21 +354,21 @@ To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To 
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
-![opencircle](img/opencircle.png): The cell has not been run. This could also mean that the cell ran successfully, but the output may not be consistent with the code in the cell because the code was modified after RCloud initiated a run of your notebook.
+![Cell Run-state: Open Circle](img/opencircle.png): The cell has not been run. This could also mean that the cell ran successfully, but the output may not be consistent with the code in the cell because the code was modified after RCloud initiated a run of your notebook.
 
-![bluearrow](img/bluearrow.png): The cell is queued to be run.
+![Cell Run-state: Blue Arrow](img/bluearrow.png): The cell is queued to be run.
 
-![runningquestion1](img/cellstatequestion1.png): RCloud initiated a run of your notebook, but a cell's code was modified after execution was initiated.
+![Cell Run-state: Running Question Mark 1](img/cellstatequestion1.png): RCloud initiated a run of your notebook, but a cell's code was modified after execution was initiated.
 
-![runningcircle](img/runningcircle.png): The cell is running.
+![Cell Run-state: Running Circle](img/runningcircle.png): The cell is running.
 
-![runningquestion2](img/cellstatequestion2.png): The cell is running, but because the code was modified after notebook execution was initiated, the output may not be consistent with the code.
+![Cell Run-state: Running Question Mark 2](img/cellstatequestion2.png): The cell is running, but because the code was modified after notebook execution was initiated, the output may not be consistent with the code.
 
-![greencircle](img/greencircle.png): The cell ran successfully.
+![Cell Run-state: Green Circle](img/greencircle.png): The cell ran successfully.
 
-![exclaim](img/exclaim.png): The cell ran but had errors.
+![Cell Run-state: Exclamation Mark](img/exclaim.png): The cell ran but had errors.
 
-![splatcircle](img/splatcircle.png): The cell's run was cancelled.
+![Cell Run-state: Splat Circle](img/splatcircle.png): The cell's run was cancelled.
 
 [Top](#TOP)
 
@@ -367,7 +378,7 @@ The run-state of each cell is displayed via an icon in between the gutter and ce
 
 When you run a notebook, you can stop running cells and prevent queued cells from running by pressing the stop button, located in the header at the top of the screen:
 
-![nonpreemptivestop](img/stop.png)
+![Nonpreemptive Stop](img/stop.png)
 
 This ends an interrupt to the R process and terminates execution if possible.
 
@@ -377,7 +388,7 @@ This ends an interrupt to the R process and terminates execution if possible.
 
 ### Rearranging Cells
 
-To rearrange your cells, click and drag the blank status area above the cell or the ![INSERT1](img/dragcell.png) icon to the left of the cell.
+To rearrange your cells, click and drag the blank status area above the cell or the ![Insert Cell](img/dragcell.png) icon to the left of the cell.
 
 [Top](#TOP)
 
@@ -387,7 +398,7 @@ To rearrange your cells, click and drag the blank status area above the cell or 
 
 To join cells of the same flavor, click the join icon at the right of the cell. This will combine the contents of the cell with the cell immediately above it.
 
-![JOIN](img/join.png)
+![Join Cells](img/join.png)
 
 <a name="markdownvsrmarkdowncells"></a>
 
@@ -407,7 +418,7 @@ RCloud notebooks are simply collections of prompt and markdown cells, comments, 
 
 You can also browse everyone else's notebooks by opening the Notebooks section on the left sidebar. To do this, simply click on Notebooks at the top of the panel. This toggles the panel, opening or closing it:
 
-![NOTEBOOKS](img/notebooks.png)
+![RCloud User / Notebook Directory](img/notebooks.png)
 
 To load a notebook into the current session, click on the name. After it loads, you can examine the source code or click "Run" in the header bar to execute all the cells on the page.
 
@@ -419,7 +430,7 @@ To load a notebook into the current session, click on the name. After it loads, 
 
 To create a new, blank notebook, click the + sign at the right of the Notebooks panel header area:
 
-![NEWNOTEBOOK](img/newnotebook.png)
+![Create a New Notebook](img/newnotebook.png)
 
 RCloud will automatically choose a title for your new notebook, Notebook N, where N is the next available number among your notebooks. To give your notebook a more meaningful title, click on the [title in the header bar](#notebooktitle).
 
@@ -456,7 +467,7 @@ To copy another user's notebook, first navigate to it in the left sidebar and th
 
 After you've loaded the notebook you want to fork, click the Fork icon in the header bar at the top of the screen:
 
-![FORK](img/fork.png)
+![Header Bar: Fork Icon](img/fork.png)
 
 After forking a notebook, you'll own your own copy and therefore be able to edit it.
 
@@ -476,7 +487,7 @@ There are two mechanisms by which your work is saved in RCloud.
 
 #### Manual Saving
 
-You can save your notebook at any time by clicking the ![HEADER_SAVE](img/header_save.png) icon in the header bar.
+You can save your notebook at any time by clicking the ![Header Bar: Save Icon](img/header_save.png) icon in the header bar.
 
 [Top](#TOP)
 
@@ -486,7 +497,7 @@ You can save your notebook at any time by clicking the ![HEADER_SAVE](img/header
 
 RCloud keeps track of your notebook versions automatically and frequently. Every time you save, create, or run a markdown or prompt cell, the newest version of your notebook is saved. To browse the versions of your notebook, which are stored chronologically with the latest version on top, hover over the name of your notebook in the left sidebar and click the clock icon:
 
-![HISTORY](img/notebookhistory.png)
+![Notebook History / Version](img/notebookhistory.png)
 
 To change they way dates and times are displayed next to your notebook versions, see the [show terse version dates](#showterseversiondates) setting.
 
@@ -498,11 +509,11 @@ To change they way dates and times are displayed next to your notebook versions,
 
 To "tag" a notebook version, click twice on a version name to edit it in place.
 
-![verstag](img/version_tag.png)
+![Version Tagging](img/version_tag.png)
 
 Now, rather than referring to a specific notebook version with <code>&version=hash</code> in a URL, you can refer to a specific notebook tag:
 
-![verstag](img/url_tag.png)
+![Version Tagging URL](img/url_tag.png)
 
 <code>&tag=name</code>
 
@@ -534,7 +545,7 @@ Hidden notebooks are only invisible within the RCloud interface. Hidden notebook
 
 #### Toggle Hidden
 
-Clicking the ![PRIVATENOTEBOOK](img/privatenotebook.png) icon will hide your notebook from other RCloud users.
+Clicking the ![Private Notebook Icon Toggle](img/privatenotebook.png) icon will hide your notebook from other RCloud users.
 
 [Top](#TOP)
 
@@ -542,7 +553,7 @@ Clicking the ![PRIVATENOTEBOOK](img/privatenotebook.png) icon will hide your not
 
 #### Toggle Show
 
-Clicking the ![PUBLICNOTEBOOK](img/publicnotebook.png) icon will make your notebook readable by other RCloud users.
+Clicking the ![Public Notebook Icon Toggle](img/publicnotebook.png) icon will make your notebook readable by other RCloud users.
 
 [Top](#TOP)
 
@@ -554,21 +565,21 @@ Protected notebooks are readable only by the owner and (optionally) a select gro
 
 View or modify notebook protection by clicking the notebook "info" button next to the notebook name in the notebooks tree:
 
-![notebookinfo](img/notebookinfo.png)
+![Notebook Information Icon](img/notebookinfo.png)
 
 If you own the notebook, click the "no group" link (or a group name if one exists):
 
-![protectiondialog](img/nogroup.png)
+![Notebook Protection Dialog: Group Information](img/nogroup.png)
 
 This opens the notebook protection dialog:
 
-![protectiondialog](img/notebookperms.png)
+![Notebook Protection Dialog: Permissions](img/notebookperms.png)
 
 Here, you can assign the notebook to any group you are a member of or make it entirely private (readable only by you).
 
 Use the second tab of the protection dialog to create/rename groups and/or assign other users as administrators/members of groups you administrate.
 
-![protectiondialog2](img/groupman.png)
+![Notebook Protection Dialog: Group Creation / Renaming / Membership](img/groupman.png)
 
 Note that, unlike a hidden notebook, protected notebooks are not readable by anyone without permission, even within your GitHub instance.
 
@@ -578,11 +589,11 @@ Note that, unlike a hidden notebook, protected notebooks are not readable by any
 
 ### Deleting Notebooks
 
-To delete a notebook, hover over the name of your notebook in the left sidebar and click the ![DELETENOTEBOOK](img/deletenotebook.png) icon.
+To delete a notebook, hover over the name of your notebook in the left sidebar and click the ![Delete Notebook Icon](img/deletenotebook.png) icon.
 
 RCloud will ask for a confirmation:
 
-![CONFIRM_DELETE](img/confirm_delete.png)
+![Delete Notebook Confirmation Dialog](img/confirm_delete.png)
 
 Click OK and the notebook will disappear from the left sidebar and the last-viewed available notebook will automatically load into the current session.
 
@@ -592,11 +603,11 @@ Click OK and the notebook will disappear from the left sidebar and the last-view
 
 ### Sharing Your Notebooks
 
-There are several ways you can share your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![HEADER_SHARE](img/header_share.png), a popup menu will appear:
+There are several ways you can share your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![Header Bar: Share Icon](img/header_share.png), a popup menu will appear:
 
-![HEADER_SHARETYPE](img/header_sharetype.png)
+![Header Bar: Share / View Dropdown Menu Selection](img/header_sharetype.png)
 
-This allows you to select the kind of URL you'd like to share. Make your selection using the popup menu and then right click on the ![HEADER_SHARE](img/header_share.png) icon to copy the hyperlink.
+This allows you to select the kind of URL you'd like to share. Make your selection using the popup menu and then right click on the ![Header Bar: Share Icon](img/header_share.png) icon to copy the hyperlink.
 
 Note that if you have a tagged version of your notebook currently loaded, where appropriate, RCloud will populate the shared URL with the tag instead of the version. This is beneficial because then you can tag future versions with the same tag and not break existing URLs.
 
@@ -606,7 +617,7 @@ Note that if you have a tagged version of your notebook currently loaded, where 
 
 ##### view.html
 
-This is the simplest method. This will create a link that will allow someone to see the notebook code and execute the notebook within the RCloud IDE. Users who do not own the notebook will see the play ![HEADER_PLAY](img/header_play.png) and share ![HEADER_EDIT](img/header_edit.png) icons in the header. Clicking the play icon will execute all cells in the notebook. Clicking the edit icon will return to the normal header, allowing a user to fork the notebook, etc.
+This is the simplest method. This will create a link that will allow someone to see the notebook code and execute the notebook within the RCloud IDE. Users who do not own the notebook will see the play ![Header Bar: Play / Run Icon](img/header_play.png) and share ![Header Bar: Edit Icon](img/header_edit.png) icons in the header. Clicking the play icon will execute all cells in the notebook. Clicking the edit icon will return to the normal header, allowing a user to fork the notebook, etc.
 
 <a name="hidinguielements"></a>
 
@@ -653,7 +664,7 @@ RCloud supports the [RStudio Shiny web application framework](#http://shiny.rstu
 
 To find out which users starred your notebook, click the notebook information icon:
 
-![savingplots](img/notebookinfo.png)
+![Notebook Starring Information](img/notebookinfo.png)
 
 [Top](#TOP)
 
@@ -694,13 +705,13 @@ To find and replace text within your notebook, type Ctrl-H (Win/Linux) or Cmd-Op
 
 There many ways to use your own data in RCloud. Please see the example notebooks under RCloud Sample Notebooks for some examples. Here, we'll take a closer look at the simplest method: uploading a flat file. Open the File Upload panel on the right sidebar by clicking on the heading. Then, select "Choose File" and browse to a local file, in this case "distrib.csv."
 
-![FILE UPLOAD 1](img/fileupload1.png)
+![File Upload: Example 1](img/fileupload1.png)
 
 Next, click the "Upload" button. If the file exists (just where, we'll get to in a moment), RCloud prompts with a notice that it will be overwritten. If all goes well, RCloud confirms the upload.
 
 The file now exists in your installation server's home directory and is accessible from within RCloud. For example:
 
-![FILE UPLOAD 2](img/fileupload2.png)
+![File Upload: Example 2](img/fileupload2.png)
 
 The first line of R code loads the contents of the CSV file into an object called "mydata." The next line tells R to output a string version of the object.
 
@@ -740,7 +751,7 @@ We can store this data in a new asset called "distrib.csv," simply by clicking N
 
 Now, this data is accessible in your R code:
 
-![ASSET](img/asset.png)
+![Notebook Asset](img/asset.png)
 
 [Top](#TOP)
 
@@ -750,7 +761,7 @@ Now, this data is accessible in your R code:
 
 In addition to manually entering asset text, you can also drag and drop files into the Assets panel to upload them:
 
-![DRAGDROP](img/drag_drop.png)
+![Drag and Drop File Upload](img/drag_drop.png)
 
 [Top](#TOP)
 
@@ -760,7 +771,7 @@ In addition to manually entering asset text, you can also drag and drop files in
 
 RCloud automatically generates asset links and displays them in the lower left-hand corner of the Assets panel. To copy the URL, right-click on it.
 
-![ASSETLINK](img/assetlink.png)
+![Automatically Generated Asset Link (URL)](img/assetlink.png)
 
 [Top](#TOP)
 
@@ -787,7 +798,7 @@ To use the p.mystyle paragraph style, simply reference it in markdown using HTML
 
     <p class="mystyle">This is red.</p>
 
-![USING_CSS](img/usingcss.png)
+![Using / Adding CSS](img/usingcss.png)
 
 Note that you must reload your notebook to apply the CSS.
 
@@ -799,7 +810,7 @@ Note that you must reload your notebook to apply the CSS.
 
 Assets can also contain JavaScript. When editing JavaScript (files must have the .js extension), RCloud automatically uses a JavaScript editing mode, which has built-in syntax checking.
 
-![JSMODE](img/jsmode.png)
+![Javascript File and Syntax Checking](img/jsmode.png)
 
 [Top](#TOP)
 
@@ -809,7 +820,7 @@ Assets can also contain JavaScript. When editing JavaScript (files must have the
 
 When editing HTML (files must have the .html or .htm extension), RCloud automatically uses an HTML editing mode, which has built-in syntax checking and tag completion.
 
-![HTMLMODE](img/htmlmode.png)
+![HTML File and Syntax Checking](img/htmlmode.png)
 
 [Top](#TOP)
 
@@ -819,7 +830,7 @@ When editing HTML (files must have the .html or .htm extension), RCloud automati
 
 To rename an asset, simply click on the file name on the asset's tab.
 
-![jsmode](img/assetrename.png)
+![Renaming an Asset](img/assetrename.png)
 
 [Top](#TOP)
 
@@ -881,7 +892,7 @@ Please see [the following](https://github.com/att/rcloud/blob/develop/NEWS.md#rc
 
 To conduct a global text search in all public RCloud notebooks, simply open up the search panel by clicking on Search on the left sidebar. Here are the results for a search on "markdown." RCloud searches code, comments, notebook names, assets, everything.
 
-![SEARCHRESULTS](img/searchresult.png)
+![Search Results](img/searchresult.png)
 
 ##### 1
 
@@ -897,7 +908,7 @@ When too many results are returned for any one notebook, RCloud will display a S
 
 ##### 4
 
-Search results are paginated. Click on any page number below the results or use the ![BACKPAGE](img/backpage.png) back or ![FORWARDPAGE](img/forwardpage.png) next page to page through the results.
+Search results are paginated. Click on any page number below the results or use the ![Backpage](img/backpage.png) back or ![Forwardpage](img/forwardpage.png) next page to page through the results.
 
 [Top](#TOP)
 
@@ -917,7 +928,7 @@ Please see the [official query parser syntax documentation](http://lucene.apache
 
 Various aspects of your RCloud session can be changed here.
 
-![SETTINGS](img/settings.png)
+![Settings Section](img/settings.png)
 
 [Top](#TOP)
 
@@ -975,11 +986,11 @@ You could also include a folder. RCloud would then place new notebooks within th
 
 Anyone can leave comments about anyone's notebooks in the Comments panel in the right sidebar, as demonstrated below:
 
-![COMMENTS](img/comment.png)
+![Notebook Comment Icon](img/comment.png)
 
 Comments are included in search results.
 
-To submit a comment, simply input your text in the text area and click the comment icon ![COMMENTICON](img/comment_icon.png). You can also submit your comment by pressing Ctrl-Enter (Win/Linux) or Cmd-Enter (Mac).
+To submit a comment, simply input your text in the text area and click the comment icon ![Notebook Comment Icon](img/comment_icon.png). You can also submit your comment by pressing Ctrl-Enter (Win/Linux) or Cmd-Enter (Mac).
 
 [Top](#TOP)
 
@@ -989,7 +1000,7 @@ To submit a comment, simply input your text in the text area and click the comme
 
 To edit a comment, click on the comment text to make changes. Then click Ctrl- or Cmd-Enter to update the comment.
 
-![COMMENTEDIT](img/comment_edit.png)
+![Edit Notebook Comment](img/comment_edit.png)
 
 [Top](#TOP)
 
@@ -999,7 +1010,7 @@ To edit a comment, click on the comment text to make changes. Then click Ctrl- o
 
 To delete a comment, hover your mouse over the comment. Click the X next to the comment to delete it.
 
-![COMMENTDELETE](img/comment_delete.png)
+![Delete Notebook Comment](img/comment_delete.png)
 
 [Top](#TOP)
 
@@ -1017,7 +1028,7 @@ If help is available, RCloud will open the Help panel:
 
 <a href="img/help.png"><img class="trunc" src="img/help.png" /></a>
 
-Alternatively, you can enter a function name in the text box at the top of the panel and click the help icon ![HELPBUTTON](img/help_button.png).
+Alternatively, you can enter a function name in the text box at the top of the panel and click the help icon ![Help Button](img/help_button.png).
 
 [Top](#TOP)
 
@@ -1027,7 +1038,7 @@ Alternatively, you can enter a function name in the text box at the top of the p
 
 In the course of working with your notebook, variables are defined and assigned. Often, it is convenient to know the value of a variable without issuing a command to display it. The Workspace panel displays every variable you've defined along with its value.
 
-![WORKSPACE](img/workspace.png)
+![Workspace Section](img/workspace.png)
 
 In the case of dataframe variables, a link is displayed, which, when clicked, will open up the [Dataframe panel](#dataframe).
 
@@ -1037,7 +1048,7 @@ In the case of dataframe variables, a link is displayed, which, when clicked, wi
 
 ## 14. Dataframe
 
-![DATAFRAME](img/dataframe.png)
+![Dataframe Section](img/dataframe.png)
 
 Dataframe objects are displayed here after you click a dataframe link in the [Workspace panel](#workspace) or use the View(object) command in a cell:
 
@@ -1053,9 +1064,9 @@ View(a[1:10,])
 
 The session panel displays critical system information when available, such as session timeouts. The panel will automatically open when messages are available.
 
-![SESSION](img/session.png)
+![Session Section](img/session.png)
 
-Click the ![SESSION_CLOSE](img/session_close.png) icon to dismiss a session notification. 
+Click the ![Session Close](img/session_close.png) icon to dismiss a session notification. 
 
 [Top](#TOP)
 

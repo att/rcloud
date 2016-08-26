@@ -11,6 +11,8 @@ layout: default
 
 </div>
 
+# User Guide; v1.3
+
 Created: 2015-02-14.  Updated: 2015-06-29. **GUI Documentation** contains an in-depth description of all the features in the RCloud GUI.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
 <div markdown="1" class="frmttng">
@@ -18,7 +20,8 @@ Created: 2015-02-14.  Updated: 2015-06-29. **GUI Documentation** contains an in-
 ## Table of Contents
 
 1. [Getting Started](#gettingstarted)
-1. [Parts of the GUI](#partsofthegui)
+1. [Graphic User Interface (GUI) Overview](#partsofthegui)
+    * [Parts of the GUI](#partsofthegui)
     * [GUI Navigation](#guinavigation)
         * [Opening and Closing Panels](#openingandclosingpanels)
         * [Opening and Closing All Panels](#openingandclosingallpanels)
@@ -101,7 +104,14 @@ Finally, every installation's networking architecture will be different. Please 
 
 <a name="partsofthegui"></a>
 
-## 2. Parts of the GUI
+## 2. Graphic User Interface (GUI) Overview
+
+### Parts of the GUI
+
+The RCloud Graphic User Interface (GUI) consists of:
+* Header Bar located in the banner or navigation section of the screen
+* Left and right Windowshade Panels
+* Prompt and Markdown Cells in the center of the screen
 
 ![Parts of the GUI](img/GUI_Parts.png)
 
@@ -184,7 +194,7 @@ Click the Advanced tab to access more features:
 
 <a name="cells"></a>
 
-## 4. Cells
+## 4. Prompt and Markdown Cells
 
 There are two types of cells in RCloud, both used for inserting code. The first is the **prompt** cell, which allows you to interact with RCloud in more-or-less command-line fashion. Prompt cells are useful for quick, interactive sessions.
 
@@ -212,16 +222,16 @@ For example, here's the result of pressing Enter/Return after typing a command:
 
 ![Prompt Cell Result](img/promptcellresult.png)
 
-Note that after executing a command, RCloud presents several icons that allow you to interact with the cell: ![RUN](img/runmarkdown.png), ![EDIT](img/editmarkdown.png), ![SPLIT](img/splitmarkdown.png), and ![DELETE](img/deletecell.png). Here's a brief description of each:
+Note that after executing a command, RCloud presents several icons that allow you to interact with the cell: ![Run a Markdown Cell](img/runmarkdown.png), ![Edit a Markdown Cell](img/editmarkdown.png), ![Split a Markdown Cell](img/splitmarkdown.png), and ![Delete a Markdown Cell](img/deletecell.png). Here's a brief description of each:
 
-* ![RUN](img/runmarkdown.png) Run the code in the cell.
-* ![EDIT](img/editmarkdown.png) Edit the code in the cell (clicking on your code also enables editing).
-* ![SPLIT](img/splitmarkdown.png) Split the cell into two parts at the cursor.
-* ![DELETE](img/deletecell.png) Delete the cell.
+* ![Run a Markdown Cell](img/runmarkdown.png) Run the code in the cell.
+* ![Edit a Markdown Cell](img/editmarkdown.png) Edit the code in the cell (clicking on your code also enables editing).
+* ![Split Markdown Cell](img/splitmarkdown.png) Split the cell into two parts at the cursor.
+* ![Delete a Cell](img/deletecell.png) Delete the cell.
 
 Another way to interact in multi-line mode with prompt cells is to cut and paste multiple lines of code into the cell. When you do, you'll see something like this:
 
-![Prompt Cell Result Paste](img/multilinerpromptpaste.png)
+![Prompt Cell Result; Copy and Paste a Block of Code](img/multilinerpromptpaste.png)
 
 To execute the code, simply put your cursor at the end of the last line and press Enter/Return.
 
@@ -233,6 +243,8 @@ Note that it is currently not possible to insert a prompt cell above an existing
 
 ### Markdown Cells
 
+Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. 
+
 ![Markdown Cell](img/markdowncell.png)
 
 [Top](#TOP)
@@ -241,7 +253,7 @@ Note that it is currently not possible to insert a prompt cell above an existing
 
 #### Adding R Code
 
-Markdown cells are where you enter and edit blocks of multi-line R markdown. Markdown is a plain-text formatting syntax used to create simple formatted documents. In order to differentiate your R code from text, surround your R code with the following (back ticks, brackets and "r"):
+In order to differentiate your R code from text, surround your R code with the following (back ticks, brackets and "r"):
 
 <pre>
 ```{r}
@@ -305,9 +317,9 @@ print ("some more text")
 
 #### Running your code
 
-When you're done editing in a markdown cell, click the ![RUN](img/runmarkdown.png) icon to the right of the cell. Here is the result:
+When you're done editing in a markdown cell, click the ![Run Code in Markdown Cell](img/runmarkdown.png) icon to the right of the cell. Here is the result:
 
-![RUN](img/markdowncellresult.png)
+![Run Markdown](img/markdowncellresult.png)
 
 Full documentation of markdown syntax is available [here](http://daringfireball.net/projects/markdown/syntax).
 
@@ -317,7 +329,7 @@ Full documentation of markdown syntax is available [here](http://daringfireball.
 
 #### Editing and Viewing Results
 
-If you find a typo or would like to otherwise edit your R code, click the ![EDIT](img/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
+If you find a typo or would like to otherwise edit your R code, click the ![Edit Code in a Cell](img/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
 
 [Top](#TOP)
 
@@ -325,7 +337,7 @@ If you find a typo or would like to otherwise edit your R code, click the ![EDIT
 
 #### Adding and Deleting Markdown Cells
 
-To insert a markdown cell above, click the ![INSERT1](img/addcell.png) icon. To insert a markdown cell below, click the ![INSERT2](img/addcellbelow.png) icon. To delete a markdown cell altogether, click the ![DELETE](img/deletecell.png) icon.
+To insert a markdown cell above, click the ![Insert Markdown Cell Above](img/addcell.png) icon. To insert a markdown cell below, click the ![Insert Markdown Cell  Below](img/addcellbelow.png) icon. To delete a markdown cell altogether, click the ![Delete Markdown Cell](img/deletecell.png) icon.
 
 [Top](#TOP)
 
@@ -375,7 +387,7 @@ To rearrange your cells, click and drag the blank status area above the cell or 
 
 To join cells of the same flavor, click the join icon at the right of the cell. This will combine the contents of the cell with the cell immediately above it.
 
-![JOIN](img/join.png)
+![Joining Cells](img/join.png)
 
 <a name="markdownvsrmarkdowncells"></a>
 
@@ -395,7 +407,7 @@ RCloud notebooks are simply collections of prompt and markdown cells, comments, 
 
 You can also browse everyone else's notebooks by opening the Notebooks section on the left sidebar. To do this, simply click on Notebooks at the top of the panel. This toggles the panel, opening or closing it:
 
-![User Notebooks](img/notebooks.png)
+![Directory of User Notebooks](img/notebooks.png)
 
 To load a notebook into the current session, click on the name. After it loads, you can examine the source code or click "Run" in the header bar to execute all the cells on the page.
 
@@ -407,7 +419,7 @@ To load a notebook into the current session, click on the name. After it loads, 
 
 To create a new, blank notebook, click the + sign at the right of the Notebooks panel header area:
 
-![Create New Notebook](img/newnotebook.png)
+![Create a New Notebook](img/newnotebook.png)
 
 RCloud will automatically choose a title for your new notebook, Notebook N, where N is the next available number among your notebooks. To give your notebook a more meaningful title, click on the [title in the header bar](#notebooktitle).
 
@@ -533,7 +545,7 @@ Clicking the ![Public Notebook Toggle Icon](img/publicnotebook.png) icon will ma
 
 ### Deleting Notebooks
 
-To delete a notebook, hover over the name of your notebook in the left sidebar and click the ![DELETENOTEBOOK](img/deletenotebook.png) icon.
+To delete a notebook, hover over the name of your notebook in the left sidebar and click the ![Delete Notebook Icon](img/deletenotebook.png) icon.
 
 RCloud will ask for a confirmation:
 
@@ -547,11 +559,11 @@ Click OK and the notebook will disappear from the left sidebar and the last-view
 
 ### Sharing Your Notebooks
 
-There are several ways you can share your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![HEADER_SHARE](img/header_share.png), a popup menu will appear:
+There are several ways you can share your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![Header Bar: Share Icon](img/header_share.png), a popup menu will appear:
 
 ![Header Bar: Share Icon Type](img/header_sharetype.png)
 
-This allows you to select the kind of URL you'd like to share. Make your selection using the popup menu and then right click on the ![HEADER_SHARE](img/header_share.png) icon to copy the hyperlink.
+This allows you to select the kind of URL you'd like to share. Make your selection using the popup menu and then right click on the ![Header Bar: Share Icon](img/header_share.png) icon to copy the hyperlink.
 
 Note that if you have a tagged version of your notebook currently loaded, where appropriate, RCloud will populate the shared URL with the tag instead of the version. This is beneficial because then you can tag future versions with the same tag and not break existing URLs.
 
@@ -561,7 +573,7 @@ Note that if you have a tagged version of your notebook currently loaded, where 
 
 ##### view.html
 
-This is the simplest method. This will create a link that will allow someone to see the notebook code and execute the notebook within the RCloud IDE. Users who do not own the notebook will see the play ![HEADER_PLAY](img/header_play.png) and share ![HEADER_EDIT](img/header_edit.png) icons in the header. Clicking the play icon will execute all cells in the notebook. Clicking the edit icon will return to the normal header, allowing a user to fork the notebook, etc.
+This is the simplest method. This will create a link that will allow someone to see the notebook code and execute the notebook within the RCloud IDE. Users who do not own the notebook will see the play ![Header Bar: Play Icon](img/header_play.png) and edit ![Heder Bar: Share Icon](img/header_edit.png) icons in the header. Clicking the play icon will execute all cells in the notebook. Clicking the edit icon will return to the normal header (if user is logged in), allowing a registered user to fork the notebook; once the notebook is forked (or in other words copied into the registered user's personal directory), then the registered user may edit and share the notebook.
 
 [Top](#TOP)
 
@@ -726,7 +738,7 @@ To use the p.mystyle paragraph style, simply reference it in markdown using HTML
 
     <p class="mystyle">This is red.</p>
 
-![Using or Adding CSS](img/usingcss.png)
+![Using (or Adding) CSS](img/usingcss.png)
 
 Note that you must reload your notebook to apply the CSS.
 
@@ -738,7 +750,7 @@ Note that you must reload your notebook to apply the CSS.
 
 Assets can also contain JavaScript. When editing JavaScript (files must have the .js extension), RCloud automatically uses a JavaScript editing mode, which has built-in syntax checking.
 
-![Javascript Mode](img/jsmode.png)
+![Javascript Files](img/jsmode.png)
 
 [Top](#TOP)
 
@@ -811,7 +823,7 @@ When too many results are returned for any one notebook, RCloud will display a S
 
 ##### 4
 
-Search results are paginated. Click on any page number below the results or use the ![BACKPAGE](img/backpage.png) back or ![FORWARDPAGE](img/forwardpage.png) next page to page through the results.
+Search results are paginated. Click on any page number below the results or use the ![Back Page](img/backpage.png) back or ![Forward Page](img/forwardpage.png) next page to page through the results.
 
 [Top](#TOP)
 
@@ -821,7 +833,7 @@ Search results are paginated. Click on any page number below the results or use 
 
 RCloud supports Lucene's feature-rich query parser syntax for more complex searches. Features include wildcard, fuzzy, and proximity searches, boolean operators, grouping, and much more.
 
-Please see the [official query parser syntax documentation](http://lucene.apache.org/core/2_9_4/queryparsersyntax.html) for more information.
+Please see the [Official query parser syntax documentation](http://lucene.apache.org/core/2_9_4/queryparsersyntax.html) for more information.
 
 [Top](#TOP)
 
@@ -882,7 +894,7 @@ Anyone can leave comments about anyone's notebooks in the Comments panel in the 
 
 Comments are included in search results.
 
-To submit a comment, simply input your text in the text area and click the comment icon ![COMMENTICON](img/comment_icon.png). You can also submit your comment by pressing Ctrl-Enter (Win/Linux) or Cmd-Enter (Mac).
+To submit a comment, simply input your text in the text area and click the comment icon ![Notebook Comment Icon](img/comment_icon.png). You can also submit your comment by pressing Ctrl-Enter (Win/Linux) or Cmd-Enter (Mac).
 
 [Top](#TOP)
 
@@ -920,7 +932,7 @@ If help is available, RCloud will open the Help panel:
 
 ![Help Panel](img/help.png)
 
-Alternatively, you can enter a function name in the text box at the top of the panel and click the help icon ![HELPBUTTON](img/help_button.png).
+Alternatively, you can enter a function name in the text box at the top of the panel and click the help icon ![Help Button](img/help_button.png).
 
 [Top](#TOP)
 
@@ -958,7 +970,7 @@ The session panel displays critical system information when available, such as s
 
 ![Session Panel](img/session.png)
 
-Click the ![Dismiss Session Notification](img/session_close.png) icon to dismiss a session notification. 
+Click the ![Dismiss Session Notifications](img/session_close.png) icon to dismiss a session notification. 
 
 [Top](#TOP)
 

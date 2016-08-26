@@ -11,8 +11,9 @@ layout: default
 
 </div>
 
-Created 2016-07-18. **What's New!** contains a list of new features, GUI enhancements and bug fixes. It is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis. 
+# Release Notes; Latest Version: v1.6
 
+Created 2016-07-18. **What's New!** contains a list of new features, GUI enhancements and bug fixes. It is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis. 
 
 <a name="gui"></a>
 
@@ -24,7 +25,7 @@ Created 2016-07-18. **What's New!** contains a list of new features, GUI enhance
 
 Multiple cell selection is supported.
 
-![multicell](img/multicell.png)
+![Multiple Cell Selection](img/multicell.png)
 
 1. The notebook header bar contains a checkbox that allows users to select/deselect all cells within a notebook.
 2. Users can click a cell's header bar to select a cell -- note that clicking the header bar of an already selected cell does not deselect the cell.
@@ -33,7 +34,7 @@ Multiple cell selection is supported.
 
 Use the drop-down menu in the notebook header bar to fine-tune your cell selection:
 
-![checkdropdown](img/checkdropdown.png)
+![Cell Selection State Dropdown Menu](img/checkdropdown.png)
 
 **All**: Select all notebook cells.
 
@@ -42,7 +43,7 @@ Use the drop-down menu in the notebook header bar to fine-tune your cell selecti
 **Invert**: Uncheck selected cells, and check all deselected cells.
 
 <a name="keyboardext"></a>
-#### Keyboard extension
+### Multi-cell Selection Keyboard Extension
 
 Multi-cell selection supports common keyboard extensions:
 
@@ -60,25 +61,25 @@ Multi-cell selection supports common keyboard extensions:
 
 Many keyboard shortcuts are supported. To see an exhaustive list, click in a blank area of the RCloud GUI (so that the cursor focus is not in a cell, for example) and then type <kbd>?</kdb>.
 
-![shortcuts](img/kshort.png)
+![Keyboard Shortcuts](img/kshort.png)
 
 [Top](#top)
 
 <a name="discover"></a>
 
-### Discover
+### Discover Link
 
 Click the Discover link in the main page header bar to view the most recent and most popular notebooks.
 
 You can create a mini-view of your notebook for this Discover view by creating an asset called `thumb.png`. `thumb.png` will be displayed in the Discover view if present. 
 
-![discover](img/discover.png)
+![Discover Link](img/discover.png)
 
 [Top](#top)
 
 <a name="cellheights"></a>
 
-### Cell Heights
+### Cell Heights Automatically Adjusted
 
 Cells are shown at the full height of all their text, instead of adding a second level of scrolling. This eliminates the behavior where cells would abruptly get smaller when activated. 
 
@@ -86,11 +87,11 @@ Cells are shown at the full height of all their text, instead of adding a second
 
 <a name="arrangepanelsbysize"></a>
 
-### Arrange Panels by Size
+### Arrange Panels by Size Setting
 
 In some situations, larger panels on the left-hand side of the GUI "crowd-out" the currently loaded notebook and force the user to resize. In order to minimize this, select the "Arrange Panel by Size" checkbox in the Settings panel. RCloud will then rearrange panels in order to reduce the need for resizing the notebook.
 
-![arrangepanelsbysize](img/arrangepanelsbysize.png) 
+![Arrange Panel by Size Setting](img/arrangepanelsbysize.png) 
 
 [Top](#top)
 
@@ -118,11 +119,11 @@ Note that users are still responsible for setting the permissions on the library
 
 <a name="partialnotebookruns"></a>
 
-### Partial Notebook Runs
+### Partial Notebook Execution
 
 Shift-click the play button on any cell to run only that cell forward in a notebook.
 
-![shiftclickrun](img/shiftclickrun.png)
+![Shift-click Play Button to Run Individual Cell](img/shiftclickrun.png)
 
 [Top](#top)
 
@@ -140,9 +141,9 @@ RCloud supports a `exec.auth: as-local` configuration, which uses the current un
 
 <a name="edithtmlloading"></a>
 
-### edit.html Loading Time
+### edit.html Increased Loading Speed
 
-The initial page load for edit.html is faster, because RCloud loads the notebook tree asynchronously.
+The initial page load for edit.html is faster because RCloud loads the notebook tree asynchronously.
 
 [Top](#top)
 
@@ -150,7 +151,7 @@ The initial page load for edit.html is faster, because RCloud loads the notebook
 
 ### Stylesheets
 
-Stylesheets are supported and improve output look and feel.
+Stylesheets now have improved output look and feel.
 
 [Top](#top)
 
@@ -158,7 +159,7 @@ Stylesheets are supported and improve output look and feel.
 
 ### Find and Replace
 
-Find and replace shows the number of returned results, and the first result is highlighted. Users can perform a reverse search by pressing <kbd>shift-enter</kbd>.
+Find and replace shows the number of returned results with the first result highlighted. Users may perform a reverse search by pressing <kbd>shift-enter</kbd>.
 
 [Top](#top)
 
@@ -176,13 +177,13 @@ Errors in `mini.html` and `shiny.html` are displayed in a dialog.
 
 ### Double Forking
 
-RCloud issues a warning when forking a notebook a second time, as this has no effect. GitHub returns the same notebook when forked twice.
+RCloud issues a warning when forking a notebook a second time since this has no effect. GitHub returns the same notebook when a notebook has been forked twice.
 
 [Top](#top)
 
 ### Unsupported Browsers
 
-RCloud issues sensible warnings when accessed with unsupported browsers Internet Explorer and Edge.
+RCloud issues sensible warnings when accessed with unsupported browsers, such as Internet Explorer and Edge.
 
 [Top](#top)
 

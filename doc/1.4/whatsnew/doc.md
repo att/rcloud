@@ -11,6 +11,8 @@ layout: default
 
 </div>
 
+# Release Notes; v1.4
+
 Created: 2015-07-03. **What's New!** contains a list of new features, GUI enhancements and bug fixes.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
 <div markdown="1" class="frmttng">
@@ -52,21 +54,21 @@ Protected notebooks are readable only by the owner and (optionally) a select gro
 
 View or modify notebook protection by clicking the notebook "info" button next to the notebook name in the notebooks tree:
 
-![notebookinfo](img/notebookinfo.png)
+![Notebook Information Icon](img/notebookinfo.png)
 
 If you own the notebook, click the "no group" link (or a group name if one exists):
 
-![protectiondialog](img/nogroup.png)
+![Notebook Protection Dialog: No Group Link](img/nogroup.png)
 
 This opens the notebook protection dialog:
 
-![protectiondialog](img/notebookperms.png)
+![Protection Dialog: Permissions](img/notebookperms.png)
 
 Here, you can assign the notebook to any group you are a member of or make it entirely private (readable only by you).
 
 Use the second tab of the protection dialog to create/rename groups and/or assign other users as administrators/members of groups you administrate.
 
-![protectiondialog2](img/groupman.png)
+![Protection Dialog: Group Information](img/groupman.png)
 
 [Top](#top)
 
@@ -86,7 +88,7 @@ In this release, all notebooks are displayed in the same notebook tree. Non-loca
 
 Clicking the stop button in the header bar sends an interrupt to the R process and terminates execution if possible.
 
-![stop](img/stop.png)
+![Nonpreemptive Stop Icon](img/stop.png)
 
 [Top](#top)
 
@@ -140,15 +142,15 @@ Use `&quiet=1` in view.html notebook URLs to hide all UI elements, including cel
 
 If you change a cell in a notebook _after_ initiating a notebook run, the state of the cell will turn into a purple question mark:
 
-![cellstatequestion1](img/cellstatequestion1.png)
+![Cell Run-state: Purple Question Mark](img/cellstatequestion1.png)
 
 This indicates that the result after running may not be in sync with the newly modified code in the cell. When the cell runs, RCloud displays a spinning question mark:
 
-![cellstatequestion2](img/cellstatequestion2.png)
+![Cell Run-state: Spinning Question Mark](img/cellstatequestion2.png)
 
 After the cell runs, the status will change to the "ready" state instead of the complete state (a solid green circle):
 
-![cellstateready](img/opencircle.png)
+![Cell Run-state: Green Circle](img/opencircle.png)
 
 This indicates that the cell needs to run again for the modified code and displayed results to sync.
 
@@ -160,7 +162,7 @@ This indicates that the cell needs to run again for the modified code and displa
 
 Multi-line command input is indicated with a `+` to emulate command-line R.
 
-![multilinecommandinput](img/multiline.png)
+![Multi-line Command Input](img/multiline.png)
 
 [Top](#top)
 

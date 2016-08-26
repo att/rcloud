@@ -11,6 +11,8 @@ layout: default
 
 </div>
 
+# Release Notes; v1.5
+
 Created: 2015-10-14. **What's New!** contains a list of new features, GUI enhancements and bug fixes.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
 <div markdown="1" class="frmttng">
@@ -55,11 +57,11 @@ Created: 2015-10-14. **What's New!** contains a list of new features, GUI enhanc
 
 The standard R [`locator()` command](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/locator.html) is supported, enabling point+click R tools such as `identify()`. When the locator is active, RCloud adds a blue border around a plot and changes the cursor to a crosshair:
 
-![locator](img/locator.png)
+![Locator() Function Support](img/locator.png)
 
 To add points, left-click on the plot. To end/abort a locator request, press the &lt;ESC&gt; key. Once you have selected your locations, `locator()` returns the points clicked:
 
-![locator](img/locator_res.png)
+![Locator() Function Example](img/locator_res.png)
 
 This functionality is only available in R cells.
 
@@ -71,7 +73,7 @@ This functionality is only available in R cells.
 
 Access your recently opened notebooks via the Recent link in the Notebooks titlebar:
 
-![recent](img/recent.png)
+![Recent Notebooks Display](img/recent.png)
 
 [Top](#top)
 
@@ -81,7 +83,7 @@ Access your recently opened notebooks via the Recent link in the Notebooks title
 
 Shell cells are supported. Each cell represents a separate Unix shell, so environment variables cannot be passed across shell cells. However, R environment variables defined in R cells are inherited by shell cells automatically. Commands are executed in bash.
 
-![shell](img/shell.png)
+![Bash Shells Supported](img/shell.png)
 
 [Top](#top)
 

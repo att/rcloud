@@ -9,6 +9,8 @@ layout: default
 
 </div>
 
+# Release Notes; v1.3
+
 Created 2015-02-14. **What's New!** contains a list of new features, GUI enhancements and bug fixes.  RCloud documentation is currently maintained by <a target="_blank" href="http://www.spencerseidel.com">Spencer Seidel</a> on a voluntary basis.
 
 <div markdown="1" class="frmttng">
@@ -141,17 +143,17 @@ The RCloud team has put a lot of work into creating a new cleaner interface, red
 
 The run-state of each cell is displayed via an icon in between the gutter and cell name:
 
-![opencircle](img/opencircle.png): Cell has not been run
+![Cell Run-state Indicator: Open Circle](img/opencircle.png): Cell has not been run
 
-![bluearrow](img/bluearrow.png): Cell is scheduled to be run
+![Cell Run-state Indicator: Blue Arrow](img/bluearrow.png): Cell is scheduled to be run
 
-![runningcircle](img/runningcircle.png): Cell is running
+![Cell Run-state Indicator: Running Circle](img/runningcircle.png): Cell is running
 
-![greencircle](img/greencircle.png): Cell has run successfully
+![Cell Run-state Indicator: Green Circle](img/greencircle.png): Cell has run successfully
 
-![exclaim](img/exclaim.png): Cell ran but had errors
+![Cell Run-state Indicator: Exclamation Point](img/exclaim.png): Cell ran but had errors
 
-![splatcircle](img/splatcircle.png): Cell's run was cancelled
+![Cell Run-state Indicator: Splat Circle](img/splatcircle.png): Cell's run was cancelled
 
 [Top](#top)
 
@@ -161,9 +163,9 @@ The run-state of each cell is displayed via an icon in between the gutter and ce
 
 When you run a notebook, you can prevent scheduled cells from running by pressing the stop button, located in the header at the top of the screen:
 
-![nonpreemptivestop](img/stop.png)
+![Nonpreemptive Stop Icon](img/stop.png)
 
-Note that this will not interrupt currently running cells (![runningcircle](img/runningcircle.png)). It will only prevent scheduled cells from running.
+Note that this will not interrupt currently running cells (![Running Circle](img/runningcircle.png)). It will only prevent scheduled cells from running.
 
 [Top](#top)
 
@@ -187,9 +189,9 @@ R and Python cells have automatic indentation.
 
 ### Code and Output
 
-Most cells show both the code and the output. Output is shown when the cell is run.  Click on the code or the edit code icon in cell's status bar to activate the cell's edit mode.
+Most cells show both the code and the output. Output results are shown when the cell is run.  Click on the code or the edit code icon in cell's status bar to activate the cell's edit mode.
 
-![codeandoutput](img/codeandoutput.png)
+![Code and Output Results](img/codeandoutput.png)
 
 Markdown cells behave slightly differently - since the markdown output already contains the code, the code editor is hidden when the markdown is run.  Click on any code (not markdown) within the markdown output, or click on the edit code icon in the status bar to activate it.
 
@@ -205,15 +207,16 @@ Code can also request lines of input. E.g. `readline` works - as does `browser` 
 
 E.g.
 
-![readline](img/readline.png)
+![Readline Implementation](img/readline.png)
 
 And the result:
 
-![readline_results](img/readline_results.png)
+![Readline Results](img/readline_results.png)
 
 For debugging:
 
-![browse](img/browse.png)
+![Debugging](img/browse.png)
+
 [Top](#top)
 
 <a name="savingplots" ></a>
@@ -222,7 +225,7 @@ For debugging:
 
 Hover the mouse over a plot created in an R cell to make the disk icon appear in the upper right corner (see 1), which contains a list of available image formats.  A widget at the lower-right corner can be used to resize the image (see 2).
 
-![saveresize](img/saveresize.png)
+![Save and Resize Plots](img/saveresize.png)
 
 [Top](#top)
 
@@ -242,11 +245,11 @@ Users can search/search-place across all cells in a notebook.
 
 Ctrl/Cmd-F opens the find bar at the top of the notebook.  Type to search incrementally.
 
-![find](img/find.png)
+![Find Text](img/find.png)
 
 Ctrl-H (Win, Linux), Cmd-Option-H (Mac) opens the replace bar.
 
-![find_replace](img/find_replace.png)
+![Find and Replace](img/find_replace.png)
 
 [Top](#top)
 
@@ -256,7 +259,7 @@ Ctrl-H (Win, Linux), Cmd-Option-H (Mac) opens the replace bar.
 
 Clicking the notebook information icon shows which users have starred a notebook.
 
-![notebookinfo](img/notebookinfo.png)
+![Notebook Information Icon](img/notebookinfo.png)
 
 [Top](#top)
 
@@ -266,7 +269,7 @@ Clicking the notebook information icon shows which users have starred a notebook
 
 RCloud displays an animated icon when first loading a notebook.
 
-![notebook_loading](img/notebook_loading.png)
+![Loading a Notebook Icon](img/notebook_loading.png)
 
 [Top](#top)
 
@@ -294,11 +297,11 @@ Function arguments are shown in the Workspace panel.
 
 Given the following user defined function:
 
-![function](img/function.png)
+![User Defined Function](img/function.png)
 
 The arguments are displayed in the Workspace panel:
 
-![functionargsinworkspace](img/functionargsinworkspace.png)
+![Function Workspace Panel](img/functionargsinworkspace.png)
 
 [Top](#top)
 
@@ -308,7 +311,7 @@ The arguments are displayed in the Workspace panel:
 
 There is an option to turn off "terse dates" in the Options panel.
 
-![settings](img/settings.png)
+![Settings Panel](img/settings.png)
 
 [Top](#top)
 
@@ -318,7 +321,7 @@ There is an option to turn off "terse dates" in the Options panel.
 
 You can enable and disable per-user extensions using the "Enable Extensions" and "Disable Extensions" text boxes. These set the user options `addons` and `skip-addons`, respectively. On starting the session, any extensions listed in `skip-addons` are not loaded.
 
-![settings](img/settings.png)
+![Settings Panel](img/settings.png)
 
 [Top](#top)
 
@@ -328,7 +331,7 @@ You can enable and disable per-user extensions using the "Enable Extensions" and
 
 If your server is set up to allow subscribing to comments, the Subscribe to Comments option will appear in the settings panel:
 
-![commentsubscribe](img/commentsubscribe.png)
+![Subscribe to Comments](img/commentsubscribe.png)
 
 [Top](#top)
 <a name="cellnumbers" ></a>
@@ -337,11 +340,11 @@ If your server is set up to allow subscribing to comments, the Subscribe to Comm
 
 Cell number is shown above each cell in its status area.
 
-![cellnumbers](img/cellnumbers.png)
+![Cell Numbers](img/cellnumbers.png)
 
 You can turn off this feature in the settings panel:
 
-![settings](img/settings.png)
+![Settings Panel](img/settings.png)
 
 [Top](#top)
 
@@ -349,7 +352,7 @@ You can turn off this feature in the settings panel:
 
 ### Reordering Cells
 
-Users can grab the status area above cell as well as the gutter area (![dragcell](img/dragcell.png)) in order to reorder cells. This allows users to move cells when not editing them.
+Users can grab the status area above cell as well as the gutter area (![Drag and Drop Cell Reordering](img/dragcell.png)) in order to reorder cells. This allows users to move cells when not editing them.
 
 [Top](#top)
 
