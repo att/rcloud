@@ -17,7 +17,7 @@ RCloud.UI.find_replace = (function() {
 
         // matches_
         find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
+        show_match_details(matches_.length === 0 ? 0 : 1, matches_.length);
 
         if(find_input_.val().length) {
             active_match_ = 0;
@@ -84,26 +84,26 @@ RCloud.UI.find_replace = (function() {
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
 
-                if(active_match_ !== undefined) {
+                if(matches_.length != 0) {
                      active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
+                     show_match_details(active_match_ + 1, matches_.length);
                 } else {
                      active_match_ = 0;
                 }
-
-                show_match_details(active_match_ + 1, matches_.length);
-
+                
                 active_transition('activate');
             }
 
             function find_previous() {
                 active_transition('deactivate');
-                if(active_match_ !== undefined)
+                
+                if(matches_.length != 0) {
                     active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
-                else
+                    show_match_details(active_match_ + 1, matches_.length);
+                } else {
                     active_match_ = 0;
-
-                show_match_details(active_match_ + 1, matches_.length);
-
+                }
+                
                 active_transition('activate');
             }
 
