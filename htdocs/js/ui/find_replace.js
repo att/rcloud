@@ -8,7 +8,7 @@ RCloud.UI.find_replace = (function() {
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
-        change_interval;
+        change_interval_;
 
     function generate_matches() {
         active_match_ = undefined;
