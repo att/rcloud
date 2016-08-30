@@ -33,6 +33,18 @@ RCloud.UI.scratchpad = (function() {
                 widget.setOptions({
                     enableBasicAutocompletion: true
                 });
+
+                widget.commands.addCommands([{
+                    name: 'blurCell',
+                    bindKey: {
+                        win: 'Escape',
+                        mac: 'Escape'
+                    },
+                    exec: function() {
+                        that.widget.blur();
+                    }
+                }]);
+
                 session.setMode(new LangMode(false, doc, session));
                 session.setUseWrapMode(true);
                 widget.resize();
