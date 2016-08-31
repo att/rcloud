@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ -z "$ROOT" ]; then
+    echo Defaulting ROOT to /data/rcloud
+    ROOT=/data/rcloud
+fi
+
+cd "$ROOT"
+exec conf/start

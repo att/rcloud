@@ -1,0 +1,6 @@
+#!/bin/sh
+
+ROOT=/data/rcloud
+export ROOT
+RS=`echo 'cat(system.file("libs","Rserve",package="Rserve"))' | /usr/bin/R --vanilla --slave`
+R_LIBS=$ROOT/Rlib /usr/bin/R CMD "$RS" --RS-conf "$ROOT/conf/scripts.conf" > /dev/null
