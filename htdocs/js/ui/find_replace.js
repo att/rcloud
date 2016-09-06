@@ -278,6 +278,13 @@ RCloud.UI.find_replace = (function() {
         highlight_all();
     }
     function hide_dialog() {
+
+        if(!shell.notebook.model.read_only()) {
+            var current_match = matches_[active_match_];
+            var view = shell.notebook.model.cells[current_match.index].views[0];
+            view.select_highlight_range();
+        }
+
         clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
