@@ -289,7 +289,7 @@ RCloud.UI.find_replace = (function() {
         if(!shell.notebook.model.read_only()) {
             var current_match = matches_[active_match_];
             var view = shell.notebook.model.cells[current_match.index].views[0];
-            view.select_highlight_range();
+            view.select_highlight_range(current_match.begin, current_match.end);
         }
 
         clearInterval(change_interval_);
