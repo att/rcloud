@@ -963,9 +963,9 @@ function create_cell_html_view(language, cell_model) {
             }
             return this;
         },
-        select_highlight_range: function() {
+        select_highlight_range: function(begin, end) {
             this.edit_source(true);
-            var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, highlights_[0].begin, highlights_[0].end);
+            var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, begin, end);
             ace_widget_.getSelection().setSelectionRange(ace_range);
         }
     });
