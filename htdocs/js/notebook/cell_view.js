@@ -967,7 +967,7 @@ function create_cell_html_view(language, cell_model) {
             this.edit_source(true);
             var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, highlights_[0].begin, highlights_[0].end);
             ace_widget_.getSelection().setSelectionRange(ace_range);
-        },
+        }
     });
 
     result.edit_source(false);
