@@ -29,6 +29,10 @@ RCloud.UI.find_replace = (function() {
         }
     };
 
+    function matches_exist() {
+        return matches_.length !== 0;
+    }
+
     function toggle_find_replace(replace) {
         if(!find_dialog_) {
 
@@ -361,11 +365,9 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function replace_current() {
-        function findIndex(a, f, i) {
-            if(i===undefined) i = 0;
-            for(; i < a.length && !f(a[i]); ++i);
-            return i === a.length ? -1 : i;
-        }
+        if(!matches_exist())
+            return;
+
         var match = matches_[active_match_];
         var cell = shell.notebook.model.cells[match.index];
         var content = cell.content();
