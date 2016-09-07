@@ -8,16 +8,12 @@ RCloud.UI.find_replace = (function() {
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
-        change_interval;
+        change_interval_;
 
     function generate_matches() {
         active_match_ = undefined;
         build_regex(find_input_.val());
         highlight_all();
-
-        // matches_
-        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
 
         if(find_input_.val().length) {
             active_match_ = 0;
@@ -27,9 +23,14 @@ RCloud.UI.find_replace = (function() {
             active_match_ = undefined;
             hide_matches();
         }
+
+        // matches_
+        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
+        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
     };
 
     function toggle_find_replace(replace) {
+
         if(!find_dialog_) {
 
             var markup = $(_.template(
@@ -63,6 +64,7 @@ RCloud.UI.find_replace = (function() {
             if(navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
                 find_form_.on('focusout', function(e) {
                     setTimeout(function() {
+
                         if($(document.activeElement).closest(find_form_).length === 0) {
                             has_focus_ = false;
                             clear_highlights();
@@ -184,10 +186,7 @@ RCloud.UI.find_replace = (function() {
                     $('#' + cycle[i]).focus();
                     return false;
                 case $.ui.keyCode.ESCAPE:
-                    e.preventDefault();
-                    e.stopPropagation();
                     hide_dialog();
-                    return false;
                 }
                 return undefined;
             });
@@ -232,13 +231,13 @@ RCloud.UI.find_replace = (function() {
                     new_value = find_input_.val();
 
                 if(new_value !== old_value) {
-
                     generate_matches();
-
                     find_input_.data('value', new_value);
                 }
 
             }, 250);
+
+            generate_matches();
 
             build_regex(find_input_.val());
 
