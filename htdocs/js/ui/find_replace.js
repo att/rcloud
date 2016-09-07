@@ -88,7 +88,7 @@ RCloud.UI.find_replace = (function() {
             function find_next(reason) {
                 active_transition(reason || 'deactivate');
 
-                if(matches_.length != 0) {
+                if(matches_exist()) {
                      active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
                      show_match_details(active_match_ + 1, matches_.length);
                 } else {
@@ -101,7 +101,7 @@ RCloud.UI.find_replace = (function() {
             function find_previous() {
                 active_transition('deactivate');
                 
-                if(matches_.length != 0) {
+                if(matches_exist()) {
                     active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
                     show_match_details(active_match_ + 1, matches_.length);
                 } else {
@@ -128,7 +128,7 @@ RCloud.UI.find_replace = (function() {
             replace_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if(active_match_ !== undefined) {
+                if(matches_exist()) {
                     var cell = replace_current();
                     if(cell) {
                         shell.notebook.controller.update_cell(cell)
@@ -145,7 +145,7 @@ RCloud.UI.find_replace = (function() {
             replace_all_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if(active_match_ !== undefined) {
+                if(matches_exist()) {
                     active_transition('deactivate');
                     replace_rest();
                 }
@@ -316,7 +316,7 @@ RCloud.UI.find_replace = (function() {
         return null;
     }
     function active_transition(transition) {
-        if(active_match_ !== undefined) {
+        if(matches_exist()) {
             var match = matches_[active_match_];
 
             if(match) {
