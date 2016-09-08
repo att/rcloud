@@ -49,7 +49,6 @@ RCloud.UI.shortcut_dialog = (function() {
                         current_shortcut.keys.push(keys.join(' '));
                     });
 
-                    // are there any 'click +' shortcuts?
                     if(shortcut.click_keys) {
                         current_shortcut.keys.push({
                             keys: _.map(shortcut.click_keys.keys, function(key) { return get_key(key); }).join(' '),
@@ -64,7 +63,6 @@ RCloud.UI.shortcut_dialog = (function() {
                 template_data.push(key_group);
             });
 
-            // generate dynamic content:
             var content_template = _.template(
                 $("#shortcut_dialog_content_template").html()
             );
