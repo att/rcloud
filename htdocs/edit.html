@@ -447,7 +447,11 @@
             <td>
               <% _.each(shortcut.keys, function(key_combo, index) { %>
                 <%if(index > 0) {%> / <%}%>
-                <kbd><%=key_combo%></kbd>
+                <%if(_.isObject(key_combo)) { %>
+                  <kbd><%=key_combo.keys%> click</kbd> <span>on the</span> <span class="target"><%=key_combo.target%></span>
+                <% } else { %>
+                  <kbd><%=key_combo%></kbd>
+                <% } %>
               <% }); %>
             </td>
             <td>

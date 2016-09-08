@@ -47,8 +47,7 @@ RCloud.UI.shortcut_manager = (function() {
                 on_page: ['view', 'edit'],
                 ignore_clash: false,
                 enable_in_dialogs: false,
-                enabled: true,
-                with_click: false
+                enabled: true
             });
 
             // clean-up:
@@ -58,6 +57,15 @@ RCloud.UI.shortcut_manager = (function() {
                 shortcut.bind_keys = shortcut.keys.win_mac;
             } else {
                 shortcut.bind_keys = shortcut.keys[is_mac ? 'mac' : 'win'];
+            }
+
+            // click keys, click on target + keys:
+            if (shortcut.click_keys) {
+                if(shortcut.click_keys.hasOwnProperty('win_mac')) {
+                    shortcut.click_keys.keys = shortcut.click_keys.win_mac;
+                } else {
+                    shortcut.click_keys.keys = shortcut.click_keys[is_mac ? 'mac' : 'win'];
+                }
             }
 
             // if this is a shortcut that needs to be added:

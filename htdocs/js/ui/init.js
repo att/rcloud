@@ -317,6 +317,12 @@ RCloud.UI.init = function() {
                 ['shift', 'alt', 'enter']
             ]
         },
+        click_keys: {
+            target: 'Play button',
+            win_mac: [
+                ['shift']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',

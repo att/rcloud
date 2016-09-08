@@ -19,6 +19,15 @@ RCloud.UI.shortcut_dialog = (function() {
                 'General']);
             }
 
+            var get_key = function(key) {
+                var replacement =  _.findWhere([
+                    { initial: 'option', replace_with: 'opt' },
+                    { initial: 'command', replace_with: 'cmd' }
+                ], { initial : key });
+              
+                return replacement ? replacement.replace_with : key;
+            };
+
             _.each(shortcuts_by_category_, function(group) {
 
                 var key_group = {
@@ -29,24 +38,24 @@ RCloud.UI.shortcut_dialog = (function() {
                 _.each(group.shortcuts, function(shortcut) {
 
                     var current_shortcut = {
-                            description : shortcut.description,
-                            keys: []
-                        };
-
+                        description : shortcut.description,
+                        keys: []
+                    };
+ 
                     _.each(shortcut.bind_keys, function(keys) {
-
                         keys = _.map(keys, function(key) { 
-                            
-                            var replacement =  _.findWhere([
-                                { initial: 'option', replace_with: 'opt' },
-                                { initial: 'command', replace_with: 'cmd' }
-                            ], { initial : key });
-                          
-                            return replacement ? replacement.replace_with : key;
+                            return get_key(key);
                         });
-
                         current_shortcut.keys.push(keys.join(' '));
                     });
+
+                    // are there any 'click +' shortcuts?
+                    if(shortcut.click_keys) {
+                        current_shortcut.keys.push({
+                            keys: _.map(shortcut.click_keys.keys, function(key) { return get_key(key); }).join(' '),
+                            target: shortcut.click_keys.target
+                        });
+                    }
 
                     key_group.shortcuts.push(current_shortcut);
 
