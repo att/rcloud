@@ -86,31 +86,6 @@
                 <td>
                   <% _.each(shortcut.keys, function(key_combo, index) { %>
                     <%if(index > 0) {%> / <%}%>
-                    <kbd><%=key_combo%></kbd>
-                  <% }); %>
-                </td>
-                <td>
-                  <%=shortcut.description%>
-                </td>
-              </tr>
-            <% }); %>
-          </tbody>
-        </table>
-      </div>
-    <% }); %>
-    </script>
-
-    <script type="text/template" id="shortcut_dialog_content_template">
-    <% _.each(categories, function(category) { %>
-      <div class="category">
-        <h3><%=category.name%></h3>
-        <table>
-          <tbody>
-            <% _.each(category.shortcuts, function(shortcut) { %>
-              <tr>
-                <td>
-                  <% _.each(shortcut.keys, function(key_combo, index) { %>
-                    <%if(index > 0) {%> / <%}%>
                     <%if(_.isObject(key_combo)) { %>
                       <kbd><%=key_combo.keys%> click</kbd> <span>on the</span> <span class="target"><%=key_combo.target%></span>
                     <% } else { %>
