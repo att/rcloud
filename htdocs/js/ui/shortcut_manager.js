@@ -47,7 +47,8 @@ RCloud.UI.shortcut_manager = (function() {
                 on_page: ['view', 'edit'],
                 ignore_clash: false,
                 enable_in_dialogs: false,
-                enabled: true
+                enabled: true,
+                with_click: false
             });
 
             // clean-up:
