@@ -34,7 +34,7 @@ RCloud.UI.find_replace = (function() {
     };
 
     function matches_exist() {
-        return matches_.length !== 0;
+        return matches_.length !== 0 && !isNaN(active_match_);
     }
 
     function toggle_find_replace(replace) {
