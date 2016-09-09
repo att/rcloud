@@ -201,17 +201,18 @@ RCloud.UI.scratchpad = (function() {
             var content = this.current_model.content();
             if (Notebook.is_binary_content(content)) {
                 binary_mode_ = true;
-                
+
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
 
                 // PDF seems not to be supported properly by browsers
-                var sbin = $('#scratchpad-binary');
+                var sbin = $('#scratchpad-binary'),
+                    extension = this.current_model.filename().substr(this.current_model.filename().lastIndexOf('.') + 1);
 
-                if(/\.pdf$/i.test(this.current_model.filename())){
-                    sbin.html('<div><p>PDF preview not supported</p></div>');
+                if(['bmp', 'jpg', 'jpeg', 'png', 'gif'].indexOf(extension.toLowerCase()) !== -1) {
+                    sbin.html('<div><img src="' + this.current_model.asset_url(true) + '"/></div>"');
                 } else {
-                    sbin.html('<div><object data="' + this.current_model.asset_url(true) + '"></object></div>');
+                    sbin.html('<div><p>Preview not supported for this file type</p></div>');
                 }
 
                 sbin.show();
