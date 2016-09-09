@@ -205,7 +205,6 @@ RCloud.UI.scratchpad = (function() {
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
 
-                // PDF seems not to be supported properly by browsers
                 var sbin = $('#scratchpad-binary'),
                     extension = this.current_model.filename().substr(this.current_model.filename().lastIndexOf('.') + 1);
 
