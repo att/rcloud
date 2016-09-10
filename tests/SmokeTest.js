@@ -1,4 +1,4 @@
-casper.test.begin("Smoke Test case which covers basic features", 27, function suite(test) {
+casper.test.begin("Smoke Test case which covers basic features", 29, function suite(test) {
 
     var x = require('casper').selectXPath;//required if we detect an element using xpath
     var github_username = casper.cli.options.username;//user input github username
@@ -7,6 +7,7 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
     var functions = require(fs.absolute('basicfunctions.js'));//invoke the common functions present in basicfunctions.js
     var notebook_id = '60cf414db458dae177addac8d48d4dea';//Notebook which consists all the cells like "R, Python, Markdown, Shell"
     var Notebook_name = "TEST_NOTEBOOK";// Notebook name of the importing/Load Notebook
+
     var fileName = "SampleFiles/PHONE.csv";
     var system = require('system');
     var currentFile = require('system').args[4];
@@ -33,7 +34,6 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
 
     casper.then(function () {
         casper.echo('⌚️  Validating page for the RCloud page with Shareable link icon and cell trash icon...');
-        // test.comment('⌚️  Validating page for the RCloud page with Shareable link icon and cell trash icon...');
         functions.validation(casper);
     });
 
@@ -155,7 +155,6 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
         var url1 = this.getCurrentUrl();
         this.thenOpen(url1);
         this.wait(8000);
-        console.log('Validation of the notebook loading by checking for elements- Shareable link and Logout option ')
     });
 
     // Click on RunAll and verify the output
@@ -181,7 +180,7 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
     casper.then(function () {
         this.then(function () {
             this.test.assertExists(x(".//*[@id='part3.sh']/div[3]/div[2]/pre/code"), "Shell Cell has been executed and Output div is visible");
-            this.test.assertSelectorHasText(x(".//*[@id='part3.sh']/div[3]/div[2]/pre/code"), "/tmp/Rserv/", "Shell cell has been produced expected output");
+            this.test.assertSelectorHasText(x(".//*[@id='part3.sh']/div[3]/div[2]/pre/code"), "/tmp/Rserv/", "Shell cell has produced expected output");
         });
     });
 
@@ -189,19 +188,19 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
     casper.then(function () {
         test.comment('⌚️  Verifying for Workspace and Dataframe Divs contents...');
         this.click('#accordion-right > div:nth-child(3) > div:nth-child(1)');
-        this.wait(2000);
-        this.then(function () {
+        this.wait(5000).then(function () {
             var data = this.fetchText("#enviewer-body-wrapper");
             console.log("Workspace has produced following Dataframe : \n\ " + data);
         });
     });
 
     //Verify for dataframe div
-    casper.then(function () {
+    casper.wait(5000).then(function () {
         console.log("Clicking on dataframe, from the workspace div");
-        this.click('#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)');
-        this.wait(2000);
-        this.then(function () {
+        this.waitForSelector("#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)", function(){
+            this.click('#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)');    
+        });        
+        this.wait(6000).then(function () {
             var df = this.fetchText("#viewer-body");
             console.log("Contents of Dataframe: \n\ " + df);
         });
@@ -212,7 +211,7 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
         casper.then(function () {
             this.thenOpen(URL);
             test.comment('⌚️  Uploading binary file to the Notebook ...');
-            this.wait(10000);
+            this.wait(5000);
         });
 
         //Verifying whether file upload div is open or not
@@ -223,14 +222,13 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
             }
             else {
                 this.echo('File upload div is not open,hence opening it');
-                this.wait(6000);
+                this.wait(2000);
                 this.click(x(".//*[@id='accordion-right']/div[2]/div[1]"));
-                this.wait(5000);
             }
         });
 
         //Uploading file
-        casper.then(function () {
+        casper.wait(3000).then(function () {
             casper.page.uploadFile("#file", fileName);
             console.log('Selecting file from directory');
         });
@@ -267,12 +265,12 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
     });
 
     //Checking for Fork feature
-    casper.wait(12000).then(function () {
+    casper.then(function () {
         test.comment('⌚️  Verifying for Fork feature ...');
         functions.fork(casper);
     });
 
-    casper.then(function () {
+    casper.wait(5000).then(function () {
         test.comment('⌚️  Testing Shareable links ...');
         //Notebook.R
         casper.then(function () {
@@ -380,13 +378,12 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
     //Making notebook private
     casper.then(function () {
         test.comment('⌚️  Making Notebook as Private ...');
-        this.wait(3000).mouse.move('.jqtree-selected > div:nth-child(1)');
+        this.wait(3000).mouse.move(".jqtree-selected > div:nth-child(1) > span:nth-child(1)");
         this.wait(3000).waitUntilVisible(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)", function () {
             this.click(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)")
         });
 
-        this.then(function () {
-            this.wait(3000);
+        this.wait(5000).then(function () {
             this.click('.group-link > a:nth-child(1)')
         });
 
@@ -412,17 +409,46 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
 
     //validate if notebook has become private
     casper.wait(10000).then(function () {
-        this.mouse.move('.jqtree-selected > div:nth-child(1)');
+        this.mouse.move('.jqtree-selected > div:nth-child(1) > span:nth-child(1)');
         this.wait(2000);
         this.waitUntilVisible(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)", function () {
             this.click(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)");
-            // console.log("Clicking on notebook info");
+            console.log("Clicking on notebook info");
         });
 
         this.wait(5000).then(function () {
             status = this.fetchText('.group-link > a:nth-child(1)');
             console.log("notebook is " + status);
             this.test.assertEquals(status, 'private', "The notebook has been converted to private successfully");
+        });
+    });
+
+    //Discover.html for anonymous user
+    casper.viewport(1024, 768).then(function () {
+        test.comment("Opening Discover page")
+        casper.viewport(1366, 768).then(function () {
+            this.waitForSelector("#rcloud-navbar-menu > li:nth-child(5) > a:nth-child(1)", function () {
+                console.log("Link for opening Discover found. Clicking on it");
+                if (this.clickLabel("Discover", "a")) {
+                    this.wait(11000);
+                    this.viewport(1366, 768).withPopup(/discover.html/, function () {
+                        this.wait(4000);
+                        this.test.assertUrlMatch(/discover.html/, 'Discover page URL matched');
+                        this.wait(8000);
+                        this.waitForSelector(".active > a:nth-child(1)", function () {
+                            this.test.assertExists(".active > a:nth-child(1)", "Discover page opened successfully");
+                        });
+                    });
+                }
+                else {
+                    console.log('Unable to open Discover page');
+                }
+            });
+        });
+
+        casper.then(function () {
+            this.thenOpen(URL1);
+            this.wait(5000);
         });
     });
 
@@ -438,6 +464,7 @@ casper.test.begin("Smoke Test case which covers basic features", 27, function su
         this.wait(7000);
         this.click('#main-div > p:nth-child(2) > a:nth-child(2)');
     });
+    
     casper.then(function () {
         this.wait(5000);
         this.click('.btn');

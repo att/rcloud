@@ -2,7 +2,7 @@
  * Created by Prateek.Naik
  */
 //Begin Tests
-casper.test.begin("Creating a new group from Manage group option", 2, function suite(test) {
+casper.test.begin("Creating a new group from Manage group option", 3, function suite(test) {
 
     var x = require('casper').selectXPath;
     var github_username = casper.cli.options.username;
@@ -29,7 +29,7 @@ casper.test.begin("Creating a new group from Manage group option", 2, function s
     //Function to generate group names
     casper.then(function () {
         ID2 = this.evaluate(function () {
-            return Math.random().toString(36).substr(2, 9);
+            return Math.random().toString(36).substr(2,5);
         });
     });
 
@@ -44,10 +44,10 @@ casper.test.begin("Creating a new group from Manage group option", 2, function s
         this.wait(2000);
     });
 
-    // casper.then(function () {
-    //     ID1 = this.fetchText('select.ng-pristine:nth-child(3) > option:nth-child(1)');
-    //     this.echo('The group which is going to be renamed is:' + ID1);
-    // });
+    casper.then(function () {
+        ID1 = this.fetchText('select.ng-pristine:nth-child(3) > option:nth-child(1)');
+        this.echo('The group which is going to be renamed is:' + ID1);
+    });
 
     //renaming the group
     casper.then(function () {

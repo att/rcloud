@@ -108,7 +108,7 @@ casper.test.begin("Importing External private notebook", 10, function suite(test
 
     casper.viewport(1024, 768).then(function () {
         this.wait(3000)
-        functions.login(casper, 'InsertDelete', 'musigma12', rcloud_url);
+        functions.login(casper, 'djoky', 'musigma12', rcloud_url);
     });
 
     casper.viewport(1024, 768).then(function () {
@@ -148,7 +148,7 @@ casper.test.begin("Importing External private notebook", 10, function suite(test
         this.test.assertExists('.modal-body', 'Error message thrown in Session div as the notebook being imported is private')
     });
 
-    casper.run(function () {
+    casper.wait(3000).run(function () {
         test.done();
     });
 });
