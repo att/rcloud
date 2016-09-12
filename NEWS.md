@@ -1,3 +1,39 @@
+## RCloud 1.6.2
+
+### Features
+
+### Improvements
+* Ability to open mini.html notebooks by name using `&user=...&path=...`
+  URLs. (#1034)
+
+* Preview PDF files in assets. (#2008)
+
+* Closing the find/replace dialog leaves the current match selected (if the
+  notebook is editable). (#2204)
+
+* Changing a cell's language leaves the focus in that cell (if the notebook is
+  editable). (#2206)
+
+* ESC loses the keyboard focus for the asset pane as it already blurred
+  cells. (#2221)
+
+### Bugfixes
+* Attempting to anonymously open notebooks by name would fail with a missing
+  function error.
+
+* Find/Replace dialog could show NaNs when the find text was not
+  found. (#2248)
+
+* Find result was obscured by the current text selection. (#2130)
+
+* Find/Replace dialog could get stuck open on Firefox. (#2215)
+
+* Find/Replace count was not always shown on Firefox. (#2213)
+
+* Uploading an unknown file types could cause the file to be
+  downloaded. (#2008)
+
+
 ## RCloud 1.6.1
 
 ### Features
