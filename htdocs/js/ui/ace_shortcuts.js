@@ -60,7 +60,7 @@ RCloud.UI.ace_shortcuts = (function() {
                         ['ctrl', 'enter']
                     ]
                 }
-            }, {                                                        // !
+            }, {
                 category: 'Code Editor',
                 id: 'code_editor_cursor_start_of_line',
                 description: 'Cursor at beginning of line',
