@@ -40,6 +40,16 @@ function main() {
 
             var notebook = getURLParameter("notebook"),
                 version = getURLParameter("version");
+            if (notebook === null && getURLParameter("user")) {
+                var path = getURLParameter("path"), user = getURLParameter("user");
+                promise = promise.then(function() {
+                    return rcloud.get_notebook_by_name(path, user);
+                }).then(function(result) {
+                    if(!result)
+                        throw new Error('Notebook "' + path + '" (user ' + user + ') not found');
+                    notebook = result[0];
+                });
+            }
             var tag = getURLParameter("tag");
             if(!version && tag) {
                 promise = promise.then(function() {
