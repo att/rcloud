@@ -237,7 +237,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["api", "disable_warnings"],
             ["api", "set_url"],
             ["api", "get_url"],
-            ["get_notebook_by_name"],
+            ["notebook_by_name"],
             ["get_notebook_info"],
             ["get_multiple_notebook_infos"],
             ["languages", "get_list"],
@@ -445,7 +445,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.get_notebook_by_name = function(user, path) {
-            return rcloud_ocaps.get_notebook_by_nameAsync(user, path);
+            return rcloud_ocaps.notebook_by_nameAsync(user, path);
         };
 
         rcloud.get_notebook_info = rcloud_ocaps.get_notebook_infoAsync;
@@ -552,8 +552,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["set_notebook_info"],
             ["get_notebook_property"],
             ["set_notebook_property"],
-            ["remove_notebook_property"],
-            ["notebook_by_name"]
+            ["remove_notebook_property"]
         ];
         RCloud.promisify_paths(rcloud_ocaps, paths);
 
@@ -741,10 +740,6 @@ RCloud.create = function(rcloud_ocaps) {
         rcloud.get_notebook_property = rcloud_ocaps.get_notebook_propertyAsync;
         rcloud.set_notebook_property = rcloud_ocaps.set_notebook_propertyAsync;
         rcloud.remove_notebook_property = rcloud_ocaps.remove_notebook_propertyAsync;
-
-        rcloud.get_notebook_by_name = function(user, path) {
-            return rcloud_ocaps.notebook_by_nameAsync(user, path);
-        };
     }
 
     rcloud._ocaps = rcloud_ocaps;
