@@ -350,6 +350,10 @@ function create_cell_html_view(language, cell_model) {
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
         });
+
+        var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
+            right_handler = ace_widget_.commands.commandKeyBinding[1].right;
+
         ace_widget_.commands.addCommands([{
             name: 'executeCell',
             bindKey: {
@@ -369,6 +373,24 @@ function create_cell_html_view(language, cell_model) {
             },
             exec: function() {
                 shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'left',
+            bindKey: {
+                win: 'left',
+                mac: 'left'
+            },
+            exec: function(widget, args, request) {
+                left_handler.exec(widget, args, request);
+            }
+        }, {
+            name: 'right',
+            bindKey: {
+                win: 'right',
+                mac: 'right'
+            },
+            exec: function(widget, args, request) {
+                right_handler.exec(widget, args, request);
             }
         }, {
             name: 'navigateToPreviousCell',
