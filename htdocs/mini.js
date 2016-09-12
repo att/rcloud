@@ -16,6 +16,7 @@ function main() {
         RCloud.UI.fatal_dialog("Sorry, RCloud does not currently support IE or Edge. Please try another browser.", "Close");
         return;
     }
+    RCloud.UI.session_pane.init(); // really should be error logger which detects if there is a pane
 
     rclient = RClient.create({
         debug: false,
