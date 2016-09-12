@@ -441,7 +441,23 @@ function create_cell_html_view(language, cell_model) {
                 mac: 'up'
             },
             exec: function(widget, args, request) {
+                
+                var cursor_position = ace_widget_.getCursorPosition();
                 var use_default = true;
+
+                if(cursor_position.row === 0) {
+                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                    if(prior_cell) {
+                        prior_cell.set_focus();
+
+                        var prior_widget = prior_cell.views[0].ace_widget();
+                        var last = ui_utils.ace_get_last(prior_widget);
+                        prior_widget.gotoLine(last.row + 1, 0);
+
+                        use_default = false;
+                    }
+                }
 
                 if(use_default)
                     up_handler.exec(widget, args, request);
@@ -454,6 +470,23 @@ function create_cell_html_view(language, cell_model) {
             },
             exec: function(widget, args, request) {
                 var use_default = true;
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+                var last = ui_utils.ace_get_last(ace_widget_);
+
+                if(cursor_position.row == last.row) {
+                    use_default = false;
+
+                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                    if(subsequent_cell) {
+                        subsequent_cell.set_focus();
+
+                        subsequent_cell.views[0].ace_widget()
+                            .gotoLine(0, 0);
+                    }
+                } 
 
                 if(use_default)
                     down_handler.exec(widget, args, request);
