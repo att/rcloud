@@ -123,6 +123,17 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     return newHeight;
 };
 
+ui_utils.ace_get_last = function(widget) {
+    var session =  widget.getSession(),
+        row = session.getLength() - 1,
+        column = session.getLine(row).length;
+
+    return {
+        row: row,
+        column: column
+    };
+}
+
 ui_utils.ace_set_pos = function(widget, row, column) {
     var sel = widget.getSelection();
     var range = sel.getRange();
