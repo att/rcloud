@@ -2915,6 +2915,11 @@ function create_cell_html_view(language, cell_model) {
 
             }
             return this;
+        },
+        select_highlight_range: function(begin, end) {
+            this.edit_source(true);
+            var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, begin, end);
+            ace_widget_.getSelection().setSelectionRange(ace_range);
         }
     });
 
@@ -6177,7 +6182,7 @@ RCloud.UI.find_replace = (function() {
     };
 
     function matches_exist() {
-        return matches_.length !== 0;
+        return matches_.length !== 0 && !isNaN(active_match_);
     }
 
     function toggle_find_replace(replace) {
@@ -6428,6 +6433,16 @@ RCloud.UI.find_replace = (function() {
         highlight_all();
     }
     function hide_dialog() {
+
+        if(!shell.notebook.model.read_only()) {
+            var current_match = matches_[active_match_];
+
+            if(current_match) {
+                var view = shell.notebook.model.cells[current_match.index].views[0];
+                view.select_highlight_range(current_match.begin, current_match.end);
+            }
+        }
+
         clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
@@ -10367,14 +10382,21 @@ RCloud.UI.scratchpad = (function() {
             var content = this.current_model.content();
             if (Notebook.is_binary_content(content)) {
                 binary_mode_ = true;
+
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
-                // PDF seems not to be supported properly by browsers
-                var sbin = $('#scratchpad-binary');
-                if(/\.pdf$/i.test(this.current_model.filename()))
-                    sbin.html('<div><p>PDF preview not supported</p></div>');
-                else
-                    sbin.html('<div><object data="' + this.current_model.asset_url(true) + '"></object></div>');
+
+                var sbin = $('#scratchpad-binary'),
+                    extension = this.current_model.filename().substr(this.current_model.filename().lastIndexOf('.') + 1);
+
+                if(['bmp', 'jpg', 'jpeg', 'png', 'gif'].indexOf(extension.toLowerCase()) !== -1) {
+                    sbin.html('<div><img src="' + this.current_model.asset_url(true) + '"/></div>"');
+                } else if('pdf' === extension.toLowerCase()) {
+                    sbin.html('<div><object><embed type="application/pdf" src="' + this.current_model.asset_url(true) + '" /></object></div>');
+                } else {
+                    sbin.html('<div><p>Preview not supported for this file type</p></div>');
+                }
+
                 sbin.show();
             }
             else {
