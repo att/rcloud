@@ -54,6 +54,9 @@
 * Title/tooltips shown for most buttons in the UI, text adapting where
   appropriate. (#1438 etc.)
 
+* Image assets in encrypted notebooks were displayed as garbage text, when opened
+  in a separate window. (#1893)
+
 
 ## RCloud 1.6
 
