@@ -352,7 +352,9 @@ function create_cell_html_view(language, cell_model) {
         });
 
         var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
-            right_handler = ace_widget_.commands.commandKeyBinding[0].right;
+            right_handler = ace_widget_.commands.commandKeyBinding[0].right,
+            up_handler = ace_widget_.commands.commandKeyBinding[0].up,
+            down_handler = ace_widget_.commands.commandKeyBinding[0].down;
 
         ace_widget_.commands.addCommands([{
             name: 'executeCell',
@@ -431,6 +433,31 @@ function create_cell_html_view(language, cell_model) {
                 if(use_default) {
                     right_handler.exec(widget, args, request);
                 }
+            }
+        }, {
+            name: 'up',
+            bindKey: {
+                win: 'up',
+                mac: 'up'
+            },
+            exec: function(widget, args, request) {
+                var use_default = true;
+
+                if(use_default)
+                    up_handler.exec(widget, args, request);
+            }
+        }, {
+            name: 'down',
+            bindKey: {
+                win: 'down',
+                mac: 'down'
+            },
+            exec: function(widget, args, request) {
+                var use_default = true;
+
+                if(use_default)
+                    down_handler.exec(widget, args, request);
+
             }
         }, {
             name: 'navigateToPreviousCell',
