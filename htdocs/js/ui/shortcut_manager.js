@@ -72,29 +72,32 @@ RCloud.UI.shortcut_manager = (function() {
             }
 
             // if this is a shortcut that needs to be added:
-            if (shortcut.bind_keys && shortcut.bind_keys.length) {
+            if ((shortcut.bind_keys && shortcut.bind_keys.length) || 
+                shortcut.click_keys) {
 
                 shortcut_to_add.key_desc = [];
 
                 // construct the key bindings:
-                for (var i = 0; i < shortcut.bind_keys.length; i++) {
+                if(shortcut.bind_keys) {
+                    for (var i = 0; i < shortcut.bind_keys.length; i++) {
 
-                    // ensure consistent order across definitions:
-                    var bind_keys = _
-                        .chain(shortcut.bind_keys[i])
-                        .map(function(element) {
-                            return element.toLowerCase(); })
-                        .sortBy(function(element) {
-                            var rank = {
-                                "command": 1,
-                                "ctrl": 2,
-                                "shift": 3
-                            };
-                            return rank[element];
-                        }).value();
+                        // ensure consistent order across definitions:
+                        var bind_keys = _
+                            .chain(shortcut.bind_keys[i])
+                            .map(function(element) {
+                                return element.toLowerCase(); })
+                            .sortBy(function(element) {
+                                var rank = {
+                                    "command": 1,
+                                    "ctrl": 2,
+                                    "shift": 3
+                                };
+                                return rank[element];
+                            }).value();
 
-                    // so that they can be compared:
-                    shortcut_to_add.key_desc.push(bind_keys.join('+'));
+                        // so that they can be compared:
+                        shortcut_to_add.key_desc.push(bind_keys.join('+'));
+                    }
                 }
 
                 // with existing shortcuts:
