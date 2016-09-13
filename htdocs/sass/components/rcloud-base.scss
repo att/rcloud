@@ -595,6 +595,11 @@ ul.recent-notebooks-list li a {
     & div {
         height: 0;
     }
+
+    & embed {
+        width: 100%;
+        height: 100%;
+    }
 }
 
 #scratchpad-binary object {
