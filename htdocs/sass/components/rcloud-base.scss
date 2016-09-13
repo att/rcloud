@@ -594,6 +594,10 @@ ul.recent-notebooks-list li a {
 
     & div {
         height: 0;
+
+        &.embed {
+            height: 100%;
+        }
     }
 
     & embed {
