@@ -210,10 +210,13 @@ RCloud.UI.scratchpad = (function() {
 
                 if(['bmp', 'jpg', 'jpeg', 'png', 'gif'].indexOf(extension.toLowerCase()) !== -1) {
                     sbin.html('<div><img src="' + this.current_model.asset_url(true) + '"/></div>"');
+                    sbin.find('div').removeClass('embed');
                 } else if('pdf' === extension.toLowerCase()) {
                     sbin.html('<div><object><embed type="application/pdf" src="' + this.current_model.asset_url(true) + '" /></object></div>');
+                    sbin.find('div').addClass('embed');
                 } else {
                     sbin.html('<div><p>Preview not supported for this file type</p></div>');
+                    sbin.find('div').removeClass('embed');
                 }
 
                 sbin.show();
