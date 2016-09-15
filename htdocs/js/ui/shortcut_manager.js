@@ -24,7 +24,8 @@ RCloud.UI.shortcut_manager = (function() {
     function is_active(shortcut) {
         return shortcut.enabled && 
             _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable') &&
-            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit');
+            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit') &&
+            (!_.isFunction(shortcut.is_active) || (_.isFunction(shortcut.is_active) && shortcut.is_active()));
     }
 
     function convert_extension(shortcuts) {
