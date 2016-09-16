@@ -317,12 +317,12 @@ RCloud.UI.init = function() {
                 ['shift', 'alt', 'enter']
             ]
         },
-        // click_keys: {
-        //     target: 'Play button',
-        //     win_mac: [
-        //         ['shift']
-        //     ]
-        // },
+        click_keys: {
+            target: 'Play button',
+            win_mac: [
+                ['shift']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
@@ -334,6 +334,13 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'select_cell',
+        description: 'Select individual cell',
+        click_keys: {
+            target: 'Cell title'
+        }
     }]);
 
     // general:
