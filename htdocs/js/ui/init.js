@@ -341,6 +341,23 @@ RCloud.UI.init = function() {
         click_keys: {
             target: 'Cell title'
         }
+    }, {
+        category: 'Cell Management',
+        id: 'toggle_select_cell',
+        description: 'Toggle cell selection',
+        click_keys: {
+            target: 'Cell title',
+            win: ['ctrl'],
+            mac: ['command']
+        }
+    }, {
+        category: 'Cell Management',
+        id: 'select_cell_range',
+        description: 'Select range of cells',
+        click_keys: {
+            target: 'Cell title',
+            win_mac: ['shift']
+        }
     }]);
 
     // general:
