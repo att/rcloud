@@ -48,7 +48,8 @@ RCloud.UI.run_button = (function() {
             if(running_)
                 this.stop();
             else {
-                (do_reset_ ? shell.load_notebook(shell.gistname(), shell.version()) : Promise.resolve(undefined))
+                (do_reset_ ? RCloud.session.reset().then(function() {
+                    return rcloud.load_notebook(shell.gistname(), shell.version()); }) : Promise.resolve(undefined))
                     .then(function() {
                         shell.run_notebook();
                     });
