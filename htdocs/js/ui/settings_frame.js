@@ -175,6 +175,12 @@ RCloud.UI.settings_frame = (function() {
                     needs_reload: true,
                     label: "Arrange panels by size"
                 }),
+                'clear-r-session-when-run-all': that.checkbox({
+                    sort: 5000,
+                    default_value: true,
+                    needs_reload: true,
+                    label: "Clear R Session when entire notebook is run"
+                }),                
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,
