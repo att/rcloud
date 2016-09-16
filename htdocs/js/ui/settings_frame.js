@@ -178,9 +178,11 @@ RCloud.UI.settings_frame = (function() {
                 'clear-r-session-when-run-all': that.checkbox({
                     sort: 5000,
                     default_value: true,
-                    needs_reload: true,
-                    label: "Clear R Session when entire notebook is run"
-                }),                
+                    label: "Clear R Session when entire notebook is run",
+                    set: function(val) {
+                        RCloud.UI.run_button.reset_on_run(val);
+                    }
+                }),
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,
