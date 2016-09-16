@@ -46,7 +46,7 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
-    // keyboard shortcuts:
+    // shortcuts:
     RCloud.UI.shortcut_manager.init();
     RCloud.UI.ace_shortcuts.init();
 
@@ -317,6 +317,12 @@ RCloud.UI.init = function() {
                 ['shift', 'alt', 'enter']
             ]
         },
+        // click_keys: {
+        //     target: 'Play button',
+        //     win_mac: [
+        //         ['shift']
+        //     ]
+        // },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
