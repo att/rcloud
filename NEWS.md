@@ -1,6 +1,8 @@
 ## RCloud 1.6.2
 
 ### Features
+* Arrow up and down (or left and right) between cells when at the beginning or
+  end of a cell. (#2007)
 
 ### Improvements
 * Ability to open mini.html notebooks by name using `&user=...&path=...`
