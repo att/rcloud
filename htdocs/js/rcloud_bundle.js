@@ -10273,6 +10273,7 @@ RCloud.UI.right_panel =
 RCloud.UI.run_button = (function() {
     var running_ = false,
         stopping_ = false,
+        do_reset_ = false,
         queue_ = [],
         cancels_ = [];
 
@@ -10318,8 +10319,12 @@ RCloud.UI.run_button = (function() {
         run: function() {
             if(running_)
                 this.stop();
-            else
-                shell.run_notebook();
+            else {
+                (do_reset_ ? shell.load_notebook(shell.gistname(), shell.version()) : Promise.resolve(undefined))
+                    .then(function() {
+                        shell.run_notebook();
+                    });
+            }
         },
         stop: function() {
             if(rcloud.has_compute_separation)
@@ -10334,6 +10339,12 @@ RCloud.UI.run_button = (function() {
             running_ = false;
             display('Run All', 'icon-play');
             highlight(false);
+        },
+        reset_on_run: function(v) {
+            if(!arguments.length)
+                return do_reset_;
+            do_reset_ = v;
+            return this;
         },
         enqueue: function(f, cancel) {
             var that = this;
@@ -11301,6 +11312,14 @@ RCloud.UI.settings_frame = (function() {
                     default_value: true,
                     needs_reload: true,
                     label: "Arrange panels by size"
+                }),
+                'clear-r-session-when-run-all': that.checkbox({
+                    sort: 5000,
+                    default_value: true,
+                    label: "Clear R Session when entire notebook is run",
+                    set: function(val) {
+                        RCloud.UI.run_button.reset_on_run(val);
+                    }
                 }),
                 'addons': that.text_input_vector({
                     sort: 10000,
