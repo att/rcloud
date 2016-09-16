@@ -35,6 +35,8 @@
 * Uploading an unknown file types could cause the file to be
   downloaded. (#2008)
 
+* Revert shortcut was shown when not appropriate (#2220)
+
 
 ## RCloud 1.6.1
 
