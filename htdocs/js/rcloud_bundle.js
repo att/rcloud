@@ -876,6 +876,17 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     return newHeight;
 };
 
+ui_utils.ace_get_last = function(widget) {
+    var session =  widget.getSession(),
+        row = session.getLength() - 1,
+        column = session.getLine(row).length;
+
+    return {
+        row: row,
+        column: column
+    };
+}
+
 ui_utils.ace_set_pos = function(widget, row, column) {
     var sel = widget.getSelection();
     var range = sel.getRange();
@@ -2298,6 +2309,12 @@ function create_cell_html_view(language, cell_model) {
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
         });
+
+        var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
+            right_handler = ace_widget_.commands.commandKeyBinding[0].right,
+            up_handler = ace_widget_.commands.commandKeyBinding[0].up,
+            down_handler = ace_widget_.commands.commandKeyBinding[0].down;
+
         ace_widget_.commands.addCommands([{
             name: 'executeCell',
             bindKey: {
@@ -2317,6 +2334,122 @@ function create_cell_html_view(language, cell_model) {
             },
             exec: function() {
                 shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'left',
+            bindKey: {
+                win: 'left',
+                mac: 'left'
+            },
+            exec: function(widget, args, request) {
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+
+                if(cursor_position.row === 0 && cursor_position.column === 0) {
+                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                    if(prior_cell) {
+                        prior_cell.set_focus();
+
+                        var prior_widget = prior_cell.views[0].ace_widget();
+                        var last = ui_utils.ace_get_last(prior_widget);
+                        prior_widget.gotoLine(last.row + 1, last.column);
+
+                        use_default = false;
+                    }
+                }
+
+                if(use_default) {
+                    left_handler.exec(widget, args, request);    
+                }
+            }
+        }, {
+            name: 'right',
+            bindKey: {
+                win: 'right',
+                mac: 'right'
+            },
+            exec: function(widget, args, request) {
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+                var last = ui_utils.ace_get_last(ace_widget_);
+
+                if(cursor_position.column === last.column && cursor_position.row == last.row) {
+                    use_default = false;
+
+                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                    if(subsequent_cell) {
+                        subsequent_cell.set_focus();
+
+                        subsequent_cell.views[0].ace_widget()
+                            .gotoLine(0, 0);
+                    }
+                } 
+
+                if(use_default) {
+                    right_handler.exec(widget, args, request);
+                }
+            }
+        }, {
+            name: 'up',
+            bindKey: {
+                win: 'up',
+                mac: 'up'
+            },
+            exec: function(widget, args, request) {
+                
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+
+                if(cursor_position.row === 0) {
+                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                    if(prior_cell) {
+                        prior_cell.set_focus();
+
+                        var prior_widget = prior_cell.views[0].ace_widget();
+                        var last = ui_utils.ace_get_last(prior_widget);
+                        prior_widget.gotoLine(last.row + 1, 0);
+
+                        use_default = false;
+                    }
+                }
+
+                if(use_default)
+                    up_handler.exec(widget, args, request);
+            }
+        }, {
+            name: 'down',
+            bindKey: {
+                win: 'down',
+                mac: 'down'
+            },
+            exec: function(widget, args, request) {
+                var use_default = true;
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+                var last = ui_utils.ace_get_last(ace_widget_);
+
+                if(cursor_position.row == last.row) {
+                    use_default = false;
+
+                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                    if(subsequent_cell) {
+                        subsequent_cell.set_focus();
+
+                        subsequent_cell.views[0].ace_widget()
+                            .gotoLine(0, 0);
+                    }
+                } 
+
+                if(use_default)
+                    down_handler.exec(widget, args, request);
+
             }
         }, {
             name: 'navigateToPreviousCell',
@@ -6637,7 +6770,8 @@ RCloud.UI.shortcut_manager = (function() {
     function is_active(shortcut) {
         return shortcut.enabled && 
             _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable') &&
-            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit');
+            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit') &&
+            (!_.isFunction(shortcut.is_active) || (_.isFunction(shortcut.is_active) && shortcut.is_active()));
     }
 
     function convert_extension(shortcuts) {
@@ -6666,36 +6800,51 @@ RCloud.UI.shortcut_manager = (function() {
             // clean-up:
             var is_mac = ui_utils.is_a_mac();
 
-            if (shortcut.keys.hasOwnProperty('win_mac')) {
-                shortcut.bind_keys = shortcut.keys.win_mac;
-            } else {
-                shortcut.bind_keys = shortcut.keys[is_mac ? 'mac' : 'win'];
+            if(shortcut.keys) {
+                if (shortcut.keys.hasOwnProperty('win_mac')) {
+                    shortcut.bind_keys = shortcut.keys.win_mac;
+                } else {
+                    shortcut.bind_keys = shortcut.keys[is_mac ? 'mac' : 'win'];
+                }
+            }
+
+            // click keys, click on target + keys:
+            if (shortcut.click_keys) {
+                if(shortcut.click_keys.hasOwnProperty('win_mac')) {
+                    shortcut.click_keys.keys = shortcut.click_keys.win_mac;
+                } else if(shortcut.click_keys.hasOwnProperty('win') || shortcut.click_keys.hasOwnProperty('mac')) {
+                    // optional for click_keys:
+                    shortcut.click_keys.keys = shortcut.click_keys[is_mac ? 'mac' : 'win'];
+                }
             }
 
             // if this is a shortcut that needs to be added:
-            if (shortcut.bind_keys && shortcut.bind_keys.length) {
+            if ((shortcut.bind_keys && shortcut.bind_keys.length) || 
+                shortcut.click_keys) {
 
                 shortcut_to_add.key_desc = [];
 
                 // construct the key bindings:
-                for (var i = 0; i < shortcut.bind_keys.length; i++) {
+                if(shortcut.bind_keys) {
+                    for (var i = 0; i < shortcut.bind_keys.length; i++) {
 
-                    // ensure consistent order across definitions:
-                    var bind_keys = _
-                        .chain(shortcut.bind_keys[i])
-                        .map(function(element) {
-                            return element.toLowerCase(); })
-                        .sortBy(function(element) {
-                            var rank = {
-                                "command": 1,
-                                "ctrl": 2,
-                                "shift": 3
-                            };
-                            return rank[element];
-                        }).value();
+                        // ensure consistent order across definitions:
+                        var bind_keys = _
+                            .chain(shortcut.bind_keys[i])
+                            .map(function(element) {
+                                return element.toLowerCase(); })
+                            .sortBy(function(element) {
+                                var rank = {
+                                    "command": 1,
+                                    "ctrl": 2,
+                                    "shift": 3
+                                };
+                                return rank[element];
+                            }).value();
 
-                    // so that they can be compared:
-                    shortcut_to_add.key_desc.push(bind_keys.join('+'));
+                        // so that they can be compared:
+                        shortcut_to_add.key_desc.push(bind_keys.join('+'));
+                    }
                 }
 
                 // with existing shortcuts:
@@ -6820,8 +6969,6 @@ RCloud.UI.shortcut_manager = (function() {
         },
         get_registered_shortcuts_by_category: function(sort_items) {
 
-            //console.log(extension_.sections.all.entries);
-
             var rank = _.map(sort_items, (function(item, index) {
                 return { key: item, value: index + 1 } }));
             rank = _.object(_.pluck(rank, 'key'), _.pluck(rank, 'value'));
@@ -6863,6 +7010,15 @@ RCloud.UI.shortcut_dialog = (function() {
                 'General']);
             }
 
+            var get_key = function(key) {
+                var replacement =  _.findWhere([
+                    { initial: 'option', replace_with: 'opt' },
+                    { initial: 'command', replace_with: 'cmd' }
+                ], { initial : key });
+              
+                return replacement ? replacement.replace_with : key;
+            };
+
             _.each(shortcuts_by_category_, function(group) {
 
                 var key_group = {
@@ -6873,24 +7029,23 @@ RCloud.UI.shortcut_dialog = (function() {
                 _.each(group.shortcuts, function(shortcut) {
 
                     var current_shortcut = {
-                            description : shortcut.description,
-                            keys: []
-                        };
-
+                        description : shortcut.description,
+                        keys: []
+                    };
+ 
                     _.each(shortcut.bind_keys, function(keys) {
-
                         keys = _.map(keys, function(key) { 
-                            
-                            var replacement =  _.findWhere([
-                                { initial: 'option', replace_with: 'opt' },
-                                { initial: 'command', replace_with: 'cmd' }
-                            ], { initial : key });
-                          
-                            return replacement ? replacement.replace_with : key;
+                            return get_key(key);
                         });
-
                         current_shortcut.keys.push(keys.join(' '));
                     });
+
+                    if(shortcut.click_keys) {
+                        current_shortcut.keys.push({
+                            keys: _.map(shortcut.click_keys.keys, function(key) { return get_key(key); }).join(' '),
+                            target: shortcut.click_keys.target
+                        });
+                    }
 
                     key_group.shortcuts.push(current_shortcut);
 
@@ -6899,7 +7054,6 @@ RCloud.UI.shortcut_dialog = (function() {
                 template_data.push(key_group);
             });
 
-            // generate dynamic content:
             var content_template = _.template(
                 $("#shortcut_dialog_content_template").html()
             );
@@ -6982,7 +7136,7 @@ RCloud.UI.ace_shortcuts = (function() {
                         ['ctrl', 'enter']
                     ]
                 }
-            }, {                                                        // !
+            }, {
                 category: 'Code Editor',
                 id: 'code_editor_cursor_start_of_line',
                 description: 'Cursor at beginning of line',
@@ -8258,7 +8412,7 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
-    // keyboard shortcuts:
+    // shortcuts:
     RCloud.UI.shortcut_manager.init();
     RCloud.UI.ace_shortcuts.init();
 
@@ -8391,8 +8545,11 @@ RCloud.UI.init = function() {
             ]
         },
         on_page: ['edit'],
+        is_active: function() {
+            return shell.notebook.controller.is_mine() && shell.notebook.model.read_only();
+        },
         action: function() {
-            if(shell.notebook.controller.is_mine() && shell.version()) {
+            if(this.is_active()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
@@ -8456,7 +8613,7 @@ RCloud.UI.init = function() {
         },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
-    }/*, {
+    }, {
         category: 'Cell Management',
         id: 'arrow_next_cell',
         description: 'Enter next cell (from end of current)',
@@ -8472,7 +8629,7 @@ RCloud.UI.init = function() {
             win_mac: ['left']
         },
         modes: ['writeable']
-    }*/, {
+    }, {
         category: 'Cell Management',
         id: 'goto_previous_cell',
         description: 'Go to previous cell',
@@ -8529,6 +8686,12 @@ RCloud.UI.init = function() {
                 ['shift', 'alt', 'enter']
             ]
         },
+        click_keys: {
+            target: 'Play button',
+            win_mac: [
+                ['shift']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
@@ -8540,6 +8703,30 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'select_cell',
+        description: 'Select individual cell',
+        click_keys: {
+            target: 'Cell title'
+        }
+    }, {
+        category: 'Cell Management',
+        id: 'toggle_select_cell',
+        description: 'Toggle cell selection',
+        click_keys: {
+            target: 'Cell title',
+            win: ['ctrl'],
+            mac: ['command']
+        }
+    }, {
+        category: 'Cell Management',
+        id: 'select_cell_range',
+        description: 'Select range of cells',
+        click_keys: {
+            target: 'Cell title',
+            win_mac: ['shift']
+        }
     }]);
 
     // general:
@@ -10386,10 +10573,13 @@ RCloud.UI.scratchpad = (function() {
 
                 if(['bmp', 'jpg', 'jpeg', 'png', 'gif'].indexOf(extension.toLowerCase()) !== -1) {
                     sbin.html('<div><img src="' + this.current_model.asset_url(true) + '"/></div>"');
+                    sbin.find('div').removeClass('embed');
                 } else if('pdf' === extension.toLowerCase()) {
                     sbin.html('<div><object><embed type="application/pdf" src="' + this.current_model.asset_url(true) + '" /></object></div>');
+                    sbin.find('div').addClass('embed');
                 } else {
                     sbin.html('<div><p>Preview not supported for this file type</p></div>');
+                    sbin.find('div').removeClass('embed');
                 }
 
                 sbin.show();
