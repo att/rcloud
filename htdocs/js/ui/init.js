@@ -100,9 +100,9 @@ RCloud.UI.init = function() {
     RCloud.UI.shortcut_manager.add([{
         category: 'Notebook Management',
         id: 'notebook_cell',
-        description: 'Saves the current notebook',
+        description: 'Save the current notebook',
         keys: {
-            mac: [
+            mac: [ 
                 ['command', 's']
             ],
             win: [
@@ -141,7 +141,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_undo',
-        description: 'Steps back through the notebook\'s history',
+        description: 'Step back through the notebook\'s history',
         keys: {
             mac: [
                 ['command', 'z']
@@ -155,7 +155,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_redo',
-        description: 'Steps forwards through the notebook\'s history',
+        description: 'Step forwards through the notebook\'s history',
         keys: {
             mac: [
                 ['command', 'shift', 'z']
@@ -202,7 +202,7 @@ RCloud.UI.init = function() {
     RCloud.UI.shortcut_manager.add([{
         category: 'Cell Management',
         id: 'remove_cells',
-        description: 'Removes selected cells',
+        description: 'Remove selected cells',
         keys: {
             mac: [
                 ['del'],
