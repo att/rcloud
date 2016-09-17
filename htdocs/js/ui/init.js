@@ -169,7 +169,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_revert',
-        description: 'Reverts a notebook',
+        description: 'Revert a notebook',
         keys: {
             mac: [
                 ['command', 'e']
