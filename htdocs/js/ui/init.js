@@ -252,7 +252,9 @@ RCloud.UI.init = function() {
         id: 'arrow_next_cell',
         description: 'Enter next cell (from end of current)',
         keys: {
-            win_mac: ['right']
+            win_mac: [
+                ['right']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -260,7 +262,9 @@ RCloud.UI.init = function() {
         id: 'arrow_previous_cell',
         description: 'Enter previous cell (from start of current)',
         keys: {
-            win_mac: ['left']
+            win_mac: [
+                ['left']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -268,7 +272,9 @@ RCloud.UI.init = function() {
         id: 'arrow_next_cell_down',
         description: 'Enter next cell (from last line of current)',
         keys: {
-            win_mac: ['down']
+            win_mac: [
+                ['down']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -276,7 +282,9 @@ RCloud.UI.init = function() {
         id: 'arrow_previous_cell_up',
         description: 'Enter previous cell (from first line of current)',
         keys: {
-            win_mac: ['up']
+            win_mac: [
+                ['up']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -346,7 +354,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
-        description: 'Blur Cell/Command Prompt',
+            description: 'Blur Cell/Command Prompt',
         keys: {
             win_mac: [
                 ['esc']
