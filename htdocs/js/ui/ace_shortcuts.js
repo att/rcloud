@@ -136,7 +136,7 @@ RCloud.UI.ace_shortcuts = (function() {
             {
                 category: 'Code Editor',
                 id: 'ace_move_lines_up',
-                description: 'Moves lines up',
+                description: 'Move lines up',
                 keys: { 
                     mac: [
                         ['option', 'up'] 
