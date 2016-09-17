@@ -453,7 +453,7 @@ function create_cell_html_view(language, cell_model) {
 
                         var prior_widget = prior_cell.views[0].ace_widget();
                         var last = ui_utils.ace_get_last(prior_widget);
-                        prior_widget.gotoLine(last.row + 1, 0);
+                        prior_widget.gotoLine(last.row + 1, cursor_position.column);
 
                         use_default = false;
                     }
@@ -484,7 +484,7 @@ function create_cell_html_view(language, cell_model) {
                         subsequent_cell.set_focus();
 
                         subsequent_cell.views[0].ace_widget()
-                            .gotoLine(0, 0);
+                            .gotoLine(1, cursor_position.column);
                     }
                 } 
 
