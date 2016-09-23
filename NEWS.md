@@ -4,7 +4,14 @@
 * Arrow up and down (or left and right) between cells when at the beginning or
   end of a cell. (#2007)
 
+* Option to clear the R session when running the whole notebook (active by
+  default). (#1734)
+
 ### Improvements
+* To better encapsulate its dependencies, HTML Widgets support is now in a
+  separate package `rcloud.htmlwidgets`. It is recommended to add this package to
+  the `rcloud.alluser.addons` config, as shown in `rcloud.conf.samp`. (#2243)
+
 * Ability to open mini.html notebooks by name using `&user=...&path=...`
   URLs. (#1034)
 
