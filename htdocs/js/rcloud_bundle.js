@@ -2412,7 +2412,7 @@ function create_cell_html_view(language, cell_model) {
 
                         var prior_widget = prior_cell.views[0].ace_widget();
                         var last = ui_utils.ace_get_last(prior_widget);
-                        prior_widget.gotoLine(last.row + 1, 0);
+                        prior_widget.gotoLine(last.row + 1, cursor_position.column);
 
                         use_default = false;
                     }
@@ -2443,7 +2443,7 @@ function create_cell_html_view(language, cell_model) {
                         subsequent_cell.set_focus();
 
                         subsequent_cell.views[0].ace_widget()
-                            .gotoLine(0, 0);
+                            .gotoLine(1, cursor_position.column);
                     }
                 } 
 
@@ -7212,7 +7212,7 @@ RCloud.UI.ace_shortcuts = (function() {
             {
                 category: 'Code Editor',
                 id: 'ace_move_lines_up',
-                description: 'Moves lines up',
+                description: 'Move lines up',
                 keys: { 
                     mac: [
                         ['option', 'up'] 
@@ -8466,9 +8466,9 @@ RCloud.UI.init = function() {
     RCloud.UI.shortcut_manager.add([{
         category: 'Notebook Management',
         id: 'notebook_cell',
-        description: 'Saves the current notebook',
+        description: 'Save the current notebook',
         keys: {
-            mac: [
+            mac: [ 
                 ['command', 's']
             ],
             win: [
@@ -8507,7 +8507,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_undo',
-        description: 'Steps back through the notebook\'s history',
+        description: 'Step back through the notebook\'s history',
         keys: {
             mac: [
                 ['command', 'z']
@@ -8521,7 +8521,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_redo',
-        description: 'Steps forwards through the notebook\'s history',
+        description: 'Step forwards through the notebook\'s history',
         keys: {
             mac: [
                 ['command', 'shift', 'z']
@@ -8535,7 +8535,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_revert',
-        description: 'Reverts a notebook',
+        description: 'Revert a notebook',
         keys: {
             mac: [
                 ['command', 'e']
@@ -8568,7 +8568,7 @@ RCloud.UI.init = function() {
     RCloud.UI.shortcut_manager.add([{
         category: 'Cell Management',
         id: 'remove_cells',
-        description: 'Removes selected cells',
+        description: 'Remove selected cells',
         keys: {
             mac: [
                 ['del'],
@@ -8618,7 +8618,9 @@ RCloud.UI.init = function() {
         id: 'arrow_next_cell',
         description: 'Enter next cell (from end of current)',
         keys: {
-            win_mac: ['right']
+            win_mac: [
+                ['right']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -8626,7 +8628,29 @@ RCloud.UI.init = function() {
         id: 'arrow_previous_cell',
         description: 'Enter previous cell (from start of current)',
         keys: {
-            win_mac: ['left']
+            win_mac: [
+                ['left']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'arrow_next_cell_down',
+        description: 'Enter next cell (from last line of current)',
+        keys: {
+            win_mac: [
+                ['down']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'arrow_previous_cell_up',
+        description: 'Enter previous cell (from first line of current)',
+        keys: {
+            win_mac: [
+                ['up']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -8696,7 +8720,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
-        description: 'Blur Cell/Command Prompt',
+            description: 'Blur Cell/Command Prompt',
         keys: {
             win_mac: [
                 ['esc']
