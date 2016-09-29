@@ -454,6 +454,22 @@ RCloud.UI.find_replace = (function() {
                 },
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_replace_text_match',
+                description: 'Replace text match',
+                keys: {
+                    mac: [
+                        ['command', 'r']
+                    ],
+                    win: [
+                        ['ctrl', 'r']
+                    ]
+                },
+                modes: ['writeable'],
+                action: function() {
+                    console.log('Replace text match');
+                }
             }]);
         },
         hide_replace: function() {
