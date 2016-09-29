@@ -5,6 +5,7 @@ RCloud.UI.find_replace = (function() {
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         replace_next_func_,
+        find_previous_func_, find_next_func_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
@@ -476,6 +477,40 @@ RCloud.UI.find_replace = (function() {
                 element_scope: '#find-form',
                 action: function() {
                     replace_next_func_();
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_goto_previous_match',
+                description: 'Go to previous search match',
+                keys: {
+                    mac: [
+                        ['shift', 'enter']
+                    ],
+                    win: [
+                        ['shift', 'enter'],
+                        ['shift', 'f3']
+                    ]
+                },
+                element_scope: '#find-form',
+                action: function() {
+
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_goto_next_match',
+                description: 'Go to next search match',
+                keys: {
+                    mac: [
+                        ['enter']
+                    ],
+                    win: [
+                        ['enter'],
+                        ['f3']
+                    ]
+                },
+                element_scope: '#find-form',
+                action: function() {
+                    
                 }
             }]);
         },
