@@ -109,7 +109,7 @@ RCloud.UI.find_replace = (function() {
                 });
             }
 
-            function find_next(reason) {
+            find_next_func_ = function(reason) {
                 active_transition(reason || 'deactivate');
 
                 if(matches_exist()) {
@@ -122,9 +122,7 @@ RCloud.UI.find_replace = (function() {
                 active_transition('activate');
             }
 
-            find_next_func_ = find_next;
-
-            function find_previous() {
+            find_previous_func_ = function() {
                 active_transition('deactivate');
                 
                 if(matches_exist()) {
@@ -142,14 +140,14 @@ RCloud.UI.find_replace = (function() {
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                find_next();
+                find_next_func_();
                 return false;
             });
 
             find_last_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                find_previous();
+                find_previous_func_();
                 return false;
             });
 
@@ -159,12 +157,12 @@ RCloud.UI.find_replace = (function() {
                     if(cell) {
                         shell.notebook.controller.update_cell(cell)
                             .then(function() {
-                                find_next('replace');
+                                find_next_func_('replace');
                             });
                     }
                 }
                 else
-                    find_next();
+                    find_next_func_();
 
                 return false;
             };
@@ -198,9 +196,9 @@ RCloud.UI.find_replace = (function() {
                     e.preventDefault();
                     e.stopPropagation();
                     if(e.shiftKey)
-                        find_previous();
+                        find_previous_func_();
                     else
-                        find_next();
+                        find_next_func_();
                     return false;
                 }
                 return undefined;
@@ -631,7 +629,7 @@ RCloud.UI.find_replace = (function() {
                 },
                 element_scope: '#find-form',
                 action: function() {
-
+                    find_previous_func_();
                 }
             }, {
                 category: 'Notebook Management',
@@ -648,7 +646,7 @@ RCloud.UI.find_replace = (function() {
                 },
                 element_scope: '#find-form',
                 action: function() {
-                    
+                    find_next_func_();
                 }
             }]);
         },
