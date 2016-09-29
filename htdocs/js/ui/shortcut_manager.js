@@ -129,14 +129,30 @@ RCloud.UI.shortcut_manager = (function() {
                                 var func_to_bind = function(e) {
 
                                     if (is_active(get_by_id(shortcut_to_add.id))) {
-                                        e.preventDefault();
+                                        
+                                        // anything that means the shortcut shouldn't be active?
+                                        var enable = true;
 
-                                        // invoke if conditions are met:
-                                        if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
-                                            !$('.modal').is(':visible')) {
-                                            shortcut.action(e);
+                                        if(!shortcut.enable_in_dialogs && $('.modal').is(':visible')) {
+                                            enable = false;
                                         }
 
+                                        if(shortcut.element_scope) {
+
+                                            var parent_element = $(shortcut.element_scope);
+                                            var focus_element = $(':focus');
+
+                                            if(parent_element.length && focus_element.length) {
+                                                enable = $.contains(parent_element.get(0), focus_element.get(0));
+                                            } else {
+                                                enable = false;
+                                            }
+                                        }
+
+                                        if(enable) {
+                                            e.preventDefault();
+                                            shortcut.action(e);
+                                        }
                                     }
                                 };
 
@@ -145,7 +161,6 @@ RCloud.UI.shortcut_manager = (function() {
                                 } else {
                                     window.Mousetrap().bind(binding, func_to_bind);
                                 }
-
                             });
                         }
                     }
