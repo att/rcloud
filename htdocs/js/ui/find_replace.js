@@ -467,8 +467,9 @@ RCloud.UI.find_replace = (function() {
                     ]
                 },
                 modes: ['writeable'],
+                element_scope: '#find-form',
                 action: function() {
-                    console.log('Replace text match');
+                    
                 }
             }]);
         },
