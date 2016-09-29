@@ -10,7 +10,8 @@ RCloud.UI.find_replace = (function() {
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
-        change_interval_;
+        change_interval_,
+        replace_shown_ = false;
 
     function generate_matches() {
         active_match_ = undefined;
@@ -40,6 +41,8 @@ RCloud.UI.find_replace = (function() {
     }
 
     function toggle_find_replace(replace) {
+
+        replace_shown_ = replace;
 
         if(!find_dialog_) {
 
@@ -476,7 +479,9 @@ RCloud.UI.find_replace = (function() {
                 modes: ['writeable'],
                 element_scope: '#find-form',
                 action: function() {
-                    replace_next_func_();
+                    if(replace_shown_) {
+                        replace_next_func_();
+                    }
                 }
             }, {
                 category: 'Notebook Management',
