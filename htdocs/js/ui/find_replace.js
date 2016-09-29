@@ -4,6 +4,8 @@ RCloud.UI.find_replace = (function() {
         find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
+        replace_next_func_,
+        shown_ = false, replace_mode_ = false,
         find_next_func_, find_previous_func_,
         highlights_shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
@@ -150,9 +152,7 @@ RCloud.UI.find_replace = (function() {
                 return false;
             });
 
-            replace_next_.click(function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            replace_next_func_ = function() {
                 if(matches_exist()) {
                     var cell = replace_current();
                     if(cell) {
@@ -164,7 +164,14 @@ RCloud.UI.find_replace = (function() {
                 }
                 else
                     find_next();
+
                 return false;
+            };
+
+            replace_next_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                replace_next_func_();
             });
 
             replace_all_.click(function(e) {
@@ -606,7 +613,7 @@ RCloud.UI.find_replace = (function() {
                 modes: ['writeable'],
                 element_scope: '#find-form',
                 action: function() {
-                    
+                    replace_next_func_();
                 }
             }]);
         },
