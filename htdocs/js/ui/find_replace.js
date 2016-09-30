@@ -177,7 +177,7 @@ RCloud.UI.find_replace = (function() {
             replace_cycle_.push('find-close');
 
             function find_next_on_enter(e) {
-                if(e.keyCode===$.ui.keyCode.ENTER) {
+                if(e.keyCode===$.ui.keyCode.ENTER || (!ui_utils.is_a_mac() && e.keyCode === 114)) {
                     e.preventDefault();
                     e.stopPropagation();
                     if(e.shiftKey)
@@ -495,10 +495,6 @@ RCloud.UI.find_replace = (function() {
                         ['shift', 'enter'],
                         ['shift', 'f3']
                     ]
-                },
-                element_scope: '#find-form',
-                action: function() {
-                    find_previous_func_();
                 }
             }, {
                 category: 'Notebook Management',
@@ -512,10 +508,6 @@ RCloud.UI.find_replace = (function() {
                         ['enter'],
                         ['f3']
                     ]
-                },
-                element_scope: '#find-form',
-                action: function() {
-                    find_next_func_();
                 }
             }]);
         },
