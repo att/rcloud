@@ -176,7 +176,7 @@ RCloud.UI.find_replace = (function() {
             find_cycle_.push('find-close');
             replace_cycle_.push('find-close');
 
-            function find_next_on_enter(e) {
+            function find_next_on_keycode(e) {
                 if(e.keyCode===$.ui.keyCode.ENTER || (!ui_utils.is_a_mac() && e.keyCode === 114)) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -189,8 +189,8 @@ RCloud.UI.find_replace = (function() {
                 return undefined;
             }
 
-            find_input_.keydown(find_next_on_enter);
-            replace_input_.keydown(find_next_on_enter);
+            find_input_.keydown(find_next_on_keycode);
+            replace_input_.keydown(find_next_on_keycode);
 
             find_form_.keydown(function(e) {
                 switch(e.keyCode) {
