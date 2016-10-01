@@ -177,7 +177,7 @@ RCloud.UI.find_replace = (function() {
             replace_cycle_.push('find-close');
 
             function find_next_on_keycode(e) {
-                if(e.keyCode===$.ui.keyCode.ENTER || (!ui_utils.is_a_mac() && e.keyCode === 114)) {
+                if(e.keyCode===$.ui.keyCode.ENTER || (!ui_utils.is_a_mac() && e.keyCode === 114 /* f3 */)) {
                     e.preventDefault();
                     e.stopPropagation();
                     if(e.shiftKey)
