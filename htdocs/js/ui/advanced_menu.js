@@ -39,6 +39,14 @@ RCloud.UI.advanced_menu = (function() {
                             shell.open_from_github(result);
                     }
                 },
+                pull_and_replace_notebook: {
+                    sort: 3000,
+                    text: "Pull and replace from notebook",
+                    modes: ['edit'],
+                    action: function() {
+                        shell.notebook.controller.pull_and_replace_notebook();
+                    }
+                },
                 show_source: {
                     sort: 9000,
                     text: "Show Source",

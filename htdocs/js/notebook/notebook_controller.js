@@ -442,6 +442,9 @@ Notebook.create_controller = function(model)
                 return [find_changes_from(notebook), gistname];
             }).spread(apply_changes_and_load);
         },
+        pull_and_replace_notebook: function() {
+            console.log('pull and replace notebook');
+        },
         fork_notebook: function(gistname, version) {
             model.read_only(false); // so that update_notebook doesn't throw
             return rcloud.fork_notebook(gistname)
