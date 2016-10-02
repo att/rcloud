@@ -1,7 +1,7 @@
 RCloud.UI.find_replace = (function() {
 
     var find_dialog_ = null, regex_,
-        find_form_,
+        find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         shown_ = false, replace_mode_ = false,
@@ -49,6 +49,7 @@ RCloud.UI.find_replace = (function() {
 
             find_dialog_ = $(markup.get(0));
             find_form_ = markup.find('#find-form');
+            find_details_ = markup.find('#find-details');
             find_input_ = markup.find('#find-input');
             find_match_ = markup.find('#match-status');
             match_index_ = markup.find('#match-index');
@@ -66,6 +67,8 @@ RCloud.UI.find_replace = (function() {
                 e.stopPropagation();
                 generate_matches();
             });
+
+            find_details_.click(function() { find_input_.focus(); });
 
             // disabling clear results on blur for firefox, since its implementation
             // is either the only unbroken one or the only broken one (unclear)
