@@ -154,6 +154,44 @@
   </div>
 </script>
 
+<div id="pull-changes-dialog" class="modal fade in">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
+        <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+            <h3 class="modal-title">Pull Changes from Notebook</h3>
+        </div>
+        <div class="modal-body">
+          <p>Pull changes from another notebook into your current notebook.</p>
+
+          <label for="pull-changes-by">Notebook source:</label>
+          <select id="pull-changes-by">
+            <option value="file">File</option>
+            <option value="url">URL</option>
+            <option value="id" selected="selected">Notebook id</option>
+          </select>
+
+          <div data-by="file">
+            upload by file
+          </div>
+
+          <div data-by="url">
+            specify url
+          </div>
+
+          <div data-by="id">
+            specify id
+          </div>
+
+        <div class="modal-footer">
+          <span class="btn btn-cancel">Cancel</span>
+          <span class="btn btn-primary">Pull</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="text/html" id="selection-bar-snippet">
   <div id="selection-bar">
     <div class="btn-group">
