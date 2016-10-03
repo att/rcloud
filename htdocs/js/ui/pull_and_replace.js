@@ -19,6 +19,7 @@ RCloud.UI.pull_and_replace = (function() {
 		},
 		update_pulled_by = function(pulled_method) {
 			method_ = pulled_method ? pulled_method : 'id';
+			select_by_.val(method_);
 			$(dialog_).find('div[data-by]').hide();
 			$(dialog_).find('div[data-by="' + pulled_method + '"]').show();
 		},
