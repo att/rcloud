@@ -15,8 +15,12 @@ RCloud.UI.pull_and_replace = (function() {
 
 					// split and set:
 					var separatorIndex = val.indexOf(':');
-					get_input().val(val.substring(separatorIndex + 1));
-					update_pulled_by(val.substring(0, separatorIndex));
+					var type = val.substring(0, separatorIndex);
+					var value = val.substring(separatorIndex + 1);
+
+					// they'll need to upload again if it's a file:
+					get_input().val(type === 'file' ? '' : value);
+					update_pulled_by(type);
 
 				} else {
 					// default to id:
@@ -74,7 +78,7 @@ RCloud.UI.pull_and_replace = (function() {
 
 			// inputs:
 			inputs_.forEach(function(input) {
-				input[input.data('pull')](update_pull_button_state);
+				input.bind(input.data('pull'), function() { setTimeout(update_pull_button_state, 0); });
 			});
 
 			btn_pull_.click(do_pull);
