@@ -52,7 +52,14 @@ RCloud.UI.pull_and_replace = (function() {
 			return $('#pull-notebook-' + get_method());
 		},
 		update_pull_button_state = function() {
-			ui_utils[(get_input().val() ? 'enable' : 'disable') + '_bs_button'](btn_pull_);
+			var enable = false;
+
+			if((get_method() === 'id' && get_input().val() != shell.gistname() && get_input().val()) ||
+				(get_method() !== 'id' && get_input().val())) {
+				enable = true;
+			}
+
+			ui_utils[(enable ? 'enable' : 'disable') + '_bs_button'](btn_pull_);
 		};
 
 	return {
