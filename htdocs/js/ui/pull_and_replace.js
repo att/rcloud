@@ -64,8 +64,9 @@ RCloud.UI.pull_and_replace = (function() {
                 }
             });
 
-			btn_cancel_.click(function() { dialog_.modal('hide'); });
-			btn_close_.click(function() { dialog_.modal('hide'); });
+			[btn_cancel_, btn_close_].forEach(function(button) {
+				button.click(function() { dialog_.modal('hide'); });
+			});
 
 			select_by_.change(function() {
 				update_pulled_by($(this).val());

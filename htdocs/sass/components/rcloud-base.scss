@@ -684,3 +684,16 @@ body .modal-dialog.full {
         }
     }
 }
+
+#pull-changes-dialog {
+    label {
+        width: 150px;
+        margin-top: 10px;
+    }   
+    input {
+        margin-top: 10px;
+    } 
+    input[type="file"] {
+        margin-left: 153px;
+    }
+}
