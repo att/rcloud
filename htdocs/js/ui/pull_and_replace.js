@@ -9,6 +9,7 @@ RCloud.UI.pull_and_replace = (function() {
 		btn_close_ = dialog_.find('.close'),
 		btn_pull_ = dialog_.find('.btn-primary'),
 		inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
+		notebook_from_file_,
 		show_dialog = function() {
 			rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
 				if(val && val.indexOf(':') !== -1) {
@@ -41,6 +42,19 @@ RCloud.UI.pull_and_replace = (function() {
 			$(dialog_).find('div[data-by="' + pulled_method + '"]').show();
 			update_pull_button_state();
 		},
+		upload_file = function(file) {
+			Notebook.read_from_file(file, {
+                on_load_end: function() {
+                    // TODO
+                },
+                on_error: function(message) {
+                    // TODO
+                },
+                on_notebook_parsed: function(read_notebook) {
+                    notebook_from_file_ = read_notebook;
+                }
+            });
+		},
 		do_pull = function() {
 
 			var method = get_method(),
@@ -48,16 +62,22 @@ RCloud.UI.pull_and_replace = (function() {
 
 			rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value);
 			
-			switch(method) {
-				case 'id':
-					rcloud.get_notebook(value).then(function(notebook) {
-						shell.pull_and_replace_notebook(notebook).then(function() {
-							close_dialog();
-						});
-					});
-				// case 'file': 
-				// case 'url':
-			}
+			var get_notebook_func, notebook;
+
+			if(method === 'id') {
+				get_notebook_func = rcloud.get_notebook(value);
+			} else if(method === 'file') {
+				get_notebook_func = function() { return Promise.resolve(notebook_from_file_); }
+ 			} else if(method === 'url') {
+
+ 			}
+
+			get_notebook_func().then(function(notebook) {
+				shell.pull_and_replace_notebook(notebook).then(function() {
+					close_dialog();
+				});
+			});
+
 		},
 		get_method = function() {
 			return select_by_.val();
@@ -100,6 +120,12 @@ RCloud.UI.pull_and_replace = (function() {
 			// inputs:
 			inputs_.forEach(function(input) {
 				input.bind(input.data('pull'), function() { setTimeout(update_pull_button_state, 0); });
+			});
+
+			pull_notebook_file_.click(function() {
+				pull_notebook_file_.val(null);
+			}).change(function() {
+				upload_file(pull_notebook_file_[0].files[0]); 
 			});
 
 			btn_pull_.click(do_pull);
