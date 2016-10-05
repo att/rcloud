@@ -32,6 +32,9 @@ RCloud.UI.pull_and_replace = (function() {
 	            });
 			});
 		},
+		close_dialog = function() {
+			dialog_.modal('hide');
+		},
 		update_pulled_by = function(pulled_method) {
 			select_by_.val(pulled_method);
 			$(dialog_).find('div[data-by]').hide();
@@ -39,11 +42,20 @@ RCloud.UI.pull_and_replace = (function() {
 			update_pull_button_state();
 		},
 		do_pull = function() {
-			console.log('Notebook pulled');
-			// ['file', 'url', 'id'].forEach(function(type) {
-			// 	$('pull-notebook-' + type).val('');
-			// });
-			rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', get_method() + ':' + get_input().val());
+
+			var method = get_method(),
+				value = get_input().val();
+
+			rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value);
+			
+			switch(method) {
+				case 'id':
+					rcloud.get_notebook(value).then(function(notebook) {
+						shell.pull_and_replace_notebook(notebook).then(function() {
+							close_dialog();
+						});
+					});
+			}
 		},
 		get_method = function() {
 			return select_by_.val();
@@ -76,7 +88,7 @@ RCloud.UI.pull_and_replace = (function() {
             });
 
 			[btn_cancel_, btn_close_].forEach(function(button) {
-				button.click(function() { dialog_.modal('hide'); });
+				button.click(close_dialog);
 			});
 
 			select_by_.change(function() {

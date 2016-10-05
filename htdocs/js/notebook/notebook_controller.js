@@ -105,8 +105,9 @@ Notebook.create_controller = function(model)
     }
 
     // calculate the changes needed to get back from the newest version in notebook
-    // back to what we are presently displaying (current_gist_)
-    function find_changes_from(notebook) {
+    // back to what we are presently displaying (current_gist_) or from to_notebook
+    // if this has been specified;
+    function find_changes_from(notebook, to_notebook) {
         function change_object(obj) {
             obj.name = function(n) { return n; };
             return obj;
@@ -115,7 +116,7 @@ Notebook.create_controller = function(model)
 
         // notebook files, current files
         var nf = notebook.files,
-            cf = _.extend({}, current_gist_.files); // dupe to keep track of changes
+            cf = _.extend({}, to_notebook ? to_notebook.files : current_gist_.files); // dupe to keep track of changes
 
         // find files which must be changed or removed to get from nf to cf
         for(var f in nf) {
@@ -439,8 +440,10 @@ Notebook.create_controller = function(model)
                 return [find_changes_from(notebook), gistname];
             }).spread(apply_changes_and_load);
         },
-        pull_and_replace_notebook: function() {
-            console.log('pull and replace notebook');
+        pull_and_replace_notebook: function(from_notebook) {
+            model.read_only(false);
+            var changes = find_changes_from(current_gist_, from_notebook);
+            return apply_changes_and_load(changes, shell.gistname());
         },
         fork_notebook: function(gistname, version) {
             model.read_only(false); // so that update_notebook doesn't throw
