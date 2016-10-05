@@ -25,5 +25,3 @@ Notebook.sanitize = function(notebook) {
         files[fn] = _.pick(files[fn], 'content');
     return notebook;
 };
-
-
