@@ -213,6 +213,8 @@ var shell = (function() {
                         return [notebook, notebook.id, null];
                     });
             });
+        }, pull_and_replace_notebook: function(from_notebook) {
+            return notebook_controller_.pull_and_replace_notebook(from_notebook);
         }, improve_load_error: function(xep, gistname, version) {
             var msg1 = "Could not open notebook " + gistname;
             if(version)
