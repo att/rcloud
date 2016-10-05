@@ -55,6 +55,8 @@ RCloud.UI.pull_and_replace = (function() {
 							close_dialog();
 						});
 					});
+				// case 'file': 
+				// case 'url':
 			}
 		},
 		get_method = function() {

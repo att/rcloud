@@ -113,33 +113,24 @@ RCloud.UI.import_export = (function() {
                             function do_upload(file) {
                                 notebook_status.hide();
                                 notebook_desc.hide();
-                                var fr = new FileReader();
-                                fr.onloadend = function(e) {
-                                    notebook_status.show();
-                                    try {
-                                        notebook = JSON.parse(fr.result);
+
+                                Notebook.read_from_file(
+                                    file, {
+                                        on_load_end: function() {
+                                            notebook_status.show();
+                                        },
+                                        on_error: function(message) {
+                                            notebook_status.text(message);
+                                        },
+                                        on_notebook_parsed: function(read_notebook) {
+                                            notebook = read_notebook;
+                                            notebook_status.text('');
+                                            notebook_desc_content.val(notebook.description);
+                                            notebook_desc.show();
+                                            ui_utils.enable_bs_button(import_button);
+                                        }
                                     }
-                                    catch(x) {
-                                        notebook_status.text("Invalid notebook format: couldn't parse JSON");
-                                        return;
-                                    }
-                                    if(!notebook.description) {
-                                        notebook_status.text('Invalid notebook format: has no description');
-                                        notebook = null;
-                                        return;
-                                    }
-                                    if(!notebook.files || _.isEmpty(notebook.files)) {
-                                        notebook_status.text('Invalid notebook format: has no files');
-                                        notebook = null;
-                                        return;
-                                    }
-                                    notebook_status.text('');
-                                    notebook_desc_content.val(notebook.description);
-                                    notebook_desc.show();
-                                    notebook = Notebook.sanitize(notebook);
-                                    ui_utils.enable_bs_button(import_button);
-                                };
-                                fr.readAsText(file);
+                                );
                             }
                             function do_import() {
 
