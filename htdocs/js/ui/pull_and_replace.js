@@ -35,6 +35,10 @@ RCloud.UI.pull_and_replace = (function() {
 			});
 		},
 		close_dialog = function() {
+
+			// reset pulling state:
+			reset_pulling_state();
+
 			dialog_.modal('hide');
 		},
 		update_pulled_by = function(pulled_method) {
@@ -60,6 +64,8 @@ RCloud.UI.pull_and_replace = (function() {
 		},
 		do_pull = function() {
 
+			update_when_pulling();
+
 			var method = get_method(),
 				value = get_input().val();
 			
@@ -73,16 +79,15 @@ RCloud.UI.pull_and_replace = (function() {
  			
  			}
 
- 			RCloud.UI.with_progress(function() { return 
-
 			get_notebook_func().then(function(notebook) {
 				rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value);
 				shell.pull_and_replace_notebook(notebook).then(function() {
 					close_dialog();
 				});
 			}).catch(function(e) {
+				reset_pulling_state();
 				show_error(e.message);
-			})});
+			});
 
 		},
 		get_method = function() {
@@ -101,6 +106,16 @@ RCloud.UI.pull_and_replace = (function() {
 				id: error_selector_.substring(1),
 				text: errorText
 			}).appendTo($(dialog_).find('div[data-by="' + get_method() + '"]'));
+
+			update_pull_button_state();
+		},
+		update_when_pulling = function() {
+			btn_pull_.text('Pulling');
+			dialog_.addClass('pulling');
+		},
+		reset_pulling_state = function() {
+			btn_pull_.text('Pull');
+			dialog_.removeClass('pulling');
 		},
 		update_pull_button_state = function() {
 			var enable = false;

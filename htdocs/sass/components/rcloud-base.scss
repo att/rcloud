@@ -687,6 +687,13 @@ body .modal-dialog.full {
 }
 
 #pull-changes-dialog {
+
+    pointer-events: auto;
+
+    .btn-cancel, .close {
+        display: inline-block;
+    }
+
     label {
         width: 150px;
         margin-top: 10px;
@@ -705,5 +712,13 @@ body .modal-dialog.full {
         margin-left: 152px;
         margin-top: 5px;
         width: 275px;
+    }
+    
+    &.pulling {
+        pointer-events: none;
+
+        .btn-cancel, .close {
+            display: none;
+        }
     }
 }
