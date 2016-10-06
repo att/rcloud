@@ -7,6 +7,7 @@ RCloud.UI.pull_and_replace = (function() {
 		pull_notebook_id_ = $('#pull-notebook-id'),
 		btn_cancel_ = dialog_.find('.btn-cancel'),
 		btn_close_ = dialog_.find('.close'),
+		error_selector_ = '#pull-error',
 		btn_pull_ = dialog_.find('.btn-primary'),
 		inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
 		notebook_from_file_,
@@ -37,6 +38,7 @@ RCloud.UI.pull_and_replace = (function() {
 			dialog_.modal('hide');
 		},
 		update_pulled_by = function(pulled_method) {
+			clear_error();
 			select_by_.val(pulled_method);
 			$(dialog_).find('div[data-by]').hide();
 			$(dialog_).find('div[data-by="' + pulled_method + '"]').show();
@@ -48,10 +50,11 @@ RCloud.UI.pull_and_replace = (function() {
                     // TODO
                 },
                 on_error: function(message) {
-                    // TODO
+                    show_error(message);
                 },
                 on_notebook_parsed: function(read_notebook) {
                     notebook_from_file_ = read_notebook;
+                    update_pull_button_state();
                 }
             });
 		},
@@ -65,17 +68,19 @@ RCloud.UI.pull_and_replace = (function() {
 			var get_notebook_func, notebook;
 
 			if(method === 'id') {
-				get_notebook_func = rcloud.get_notebook(value);
+				get_notebook_func = function() { return rcloud.get_notebook(value); }
 			} else if(method === 'file') {
 				get_notebook_func = function() { return Promise.resolve(notebook_from_file_); }
  			} else if(method === 'url') {
-
+ 				
  			}
 
 			get_notebook_func().then(function(notebook) {
 				shell.pull_and_replace_notebook(notebook).then(function() {
 					close_dialog();
 				});
+			}).catch(function(e) {
+				show_error(e.message);
 			});
 
 		},
@@ -85,11 +90,22 @@ RCloud.UI.pull_and_replace = (function() {
 		get_input = function() {
 			return $('#pull-notebook-' + get_method());
 		},
+		clear_error = function() {
+			$(error_selector_).remove();
+		},		
+		show_error = function(errorText) {
+			clear_error();
+
+			$('<div />', {
+				id: error_selector_.substring(1),
+				text: errorText
+			}).appendTo($(dialog_).find('div[data-by="' + get_method() + '"]'));
+		},
 		update_pull_button_state = function() {
 			var enable = false;
 
 			if((get_method() === 'id' && get_input().val() != shell.gistname() && get_input().val()) ||
-				(get_method() !== 'id' && get_input().val())) {
+				(get_method() !== 'id' && get_input().val()) && !$(error_selector_).is(':visible')) {
 				enable = true;
 			}
 
@@ -114,6 +130,7 @@ RCloud.UI.pull_and_replace = (function() {
 			});
 
 			select_by_.change(function() {
+				pull_notebook_file_.val(null);
 				update_pulled_by($(this).val());
 			});
 
@@ -123,7 +140,9 @@ RCloud.UI.pull_and_replace = (function() {
 			});
 
 			pull_notebook_file_.click(function() {
+				clear_error();
 				pull_notebook_file_.val(null);
+				update_pull_button_state();
 			}).change(function() {
 				upload_file(pull_notebook_file_[0].files[0]); 
 			});
