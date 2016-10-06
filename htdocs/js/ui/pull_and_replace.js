@@ -62,8 +62,6 @@ RCloud.UI.pull_and_replace = (function() {
 
 			var method = get_method(),
 				value = get_input().val();
-
-			rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value);
 			
 			var get_notebook_func, notebook;
 
@@ -72,16 +70,19 @@ RCloud.UI.pull_and_replace = (function() {
 			} else if(method === 'file') {
 				get_notebook_func = function() { return Promise.resolve(notebook_from_file_); }
  			} else if(method === 'url') {
- 				
+ 			
  			}
 
+ 			RCloud.UI.with_progress(function() { return 
+
 			get_notebook_func().then(function(notebook) {
+				rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value);
 				shell.pull_and_replace_notebook(notebook).then(function() {
 					close_dialog();
 				});
 			}).catch(function(e) {
 				show_error(e.message);
-			});
+			})});
 
 		},
 		get_method = function() {
@@ -136,7 +137,18 @@ RCloud.UI.pull_and_replace = (function() {
 
 			// inputs:
 			inputs_.forEach(function(input) {
-				input.bind(input.data('pull'), function() { setTimeout(update_pull_button_state, 0); });
+				input.bind(input.data('pull'), function() { 
+					setTimeout(function() {
+
+						if(get_method() === 'id' && get_input().val() === shell.gistname()) {
+							show_error('You cannot pull from your current notebook; the source must be a different notebook.');
+						} else {
+							clear_error();
+						}
+
+						update_pull_button_state();
+					}, 0); 
+				});
 			});
 
 			pull_notebook_file_.click(function() {
