@@ -427,6 +427,13 @@ ui_utils.editable = function(elem$, command) {
         sel.removeAllRanges();
         sel.addRange(range);
     }
+    function setCaretPosition(position) {
+        var range = document.createRange();
+        var text_node = elem$.get(0).firstChild;
+        range.setStart(text_node, position);
+        range.setEnd(text_node, position);
+        selectRange(range);
+    };
     function options() {
         return elem$.data('__editable');
     }
@@ -563,6 +570,10 @@ ui_utils.editable = function(elem$, command) {
                 } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
                     window.getSelection().removeAllRanges();
+                } else if(e.keyCode === $.ui.keyCode.HOME) {
+                    setCaretPosition(0);
+                } else if(e.keyCode === $.ui.keyCode.END) {
+                    setCaretPosition(decode(elem$.text()).length);
                 }
                 return true;
             },
