@@ -434,6 +434,9 @@ ui_utils.editable = function(elem$, command) {
         range.setEnd(text_node, position);
         selectRange(range);
     };
+    function getCaretPosition() {
+        return window.getSelection().getRangeAt(0);
+    };
     function options() {
         return elem$.data('__editable');
     }
@@ -574,6 +577,10 @@ ui_utils.editable = function(elem$, command) {
                     setCaretPosition(0);
                 } else if(e.keyCode === $.ui.keyCode.END) {
                     setCaretPosition(decode(elem$.text()).length);
+                } else if(e.keyCode === $.ui.keyCode.RIGHT) {
+                    if(getCaretPosition().startOffset === decode(elem$.text()).length - 1) {
+                        setCaretPosition(decode(elem$.text()).length);
+                    }
                 }
                 return true;
             },
