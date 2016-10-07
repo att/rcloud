@@ -247,10 +247,6 @@ RCloud.UI.find_replace = (function() {
 
             generate_matches();
 
-            build_regex(find_input_.val());
-
-            highlight_all();
-
             find_input_.focus();
 
         } else {
