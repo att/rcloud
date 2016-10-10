@@ -333,8 +333,12 @@ RCloud.UI.find_replace = (function() {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
 
-        if(focussed_cell)
+        if(focussed_cell) {
+
+            // get cursor position:
+            var pos = focussed_cell.views[0].ace_widget().getCursorPosition();
             return focussed_cell.views[0].get_selection();
+        }
 
         // command prompt inactive for view:
         if(RCloud.UI.command_prompt.ace_widget() && RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
