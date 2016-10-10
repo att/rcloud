@@ -221,7 +221,9 @@ RCloud.UI.find_replace = (function() {
 
         var active_cell_selection = get_active_cell_selection();
 
-        if(active_cell_selection !== null) {
+        if(opts && opts.search_again) {
+            find_input_.val(find_input_.data('searchagain'));
+        } else if(active_cell_selection !== null) {
             find_input_.val(active_cell_selection);
         } else {
             ui_utils.select_allowed_elements();
@@ -266,12 +268,29 @@ RCloud.UI.find_replace = (function() {
 
         // find next/last
         if(opts) {
-            if(opts.next && shown_) {
-                // move to the next item:
-                find_next_func_();
-            } else if(opts.previous && shown_) {
-                // straight to the last item:
-                find_previous_func_();
+
+            if(shown_) {
+                if(opts.next) {
+                    find_next_func_();
+                } else if(opts.previous) {
+                    find_previous_func_();
+                }
+            } else {
+
+                if(opts.search_again) {
+                    console.log('from cursor!');
+                }
+
+                //get_active_cell_cursor_position
+
+                var cursor_position = get_active_cell_cursor_position();
+                //editor.session.doc.positionToIndex(editor.selection.getCursor())
+
+                console.log('matches: ', matches_);
+                    // begin
+                    // end
+                    // index
+
             }
         }
 
@@ -309,6 +328,8 @@ RCloud.UI.find_replace = (function() {
             }
         }
 
+        find_input_.data('searchagain', find_input_.val());
+
         clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
@@ -328,15 +349,20 @@ RCloud.UI.find_replace = (function() {
             view.change_highlights(matches);
         });
     }
-    function get_active_cell_selection() {
-        var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
+    function get_focussed_cell() {
+        return _.find(shell.notebook.model.cells, function(cell) {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
+    }
+    function get_active_cell_cursor_position() { 
+        var focussed_cell = get_focussed_cell();
+
+        return focussed_cell ? focussed_cell.views[0].ace_widget().getCursorPosition() : undefined;
+    }
+    function get_active_cell_selection() {
+        var focussed_cell = get_focussed_cell();
 
         if(focussed_cell) {
-
-            // get cursor position:
-            var pos = focussed_cell.views[0].ace_widget().getCursorPosition();
             return focussed_cell.views[0].get_selection();
         }
 
@@ -473,7 +499,8 @@ RCloud.UI.find_replace = (function() {
                 },
                 action: function() {
                     toggle_find_replace(false, {
-                        next: true
+                        next: true,
+                        search_again: true
                     });
                 }
             }, {
