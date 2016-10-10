@@ -174,6 +174,14 @@ RCloud.UI.pull_and_replace = (function() {
 				upload_file(pull_notebook_file_[0].files[0]); 
 			});
 
+			[pull_notebook_url_, pull_notebook_id_].forEach(function(control) {
+				control.keydown(function(e) {
+					if(e.keyCode === $.ui.keyCode.ENTER && !btn_pull_.hasClass('disabled')) {
+						do_pull();
+					}
+				});
+			});
+
 			btn_pull_.click(do_pull);
 
             return this;
