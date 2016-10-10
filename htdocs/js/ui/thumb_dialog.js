@@ -4,6 +4,7 @@ RCloud.UI.thumb_dialog = (function() {
         $drop_zone_ = $('#thumb-drop-overlay'),
         $instruction_ = $drop_zone_.find('.inner'),
         $footer_ = $dialog_.find('.modal-footer'),
+        $update_ok_ = $footer_.find('.btn-primary'),
         $drop_zone_remove_ = $('#thumb-remove'),
         $thumb_upload_ = $('#thumb-upload'),
         $selected_file_ = $('#selected-file'),
@@ -15,7 +16,8 @@ RCloud.UI.thumb_dialog = (function() {
         is_visible: function() {
             return $dialog_.is(':visible');
         },
-        add_image: function(selector, img_src) {
+        set_image: function(img_src) {
+            var selector = $drop_zone_;
             if(selector.find('img').length === 0) {
                 selector.append($('<img/>'));
             }
@@ -31,6 +33,7 @@ RCloud.UI.thumb_dialog = (function() {
             $drop_zone_.removeClass('active dropped');
             $drop_zone_.find('img').remove();
             added_file_ = null;
+            ui_utils.disable_bs_button($update_ok_);
 
             // reset size of drop zone:
             $drop_zone_.css('height', $drop_zone_.data('height') + 'px');
@@ -44,31 +47,35 @@ RCloud.UI.thumb_dialog = (function() {
 
             return valid;
         },
+        display_image: function(data_url) {
+            $drop_zone_.addClass('dropped');
+            this.set_image(data_url);
+
+            // show the complete:
+            $upload_success_.show();
+
+            setTimeout(function() {
+
+                $upload_success_.animate({
+                    'margin-top': '0px', 'opacity' : '0'
+                }, {
+                    duration: 'fast',
+                    complete: function() {
+                        $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
+                    }
+                });
+
+            }, 1500);
+        },
         upload: function(file) {
             // process:
             added_file_ = file;
+            ui_utils.enable_bs_button($update_ok_);
             var that = this;
 
             var reader = new FileReader();
             reader.onload = function(e) {
-                $drop_zone_.addClass('dropped');
-                that.add_image($drop_zone_, e.target.result);
-
-                // show the complete:
-                $upload_success_.show();
-
-                setTimeout(function() {
-
-                    $upload_success_.animate({
-                        'margin-top': '0px', 'opacity' : '0'
-                        }, {
-                            duration: 'fast',
-                            complete: function() {
-                                $upload_success_.css({ 'opacity' :  '1.0', 'margin-top' : '35px' }).hide();
-                        }
-                    });
-
-                }, 1500);
+                that.display_image(e.target.result);
             };
 
             reader.readAsDataURL(added_file_);
@@ -167,14 +174,15 @@ RCloud.UI.thumb_dialog = (function() {
                 that.reset();
             });
 
-            $footer_.find('.btn-primary').on('click', function() {
+            ui_utils.disable_bs_button($update_ok_);
+            $update_ok_.on('click', function() {
                 $dialog_.modal('hide');
 
                 if(added_file_) {
-                    //added_file_.name = 'thumb.png';
                     RCloud.UI.upload_with_alerts(true, {
                         files: [added_file_],
-                        filenames: [thumb_filename_]
+                        filenames: [thumb_filename_],
+                        show_result: false
                     }).catch(function() {}); // we have special handling for upload errors
                 }
 
@@ -210,6 +218,16 @@ RCloud.UI.thumb_dialog = (function() {
         }
     };
 
+    // http://stackoverflow.com/a/30407840
+    function dataURLtoBlob(dataurl) {
+        var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], {type:mime});
+    }
+
     return {
         init: function() {
             utils.init();
@@ -219,6 +237,11 @@ RCloud.UI.thumb_dialog = (function() {
         },
         is_visible: function() {
             return utils.is_visible();
+        },
+        display_image: function(data_url) {
+            utils.display_image(data_url);
+            added_file_ = dataURLtoBlob(data_url);
+            ui_utils.enable_bs_button($update_ok_);
         }
     };
 })();

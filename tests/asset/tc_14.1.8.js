@@ -50,7 +50,7 @@ casper.test.begin("If there are no assets present, the Assets div should be uned
         this.test.assertSelectorDoesntHaveText(x(".//*[@id='asset-list']"), 'scratch.R', "Successfully deleted the scratch.R asset");
     });
 
-    casper.then(function () {
+    casper.wait(3000).then(function () {
         this.sendKeys(x(".//*[@id='scratchpad-editor']"), "SENDING_TEXT");
         console.log("After deleting asset, Now adding text to check whether asset div is editable or not")
         this.wait(3000);

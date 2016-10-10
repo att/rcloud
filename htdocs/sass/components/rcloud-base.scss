@@ -432,6 +432,7 @@ td {
 
 .ace_start.find-highlight {
     position: absolute;
+    z-index: 10;
 }
 
 .inner-tab {
@@ -590,6 +591,19 @@ ul.recent-notebooks-list li a {
     width: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+
+    & div {
+        height: 0;
+
+        &.embed {
+            height: 100%;
+        }
+    }
+
+    & embed {
+        width: 100%;
+        height: 100%;
+    }
 }
 
 #scratchpad-binary object {
@@ -633,7 +647,7 @@ body .modal-dialog.full {
         float: left;
         margin-right: 20px;
 
-        kbd {
+        kbd, .target, span {
             display: inline-block;
             padding: 3px 5px;
             font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
@@ -645,6 +659,16 @@ body .modal-dialog.full {
             border-bottom-color: #bbb;
             border-radius: 3px;
             box-shadow: inset 0 -1px 0 #bbb;
+        }
+
+        span {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        .target {
+
         }
 
         table {

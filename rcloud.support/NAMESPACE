@@ -25,8 +25,6 @@ S3method(rcs.list, RCSff)
 
 S3method(print, deferred_result)
 
-S3method(as.character, htmlwidget)
-
 import(gist)
 import(knitr)
 import(markdown)

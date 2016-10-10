@@ -16,6 +16,7 @@ RCloud.UI.import_export = (function() {
                             var url = $('#import-source').val(),
                                 notebooks = $('#import-gists').val(),
                                 prefix = $('#import-prefix').val();
+
                             notebooks = _.without(notebooks.split(/[\s,;]+/), "");
                             rcloud.port_notebooks(url, notebooks, prefix)
                                 .then(function(result) {
@@ -28,11 +29,19 @@ RCloud.UI.import_export = (function() {
                                         else
                                             failed.push(res);
                                     }
+
+                                    var promises = [];
+
                                     succeeded.forEach(function(notebook) {
-                                        editor.star_notebook(true, {notebook: notebook}).then(function() {
-                                            editor.set_notebook_visibility(notebook.id, true);
-                                        });
+                                        promises.push(editor.star_notebook(true, {notebook: notebook}).then(function() {
+                                            return editor.set_notebook_visibility(notebook.id, true, function(){});
+                                        }));
                                     });
+
+                                    Promise.all(promises).then(function() {
+                                        editor.highlight_imported_notebooks(succeeded);
+                                    });
+                                    
                                     if(failed.length)
                                         RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
                                 });
@@ -142,6 +151,9 @@ RCloud.UI.import_export = (function() {
                                     rcloud.create_notebook(notebook, false).then(function(notebook) {
                                         editor.star_notebook(true, {notebook: notebook}).then(function() {
                                             editor.set_notebook_visibility(notebook.id, true);
+
+                                            // highlight the node:
+                                            editor.highlight_imported_notebooks(notebook);
                                         });
                                     });
 

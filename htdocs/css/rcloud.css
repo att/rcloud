@@ -9145,6 +9145,12 @@ pre code.py.hljs .hljs-string {
   margin-bottom: 0;
   border-radius: 0; }
 
+.navbar-inverse .navbar-brand:visited {
+  color: #999; }
+
+.navbar-inverse .navbar-brand:hover {
+  color: white; }
+
 body {
   margin: 0; }
 
@@ -9473,7 +9479,8 @@ td {
   background-color: peru; }
 
 .ace_start.find-highlight {
-  position: absolute; }
+  position: absolute;
+  z-index: 10; }
 
 .inner-tab {
   padding: 30px; }
@@ -9604,6 +9611,13 @@ ul.recent-notebooks-list li a {
   width: 100%;
   overflow-x: hidden;
   overflow-y: auto; }
+  #scratchpad-binary div {
+    height: 0; }
+    #scratchpad-binary div.embed {
+      height: 100%; }
+  #scratchpad-binary embed {
+    width: 100%;
+    height: 100%; }
 
 #scratchpad-binary object {
   display: block; }
@@ -9634,7 +9648,7 @@ body .modal-dialog.full {
     width: 450px;
     float: left;
     margin-right: 20px; }
-    #shortcut-dialog .modal-dialog .category kbd {
+    #shortcut-dialog .modal-dialog .category kbd, #shortcut-dialog .modal-dialog .category .target, #shortcut-dialog .modal-dialog .category span {
       display: inline-block;
       padding: 3px 5px;
       font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
@@ -9646,6 +9660,10 @@ body .modal-dialog.full {
       border-bottom-color: #bbb;
       border-radius: 3px;
       box-shadow: inset 0 -1px 0 #bbb; }
+    #shortcut-dialog .modal-dialog .category span {
+      background: transparent;
+      border: none;
+      box-shadow: none; }
     #shortcut-dialog .modal-dialog .category table {
       width: 100%; }
       #shortcut-dialog .modal-dialog .category table td {

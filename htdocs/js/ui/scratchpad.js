@@ -33,6 +33,18 @@ RCloud.UI.scratchpad = (function() {
                 widget.setOptions({
                     enableBasicAutocompletion: true
                 });
+
+                widget.commands.addCommands([{
+                    name: 'blurCell',
+                    bindKey: {
+                        win: 'Escape',
+                        mac: 'Escape'
+                    },
+                    exec: function() {
+                        that.widget.blur();
+                    }
+                }]);
+
                 session.setMode(new LangMode(false, doc, session));
                 session.setUseWrapMode(true);
                 widget.resize();
@@ -54,17 +66,7 @@ RCloud.UI.scratchpad = (function() {
 
                 RCloud.UI.thumb_dialog.init();
 
-                $('#update-thumb').click(function() {
-
-                    // select the thumb in the assets:
-                    var thumb = shell.notebook.model.get_asset('thumb.png');
-
-                    if(thumb) {
-                        thumb.controller.select();
-                    }
-
-                    RCloud.UI.thumb_dialog.show();
-                });
+                $('#update-thumb').click(RCloud.UI.scratchpad.update_thumb);
             }
             function setup_asset_drop() {
                 var showOverlay_;
@@ -199,14 +201,24 @@ RCloud.UI.scratchpad = (function() {
             var content = this.current_model.content();
             if (Notebook.is_binary_content(content)) {
                 binary_mode_ = true;
+
                 // ArrayBuffer, binary content: display object
                 $('#scratchpad-editor').hide();
-                // PDF seems not to be supported properly by browsers
-                var sbin = $('#scratchpad-binary');
-                if(/\.pdf$/i.test(this.current_model.filename()))
-                    sbin.html('<p>PDF preview not supported</p>');
-                else
-                    sbin.html('<object data="' + this.current_model.asset_url(true) + '"></object>');
+
+                var sbin = $('#scratchpad-binary'),
+                    extension = this.current_model.filename().substr(this.current_model.filename().lastIndexOf('.') + 1);
+
+                if(['bmp', 'jpg', 'jpeg', 'png', 'gif'].indexOf(extension.toLowerCase()) !== -1) {
+                    sbin.html('<div><img src="' + this.current_model.asset_url(true) + '"/></div>"');
+                    sbin.find('div').removeClass('embed');
+                } else if('pdf' === extension.toLowerCase()) {
+                    sbin.html('<div><object><embed type="application/pdf" src="' + this.current_model.asset_url(true) + '" /></object></div>');
+                    sbin.find('div').addClass('embed');
+                } else {
+                    sbin.html('<div><p>Preview not supported for this file type</p></div>');
+                    sbin.find('div').removeClass('embed');
+                }
+
                 sbin.show();
             }
             else {
@@ -263,6 +275,15 @@ RCloud.UI.scratchpad = (function() {
         }, update_asset_url: function() {
             if(this.current_model)
                 $('#asset-link').attr('href', this.current_model.asset_url());
+        }, update_thumb: function() {
+            // select the thumb in the assets:
+            var thumb = shell.notebook.model.get_asset('thumb.png');
+
+            if(thumb) {
+                thumb.controller.select();
+            }
+
+            RCloud.UI.thumb_dialog.show();
         }, clear: function() {
             if(!this.exists)
                 return;

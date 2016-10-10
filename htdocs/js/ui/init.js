@@ -46,7 +46,7 @@ RCloud.UI.init = function() {
     RCloud.UI.navbar.init();
     RCloud.UI.selection_bar.init();
 
-    // keyboard shortcuts:
+    // shortcuts:
     RCloud.UI.shortcut_manager.init();
     RCloud.UI.ace_shortcuts.init();
 
@@ -100,9 +100,9 @@ RCloud.UI.init = function() {
     RCloud.UI.shortcut_manager.add([{
         category: 'Notebook Management',
         id: 'notebook_cell',
-        description: 'Saves the current notebook',
+        description: 'Save the current notebook',
         keys: {
-            mac: [
+            mac: [ 
                 ['command', 's']
             ],
             win: [
@@ -141,7 +141,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_undo',
-        description: 'Steps back through the notebook\'s history',
+        description: 'Step back through the notebook\'s history',
         keys: {
             mac: [
                 ['command', 'z']
@@ -155,7 +155,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_redo',
-        description: 'Steps forwards through the notebook\'s history',
+        description: 'Step forwards through the notebook\'s history',
         keys: {
             mac: [
                 ['command', 'shift', 'z']
@@ -169,7 +169,7 @@ RCloud.UI.init = function() {
     }, {
         category: 'Notebook Management',
         id: 'history_revert',
-        description: 'Reverts a notebook',
+        description: 'Revert a notebook',
         keys: {
             mac: [
                 ['command', 'e']
@@ -179,8 +179,11 @@ RCloud.UI.init = function() {
             ]
         },
         on_page: ['edit'],
+        is_active: function() {
+            return shell.notebook.controller.is_mine() && shell.notebook.model.read_only();
+        },
         action: function() {
-            if(shell.notebook.controller.is_mine() && shell.version()) {
+            if(this.is_active()) {
                 editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
             }
         }
@@ -199,7 +202,7 @@ RCloud.UI.init = function() {
     RCloud.UI.shortcut_manager.add([{
         category: 'Cell Management',
         id: 'remove_cells',
-        description: 'Removes selected cells',
+        description: 'Remove selected cells',
         keys: {
             mac: [
                 ['del'],
@@ -244,12 +247,14 @@ RCloud.UI.init = function() {
         },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
-    }/*, {
+    }, {
         category: 'Cell Management',
         id: 'arrow_next_cell',
         description: 'Enter next cell (from end of current)',
         keys: {
-            win_mac: ['right']
+            win_mac: [
+                ['right']
+            ]
         },
         modes: ['writeable']
     }, {
@@ -257,10 +262,32 @@ RCloud.UI.init = function() {
         id: 'arrow_previous_cell',
         description: 'Enter previous cell (from start of current)',
         keys: {
-            win_mac: ['left']
+            win_mac: [
+                ['left']
+            ]
         },
         modes: ['writeable']
-    }*/, {
+    }, {
+        category: 'Cell Management',
+        id: 'arrow_next_cell_down',
+        description: 'Enter next cell (from last line of current)',
+        keys: {
+            win_mac: [
+                ['down']
+            ]
+        },
+        modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'arrow_previous_cell_up',
+        description: 'Enter previous cell (from first line of current)',
+        keys: {
+            win_mac: [
+                ['up']
+            ]
+        },
+        modes: ['writeable']
+    }, {
         category: 'Cell Management',
         id: 'goto_previous_cell',
         description: 'Go to previous cell',
@@ -317,17 +344,47 @@ RCloud.UI.init = function() {
                 ['shift', 'alt', 'enter']
             ]
         },
+        click_keys: {
+            target: 'Play button',
+            win_mac: [
+                ['shift']
+            ]
+        },
         modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
-        description: 'Blur Cell/Command Prompt',
+            description: 'Blur Cell/Command Prompt',
         keys: {
             win_mac: [
                 ['esc']
             ]
         },
         modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'select_cell',
+        description: 'Select individual cell',
+        click_keys: {
+            target: 'Cell title'
+        }
+    }, {
+        category: 'Cell Management',
+        id: 'toggle_select_cell',
+        description: 'Toggle cell selection',
+        click_keys: {
+            target: 'Cell title',
+            win: ['ctrl'],
+            mac: ['command']
+        }
+    }, {
+        category: 'Cell Management',
+        id: 'select_cell_range',
+        description: 'Select range of cells',
+        click_keys: {
+            target: 'Cell title',
+            win_mac: ['shift']
+        }
     }]);
 
     // general:

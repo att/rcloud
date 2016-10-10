@@ -1,3 +1,110 @@
+## RCloud 1.6.2
+
+### Features
+* Arrow up and down (or left and right) between cells when at the beginning or
+  end of a cell. (#2007)
+
+* Option to clear the R session when running the whole notebook (active by
+  default). (#1734)
+
+### Improvements
+* To better encapsulate its dependencies, HTML Widgets support is now in a
+  separate package `rcloud.htmlwidgets`. It is recommended to add this package to
+  the `rcloud.alluser.addons` config, as shown in `rcloud.conf.samp`. (#2243)
+
+* Ability to open mini.html notebooks by name using `&user=...&path=...`
+  URLs. (#1034)
+
+* Preview PDF files in assets. (#2008)
+
+* Closing the find/replace dialog leaves the current match selected (if the
+  notebook is editable). (#2204)
+
+* Changing a cell's language leaves the focus in that cell (if the notebook is
+  editable). (#2206)
+
+* ESC loses the keyboard focus for the asset pane as it already blurred
+  cells. (#2221)
+
+### Bugfixes
+* Attempting to anonymously open notebooks by name would fail with a missing
+  function error.
+
+* Find/Replace dialog could show NaNs when the find text was not
+  found. (#2248)
+
+* Find result was obscured by the current text selection. (#2130)
+
+* Find/Replace dialog could get stuck open on Firefox. (#2215)
+
+* Find/Replace count was not always shown on Firefox. (#2213)
+
+* Uploading an unknown file types could cause the file to be
+  downloaded. (#2008)
+
+* Revert shortcut was shown when not appropriate (#2220)
+
+
+## RCloud 1.6.1
+
+### Features
+* `rcloud.download.file` invokes a file download in browsers that support
+  it. See
+  [this notebook](https://rcloud.social/edit.html?notebook=1aafc8129d835a9527e87630109c3df9)
+  for a simple example downloading text from a notebook, and
+  [this notebook](https://rcloud.social/edit.html?notebook=0f7e6a325bb9158ed01a864ca7f4f175)
+  for an example of downloading both text and binary files from a mini.html notebook.
+
+* New, easier methods for adding thumbnail images for the discover
+  page. Thumbnails can be pasted, dragged, uploaded from a file, or selected
+  from any plot in the notebook. (#2078, #2217)
+
+* Button to clear the session pane. (#1734)
+
+* Docker configuration is included in the source.
+
+### Improvements
+* HTML Widgets load faster. (#2231)
+
+* By popular demand, the Delete Cell button is replaced. (#2176)
+
+* Disconnection in anonymous mode should reload, not attempt to log in (#2237)
+
+* Clicking on the RCloud logo navigates to the Edit page. (#2186)
+
+* Times on discovery page are shown relatively (time ago). (#2150)
+
+* Newly imported notebooks are highlighted in the Notebook Tree. (#1431)
+
+* Discover page launches in a new tab. (#2184)
+
+* Number of cells selected is displayed in the Selection Bar. (#2189)
+
+* Session pane will not autoscroll if it is not currently showing the last
+  line. (#1996)
+
+### Bugfixes
+* Imported notebooks were not showing on discover page. (#2183)
+
+* Clicking "cancel" on the New Asset dialog was throwing an error. (#2171)
+
+* Cells could overlap tall plots. (#1841)
+
+* Starred deleted notebooks were not shown in the All Notebooks tree.
+  (#2165 / #2160 / #2194)
+
+* Image assets could overflow the div in Firefox (#2201)
+
+* Disabled asset pane would still grab the keyboard focus, causing keyboard
+  shortcuts not to work. (#2218)
+
+* Title/tooltips shown for most buttons in the UI, text adapting where
+  appropriate. (#1438 etc.)
+
+* Image assets in encrypted notebooks were displayed as garbage text, when opened
+  in a separate window. (#1893)
+
+
 ## RCloud 1.6
 
 ### Features

@@ -350,6 +350,12 @@ function create_cell_html_view(language, cell_model) {
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
         });
+
+        var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
+            right_handler = ace_widget_.commands.commandKeyBinding[0].right,
+            up_handler = ace_widget_.commands.commandKeyBinding[0].up,
+            down_handler = ace_widget_.commands.commandKeyBinding[0].down;
+
         ace_widget_.commands.addCommands([{
             name: 'executeCell',
             bindKey: {
@@ -369,6 +375,122 @@ function create_cell_html_view(language, cell_model) {
             },
             exec: function() {
                 shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'left',
+            bindKey: {
+                win: 'left',
+                mac: 'left'
+            },
+            exec: function(widget, args, request) {
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+
+                if(cursor_position.row === 0 && cursor_position.column === 0) {
+                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                    if(prior_cell) {
+                        prior_cell.set_focus();
+
+                        var prior_widget = prior_cell.views[0].ace_widget();
+                        var last = ui_utils.ace_get_last(prior_widget);
+                        prior_widget.gotoLine(last.row + 1, last.column);
+
+                        use_default = false;
+                    }
+                }
+
+                if(use_default) {
+                    left_handler.exec(widget, args, request);    
+                }
+            }
+        }, {
+            name: 'right',
+            bindKey: {
+                win: 'right',
+                mac: 'right'
+            },
+            exec: function(widget, args, request) {
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+                var last = ui_utils.ace_get_last(ace_widget_);
+
+                if(cursor_position.column === last.column && cursor_position.row == last.row) {
+                    use_default = false;
+
+                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                    if(subsequent_cell) {
+                        subsequent_cell.set_focus();
+
+                        subsequent_cell.views[0].ace_widget()
+                            .gotoLine(0, 0);
+                    }
+                } 
+
+                if(use_default) {
+                    right_handler.exec(widget, args, request);
+                }
+            }
+        }, {
+            name: 'up',
+            bindKey: {
+                win: 'up',
+                mac: 'up'
+            },
+            exec: function(widget, args, request) {
+                
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+
+                if(cursor_position.row === 0) {
+                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                    if(prior_cell) {
+                        prior_cell.set_focus();
+
+                        var prior_widget = prior_cell.views[0].ace_widget();
+                        var last = ui_utils.ace_get_last(prior_widget);
+                        prior_widget.gotoLine(last.row + 1, cursor_position.column);
+
+                        use_default = false;
+                    }
+                }
+
+                if(use_default)
+                    up_handler.exec(widget, args, request);
+            }
+        }, {
+            name: 'down',
+            bindKey: {
+                win: 'down',
+                mac: 'down'
+            },
+            exec: function(widget, args, request) {
+                var use_default = true;
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+                var last = ui_utils.ace_get_last(ace_widget_);
+
+                if(cursor_position.row == last.row) {
+                    use_default = false;
+
+                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                    if(subsequent_cell) {
+                        subsequent_cell.set_focus();
+
+                        subsequent_cell.views[0].ace_widget()
+                            .gotoLine(1, cursor_position.column);
+                    }
+                } 
+
+                if(use_default)
+                    down_handler.exec(widget, args, request);
+
             }
         }, {
             name: 'navigateToPreviousCell',
@@ -828,7 +950,7 @@ function create_cell_html_view(language, cell_model) {
             var config = renderer.layerConfig;
             var top = pos.top - config.offset;
 
-            // shouldScoll  = true  = ^
+            // shouldScroll  = true  = ^
             // shouldScroll = false = v
             if (pos.top >= 0 && top + rect.top < $('#rcloud-cellarea').offset().top) {
                 shouldScroll = true;
@@ -898,7 +1020,7 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
-            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, input_div_);
+            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {
@@ -949,7 +1071,7 @@ function create_cell_html_view(language, cell_model) {
                             window.setTimeout(function() {
                                 var hl = ace_div.find('.find-highlight.' + range.kind);
                                 if(hl.size())
-                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, ace_div, hl);
+                                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, ace_div, hl);
                             }, 0);
                         }
                     });
@@ -958,10 +1080,15 @@ function create_cell_html_view(language, cell_model) {
                 assign_code();
                 var $active = code_div_.find('.find-highlight.active, .find-highlight.activereplaced');
                 if($active.size())
-                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, notebook_cell_div, code_div_, $active);
+                    ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, code_div_, $active);
 
             }
             return this;
+        },
+        select_highlight_range: function(begin, end) {
+            this.edit_source(true);
+            var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, begin, end);
+            ace_widget_.getSelection().setSelectionRange(ace_range);
         }
     });
 

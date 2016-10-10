@@ -1,6 +1,11 @@
 # Setting up RCloud
 
-## Prerequisites
+## Installing from Docker Hub
+
+(https://hub.docker.com/r/rcl0ud/rcloud/)
+
+## Installing on your system
+### Prerequisites
 
 RCloud requires R 3.1.0 or higher and several R packages. If you want to compile R and all necessary packages from sources these are the necessary dependencies:
 
@@ -20,7 +25,7 @@ RCloud requires R 3.1.0 or higher and several R packages. If you want to compile
 
 If you have already R installed you may need only a subset of the above.
 
-## Installing from GitHub
+### Installing from GitHub
 
 Check out the RCloud repository to a place that will be your RCloud root directory. For illustration purposes we will use `/data/rcloud` as the root, but it can be any other directory.
 
@@ -77,7 +82,7 @@ If you're using github.com, then your file will look like this:
 The last three lines are the base URL of the github website,
 the entry point for the github API and the entry point for gists.
 
-### Enterprise Github deployment
+#### Enterprise Github deployment
 
 If you have an enterprise github deployment where the gists URL
 ends with `/gist` instead of beginning with `gist.`, you
@@ -88,7 +93,7 @@ your RCloud deployment, you can add a whitelist to your configuration:
 
     github.user.whitelist: user1,user2,user3,etc
 
-### Hostnames
+#### Hostnames
 
 If your computer doesn't resolve its hostname to what you will be using,
 (let's say `127.0.0.1`) you may also want to add:
@@ -99,7 +104,7 @@ Then go to `http://127.0.0.1:8080/login.R` and authorize access to your
 account through github.
 
 
-## Installing from a distribution tar ball
+### Installing from a distribution tar ball
 
 If you don't have internet access on the target machine, it is possible to install RCloud from a distribution
 tar ball which has all dependent packages included. The process is essentially identical to the above, only that you don't use `git` to check out the sources, but unpack the tar ball instead.
@@ -119,7 +124,7 @@ your GitHub setup. Then start RCloud via
     $ sh scripts/fresh_start.sh
 
 
-## Will you be hacking on the code? Read on
+### Will you be hacking on the code? Read on
 
 If you're just running RCloud, skip this session. If you're going to
 be hacking the code, you'll need to install a recent version of
@@ -130,11 +135,7 @@ be hacking the code, you'll need to install a recent version of
 This will install the node.js dependencies necessary to concatenate and
 minify the JavaScript files used in RCloud.
 
-[SASS](http://sass-lang.com/) is also used to manage the CSS used in RCloud. 
-You can get help installing SASS by heading over to the [installation page]
-(http://sass-lang.com/install) and following the 'command line' instructions.
-
-### Starting rcloud
+#### Starting rcloud
 
 The safest way to install rcloud currently is to simply run the
 `scripts/fresh_start.sh` script. This will reinstall the
@@ -143,7 +144,7 @@ node.js and the necessary dependencies installed), kill any old
 instances of RCloud running, deauthorize all login tokens (only if
 SessionServer is not used), and start a new version of RCloud.
 
-### Pitfalls
+#### Pitfalls
 
 If you have trouble with authentication, make sure your hostname is
 FQDN (fully qualified domain name) and it matches your external name.
@@ -163,9 +164,9 @@ Also if things are failing, make sure you have the latest R packages installed. 
 to re-build all packages in RCloud.
 
 
-### Optional functionality
+#### Optional functionality
 
-#### Redis
+##### Redis
 
 It is strongly recommended to use Redis as the back-end for key/value
 storage in RCloud. Install Redis server (in Debian/Ubuntu
@@ -176,7 +177,7 @@ Note: the default up until RCloud 1.0 is file-based RCS back-end which
 is limited and deprecated and thus the default may become Redis in
 future releases.
 
-#### Search
+##### Search
 
 RCloud 1.0 uses Apache Solr to index gists and provide search
 functionality if desired. See `conf/solr/README.md` for
@@ -195,7 +196,7 @@ collection used by RCloud. Then add
 to `rcloud.conf`.
 
 
-#### SessionKeyServer
+##### SessionKeyServer
 
 For enhanced security RCloud can be configured to use a session key
 server instead of flat files. To install the reference server (it
@@ -211,7 +212,7 @@ requires Java so e.g. `sudo apt-get install openjdk-7-jdk`), use
 
 Then add `Session.server: http://127.0.0.1:4301` to `rcloud.conf`.
 
-#### PAM authentication
+##### PAM authentication
 
 This is the most advanced setup so use only if you know how this
 works. If you want to use user switching and PAM authentication, you

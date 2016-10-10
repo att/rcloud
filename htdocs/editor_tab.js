@@ -321,7 +321,7 @@ var editor = function () {
 
     function get_notebooks_by_user(username) {
         var already_know = _.pick(notebook_info_, _.filter(Object.keys(notebook_info_), function(id) {
-            return notebook_info_[id].username === username;
+            return notebook_info_[id].username === username && !notebook_info_[id].recent_only;
         }));
         return rcloud.config.all_user_notebooks(username)
             .then(get_infos_and_counts)
@@ -521,7 +521,14 @@ var editor = function () {
                 path_tips_ = path_tips;
                 gist_sources_ = gist_sources;
                 _.extend(notebook_info_, starred_info.notebooks);
-                _.extend(notebook_info_, recent_info.notebooks);
+                for(var r in recent_info.notebooks) {
+                    // add a special flag for notebooks that we only know about from recent list
+                    // we won't show them in the tree until they're opened
+                    if(!notebook_info_[r]) {
+                        notebook_info_[r] = recent_info.notebooks[r];
+                        notebook_info_[r].recent_only = true;
+                    }
+                }
                 _.extend(num_stars_, recent_info.num_stars); // (not currently needed)
                 all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
                 var root_data = [];
@@ -847,7 +854,24 @@ var editor = function () {
             $tree_.tree('openNode', p);
             p = p.parent;
         }
-        ui_utils.scroll_into_view($tree_.parent(), 50, 100, $(node.element));
+        ui_utils.scroll_into_view($tree_.parent(), 50, 100, null, $(node.element));
+    }
+
+    function highlight_imported(node) {
+        return function() {
+            return new Promise(function(resolve) {
+                var p = node.parent;
+                while(p.sort_order===ordering.NOTEBOOK) {
+                    $tree_.tree('openNode', p);
+                    p = p.parent;
+                }
+                ui_utils.scroll_into_view($tree_.parent(), 150, 150, function() {
+                    $(node.element).closest('.jqtree_common').effect('highlight', { color: '#fd0' }, 1500, function() {
+                        resolve();
+                    });
+                }, $(node.element));
+            });
+        };
     }
 
     function select_node(node) {
@@ -1482,6 +1506,19 @@ var editor = function () {
                     return promise;
                 });
         },
+        highlight_imported_notebooks: function(notebooks) {
+
+            var nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
+                return $tree_.tree('getNodeById', node_id('interests', username_, notebook.id));
+            });
+
+            // get promises:
+            nodes.map(function(node) {
+                return highlight_imported(node);
+            }).reduce(function(cur, next) {
+                return cur.then(next);
+            }, Promise.resolve()).then(function() {});
+        },
         set_notebook_visibility: function(gistname, visible) {
             var promise = set_visibility(gistname, visible);
             update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
@@ -1638,11 +1675,17 @@ var editor = function () {
                 var currentNotebook = get_notebook_info(sorted[i][0]);
                 var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
+                var $desc;
 
                 anchor.addClass('ui-all')
                     .append($('<span class="username">'+currentNotebook.username+'</span>'))
-                    .append($('<span class="description">'+desc+'</span>'))
+                    .append($desc = $('<span class="description">'+desc+'</span>'))
                     .appendTo(li);
+
+                if(currentNotebook.source)
+                    $desc.addClass('foreign-notebook');
+                else if(!currentNotebook.visible)
+                    $desc.addClass('hidden-notebook');
 
                 anchor.click(click_recent);
             }
