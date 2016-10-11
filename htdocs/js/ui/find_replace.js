@@ -256,6 +256,22 @@ RCloud.UI.find_replace = (function() {
 
             generate_matches();
 
+            if(opts.search_again) {
+                // get the cursor index: 
+                var cursor_index = get_active_cell_cursor_index();
+
+                console.log('cursor index: ', cursor_index);
+                console.log('matches: ', matches_);
+
+                if(cursor_index && matches_.length) {
+
+                }
+
+                // begin
+                // end
+                // index
+            }
+
             find_input_.focus();
 
         } else {
@@ -264,33 +280,11 @@ RCloud.UI.find_replace = (function() {
             } else {
                 find_input_.focus();
             }
-        }
 
-        // find next/last
-        if(opts) {
-
-            if(shown_) {
-                if(opts.next) {
-                    find_next_func_();
-                } else if(opts.previous) {
-                    find_previous_func_();
-                }
-            } else {
-
-                if(opts.search_again) {
-                    console.log('from cursor!');
-                }
-
-                //get_active_cell_cursor_position
-
-                var cursor_position = get_active_cell_cursor_position();
-                //editor.session.doc.positionToIndex(editor.selection.getCursor())
-
-                console.log('matches: ', matches_);
-                    // begin
-                    // end
-                    // index
-
+            if(opts.next) {
+                find_next_func_();
+            } else if(opts.previous) {
+                find_previous_func_();
             }
         }
 
@@ -354,10 +348,15 @@ RCloud.UI.find_replace = (function() {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
     }
-    function get_active_cell_cursor_position() { 
+    function get_active_cell_cursor_index() {
         var focussed_cell = get_focussed_cell();
 
-        return focussed_cell ? focussed_cell.views[0].ace_widget().getCursorPosition() : undefined;
+        if(!focussed_cell) {
+            return undefined;
+        }
+    
+        var widget = focussed_cell.views[0].ace_widget();
+        return widget.session.doc.positionToIndex(widget.getCursorPosition());
     }
     function get_active_cell_selection() {
         var focussed_cell = get_focussed_cell();
