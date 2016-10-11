@@ -11,7 +11,7 @@ RCloud.UI.find_replace = (function() {
         matches_ = [], active_match_,
         change_interval_;
 
-    function generate_matches() {
+    function generate_matches(match_index) {
         active_match_ = undefined;
         build_regex(find_input_.val());
         highlight_all();
@@ -21,7 +21,7 @@ RCloud.UI.find_replace = (function() {
         show_match_details(matches_.length === 0 ? 0 : 1, matches_.length);
 
         if(find_input_.val().length) {
-            active_match_ = 0;
+            active_match_ = _.isUndefined(match_index) ? 0 : match_index;
             show_matches();
             active_transition('activate');
         } else {
@@ -31,13 +31,23 @@ RCloud.UI.find_replace = (function() {
 
         // matches_
         find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
+
+        var current_match;
+
+        if(matches_.length === 0) {
+            current_match = '0';
+        } else if(!_.isUndefined(match_index)) {
+            current_match = (match_index + 1).toString();
+        } else {
+            current_match = '1';
+        }
+
+        show_match_details(current_match, matches_.length);
     };
 
     function matches_exist() {
         return matches_.length !== 0 && !isNaN(active_match_);
     }
-
     function toggle_find_replace(replace, opts) {
         if(!find_dialog_) {
 
@@ -256,23 +266,45 @@ RCloud.UI.find_replace = (function() {
 
             generate_matches();
 
-            if(opts.search_again) {
+            if(opts && opts.search_again) {
+
                 // get the cursor index: 
-                var cursor_index = get_active_cell_cursor_index();
+                var cursor_details = get_active_cell_cursor_details();
 
-                console.log('cursor index: ', cursor_index);
-                console.log('matches: ', matches_);
+                if(matches_.length && cursor_details) {
 
-                if(cursor_index && matches_.length) {
+                    var next_match = _.find(matches_, function(match) {
+                        return cursor_details.index === match.cell_index && 
+                            cursor_details.cursor_index >= match.begin && 
+                            cursor_details.cursor_index <= match.end;
+                    });
+
+                    if(!next_match) {
+                        next_match = _.find(matches_, function(match) {
+                            return match.index == cursor_details.cell_index && cursor_details.cursor_index < match.begin
+                        });
+
+                        if(!next_match) {
+                            next_match = _.find(matches_, function(match) {
+                                return match.index >= cursor_details.cell_index;
+                            });
+                        }
+                    }
+
+                    var match_index = matches_.findIndex(function(match) {
+                       return match.begin === next_match.begin &&
+                              match.end === next_match.end &&
+                              match.index === next_match.index; 
+                    });
+
+                    console.log(match_index);
+                    generate_matches(match_index);
 
                 }
 
-                // begin
-                // end
-                // index
+            } else {
+                find_input_.focus();    
             }
-
-            find_input_.focus();
 
         } else {
             if(replace) {
@@ -348,7 +380,7 @@ RCloud.UI.find_replace = (function() {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
     }
-    function get_active_cell_cursor_index() {
+    function get_active_cell_cursor_details() {
         var focussed_cell = get_focussed_cell();
 
         if(!focussed_cell) {
@@ -356,7 +388,11 @@ RCloud.UI.find_replace = (function() {
         }
     
         var widget = focussed_cell.views[0].ace_widget();
-        return widget.session.doc.positionToIndex(widget.getCursorPosition());
+
+        return {
+            cell_index: focussed_cell.id() - 1,
+            cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
+        }
     }
     function get_active_cell_selection() {
         var focussed_cell = get_focussed_cell();
