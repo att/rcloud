@@ -12,25 +12,20 @@ RCloud.UI.find_replace = (function() {
         change_interval_;
 
     function generate_matches(match_index) {
-        active_match_ = undefined;
+
+        active_match_ = undefined;    
         build_regex(find_input_.val());
         highlight_all();
-
-        // matches_
-        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? 0 : 1, matches_.length);
 
         if(find_input_.val().length) {
             active_match_ = _.isUndefined(match_index) ? 0 : match_index;
             show_matches();
             active_transition('activate');
+
         } else {
             active_match_ = undefined;
             hide_matches();
         }
-
-        // matches_
-        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
 
         var current_match;
 
@@ -42,6 +37,8 @@ RCloud.UI.find_replace = (function() {
             current_match = '1';
         }
 
+        // matches_
+        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
         show_match_details(current_match, matches_.length);
     };
 
@@ -95,7 +92,9 @@ RCloud.UI.find_replace = (function() {
                     if(!has_focus_) {
                         // save so that any new content since last save is matched:
                         shell.save_notebook();
-                        generate_matches();
+
+                        generate_matches(find_input_.data('searchagain') ? active_match_ : undefined);
+
                     }
 
                     has_focus_ = true;
@@ -262,7 +261,7 @@ RCloud.UI.find_replace = (function() {
 
             }, 250);
 
-            generate_matches();
+            generate_matches(opts && opts.search_again ? active_match_ : undefined);
 
             build_regex(find_input_.val());
 
@@ -307,9 +306,7 @@ RCloud.UI.find_replace = (function() {
                               match.index === next_match.index; 
                     });
 
-                    //console.log(match_index);
                     generate_matches(match_index);
-
                 }
 
             } else {
@@ -364,6 +361,7 @@ RCloud.UI.find_replace = (function() {
             }
         }
 
+        // if search again is invoked after the dialog is hidden:
         find_input_.data('searchagain', find_input_.val());
 
         clearInterval(change_interval_);
