@@ -275,10 +275,19 @@ RCloud.UI.find_replace = (function() {
 
                 if(matches_.length && cursor_details) {
 
+                    //////////////////////////////////////////////////////////////////////////////////////////////////
+                    console.log('----------------------------------------------------------------');
+                    console.log('Cursor is at: ', cursor_details);
+                    matches_.forEach(function(match) {
+                        console.log(match);
+                    });
+
+                    //////////////////////////////////////////////////////////////////////////////////////////////////
+
                     var next_match = _.find(matches_, function(match) {
-                        return cursor_details.index === match.cell_index && 
+                        return cursor_details.cell_index === match.cell_index && 
                             cursor_details.cursor_index >= match.begin && 
-                            cursor_details.cursor_index <= match.end;
+                            cursor_details.cursor_index < match.end;
                     });
 
                     if(!next_match) {
@@ -299,7 +308,7 @@ RCloud.UI.find_replace = (function() {
                               match.index === next_match.index; 
                     });
 
-                    console.log(match_index);
+                    //console.log(match_index);
                     generate_matches(match_index);
 
                 }
