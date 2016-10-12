@@ -281,11 +281,10 @@ RCloud.UI.find_replace = (function() {
                     matches_.forEach(function(match) {
                         console.log(match);
                     });
-
                     //////////////////////////////////////////////////////////////////////////////////////////////////
 
                     var next_match = _.find(matches_, function(match) {
-                        return cursor_details.cell_index === match.cell_index && 
+                        return cursor_details.cell_index === match.index && 
                             cursor_details.cursor_index >= match.begin && 
                             cursor_details.cursor_index < match.end;
                     });
