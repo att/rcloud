@@ -20,8 +20,7 @@ RCloud.UI.find_replace = (function() {
         if(find_input_.val().length) {
             active_match_ = _.isUndefined(match_index) ? 0 : match_index;
             show_matches();
-            active_transition('activate');
-
+            active_transition('activate');            
         } else {
             active_match_ = undefined;
             hide_matches();
@@ -307,6 +306,8 @@ RCloud.UI.find_replace = (function() {
                     });
 
                     generate_matches(match_index);
+
+                    find_input_.focus();
                 }
 
             } else {
