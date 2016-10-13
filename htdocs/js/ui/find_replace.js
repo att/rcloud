@@ -273,14 +273,6 @@ RCloud.UI.find_replace = (function() {
 
                 if(matches_.length && cursor_details) {
 
-                    //////////////////////////////////////////////////////////////////////////////////////////////////
-                    console.log('----------------------------------------------------------------');
-                    console.log('Cursor is at: ', cursor_details);
-                    matches_.forEach(function(match) {
-                        console.log(match);
-                    });
-                    //////////////////////////////////////////////////////////////////////////////////////////////////
-
                     var next_match = _.find(matches_, function(match) {
                         return cursor_details.cell_index === match.index && 
                             cursor_details.cursor_index >= match.begin && 
