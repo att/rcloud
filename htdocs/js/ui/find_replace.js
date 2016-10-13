@@ -46,6 +46,10 @@ RCloud.UI.find_replace = (function() {
     }
     function toggle_find_replace(replace, opts) {
 
+        if(_.isUndefined(opts)) {
+            opts = {};
+        }
+
         if(!find_dialog_) {
 
             var markup = $(_.template(
@@ -245,13 +249,11 @@ RCloud.UI.find_replace = (function() {
 
             }, 250);
 
-            generate_matches(opts && opts.search_again ? active_match_ : undefined);
+            generate_matches(opts.search_again ? active_match_ : undefined);
 
             build_regex(find_input_.val());
 
-            highlight_all();
-
-            if(opts && opts.search_again) {
+            if(opts.search_again) {
 
                 // get the cursor index: 
                 var cursor_details = get_active_cell_cursor_details();
@@ -283,20 +285,24 @@ RCloud.UI.find_replace = (function() {
                     });
 
                     generate_matches(match_index);
-
-                    find_input_.focus();
                 }
 
+            } 
+
+            if(replace) {
+                replace_input_.focus();
             } else {
-                find_input_.focus();    
+                find_input_.focus();
             }
 
         } else {
             // find/replace dialog already shown:
             var active_cell_selection = get_active_cell_selection();
 
-            if(opts && opts.search_again) {
-                find_input_.val(find_input_.data('searchagain'));
+            if(opts.next) {
+                find_next_func_();
+            } else if(opts.previous) {
+                find_previous_func_();
             } else if(active_cell_selection !== null) {
                 find_input_.val(active_cell_selection);
             } else {
@@ -306,18 +312,6 @@ RCloud.UI.find_replace = (function() {
                 if(text) {
                     find_input_.val(text);
                 }
-            }
-
-            if(replace) {
-                replace_input_.focus();
-            } else {
-                find_input_.focus();
-            }
-
-            if(opts.next) {
-                find_next_func_();
-            } else if(opts.previous) {
-                find_previous_func_();
             }
         }
 
