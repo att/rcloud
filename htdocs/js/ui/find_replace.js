@@ -225,21 +225,6 @@ RCloud.UI.find_replace = (function() {
 
         find_dialog_.show();
 
-        var active_cell_selection = get_active_cell_selection();
-
-        if(opts && opts.search_again) {
-            find_input_.val(find_input_.data('searchagain'));
-        } else if(active_cell_selection !== null) {
-            find_input_.val(active_cell_selection);
-        } else {
-            ui_utils.select_allowed_elements();
-            var text = window.getSelection().toString();
-
-            if(text) {
-                find_input_.val(text);
-            }
-        }
-
         if(replace)
             replace_stuff_.show();
         else
@@ -307,6 +292,22 @@ RCloud.UI.find_replace = (function() {
             }
 
         } else {
+            // find/replace dialog already shown:
+            var active_cell_selection = get_active_cell_selection();
+
+            if(opts && opts.search_again) {
+                find_input_.val(find_input_.data('searchagain'));
+            } else if(active_cell_selection !== null) {
+                find_input_.val(active_cell_selection);
+            } else {
+                ui_utils.select_allowed_elements();
+                var text = window.getSelection().toString();
+
+                if(text) {
+                    find_input_.val(text);
+                }
+            }
+
             if(replace) {
                 replace_input_.focus();
             } else {
