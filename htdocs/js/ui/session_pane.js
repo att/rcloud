@@ -1,5 +1,6 @@
 RCloud.UI.session_pane = {
     error_dest_: null,
+    list_view_: null,
     clear_session_: null,
     allow_clear: true,
     body: function() {
@@ -7,6 +8,8 @@ RCloud.UI.session_pane = {
     },
     init: function() {
         var that = this;
+
+        this.list_view_ = new infinity.ListView($('#session-info-panel'));
 
         // detect where we will show errors
         this.error_dest_ = $("#session-info");
@@ -76,7 +79,8 @@ RCloud.UI.session_pane = {
         if (!document.getElementById("session-info-out"))
             $("#session-info").append($("<pre id='session-info-out'></pre>"));
         var scroll = this.should_scroll();
-        $("#session-info-out").append(msg);
+        //$("#session-info-out").append("<pre>" + msg + "</pre>");
+        this.list_view_.append("<pre>" + msg + "</pre>");
         RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
         if(scroll)
             this.scroll_to_end();
