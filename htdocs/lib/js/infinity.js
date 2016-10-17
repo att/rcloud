@@ -8,7 +8,8 @@
 // ======================================================================
 // this is a fork of the original (now deprecated) Airbnb library
 // for managing long lists. The original didn't support elements such as 
-// divs; this fork does.
+// divs; this fork does when elements have a class of 'scrollable' added
+// to them.
 // sourced from https://github.com/elliotcw/infinity
 // ======================================================================
 
