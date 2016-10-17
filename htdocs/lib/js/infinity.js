@@ -4,6 +4,14 @@
 //     license. For all licensing information, details, and documention:
 //     http://airbnb.github.com/infinity
 
+// *** IMPORTANT! ***
+// ======================================================================
+// this is a fork of the original (now deprecated) Airbnb library
+// for managing long lists. The original didn't support elements such as 
+// divs; this fork does.
+// sourced from https://github.com/elliotcw/infinity
+// ======================================================================
+
 !function(window, Math, $) {
   'use strict';
 
