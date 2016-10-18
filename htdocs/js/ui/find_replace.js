@@ -61,7 +61,7 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('change paste', function(e) {
+            find_input_.on('change', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 generate_matches();
