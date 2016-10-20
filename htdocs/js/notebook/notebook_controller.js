@@ -287,6 +287,9 @@ Notebook.create_controller = function(model)
         clear_all_selected_cells: function() {
             model.clear_all_selected_cells();
         },
+        get_selected_cells: function() {
+            return model.get_selected_cells();
+        },
         crop_cells: function() {
 
             if(!this.can_crop_cells())
