@@ -11,6 +11,7 @@ RCloud.UI.pull_and_replace = (function() {
 		btn_pull_ = dialog_.find('.btn-primary'),
 		inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
 		notebook_from_file_,
+		same_notebook_error_ = 'You cannot pull from your current notebook; the source must be a different notebook.',
 		show_dialog = function() {
 			rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
 				if(val && val.indexOf(':') !== -1) {
@@ -76,7 +77,16 @@ RCloud.UI.pull_and_replace = (function() {
 			} else if(method === 'file') {
 				get_notebook_func = function() { return Promise.resolve(notebook_from_file_); }
  			} else if(method === 'url') {
- 			
+ 				get_notebook_func = function() { 
+ 					var id = RCloud.utils.get_notebook_from_url(value);
+ 					if(!id) {
+ 						return Promise.reject(new Error('Invalid URL'));	
+ 					} else if(id === shell.gistname()) {
+ 						return Promise.reject(new Error(same_notebook_error_));
+ 					}else {
+ 						return rcloud.get_notebook(id);
+ 					}
+ 				}
  			}
 
 			get_notebook_func().then(function(notebook) {
@@ -156,7 +166,7 @@ RCloud.UI.pull_and_replace = (function() {
 					setTimeout(function() {
 
 						if(get_method() === 'id' && get_input().val() === shell.gistname()) {
-							show_error('You cannot pull from your current notebook; the source must be a different notebook.');
+							show_error(same_notebook_error_);
 						} else {
 							clear_error();
 						}
