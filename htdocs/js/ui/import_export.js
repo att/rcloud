@@ -4,6 +4,36 @@ RCloud.UI.import_export = (function() {
         saveAs(file, filename); // FileSaver.js
     }
 
+    function get_selected_files() {
+        return rcloud.config.get_user_option('export-only-selected-cells').then(function(exportSelected) {
+            var files = [];
+
+            if(exportSelected) {
+                var selected = shell.get_selected_cells();
+
+                if(selected) {
+                    files = selected.map(function(cell) { 
+                        return cell.filename();
+                    });
+
+                    return Promise.resolve(files);
+                }
+            }  else {
+                return Promise.resolve([]);
+            }                        
+       });
+    }
+
+    function prune_files(notebook, filesToKeep) {
+        if(filesToKeep && filesToKeep.length) {
+            // remove the files that aren't required:
+            _.difference(Object.keys(notebook.files), filesToKeep).forEach(function(fileToRemove) {
+                delete notebook.files[fileToRemove];
+            });
+        } 
+        return notebook;
+    }
+
     return {
         init: function() {
             RCloud.UI.advanced_menu.add({
@@ -91,11 +121,15 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook to File",
                     modes: ['edit'],
                     action: function() {
-                        return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
-                            notebook = Notebook.sanitize(notebook);
-                            var gisttext = JSON.stringify(notebook);
-                            download_as_file(notebook.description + ".gist", gisttext, 'text/json');
-                            return notebook;
+
+                        get_selected_files().then(function(files) {
+                            return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
+                                notebook = Notebook.sanitize(notebook);
+                                notebook = prune_files(notebook, files);
+                                var gisttext = JSON.stringify(notebook);
+                                download_as_file(notebook.description + ".gist", gisttext, 'text/json');
+                                return notebook;
+                            });
                         });
                     }
                 },
