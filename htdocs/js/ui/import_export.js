@@ -283,30 +283,33 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook as R Source File",
                     modes: ['edit'],
                     action: function() {
-                        return rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
-                            var strings = [];
-                            var parts = [];
-                            _.each(notebook.files, function(file) {
-                                var filename = file.filename;
-                                if(/^part/.test(filename)) {
-                                    var number = parseInt(filename.slice(4).split('.')[0]);
-                                    if(!isNaN(number)) {
-                                        if (file.language === 'R')
-                                            parts[number] = "```{r}\n" + file.content + "\n```";
-                                        else
-                                            parts[number] = file.content;
+                        return get_selected_files().then(function(files) {
+                            rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
+                                var strings = [];
+                                var parts = [];
+                                notebook = prune_files(notebook, files);
+                                _.each(notebook.files, function(file) {
+                                    var filename = file.filename;
+                                    if(/^part/.test(filename)) {
+                                        var number = parseInt(filename.slice(4).split('.')[0]);
+                                        if(!isNaN(number)) {
+                                            if (file.language === 'R')
+                                                parts[number] = "```{r}\n" + file.content + "\n```";
+                                            else
+                                                parts[number] = file.content;
+                                        }
                                     }
-                                }
-                            });
-                            for (var i=0; i<parts.length; ++i)
-                                if (!_.isUndefined(parts[i]))
-                                    strings.push(parts[i]);
-                            strings.push("");
-                            rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
-                                // rserve.js length-1 array special case making our lives difficult again
-                                var purled_source = _.isString(purled_lines) ? purled_lines :
-                                        purled_lines.join("\n");
-                                download_as_file(notebook.description + ".R", purled_source, 'text/plain');
+                                });
+                                for (var i=0; i<parts.length; ++i)
+                                    if (!_.isUndefined(parts[i]))
+                                        strings.push(parts[i]);
+                                strings.push("");
+                                rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
+                                    // rserve.js length-1 array special case making our lives difficult again
+                                    var purled_source = _.isString(purled_lines) ? purled_lines :
+                                            purled_lines.join("\n");
+                                    download_as_file(notebook.description + ".R", purled_source, 'text/plain');
+                                });
                             });
                         });
                     }
