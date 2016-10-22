@@ -20,6 +20,7 @@ requirejs_config_obj = {
         "jquery.bootpag" : ["jquery"],
         "jquery.scrollto": ["jquery"],
         "jquery.whiny": ["jquery"],
+        "infinity": ["jquery"],
         "bootstrap": ["jquery-ui", "jquery"],
         "shell_tab": ["rcloud_bundle", "editor_tab"],
         "editor_tab": ["rcloud_bundle", "laconic", "tree.jquery"],
@@ -27,9 +28,14 @@ requirejs_config_obj = {
         "rserve": ["underscore"],
         "mousetrap-global-bind.min": ["mousetrap.min"],
         "jquery.fix.clone" : ["jquery-ui"],
-        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
-                          // ,"jquery.whiny" // enable/disable jquery.whiny here
-                         ]
+        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", 
+            "jquery-ui", 
+            "hl.min", 
+            "bootstrap", 
+            "mousetrap.min",
+            "infinity"
+            // ,"jquery.whiny" // enable/disable jquery.whiny here
+        ]
     }
 };
 
@@ -45,7 +51,8 @@ var common_deps = [
     "rserve", "tree.jquery", "FileSaver",
     "css_browser_selector",
     "mousetrap.min",
-    "mousetrap-global-bind.min"
+    "mousetrap-global-bind.min",
+    "infinity"
 ];
 
 function start_require(deps) {

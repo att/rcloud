@@ -2,6 +2,7 @@ RCloud.UI.session_pane = {
     error_dest_: null,
     clear_session_: null,
     allow_clear: true,
+    list_view_: null,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
@@ -73,10 +74,14 @@ RCloud.UI.session_pane = {
         // one hacky way is to maintain a <pre> that we fill as we go
         // note that R will happily spit out incomplete lines so it's
         // not trivial to maintain each output in some separate structure
-        if (!document.getElementById("session-info-out"))
+        if (!document.getElementById("session-info-out")){
             $("#session-info").append($("<pre id='session-info-out'></pre>"));
+            this.list_view_ = new infinity.ListView($('#session-info-out'));
+        }
+
         var scroll = this.should_scroll();
-        $("#session-info-out").append(msg);
+        this.list_view_.append('<pre>' + msg + '</pre>');
+
         RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
         if(scroll)
             this.scroll_to_end();
