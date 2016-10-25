@@ -5,7 +5,7 @@ RCloud.UI.find_replace = (function() {
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         find_next_func_, find_previous_func_,
-        shown_ = false, replace_mode_ = false,
+        highlights_shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
@@ -234,10 +234,8 @@ RCloud.UI.find_replace = (function() {
         else
             replace_stuff_.hide();
 
-        if(!shown_) {
-
+        if(_.isUndefined(change_interval_)) {
             change_interval_ = setInterval(function() {
-
                 // get the value:
                 var old_value = find_input_.data('value'),
                     new_value = find_input_.val();
@@ -246,8 +244,10 @@ RCloud.UI.find_replace = (function() {
                     generate_matches();
                     find_input_.data('value', new_value);
                 }
-
             }, 250);
+        }
+
+        //if(!shown_) {
 
             generate_matches(opts.search_again ? active_match_ : undefined);
 
@@ -260,29 +260,49 @@ RCloud.UI.find_replace = (function() {
 
                 if(matches_.length && cursor_details) {
 
-                    var next_match = _.find(matches_, function(match) {
-                        return cursor_details.cell_index === match.index && 
-                            cursor_details.cursor_index >= match.begin && 
-                            cursor_details.cursor_index < match.end;
+                    var match_index, found_match;
+
+                    found_match = _.find(matches_, function(match) {
+                        return match.index === cursor_details.cell_index && 
+                            match.begin >= cursor_details.cursor_index
+                           // match.end < cursor_details.cursor_cursor_index;
                     });
 
-                    if(!next_match) {
-                        next_match = _.find(matches_, function(match) {
+                    if(!found_match) {
+                        found_match = _.find(matches_, function(match) {
                             return match.index == cursor_details.cell_index && cursor_details.cursor_index < match.begin
                         });
 
-                        if(!next_match) {
-                            next_match = _.find(matches_, function(match) {
+                        if(!found_match) {
+                            found_match = _.find(matches_, function(match) {
                                 return match.index >= cursor_details.cell_index;
                             });
                         }
                     }
 
-                    var match_index = matches_.findIndex(function(match) {
-                       return match.begin === next_match.begin &&
-                              match.end === next_match.end &&
-                              match.index === next_match.index; 
-                    });
+                    if(found_match) {
+                        match_index = matches_.findIndex(function(match) {
+                           return match.begin === found_match.begin &&
+                                  match.end === found_match.end &&
+                                  match.index === found_match.index; 
+                        }); 
+
+                        if(opts.previous) {
+                            match_index = match_index - 1;
+
+                            if(match_index < 0) {
+                                match_index = matches_.length - 1;
+                            }
+                        }
+
+                    } else if(matches_.length) {
+                        // no match from this point on:
+                        if(opts.next) {
+                            match_index = 0;
+                        } else {
+                            match_index = matches_.length - 1;
+                        }
+                    }
 
                     generate_matches(match_index);
                 }
@@ -295,7 +315,10 @@ RCloud.UI.find_replace = (function() {
                 find_input_.focus();
             }
 
-        } else {
+        //} else {
+
+        if(highlights_shown_) {
+
             // find/replace dialog already shown:
             var active_cell_selection = get_active_cell_selection();
 
@@ -315,7 +338,7 @@ RCloud.UI.find_replace = (function() {
             }
         }
 
-        shown_ = true;
+        highlights_shown_ = true;
         replace_mode_ = replace;
     }
 
@@ -337,6 +360,7 @@ RCloud.UI.find_replace = (function() {
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
+        highlights_shown_ = false;
     }
     function hide_dialog() {
 
@@ -355,7 +379,7 @@ RCloud.UI.find_replace = (function() {
         clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
-        shown_ = false;
+        //shown_ = false;
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     function escapeRegExp(string) {
@@ -372,9 +396,21 @@ RCloud.UI.find_replace = (function() {
         });
     }
     function get_focussed_cell() {
-        return _.find(shell.notebook.model.cells, function(cell) {
+        var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
+
+        if(focussed_cell) {
+            // find the index of the cell:
+            for(var loop = 0; shell.notebook.model.cells.length; loop++) {
+                if(shell.notebook.model.cells[loop].filename() === focussed_cell.filename()) {
+                    focussed_cell.index = loop;
+                    break;
+                }
+            }
+        }
+
+        return focussed_cell;
     }
     function get_active_cell_cursor_details() {
         var focussed_cell = get_focussed_cell();
@@ -386,7 +422,7 @@ RCloud.UI.find_replace = (function() {
         var widget = focussed_cell.views[0].ace_widget();
 
         return {
-            cell_index: focussed_cell.id() - 1,
+            cell_index: focussed_cell.index,
             cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
         }
     }
@@ -549,7 +585,8 @@ RCloud.UI.find_replace = (function() {
                 },
                 action: function() {
                    toggle_find_replace(false, {
-                        previous: true
+                        previous: true,
+                        search_again: true
                    });
                 }
             }, {
