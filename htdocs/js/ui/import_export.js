@@ -1,6 +1,6 @@
 RCloud.UI.import_export = (function() {
 
-    var export_only_selected_files_ = true;
+    var export_only_selected_files_;
 
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});
