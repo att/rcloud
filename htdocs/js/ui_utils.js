@@ -578,13 +578,11 @@ ui_utils.editable = function(elem$, command) {
                 } else if(e.keyCode === $.ui.keyCode.END) {
                     setCaretPosition(decode(elem$.text()).length);
                 } else if(e.keyCode === $.ui.keyCode.RIGHT) {
-
                     if(e.ctrlKey || e.metaKey) {
-
                         var afterCaret = elem$.text().substring(getCaretPosition().startOffset);
-
                         if((afterCaret.match(/ /g) || []).length == 0 || 
-                            (afterCaret.match(/ /g) || []).length == 1 && afterCaret[0] == ' ') {
+                            (afterCaret.match(/ /g) || []).length == 1 && afterCaret[0] == ' ' ||
+                            (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
                             e.preventDefault();
                             setCaretPosition(decode(elem$.text()).length);
                         }
