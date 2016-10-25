@@ -165,13 +165,10 @@
           <p>Pull changes from another notebook into your current notebook.</p>
           <label for="pull-changes-by">Notebook source:</label>
           <select id="pull-changes-by">
-            <option value="file">File</option>
             <option value="url">URL</option>
-            <option value="id" selected="selected">Notebook id</option>
+            <option value="id" selected="selected">Notebook id</option>          
+            <option value="file">File</option>
           </select>
-          <div data-by="file">
-            <input type="file" data-pull="change" id="pull-notebook-file" size="32" />
-          </div>
           <div data-by="url">
             <label for="pull-notebook-url">Notebook URL:</label>
             <input type="text" data-pull="change paste keyup" id="pull-notebook-url" size="50" spellcheck="false" />
@@ -179,6 +176,9 @@
           <div data-by="id">
             <label for="pull-notebook-id">Notebook ID:</label>
             <input type="text" data-pull="change paste keyup" id="pull-notebook-id" size="32" spellcheck="false" />
+          </div>          
+          <div data-by="file">
+            <input type="file" data-pull="change" id="pull-notebook-file" size="32" />
           </div>
         <div class="modal-footer">
           <span class="btn btn-cancel">Cancel</span>
