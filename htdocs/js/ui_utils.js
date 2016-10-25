@@ -546,7 +546,7 @@ ui_utils.editable = function(elem$, command) {
             },
             'click.editable': function(e) {
                 e.stopPropagation();
-                // allow default action but don't bubble (causing eroneous reselection in notebook tree)
+                // allow default action but don't bubble (causing erroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
                 if(e.keyCode === $.ui.keyCode.ENTER) {
@@ -579,7 +579,7 @@ ui_utils.editable = function(elem$, command) {
                     setCaretPosition(decode(elem$.text()).length);
                 } else if(e.keyCode === $.ui.keyCode.RIGHT) {
                     if(getCaretPosition().startOffset === decode(elem$.text()).length - 1 ||
-                        !getCaretPosition().startOffset) {
+                        (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
                         setCaretPosition(decode(elem$.text()).length);
                     }
                 }
