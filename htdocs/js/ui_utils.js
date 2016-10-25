@@ -578,9 +578,21 @@ ui_utils.editable = function(elem$, command) {
                 } else if(e.keyCode === $.ui.keyCode.END) {
                     setCaretPosition(decode(elem$.text()).length);
                 } else if(e.keyCode === $.ui.keyCode.RIGHT) {
-                    if(getCaretPosition().startOffset === decode(elem$.text()).length - 1 ||
-                        (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
-                        setCaretPosition(decode(elem$.text()).length);
+
+                    if(e.ctrlKey || e.metaKey) {
+
+                        var afterCaret = elem$.text().substring(getCaretPosition().startOffset);
+
+                        if((afterCaret.match(/ /g) || []).length == 0 || 
+                            (afterCaret.match(/ /g) || []).length == 1 && afterCaret[0] == ' ') {
+                            e.preventDefault();
+                            setCaretPosition(decode(elem$.text()).length);
+                        }
+                    } else {
+                        if(getCaretPosition().startOffset === decode(elem$.text()).length - 1 ||
+                            (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
+                            setCaretPosition(decode(elem$.text()).length);
+                        }
                     }
                 }
                 return true;
