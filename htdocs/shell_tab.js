@@ -129,6 +129,9 @@ var shell = (function() {
         }, split_cell: function(cell_model, point1, point2) {
             return notebook_controller_.split_cell(cell_model, point1, point2);
         },
+        get_selected_cells: function() {
+            return notebook_controller_.get_selected_cells();
+        },
         load_notebook: function(gistname, version) {
             notebook_controller_.save();
             return do_load(function() {

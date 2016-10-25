@@ -72,7 +72,7 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('change paste', function(e) {
+            find_input_.on('change', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 generate_matches();
@@ -343,7 +343,7 @@ RCloud.UI.find_replace = (function() {
         if(!shell.notebook.model.read_only()) {
             var current_match = matches_[active_match_];
 
-            if(current_match) {
+            if(current_match && shell.notebook.model.cells[current_match.index]) {
                 var view = shell.notebook.model.cells[current_match.index].views[0];
                 view.select_highlight_range(current_match.begin, current_match.end);
             }
