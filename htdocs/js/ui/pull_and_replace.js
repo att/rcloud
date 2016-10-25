@@ -27,7 +27,7 @@ RCloud.UI.pull_and_replace = (function() {
 
 				} else {
 					// default to id:
-					update_pulled_by('id');
+					update_pulled_by('url');
 				}
 
 				dialog_.modal({
