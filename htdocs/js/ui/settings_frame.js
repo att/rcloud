@@ -186,7 +186,10 @@ RCloud.UI.settings_frame = (function() {
                 'export-only-selected-cells': that.checkbox({
                     sort: 6000,
                     default_value: true,
-                    label: "Export only selected cells"
+                    label: "Export only selected cells",
+                    set: function(val) {
+                        RCloud.UI.import_export.export_only_selected_files(val);
+                    }
                 }),
                 'addons': that.text_input_vector({
                     sort: 10000,

@@ -1,27 +1,29 @@
 RCloud.UI.import_export = (function() {
+
+    var export_only_selected_files_ = true;
+
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});
         saveAs(file, filename); // FileSaver.js
     }
 
     function get_selected_files() {
-        return rcloud.config.get_user_option('export-only-selected-cells').then(function(exportSelected) {
-            var files = [];
 
-            if(exportSelected) {
-                var selected = shell.get_selected_cells();
+        var files = [];
 
-                if(selected) {
-                    files = selected.map(function(cell) { 
-                        return cell.filename();
-                    });
+        if(export_only_selected_files_) {
+            var selected = shell.get_selected_cells();
 
-                    return Promise.resolve(files);
-                }
-            }  else {
-                return Promise.resolve([]);
-            }                        
-       });
+            if(selected) {
+                files = selected.map(function(cell) { 
+                    return cell.filename();
+                });
+
+                return Promise.resolve(files);
+            }
+        }  else {
+            return Promise.resolve([]);
+        }    
     }
 
     function prune_files(notebook, filesToKeep) {
@@ -316,6 +318,9 @@ RCloud.UI.import_export = (function() {
                 }
             });
             return this;
+        },
+        export_only_selected_files: function(val) {
+            export_only_selected_files_ = val;
         }
     };
 })();
