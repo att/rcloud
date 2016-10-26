@@ -21,14 +21,9 @@ RCloud.UI.pull_and_replace = (function() {
 					var type = val.substring(0, separatorIndex);
 					var value = val.substring(separatorIndex + 1);
 
-					// they'll need to upload again if it's a file:
-					get_input().val(type === 'file' ? '' : value);
-					update_pulled_by(type);
-
-				} else {
-					// default to id:
-					update_pulled_by('url');
-				}
+					// update pulled by method:
+					update_pulled_by(type, value);
+				} 
 
 				dialog_.modal({
 	                keyboard: false
@@ -40,13 +35,27 @@ RCloud.UI.pull_and_replace = (function() {
 			// reset pulling state:
 			reset_pulling_state();
 
+			// 
+			inputs_.forEach(function(input) {
+				input.val('');
+			})
+
+			// default to URL for the next time:
+			update_pulled_by('url');
+
 			dialog_.modal('hide');
 		},
-		update_pulled_by = function(pulled_method) {
+		update_pulled_by = function(pulled_method, value) {
 			clear_error();
 			select_by_.val(pulled_method);
 			$(dialog_).find('div[data-by]').hide();
 			$(dialog_).find('div[data-by="' + pulled_method + '"]').show();
+
+			if(!_.isUndefined(value)) {
+				// and set the value coming in:
+				get_input().val(pulled_method === 'file' ? '' : value);
+			}
+
 			update_pull_button_state();
 		},
 		upload_file = function(file) {
