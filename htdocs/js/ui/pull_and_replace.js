@@ -91,7 +91,7 @@ RCloud.UI.pull_and_replace = (function() {
 
 			get_notebook_func().then(function(notebook) {
 				rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value);
-				shell.pull_and_replace_notebook(notebook).then(function() {
+				editor.pull_and_replace_notebook(notebook).then(function() {
 					close_dialog();
 				});
 			}).catch(function(e) {

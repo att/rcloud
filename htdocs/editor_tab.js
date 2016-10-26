@@ -1595,6 +1595,10 @@ var editor = function () {
             return shell.revert_notebook(gistname, version)
                 .then(this.load_callback({is_change: true, selroot: true}));
         },
+        pull_and_replace_notebook: function(from_notebook) {
+            return shell.pull_and_replace_notebook(from_notebook)
+                .then(this.load_callback({is_change: true, selroot: true}));
+        },
         show_history: function(node, opts) {
             if(_.isBoolean(opts))
                 opts = {toggle: opts};
