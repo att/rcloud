@@ -578,7 +578,7 @@ ui_utils.editable = function(elem$, command) {
                 } else if(e.keyCode === $.ui.keyCode.END) {
                     setCaretPosition(decode(elem$.text()).length);
                 } else if(e.keyCode === $.ui.keyCode.RIGHT) {
-                    if(e.ctrlKey || e.metaKey) {
+                    if(e.ctrlKey || e.altKey) {
                         var afterCaret = elem$.text().substring(getCaretPosition().startOffset);
                         if((afterCaret.match(/ /g) || []).length == 0 || 
                             (afterCaret.match(/ /g) || []).length == 1 && afterCaret[0] == ' ' ||
