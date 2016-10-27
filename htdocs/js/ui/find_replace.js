@@ -539,7 +539,7 @@ RCloud.UI.find_replace = (function() {
     var result = {
         init: function() {
             RCloud.UI.shortcut_manager.add([{
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_find',
                 description: 'Find text',
                 keys: {
@@ -554,7 +554,7 @@ RCloud.UI.find_replace = (function() {
                     toggle_find_replace(false);
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_find_next',
                 description: 'Find text (next)',
                 keys: {
@@ -573,7 +573,7 @@ RCloud.UI.find_replace = (function() {
                     });
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_find_previous',
                 description: 'Find text (previous)',
                 keys: {
@@ -592,7 +592,7 @@ RCloud.UI.find_replace = (function() {
                    });
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_replace',
                 description: 'Replace text',
                 keys: {
@@ -606,7 +606,7 @@ RCloud.UI.find_replace = (function() {
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_replace_text_match',
                 description: 'Replace text match',
                 keys: {
@@ -622,7 +622,7 @@ RCloud.UI.find_replace = (function() {
                     }
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_replace_text_all',
                 description: 'Replace all',
                 keys: {
@@ -638,7 +638,7 @@ RCloud.UI.find_replace = (function() {
                     }
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_goto_previous_match',
                 description: 'Go to previous search match',
                 keys: {
@@ -651,7 +651,7 @@ RCloud.UI.find_replace = (function() {
                     ]
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_goto_next_match',
                 description: 'Go to next search match',
                 keys: {
