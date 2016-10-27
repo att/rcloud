@@ -4,7 +4,7 @@ RCloud.UI.find_replace = (function() {
         find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
-        replace_next_func_,
+        replace_next_func_, replace_all_func_,
         find_previous_func_, find_next_func_,
         shown_ = false, replace_mode_ = false,
         find_next_func_, find_previous_func_,
@@ -176,15 +176,20 @@ RCloud.UI.find_replace = (function() {
                 replace_next_func_();
             });
 
-            replace_all_.click(function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            replace_all_func_ = function() {
                 if(matches_exist()) {
                     active_transition('deactivate');
                     replace_rest();
                 }
                 else
                     replace_all(find_input_.val(), replace_input_.val());
+                return false;
+            };
+
+            replace_all_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                replace_all_func();
                 return false;
             });
 
@@ -614,6 +619,22 @@ RCloud.UI.find_replace = (function() {
                 action: function() {
                     if(replace_shown_) {
                         replace_next_func_();
+                    }
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_replace_text_all',
+                description: 'Replace all',
+                keys: {
+                    win_mac: [
+                        ['alt', 'a']
+                    ]
+                },
+                modes: ['writeable'],
+                element_scope: '#find-form',
+                action: function() {
+                    if(replace_shown_) {
+                        replace_all_func_();
                     }
                 }
             }, {
