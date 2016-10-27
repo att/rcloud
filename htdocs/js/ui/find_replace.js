@@ -472,7 +472,7 @@ RCloud.UI.find_replace = (function() {
             }, {
                 category: 'Search/Replace',
                 id: 'notebook_replace_text_match',
-                description: 'Replace text match',
+                description: 'Replace next match',
                 keys: {
                     win_mac: [
                         ['alt', 'r']
@@ -488,7 +488,7 @@ RCloud.UI.find_replace = (function() {
             }, {
                 category: 'Search/Replace',
                 id: 'notebook_replace_text_all',
-                description: 'Replace all',
+                description: 'Replace all matches',
                 keys: {
                     win_mac: [
                         ['alt', 'a']
