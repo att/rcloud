@@ -605,11 +605,8 @@ RCloud.UI.find_replace = (function() {
                 id: 'notebook_replace_text_match',
                 description: 'Replace text match',
                 keys: {
-                    mac: [
-                        ['command', 'r']
-                    ],
-                    win: [
-                        ['ctrl', 'r']
+                    win_mac: [
+                        ['alt', 'r']
                     ]
                 },
                 modes: ['writeable'],
