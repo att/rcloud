@@ -263,22 +263,10 @@ RCloud.UI.find_replace = (function() {
                     var match_index, found_match;
 
                     found_match = _.find(matches_, function(match) {
-                        return match.index === cursor_details.cell_index && 
-                            match.begin >= cursor_details.cursor_index
-                           // match.end < cursor_details.cursor_cursor_index;
+                        return (match.index === cursor_details.cell_index && match.begin >= cursor_details.cursor_index) ||
+                            match.index > cursor_details.cell_index;
+
                     });
-
-                    if(!found_match) {
-                        found_match = _.find(matches_, function(match) {
-                            return match.index == cursor_details.cell_index && cursor_details.cursor_index < match.begin
-                        });
-
-                        if(!found_match) {
-                            found_match = _.find(matches_, function(match) {
-                                return match.index >= cursor_details.cell_index;
-                            });
-                        }
-                    }
 
                     if(found_match) {
                         match_index = matches_.findIndex(function(match) {
