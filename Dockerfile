@@ -67,6 +67,12 @@ ADD package.json     /data/rcloud/package.json
 ADD Gruntfile.js     /data/rcloud/Grunfile.js
 ADD docker           /data/rcloud/docker
 
+
+RUN cd /data/rcloud && git apply docker/domainCookie.patch
+RUN cd /data/rcloud \
+      && scripts/bootstrapR.sh \
+      && scripts/build.sh --all
+
 ## Get rcloud extention modules
 RUN cd /data/rcloud/rcloud.packages \
     && git clone https://github.com/att/rcloud.shiny.git \
@@ -75,14 +81,10 @@ RUN cd /data/rcloud/rcloud.packages \
     && git clone https://github.com/att/rcloud.dcplot.git \
     && R -e "install.packages(c('rcloud.shiny','rpython2'),repos=c('http://rforge.net','http://r.research.att.com'))"
 
-RUN cd /data/rcloud && git apply docker/domainCookie.patch
-RUN cd /data/rcloud \
-      && scripts/bootstrapR.sh \
-      && scripts/build.sh --all
-
 COPY docker/rcloud.conf /data/rcloud/conf
 COPY docker/init.sh /bin
 COPY docker/index.html /data/rcloud/htdocs
+COPY docker/dockerbye.R /data/rcloud/htdocs
 
 RUN chown -R rcloud:rcloud /data/rcloud
 
