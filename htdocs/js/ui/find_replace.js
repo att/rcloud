@@ -4,11 +4,14 @@ RCloud.UI.find_replace = (function() {
         find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
+        replace_next_func_, replace_all_func_,
+        find_previous_func_, find_next_func_,
         shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
-        change_interval_;
+        change_interval_,
+        replace_shown_ = false;
 
     function generate_matches() {
         active_match_ = undefined;
@@ -38,6 +41,8 @@ RCloud.UI.find_replace = (function() {
     }
 
     function toggle_find_replace(replace) {
+
+        replace_shown_ = replace;
 
         if(!find_dialog_) {
 
@@ -94,7 +99,7 @@ RCloud.UI.find_replace = (function() {
                 });
             }
 
-            function find_next(reason) {
+            find_next_func_ = function(reason) {
                 active_transition(reason || 'deactivate');
 
                 if(matches_exist()) {
@@ -107,7 +112,7 @@ RCloud.UI.find_replace = (function() {
                 active_transition('activate');
             }
 
-            function find_previous() {
+            find_previous_func_ = function() {
                 active_transition('deactivate');
                 
                 if(matches_exist()) {
@@ -123,43 +128,53 @@ RCloud.UI.find_replace = (function() {
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                find_next();
+                find_next_func_();
                 return false;
             });
 
             find_last_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                find_previous();
+                find_previous_func_();
                 return false;
             });
 
-            replace_next_.click(function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            replace_next_func_ = function() {
                 if(matches_exist()) {
                     var cell = replace_current();
                     if(cell) {
                         shell.notebook.controller.update_cell(cell)
                             .then(function() {
-                                find_next('replace');
+                                find_next_func_('replace');
                             });
                     }
                 }
                 else
-                    find_next();
-                return false;
-            });
+                    find_next_func_();
 
-            replace_all_.click(function(e) {
+                return false;
+            };
+
+            replace_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                replace_next_func_();
+            });
+
+            replace_all_func_ = function() {
                 if(matches_exist()) {
                     active_transition('deactivate');
                     replace_rest();
                 }
                 else
                     replace_all(find_input_.val(), replace_input_.val());
+                return false;
+            };
+
+            replace_all_.click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                replace_all_func();
                 return false;
             });
 
@@ -169,21 +184,21 @@ RCloud.UI.find_replace = (function() {
             find_cycle_.push('find-close');
             replace_cycle_.push('find-close');
 
-            function find_next_on_enter(e) {
-                if(e.keyCode===$.ui.keyCode.ENTER) {
+            function find_next_on_keycode(e) {
+                if(e.keyCode===$.ui.keyCode.ENTER || (!ui_utils.is_a_mac() && e.keyCode === 114 /* f3 */)) {
                     e.preventDefault();
                     e.stopPropagation();
                     if(e.shiftKey)
-                        find_previous();
+                        find_previous_func_();
                     else
-                        find_next();
+                        find_next_func_();
                     return false;
                 }
                 return undefined;
             }
 
-            find_input_.keydown(find_next_on_enter);
-            replace_input_.keydown(find_next_on_enter);
+            find_input_.keydown(find_next_on_keycode);
+            replace_input_.keydown(find_next_on_keycode);
 
             find_form_.keydown(function(e) {
                 switch(e.keyCode) {
@@ -425,7 +440,7 @@ RCloud.UI.find_replace = (function() {
     var result = {
         init: function() {
             RCloud.UI.shortcut_manager.add([{
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_find',
                 description: 'Find text',
                 keys: {
@@ -440,7 +455,7 @@ RCloud.UI.find_replace = (function() {
                     toggle_find_replace(false);
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_replace',
                 description: 'Replace text',
                 keys: {
@@ -453,6 +468,64 @@ RCloud.UI.find_replace = (function() {
                 },
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_replace_text_match',
+                description: 'Replace next match',
+                keys: {
+                    win_mac: [
+                        ['alt', 'r']
+                    ]
+                },
+                modes: ['writeable'],
+                element_scope: '#find-form',
+                action: function() {
+                    if(replace_shown_) {
+                        replace_next_func_();
+                    }
+                }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_replace_text_all',
+                description: 'Replace all matches',
+                keys: {
+                    win_mac: [
+                        ['alt', 'a']
+                    ]
+                },
+                modes: ['writeable'],
+                element_scope: '#find-form',
+                action: function() {
+                    if(replace_shown_) {
+                        replace_all_func_();
+                    }
+                }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_goto_previous_match',
+                description: 'Go to previous search match',
+                keys: {
+                    mac: [
+                        ['shift', 'enter']
+                    ],
+                    win: [
+                        ['shift', 'enter'],
+                        ['shift', 'f3']
+                    ]
+                }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_goto_next_match',
+                description: 'Go to next search match',
+                keys: {
+                    mac: [
+                        ['enter']
+                    ],
+                    win: [
+                        ['enter'],
+                        ['f3']
+                    ]
+                }
             }]);
         },
         hide_replace: function() {
