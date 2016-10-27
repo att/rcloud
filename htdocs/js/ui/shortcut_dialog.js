@@ -16,6 +16,7 @@ RCloud.UI.shortcut_dialog = (function() {
                 'Code Prompt',
                 'Cell Management',
                 'Notebook Management',
+                'Search/Replace',
                 'General']);
             }
 
