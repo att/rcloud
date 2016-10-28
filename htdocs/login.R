@@ -10,13 +10,20 @@ cookies <- function(headers) {
   } else list()
 }
 
+setCookieHeaders <- function(NamedCookieList){
+  headers <- paste0( names(NamedCookieList), "=" , NamedCookieList )
+  if(rcloud.support:::nzConf("cookie.domain")) headers <- paste0(headers, "; domain=", rcloud.support:::getConf("cookie.domain"))
+  headers <- paste0("Set-Cookie: ",headers, " ;path=/; ")
+  return(paste0(headers,collapse="\r\n"))
+}
 
 run <- function(url, query, body, headers)
 {
   encode <- rcloud.support:::URIencode
   getConf <- rcloud.support:::getConf
+  nzConf <- rcloud.support:::nzConf
   cookies <- cookies(headers)
-  extra.headers <- character(0)
+  cookie.headers <- list()
 
   ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
@@ -35,7 +42,8 @@ run <- function(url, query, body, headers)
     if (length(body) > 2 && "execLogin" %in% body['action']) {
       res <- unlist(rcloud.support:::session.server.auth(realm="rcloud.exec",user=body['user'],pwd=body['pwd']))
       if (length(res) > 2) {
-        extra.headers <- paste0("Set-Cookie: execUser=", res[2], "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: execToken=", res[1], "; domain=", getConf("cookie.domain"), "; path=/;")
+        cookie.headers$execUser <- res[2]
+        cookie.headers$execToken <- res[1]
         cookies$execToken <- res[1]
       } else return(list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html"))
     }
@@ -63,7 +71,8 @@ run <- function(url, query, body, headers)
       ## so we can generate a token
       token <- rcloud.support:::generate.token()
       rcloud.support:::set.token(usr, token)
-      extra.headers <- c(paste0("Set-Cookie: user=", usr, "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: token=", token, "; domain=", getConf("cookie.domain"),"; path=/;"), extra.headers)
+      cookie.headers$user = usr
+      cookie.headers$token = token
       ## re-create the back-end because the username/token have changed
       ctx <- create.gist.backend(usr, token)
       url <- gist::auth.url(redirect, ctx=ctx)
@@ -72,5 +81,5 @@ run <- function(url, query, body, headers)
   if (!is.character(url) || length(url) != 1 || !nzchar(url))
     url <- redirect ## safe-guard against bad return values
   list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",url,"\"'></head></html>", sep=''),
-       "text/html", extra.headers)
+       "text/html", setCookieHeaders(cookie.headers))
 }
