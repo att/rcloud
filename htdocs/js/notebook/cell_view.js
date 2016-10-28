@@ -347,6 +347,8 @@ function create_cell_html_view(language, cell_model) {
 
         ace_widget_.resize();
 
+        ace_widget_.commands.removeCommand('findnext');
+        ace_widget_.commands.removeCommand('findprevious');
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
         });
