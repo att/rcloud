@@ -4,40 +4,51 @@ RCloud.UI.find_replace = (function() {
         find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
-        shown_ = false, replace_mode_ = false,
+        find_next_func_, find_previous_func_,
+        highlights_shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
         change_interval_;
 
-    function generate_matches() {
-        active_match_ = undefined;
+    function generate_matches(match_index) {
+
+        active_match_ = undefined;    
         build_regex(find_input_.val());
         highlight_all();
 
-        // matches_
-        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? 0 : 1, matches_.length);
-
         if(find_input_.val().length) {
-            active_match_ = 0;
+            active_match_ = _.isUndefined(match_index) ? 0 : match_index;
             show_matches();
-            active_transition('activate');
+            active_transition('activate');            
         } else {
             active_match_ = undefined;
             hide_matches();
         }
 
+        var current_match;
+
+        if(matches_.length === 0) {
+            current_match = '0';
+        } else if(!_.isUndefined(match_index)) {
+            current_match = (match_index + 1).toString();
+        } else {
+            current_match = '1';
+        }
+
         // matches_
         find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
+        show_match_details(current_match, matches_.length);
     };
 
     function matches_exist() {
         return matches_.length !== 0 && !isNaN(active_match_);
     }
+    function toggle_find_replace(replace, opts) {
 
-    function toggle_find_replace(replace) {
+        if(_.isUndefined(opts)) {
+            opts = {};
+        }
 
         if(!find_dialog_) {
 
@@ -87,7 +98,9 @@ RCloud.UI.find_replace = (function() {
                     if(!has_focus_) {
                         // save so that any new content since last save is matched:
                         shell.save_notebook();
-                        generate_matches();
+
+                        generate_matches(find_input_.data('searchagain') ? active_match_ : undefined);
+
                     }
 
                     has_focus_ = true;
@@ -107,6 +120,8 @@ RCloud.UI.find_replace = (function() {
                 active_transition('activate');
             }
 
+            find_next_func_ = find_next;
+
             function find_previous() {
                 active_transition('deactivate');
                 
@@ -119,6 +134,8 @@ RCloud.UI.find_replace = (function() {
                 
                 active_transition('activate');
             }
+
+            find_previous_func_ = find_previous;
 
             find_next_.click(function(e) {
                 e.preventDefault();
@@ -215,28 +232,13 @@ RCloud.UI.find_replace = (function() {
 
         find_dialog_.show();
 
-        var active_cell_selection = get_active_cell_selection();
-
-        if(active_cell_selection !== null) {
-            find_input_.val(active_cell_selection);
-        } else {
-            ui_utils.select_allowed_elements();
-            var text = window.getSelection().toString();
-
-            if(text) {
-                find_input_.val(text);
-            }
-        }
-
         if(replace)
             replace_stuff_.show();
         else
             replace_stuff_.hide();
 
-        if(!shown_) {
-
+        if(_.isUndefined(change_interval_)) {
             change_interval_ = setInterval(function() {
-
                 // get the value:
                 var old_value = find_input_.data('value'),
                     new_value = find_input_.val();
@@ -245,22 +247,89 @@ RCloud.UI.find_replace = (function() {
                     generate_matches();
                     find_input_.data('value', new_value);
                 }
-
             }, 250);
+        }
 
-            generate_matches();
+        //if(!shown_) {
 
-            find_input_.focus();
+            generate_matches(opts.search_again ? active_match_ : undefined);
 
-        } else {
+            build_regex(find_input_.val());
+
+            if(opts.search_again) {
+
+                // get the cursor index: 
+                var cursor_details = get_active_cell_cursor_details();
+
+                if(matches_.length && cursor_details) {
+
+                    var match_index, found_match;
+
+                    found_match = _.find(matches_, function(match) {
+                        return (match.index === cursor_details.cell_index && match.begin >= cursor_details.cursor_index) ||
+                            match.index > cursor_details.cell_index;
+
+                    });
+
+                    if(found_match) {
+                        match_index = matches_.findIndex(function(match) {
+                           return match.begin === found_match.begin &&
+                                  match.end === found_match.end &&
+                                  match.index === found_match.index; 
+                        }); 
+
+                        if(opts.previous) {
+                            match_index = match_index - 1;
+
+                            if(match_index < 0) {
+                                match_index = matches_.length - 1;
+                            }
+                        }
+
+                    } else if(matches_.length) {
+                        // no match from this point on:
+                        if(opts.next) {
+                            match_index = 0;
+                        } else {
+                            match_index = matches_.length - 1;
+                        }
+                    }
+
+                    generate_matches(match_index);
+                }
+
+            } 
+
             if(replace) {
                 replace_input_.focus();
             } else {
                 find_input_.focus();
             }
+
+        //} else {
+
+        if(highlights_shown_) {
+
+            // find/replace dialog already shown:
+            var active_cell_selection = get_active_cell_selection();
+
+            if(opts.next) {
+                find_next_func_();
+            } else if(opts.previous) {
+                find_previous_func_();
+            } else if(active_cell_selection !== null) {
+                find_input_.val(active_cell_selection);
+            } else {
+                ui_utils.select_allowed_elements();
+                var text = window.getSelection().toString();
+
+                if(text) {
+                    find_input_.val(text);
+                }
+            }
         }
 
-        shown_ = true;
+        highlights_shown_ = true;
         replace_mode_ = replace;
     }
 
@@ -282,6 +351,7 @@ RCloud.UI.find_replace = (function() {
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
+        highlights_shown_ = false;
     }
     function hide_dialog() {
 
@@ -294,10 +364,13 @@ RCloud.UI.find_replace = (function() {
             }
         }
 
+        // if search again is invoked after the dialog is hidden:
+        find_input_.data('searchagain', find_input_.val());
+
         clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
-        shown_ = false;
+        //shown_ = false;
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     function escapeRegExp(string) {
@@ -313,13 +386,43 @@ RCloud.UI.find_replace = (function() {
             view.change_highlights(matches);
         });
     }
-    function get_active_cell_selection() {
+    function get_focussed_cell() {
         var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
 
-        if(focussed_cell)
+        if(focussed_cell) {
+            // find the index of the cell:
+            for(var loop = 0; shell.notebook.model.cells.length; loop++) {
+                if(shell.notebook.model.cells[loop].filename() === focussed_cell.filename()) {
+                    focussed_cell.index = loop;
+                    break;
+                }
+            }
+        }
+
+        return focussed_cell;
+    }
+    function get_active_cell_cursor_details() {
+        var focussed_cell = get_focussed_cell();
+
+        if(!focussed_cell) {
+            return undefined;
+        }
+    
+        var widget = focussed_cell.views[0].ace_widget();
+
+        return {
+            cell_index: focussed_cell.index,
+            cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
+        }
+    }
+    function get_active_cell_selection() {
+        var focussed_cell = get_focussed_cell();
+
+        if(focussed_cell) {
             return focussed_cell.views[0].get_selection();
+        }
 
         // command prompt inactive for view:
         if(RCloud.UI.command_prompt.ace_widget() && RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
@@ -438,6 +541,44 @@ RCloud.UI.find_replace = (function() {
                 },
                 action: function() {
                     toggle_find_replace(false);
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_find_next',
+                description: 'Find text (next)',
+                keys: {
+                    mac: [
+                        ['command', 'g']
+                    ],
+                    win: [
+                        ['ctrl', 'g'],
+                        ['f3']
+                    ]
+                },
+                action: function() {
+                    toggle_find_replace(false, {
+                        next: true,
+                        search_again: true
+                    });
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_find_previous',
+                description: 'Find text (previous)',
+                keys: {
+                    mac: [
+                        ['command', 'shift', 'g']
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'g'],
+                        ['shift', 'f3']
+                    ]
+                },
+                action: function() {
+                   toggle_find_replace(false, {
+                        previous: true,
+                        search_again: true
+                   });
                 }
             }, {
                 category: 'Notebook Management',
