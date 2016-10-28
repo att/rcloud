@@ -1,6 +1,13 @@
-## RCloud 1.6.2
+## RCloud 1.7
 
 ### Features
+* Pull and replace contents of notebook. When maintaining multiple versions of a notebook
+  (e.g. "develop" and "production"), or when collaborating on a notebook, it can be
+  helpful to simply pull the current contents of another notebook and replace the current
+  contents. Pull and Replace from notebook (in the Advanced menu) allows you to pull from
+  another notebook on the same RCloud instance, or from a file. It creates a new version,
+  and it can be undone if needed. (#2285)
+
 * Arrow up and down (or left and right) between cells when at the beginning or
   end of a cell. (#2007)
 
@@ -8,6 +15,10 @@
   default). (#1734)
 
 ### Improvements
+* Exporting the notebook to a file or an R source file now exports only the selected
+  cells, by default. You can control this behavior using the "Export only selected cells"
+  option in Settings. (#1880)
+
 * To better encapsulate its dependencies, HTML Widgets support is now in a
   separate package `rcloud.htmlwidgets`. It is recommended to add this package to
   the `rcloud.alluser.addons` config, as shown in `rcloud.conf.samp`. (#2243)
@@ -23,8 +34,7 @@
 * Changing a cell's language leaves the focus in that cell (if the notebook is
   editable). (#2206)
 
-* ESC loses the keyboard focus for the asset pane as it already blurred
-  cells. (#2221)
+* ESC loses the keyboard focus for the asset pane. (#2221)
 
 ### Bugfixes
 * Attempting to anonymously open notebooks by name would fail with a missing
@@ -33,16 +43,26 @@
 * Find/Replace dialog could show NaNs when the find text was not
   found. (#2248)
 
+* Could not paste into find dialog. (#2308)
+
 * Find result was obscured by the current text selection. (#2130)
 
 * Find/Replace dialog could get stuck open on Firefox. (#2215)
 
 * Find/Replace count was not always shown on Firefox. (#2213)
 
-* Uploading an unknown file types could cause the file to be
-  downloaded. (#2008)
+* Find highlights were incorrect on reopening the Find dialog. (#2299)
+
+* Pressing right arrow or end shortcut while editing the notebook title cancelled the edit
+  in Firefox. (#1988)
+
+* Uploading an unknown file type could cause the file to be downloaded. (#2008)
 
 * Revert shortcut was shown when not appropriate (#2220)
+
+* Part of the find input was not clickable (#2286)
+
+* Could not close find dialog if there were matches and the last cell was deleted while dialog was open. (#2304)
 
 
 ## RCloud 1.6.1
