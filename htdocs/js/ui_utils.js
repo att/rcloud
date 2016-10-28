@@ -147,6 +147,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var session = widget.getSession();
     var tab_handler = widget.commands.commandKeyBinding[0].tab;
 
+    widget.commands.removeCommand('gotoline');
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
@@ -165,14 +166,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     Autocomplete.startCommand.exec(widget, args, request);
                 else tab_handler.exec(widget, args, request);
             }
-        },
-        {
-            name: 'disable gotoline',
-            bindKey: {
-                win: "Ctrl-L",
-                mac: "Command-L"
-            },
-            exec: function() { return false; }
         },
         {
             name: 'execute-selection-or-line',
