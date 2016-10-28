@@ -155,7 +155,7 @@ RCloud.UI.pull_and_replace = (function() {
             RCloud.UI.advanced_menu.add({
                  pull_and_replace_notebook: {
                     sort: 3000,
-                    text: "Pull and replace from notebook",
+                    text: "Pull and Replace Notebook",
                     modes: ['edit'],
                     action: function() {
                         show_dialog();
