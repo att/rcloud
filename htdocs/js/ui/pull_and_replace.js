@@ -24,6 +24,7 @@ RCloud.UI.pull_and_replace = (function() {
                     // update pulled by method:
                     update_pulled_by(type, value);
                 }
+                else update_pulled_by('url');
 
                 dialog_.modal({
                     keyboard: false
