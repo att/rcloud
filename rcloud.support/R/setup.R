@@ -187,8 +187,8 @@ configure.rcloud <- function (mode=c("startup", "script")) {
           stop("*** ERROR: more recent version of session key server is required (", .SKS.version.required, ", have ", sks.ver, ")")
   }
 
-  if (!nzConf("cookie.domain")) setConf("cookie.domain", getConf("host"))
-  if (!isTRUE(grepl("[.:]", getConf("cookie.domain"))))
+  #if (!nzConf("cookie.domain")) setConf("cookie.domain", getConf("host"))
+  if (nzConf("cookie.domain") && !isTRUE(grepl("[.:]", getConf("cookie.domain"))))
     stop("*** ERROR: cookie.domain must be a FQDN! Please set your hostname correctly or add cookie.domain directive to rcloud.conf")
 
   rcloud.setup.dirs()
