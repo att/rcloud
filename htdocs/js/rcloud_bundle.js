@@ -900,6 +900,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var session = widget.getSession();
     var tab_handler = widget.commands.commandKeyBinding[0].tab;
 
+    widget.commands.removeCommand('gotoline');
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
@@ -918,14 +919,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     Autocomplete.startCommand.exec(widget, args, request);
                 else tab_handler.exec(widget, args, request);
             }
-        },
-        {
-            name: 'disable gotoline',
-            bindKey: {
-                win: "Ctrl-L",
-                mac: "Command-L"
-            },
-            exec: function() { return false; }
         },
         {
             name: 'execute-selection-or-line',
@@ -1180,6 +1173,16 @@ ui_utils.editable = function(elem$, command) {
         sel.removeAllRanges();
         sel.addRange(range);
     }
+    function setCaretPosition(position) {
+        var range = document.createRange();
+        var text_node = elem$.get(0).firstChild;
+        range.setStart(text_node, position);
+        range.setEnd(text_node, position);
+        selectRange(range);
+    };
+    function getCaretPosition() {
+        return window.getSelection().getRangeAt(0);
+    };
     function options() {
         return elem$.data('__editable');
     }
@@ -1289,7 +1292,7 @@ ui_utils.editable = function(elem$, command) {
             },
             'click.editable': function(e) {
                 e.stopPropagation();
-                // allow default action but don't bubble (causing eroneous reselection in notebook tree)
+                // allow default action but don't bubble (causing erroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
                 if(e.keyCode === $.ui.keyCode.ENTER) {
@@ -1316,6 +1319,25 @@ ui_utils.editable = function(elem$, command) {
                 } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
                     window.getSelection().removeAllRanges();
+                } else if(e.keyCode === $.ui.keyCode.HOME) {
+                    setCaretPosition(0);
+                } else if(e.keyCode === $.ui.keyCode.END) {
+                    setCaretPosition(decode(elem$.text()).length);
+                } else if(e.keyCode === $.ui.keyCode.RIGHT) {
+                    if(e.ctrlKey || e.altKey) {
+                        var afterCaret = elem$.text().substring(getCaretPosition().startOffset);
+                        if((afterCaret.match(/ /g) || []).length == 0 || 
+                            (afterCaret.match(/ /g) || []).length == 1 && afterCaret[0] == ' ' ||
+                            (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
+                            e.preventDefault();
+                            setCaretPosition(decode(elem$.text()).length);
+                        }
+                    } else {
+                        if(getCaretPosition().startOffset === decode(elem$.text()).length - 1 ||
+                            (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
+                            setCaretPosition(decode(elem$.text()).length);
+                        }
+                    }
                 }
                 return true;
             },
@@ -1501,6 +1523,11 @@ RCloud.utils.promise_sequence = function(collection, operator) {
 
 RCloud.utils.get_url_parameter = function(name) {
     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+}
+
+RCloud.utils.get_notebook_from_url = function(url) {
+    var id = url.match(new RegExp('[?&]notebook=([^&#]*)'));
+    return id && id[1];
 }
 
 /*
@@ -2306,6 +2333,8 @@ function create_cell_html_view(language, cell_model) {
 
         ace_widget_.resize();
 
+        ace_widget_.commands.removeCommand('findnext');
+        ace_widget_.commands.removeCommand('findprevious');
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
         });
@@ -3672,6 +3701,9 @@ Notebook.create_model = function()
             });
             RCloud.UI.selection_bar.update(this.cells);
         },
+        get_selected_cells: function() {
+            return this.cells.filter(function(cell) { return cell.is_selected(); });
+        },
         crop_cells: function() {
             var that = this, changes = [];
             _.chain(this.cells)
@@ -3941,8 +3973,9 @@ Notebook.create_controller = function(model)
     }
 
     // calculate the changes needed to get back from the newest version in notebook
-    // back to what we are presently displaying (current_gist_)
-    function find_changes_from(notebook) {
+    // back to what we are presently displaying (current_gist_) or from to_notebook
+    // if this has been specified;
+    function find_changes_from(notebook, to_notebook) {
         function change_object(obj) {
             obj.name = function(n) { return n; };
             return obj;
@@ -3951,7 +3984,7 @@ Notebook.create_controller = function(model)
 
         // notebook files, current files
         var nf = notebook.files,
-            cf = _.extend({}, current_gist_.files); // dupe to keep track of changes
+            cf = _.extend({}, to_notebook ? to_notebook.files : current_gist_.files); // dupe to keep track of changes
 
         // find files which must be changed or removed to get from nf to cf
         for(var f in nf) {
@@ -4123,6 +4156,9 @@ Notebook.create_controller = function(model)
         clear_all_selected_cells: function() {
             model.clear_all_selected_cells();
         },
+        get_selected_cells: function() {
+            return model.get_selected_cells();
+        },
         crop_cells: function() {
 
             if(!this.can_crop_cells())
@@ -4275,6 +4311,11 @@ Notebook.create_controller = function(model)
                 return [find_changes_from(notebook), gistname];
             }).spread(apply_changes_and_load);
         },
+        pull_and_replace_notebook: function(from_notebook) {
+            model.read_only(false);
+            var changes = find_changes_from(current_gist_, from_notebook);
+            return apply_changes_and_load(changes, shell.gistname());
+        },
         fork_notebook: function(gistname, version) {
             model.read_only(false); // so that update_notebook doesn't throw
             return rcloud.fork_notebook(gistname)
@@ -4415,6 +4456,42 @@ Notebook.is_binary_content = function(content) {
     return !_.isUndefined(content.byteLength) && !_.isUndefined(content.slice);
 };
 
+Notebook.read_from_file = function(file, opts) {
+    var notebook, 
+        fr = new FileReader();
+        opts = _.defaults(opts, {
+            on_load_end: $.noop,
+            on_error: $.noop,
+            on_notebook_parse_complete: $.noop
+        });
+
+    fr.onloadend = function(e) {
+        
+        opts.on_load_end();
+
+        try {
+            notebook = JSON.parse(fr.result);
+
+            if(!notebook.description) {
+                opts.on_error('Invalid notebook format: has no description');
+                return;
+            }
+            else if(!notebook.files || _.isEmpty(notebook.files)) {
+                opts.on_error('Invalid notebook format: has no files');
+                return;
+            }
+
+            notebook = Notebook.sanitize(notebook);
+            opts.on_notebook_parsed(notebook);
+        }
+        catch(x) {
+            opts.on_error('Invalid notebook format: couldn\'t parse JSON');
+        }
+    };
+
+    fr.readAsText(file);
+};
+
 RCloud.discovery_model = function () {
 
     var notebooks_ = {};
@@ -4497,8 +4574,6 @@ Notebook.sanitize = function(notebook) {
         files[fn] = _.pick(files[fn], 'content');
     return notebook;
 };
-
-
 
 (function() {
 
@@ -6277,43 +6352,53 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
 RCloud.UI.find_replace = (function() {
 
     var find_dialog_ = null, regex_,
-        find_form_,
+        find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
-        shown_ = false, replace_mode_ = false,
+        find_next_func_, find_previous_func_,
+        highlights_shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
         change_interval_;
 
-    function generate_matches() {
-        active_match_ = undefined;
+    function generate_matches(match_index) {
+
+        active_match_ = undefined;    
         build_regex(find_input_.val());
         highlight_all();
 
-        // matches_
-        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? 0 : 1, matches_.length);
-
         if(find_input_.val().length) {
-            active_match_ = 0;
+            active_match_ = _.isUndefined(match_index) ? 0 : match_index;
             show_matches();
-            active_transition('activate');
+            active_transition('activate');            
         } else {
             active_match_ = undefined;
             hide_matches();
         }
 
+        var current_match;
+
+        if(matches_.length === 0) {
+            current_match = '0';
+        } else if(!_.isUndefined(match_index)) {
+            current_match = (match_index + 1).toString();
+        } else {
+            current_match = '1';
+        }
+
         // matches_
         find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(matches_.length === 0 ? '0' : '1', matches_.length);
+        show_match_details(current_match, matches_.length);
     };
 
     function matches_exist() {
         return matches_.length !== 0 && !isNaN(active_match_);
     }
-
-    function toggle_find_replace(replace) {
+    function toggle_find_replace(replace, opts) {
+        if(_.isUndefined(opts)) {
+            opts = {};
+        }
 
         if(!find_dialog_) {
 
@@ -6325,6 +6410,7 @@ RCloud.UI.find_replace = (function() {
 
             find_dialog_ = $(markup.get(0));
             find_form_ = markup.find('#find-form');
+            find_details_ = markup.find('#find-details');
             find_input_ = markup.find('#find-input');
             find_match_ = markup.find('#match-status');
             match_index_ = markup.find('#match-index');
@@ -6337,11 +6423,13 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
-            find_input_.on('change paste', function(e) {
+            find_input_.on('change', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 generate_matches();
             });
+
+            find_details_.click(function() { find_input_.focus(); });
 
             // disabling clear results on blur for firefox, since its implementation
             // is either the only unbroken one or the only broken one (unclear)
@@ -6360,7 +6448,9 @@ RCloud.UI.find_replace = (function() {
                     if(!has_focus_) {
                         // save so that any new content since last save is matched:
                         shell.save_notebook();
-                        generate_matches();
+
+                        generate_matches(find_input_.data('searchagain') ? active_match_ : undefined);
+
                     }
 
                     has_focus_ = true;
@@ -6380,6 +6470,8 @@ RCloud.UI.find_replace = (function() {
                 active_transition('activate');
             }
 
+            find_next_func_ = find_next;
+
             function find_previous() {
                 active_transition('deactivate');
                 
@@ -6392,6 +6484,8 @@ RCloud.UI.find_replace = (function() {
                 
                 active_transition('activate');
             }
+
+            find_previous_func_ = find_previous;
 
             find_next_.click(function(e) {
                 e.preventDefault();
@@ -6488,28 +6582,13 @@ RCloud.UI.find_replace = (function() {
 
         find_dialog_.show();
 
-        var active_cell_selection = get_active_cell_selection();
-
-        if(active_cell_selection !== null) {
-            find_input_.val(active_cell_selection);
-        } else {
-            ui_utils.select_allowed_elements();
-            var text = window.getSelection().toString();
-
-            if(text) {
-                find_input_.val(text);
-            }
-        }
-
         if(replace)
             replace_stuff_.show();
         else
             replace_stuff_.hide();
 
-        if(!shown_) {
-
+        if(_.isUndefined(change_interval_)) {
             change_interval_ = setInterval(function() {
-
                 // get the value:
                 var old_value = find_input_.data('value'),
                     new_value = find_input_.val();
@@ -6518,26 +6597,87 @@ RCloud.UI.find_replace = (function() {
                     generate_matches();
                     find_input_.data('value', new_value);
                 }
-
             }, 250);
+        }
 
-            generate_matches();
+        //if(!shown_) {
 
-            build_regex(find_input_.val());
+            generate_matches(opts.search_again ? active_match_ : undefined);
 
-            highlight_all();
+            if(opts && opts.search_again) {
 
-            find_input_.focus();
+                // get the cursor index: 
+                var cursor_details = get_active_cell_cursor_details();
 
-        } else {
+                if(matches_.length && cursor_details) {
+
+                    var match_index, found_match;
+
+                    found_match = _.find(matches_, function(match) {
+                        return (match.index === cursor_details.cell_index && match.begin >= cursor_details.cursor_index) ||
+                            match.index > cursor_details.cell_index;
+
+                    });
+
+                    if(found_match) {
+                        match_index = matches_.findIndex(function(match) {
+                           return match.begin === found_match.begin &&
+                                  match.end === found_match.end &&
+                                  match.index === found_match.index; 
+                        }); 
+
+                        if(opts.previous) {
+                            match_index = match_index - 1;
+
+                            if(match_index < 0) {
+                                match_index = matches_.length - 1;
+                            }
+                        }
+
+                    } else if(matches_.length) {
+                        // no match from this point on:
+                        if(opts.next) {
+                            match_index = 0;
+                        } else {
+                            match_index = matches_.length - 1;
+                        }
+                    }
+
+                    generate_matches(match_index);
+                }
+
+            } 
+
             if(replace) {
                 replace_input_.focus();
             } else {
                 find_input_.focus();
             }
+
+        //} else {
+
+        if(highlights_shown_) {
+
+            // find/replace dialog already shown:
+            var active_cell_selection = get_active_cell_selection();
+
+            if(opts.next) {
+                find_next_func_();
+            } else if(opts.previous) {
+                find_previous_func_();
+            } else if(active_cell_selection !== null) {
+                find_input_.val(active_cell_selection);
+            } else {
+                ui_utils.select_allowed_elements();
+                var text = window.getSelection().toString();
+
+                if(text) {
+                    find_input_.val(text);
+                }
+            }
         }
 
-        shown_ = true;
+        highlights_shown_ = true;
         replace_mode_ = replace;
     }
 
@@ -6559,22 +6699,26 @@ RCloud.UI.find_replace = (function() {
         active_match_ = undefined;
         build_regex(null);
         highlight_all();
+        highlights_shown_ = false;
     }
     function hide_dialog() {
 
         if(!shell.notebook.model.read_only()) {
             var current_match = matches_[active_match_];
 
-            if(current_match) {
+            if(current_match && shell.notebook.model.cells[current_match.index]) {
                 var view = shell.notebook.model.cells[current_match.index].views[0];
                 view.select_highlight_range(current_match.begin, current_match.end);
             }
         }
 
+        // if search again is invoked after the dialog is hidden:
+        find_input_.data('searchagain', find_input_.val());
+
         clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
-        shown_ = false;
+        //shown_ = false;
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     function escapeRegExp(string) {
@@ -6590,13 +6734,43 @@ RCloud.UI.find_replace = (function() {
             view.change_highlights(matches);
         });
     }
-    function get_active_cell_selection() {
+    function get_focussed_cell() {
         var focussed_cell = _.find(shell.notebook.model.cells, function(cell) {
             return !_.isUndefined(cell.views[0].ace_widget()) && cell.views[0].ace_widget().textInput.isFocused();
         });
 
-        if(focussed_cell)
+        if(focussed_cell) {
+            // find the index of the cell:
+            for(var loop = 0; shell.notebook.model.cells.length; loop++) {
+                if(shell.notebook.model.cells[loop].filename() === focussed_cell.filename()) {
+                    focussed_cell.index = loop;
+                    break;
+                }
+            }
+        }
+
+        return focussed_cell;
+    }
+    function get_active_cell_cursor_details() {
+        var focussed_cell = get_focussed_cell();
+
+        if(!focussed_cell) {
+            return undefined;
+        }
+    
+        var widget = focussed_cell.views[0].ace_widget();
+
+        return {
+            cell_index: focussed_cell.index,
+            cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
+        }
+    }
+    function get_active_cell_selection() {
+        var focussed_cell = get_focussed_cell();
+
+        if(focussed_cell) {
             return focussed_cell.views[0].get_selection();
+        }
 
         // command prompt inactive for view:
         if(RCloud.UI.command_prompt.ace_widget() && RCloud.UI.command_prompt.ace_widget().textInput.isFocused())
@@ -6715,6 +6889,44 @@ RCloud.UI.find_replace = (function() {
                 },
                 action: function() {
                     toggle_find_replace(false);
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_find_next',
+                description: 'Find text (next)',
+                keys: {
+                    mac: [
+                        ['command', 'g']
+                    ],
+                    win: [
+                        ['ctrl', 'g'],
+                        ['f3']
+                    ]
+                },
+                action: function() {
+                    toggle_find_replace(false, {
+                        next: true,
+                        search_again: true
+                    });
+                }
+            }, {
+                category: 'Notebook Management',
+                id: 'notebook_find_previous',
+                description: 'Find text (previous)',
+                keys: {
+                    mac: [
+                        ['command', 'shift', 'g']
+                    ],
+                    win: [
+                        ['ctrl', 'shift', 'g'],
+                        ['shift', 'f3']
+                    ]
+                },
+                action: function() {
+                   toggle_find_replace(false, {
+                        previous: true,
+                        search_again: true
+                   });
                 }
             }, {
                 category: 'Notebook Management',
@@ -6917,9 +7129,11 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
+                //console.log(e, element, combo);
+
                 // this only executes if the shortcut is *not* defined as global
                 var search_values = ['mousetrap', 'ace_text-input'],
-                    has_modifier = e.metaKey || e.ctrlKey || e.altKey;
+                    has_modifier = e.metaKey || e.ctrlKey || e.altKey || e.keyCode === 114; /* f3, special case */
 
                 // allow the event to be handled:
                 if (has_modifier && search_values.some(function(v) {
@@ -8080,9 +8294,41 @@ RCloud.UI.image_manager = (function() {
 })();
 
 RCloud.UI.import_export = (function() {
+
+    var export_only_selected_files_;
+
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});
         saveAs(file, filename); // FileSaver.js
+    }
+
+    function get_selected_files() {
+
+        var files = [];
+
+        if(export_only_selected_files_) {
+            var selected = shell.get_selected_cells();
+
+            if(selected) {
+                files = selected.map(function(cell) { 
+                    return cell.filename();
+                });
+
+                return Promise.resolve(files);
+            }
+        }  else {
+            return Promise.resolve([]);
+        }    
+    }
+
+    function prune_files(notebook, filesToKeep) {
+        if(filesToKeep && filesToKeep.length) {
+            // remove the files that aren't required:
+            _.difference(Object.keys(notebook.files), filesToKeep).forEach(function(fileToRemove) {
+                delete notebook.files[fileToRemove];
+            });
+        } 
+        return notebook;
     }
 
     return {
@@ -8172,11 +8418,15 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook to File",
                     modes: ['edit'],
                     action: function() {
-                        return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
-                            notebook = Notebook.sanitize(notebook);
-                            var gisttext = JSON.stringify(notebook);
-                            download_as_file(notebook.description + ".gist", gisttext, 'text/json');
-                            return notebook;
+
+                        get_selected_files().then(function(files) {
+                            return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
+                                notebook = Notebook.sanitize(notebook);
+                                notebook = prune_files(notebook, files);
+                                var gisttext = JSON.stringify(notebook);
+                                download_as_file(notebook.description + ".gist", gisttext, 'text/json');
+                                return notebook;
+                            });
                         });
                     }
                 },
@@ -8194,33 +8444,24 @@ RCloud.UI.import_export = (function() {
                             function do_upload(file) {
                                 notebook_status.hide();
                                 notebook_desc.hide();
-                                var fr = new FileReader();
-                                fr.onloadend = function(e) {
-                                    notebook_status.show();
-                                    try {
-                                        notebook = JSON.parse(fr.result);
+
+                                Notebook.read_from_file(
+                                    file, {
+                                        on_load_end: function() {
+                                            notebook_status.show();
+                                        },
+                                        on_error: function(message) {
+                                            notebook_status.text(message);
+                                        },
+                                        on_notebook_parsed: function(read_notebook) {
+                                            notebook = read_notebook;
+                                            notebook_status.text('');
+                                            notebook_desc_content.val(notebook.description);
+                                            notebook_desc.show();
+                                            ui_utils.enable_bs_button(import_button);
+                                        }
                                     }
-                                    catch(x) {
-                                        notebook_status.text("Invalid notebook format: couldn't parse JSON");
-                                        return;
-                                    }
-                                    if(!notebook.description) {
-                                        notebook_status.text('Invalid notebook format: has no description');
-                                        notebook = null;
-                                        return;
-                                    }
-                                    if(!notebook.files || _.isEmpty(notebook.files)) {
-                                        notebook_status.text('Invalid notebook format: has no files');
-                                        notebook = null;
-                                        return;
-                                    }
-                                    notebook_status.text('');
-                                    notebook_desc_content.val(notebook.description);
-                                    notebook_desc.show();
-                                    notebook = Notebook.sanitize(notebook);
-                                    ui_utils.enable_bs_button(import_button);
-                                };
-                                fr.readAsText(file);
+                                );
                             }
                             function do_import() {
 
@@ -8330,38 +8571,254 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook as R Source File",
                     modes: ['edit'],
                     action: function() {
-                        return rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
-                            var strings = [];
-                            var parts = [];
-                            _.each(notebook.files, function(file) {
-                                var filename = file.filename;
-                                if(/^part/.test(filename)) {
-                                    var number = parseInt(filename.slice(4).split('.')[0]);
-                                    if(!isNaN(number)) {
-                                        if (file.language === 'R')
-                                            parts[number] = "```{r}\n" + file.content + "\n```";
-                                        else
-                                            parts[number] = file.content;
+                        return get_selected_files().then(function(files) {
+                            rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
+                                var strings = [];
+                                var parts = [];
+                                notebook = prune_files(notebook, files);
+                                _.each(notebook.files, function(file) {
+                                    var filename = file.filename;
+                                    if(/^part/.test(filename)) {
+                                        var number = parseInt(filename.slice(4).split('.')[0]);
+                                        if(!isNaN(number)) {
+                                            if (file.language === 'R')
+                                                parts[number] = "```{r}\n" + file.content + "\n```";
+                                            else
+                                                parts[number] = file.content;
+                                        }
                                     }
-                                }
-                            });
-                            for (var i=0; i<parts.length; ++i)
-                                if (!_.isUndefined(parts[i]))
-                                    strings.push(parts[i]);
-                            strings.push("");
-                            rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
-                                // rserve.js length-1 array special case making our lives difficult again
-                                var purled_source = _.isString(purled_lines) ? purled_lines :
-                                        purled_lines.join("\n");
-                                download_as_file(notebook.description + ".R", purled_source, 'text/plain');
+                                });
+                                for (var i=0; i<parts.length; ++i)
+                                    if (!_.isUndefined(parts[i]))
+                                        strings.push(parts[i]);
+                                strings.push("");
+                                rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
+                                    // rserve.js length-1 array special case making our lives difficult again
+                                    var purled_source = _.isString(purled_lines) ? purled_lines :
+                                            purled_lines.join("\n");
+                                    download_as_file(notebook.description + ".R", purled_source, 'text/plain');
+                                });
                             });
                         });
                     }
                 }
             });
             return this;
+        },
+        export_only_selected_files: function(val) {
+            export_only_selected_files_ = val;
         }
     };
+})();
+
+RCloud.UI.pull_and_replace = (function() {
+	
+	var dialog_ = $('#pull-changes-dialog'),
+		select_by_ = $('#pull-changes-by'),
+		pull_notebook_file_ = $('#pull-notebook-file'),
+		pull_notebook_url_ = $('#pull-notebook-url'),
+		pull_notebook_id_ = $('#pull-notebook-id'),
+		btn_cancel_ = dialog_.find('.btn-cancel'),
+		btn_close_ = dialog_.find('.close'),
+		error_selector_ = '#pull-error',
+		btn_pull_ = dialog_.find('.btn-primary'),
+		inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
+		notebook_from_file_,
+		same_notebook_error_ = 'You cannot pull from your current notebook; the source must be a different notebook.',
+		show_dialog = function() {
+			rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
+				if(val && val.indexOf(':') !== -1) {
+
+					// split and set:
+					var separatorIndex = val.indexOf(':');
+					var type = val.substring(0, separatorIndex);
+					var value = val.substring(separatorIndex + 1);
+
+					// update pulled by method:
+					update_pulled_by(type, value);
+				} 
+
+				dialog_.modal({
+	                keyboard: false
+	            });
+			});
+		},
+		close_dialog = function() {
+
+			// reset pulling state:
+			reset_pulling_state();
+
+			// 
+			inputs_.forEach(function(input) {
+				input.val('');
+			})
+
+			// default to URL for the next time:
+			update_pulled_by('url');
+
+			dialog_.modal('hide');
+		},
+		update_pulled_by = function(pulled_method, value) {
+			clear_error();
+			select_by_.val(pulled_method);
+			$(dialog_).find('div[data-by]').hide();
+			$(dialog_).find('div[data-by="' + pulled_method + '"]').show();
+
+			if(!_.isUndefined(value)) {
+				// and set the value coming in:
+				get_input().val(pulled_method === 'file' ? '' : value);
+			}
+
+			update_pull_button_state();
+		},
+		upload_file = function(file) {
+			Notebook.read_from_file(file, {
+                on_load_end: function() {
+                    // TODO
+                },
+                on_error: function(message) {
+                    show_error(message);
+                },
+                on_notebook_parsed: function(read_notebook) {
+                    notebook_from_file_ = read_notebook;
+                    update_pull_button_state();
+                }
+            });
+		},
+		do_pull = function() {
+
+			update_when_pulling();
+
+			var method = get_method(),
+				value = get_input().val();
+			
+			var get_notebook_func, notebook;
+
+			if(method === 'id') {
+				get_notebook_func = function() { return rcloud.get_notebook(value); }
+			} else if(method === 'file') {
+				get_notebook_func = function() { return Promise.resolve(notebook_from_file_); }
+ 			} else if(method === 'url') {
+ 				get_notebook_func = function() { 
+ 					var id = RCloud.utils.get_notebook_from_url(value);
+ 					if(!id) {
+ 						return Promise.reject(new Error('Invalid URL'));	
+ 					} else if(id === shell.gistname()) {
+ 						return Promise.reject(new Error(same_notebook_error_));
+ 					}else {
+ 						return rcloud.get_notebook(id);
+ 					}
+ 				}
+ 			}
+
+			get_notebook_func().then(function(notebook) {
+				rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value);
+				editor.pull_and_replace_notebook(notebook).then(function() {
+					close_dialog();
+				});
+			}).catch(function(e) {
+				reset_pulling_state();
+				show_error(e.message);
+			});
+
+		},
+		get_method = function() {
+			return select_by_.val();
+		},
+		get_input = function() {
+			return $('#pull-notebook-' + get_method());
+		},
+		clear_error = function() {
+			$(error_selector_).remove();
+		},		
+		show_error = function(errorText) {
+			clear_error();
+
+			$('<div />', {
+				id: error_selector_.substring(1),
+				text: errorText
+			}).appendTo($(dialog_).find('div[data-by="' + get_method() + '"]'));
+
+			update_pull_button_state();
+		},
+		update_when_pulling = function() {
+			btn_pull_.text('Pulling');
+			dialog_.addClass('pulling');
+		},
+		reset_pulling_state = function() {
+			btn_pull_.text('Pull');
+			dialog_.removeClass('pulling');
+		},
+		update_pull_button_state = function() {
+			var enable = false;
+
+			if((get_method() === 'id' && get_input().val() != shell.gistname() && get_input().val()) ||
+				(get_method() !== 'id' && get_input().val()) && !$(error_selector_).is(':visible')) {
+				enable = true;
+			}
+
+			ui_utils[(enable ? 'enable' : 'disable') + '_bs_button'](btn_pull_);
+		};
+
+	return {
+		init: function() {
+			RCloud.UI.advanced_menu.add({
+ 				pull_and_replace_notebook: {
+                    sort: 3000,
+                    text: "Pull and replace from notebook",
+                    modes: ['edit'],
+					action: function() {
+						show_dialog();
+                    }
+                }
+            });
+
+			[btn_cancel_, btn_close_].forEach(function(button) {
+				button.click(close_dialog);
+			});
+
+			select_by_.change(function() {
+				pull_notebook_file_.val(null);
+				update_pulled_by($(this).val());
+			});
+
+			// inputs:
+			inputs_.forEach(function(input) {
+				input.bind(input.data('pull'), function() { 
+					setTimeout(function() {
+
+						if(get_method() === 'id' && get_input().val() === shell.gistname()) {
+							show_error(same_notebook_error_);
+						} else {
+							clear_error();
+						}
+
+						update_pull_button_state();
+					}, 0); 
+				});
+			});
+
+			pull_notebook_file_.click(function() {
+				clear_error();
+				pull_notebook_file_.val(null);
+				update_pull_button_state();
+			}).change(function() {
+				upload_file(pull_notebook_file_[0].files[0]); 
+			});
+
+			[pull_notebook_url_, pull_notebook_id_].forEach(function(control) {
+				control.keydown(function(e) {
+					if(e.keyCode === $.ui.keyCode.ENTER && !btn_pull_.hasClass('disabled')) {
+						do_pull();
+					}
+				});
+			});
+
+			btn_pull_.click(do_pull);
+
+            return this;
+        }
+	};
 })();
 
 RCloud.UI.init = function() {
@@ -8430,6 +8887,7 @@ RCloud.UI.init = function() {
 
     // adds to advanced menu
     RCloud.UI.import_export.init();
+    RCloud.UI.pull_and_replace.init();
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -11344,6 +11802,14 @@ RCloud.UI.settings_frame = (function() {
                     label: "Clear R Session when entire notebook is run",
                     set: function(val) {
                         RCloud.UI.run_button.reset_on_run(val);
+                    }
+                }),
+                'export-only-selected-cells': that.checkbox({
+                    sort: 6000,
+                    default_value: true,
+                    label: "Export only selected cells",
+                    set: function(val) {
+                        RCloud.UI.import_export.export_only_selected_files(val);
                     }
                 }),
                 'addons': that.text_input_vector({
