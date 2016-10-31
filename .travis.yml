@@ -1,8 +1,6 @@
 addons:
   firefox: '44.0'
-language: r
-r:
-  - release
+language: c
 node_js:
   - '0.12'
 env:
