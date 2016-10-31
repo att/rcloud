@@ -4,18 +4,18 @@
 .solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"),isXML=FALSE) {
   content_type <- "application/json"
   body = paste("[",data,"]",sep='')
+  httpConfig <- httr::config()
+
+  # Check if Authentication info exists in the parameters
+  if(!is.null(solr.auth.user)) httpConfig <- c(httpConfig,httr::authenticate(solr.auth.user,solr.auth.pwd))
   if(isXML){
     content_type ="text/xml"
     body=data
     }
-   if(!is.null(solr.url)){
-  solr.post.url <- httr::parse_url(solr.url)
-  solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
-  if(is.null(solr.auth.user)){
-   httr::POST(build_url(solr.post.url) ,body=body ,add_headers('Content-Type'=content_type))
-  } else {
-   httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), authenticate(solr.auth.user,solr.auth.pwd))
-    }
+  if(!is.null(solr.url)){
+    solr.post.url <- httr::parse_url(solr.url)
+    solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
+    resp <- httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), config=httpConfig)   
   }
 }
 
@@ -25,11 +25,13 @@
   solr.get.url$query <- query
   # https://cwiki.apache.org/confluence/display/solr/Response+Writers
   solr.get.url$query$wt<-"json"
-  if(is.null(solr.auth.user)){
-    solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json())
-  }else{
-    solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),authenticate(solr.auth.user,solr.auth.pwd))
-  }
+  httpConfig <- httr::config()
+
+  if(!is.null(solr.auth.user)) httpConfig <- c(httpConfig,httr::authenticate(solr.auth.user,solr.auth.pwd))
+  
+
+  solr.res <- httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),config=httpConfig)
+  
   solr.res <- fromJSON(content(solr.res, "parsed"))
   return(solr.res)
 }
