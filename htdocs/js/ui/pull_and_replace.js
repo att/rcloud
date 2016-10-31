@@ -12,6 +12,7 @@ RCloud.UI.pull_and_replace = (function() {
         inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
         notebook_from_file_,
         same_notebook_error_ = 'You cannot pull from your current notebook; the source must be a different notebook.',
+        invalid_notebook_id_error_ = 'Invalid notebook ID.',
         show_dialog = function() {
             rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
                 if(val && val.indexOf(':') !== -1) {
@@ -83,7 +84,12 @@ RCloud.UI.pull_and_replace = (function() {
             var get_notebook_func, notebook;
 
             if(method === 'id') {
-                get_notebook_func = function() { return rcloud.get_notebook(value); };
+                get_notebook_func = function() { 
+                    if(!value.match(new RegExp('^[0-9a-f]+$'))) {
+                        return Promise.reject(new Error(invalid_notebook_id_error_));
+                    }
+                    return rcloud.get_notebook(value); 
+                };
             } else if(method === 'file') {
                 get_notebook_func = function() { return Promise.resolve(notebook_from_file_); };
             } else if(method === 'url') {
