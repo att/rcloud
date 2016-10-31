@@ -9525,7 +9525,8 @@ td {
 
 .nav-tabs > li.active > a,
 .nav-tabs > li.active > a,
-.nav-tabs > li.active > a {
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > div {
   color: #555555;
   cursor: default;
   background-color: #ffffff;
@@ -9540,6 +9541,13 @@ td {
 .navbar-nav > li {
   float: none;
   display: inline-block; }
+
+.navbar-nav > li > div {
+  color: #999;
+  display: inline; }
+  .navbar-nav > li > div:hover {
+    color: #fff;
+    cursor: pointer; }
 
 .navbar-nav > li > a {
   padding-top: 15px;

@@ -1776,7 +1776,7 @@ Notebook.Buffer.create_model = function(content, language) {
 Notebook.Asset.create_html_view = function(asset_model)
 {
     var filename_div = $("<li></li>");
-    var anchor = $("<a href='#'></a>");
+    var tab_content = $("<div></div>");
     var filename_span = $("<span style='cursor:pointer'>" + asset_model.filename() + "</span>");
     var remove = ui_utils.fa_button("icon-remove", "remove", '',
                                     { 'position': 'relative',
@@ -1784,14 +1784,14 @@ Notebook.Asset.create_html_view = function(asset_model)
                                         'opacity': '0.75'
                                     }, true);
     var thumb_camera = $('<i class="icon-camera" style="padding-left: 4px; cursor: help;" title="Shown as your notebook\'s thumbnail on the Discover page"></i>');
-    anchor.append(filename_span);
-    filename_div.append(anchor);
+    tab_content.append(filename_span);
+    filename_div.append(tab_content);
 
     if(is_thumb(asset_model.filename())) {
-        anchor.append(thumb_camera);
+        tab_content.append(thumb_camera);
     }
 
-    anchor.append(remove);
+    tab_content.append(remove);
     var old_asset_name = filename_span.text();
 
     var rename_file = function(v) {
@@ -1849,7 +1849,7 @@ Notebook.Asset.create_html_view = function(asset_model)
         select: select,
         validate: function(name) { return editor.validate_name(name); }
     };
-    anchor.click(function() {
+    tab_content.click(function() {
         if(!asset_model.active())
             asset_model.controller.select();
     });
@@ -1858,7 +1858,7 @@ Notebook.Asset.create_html_view = function(asset_model)
     });
     var result = {
         filename_updated: function() {
-            anchor.text(asset_model.filename());
+            tab_content.text(asset_model.filename());
         },
         content_updated: function() {
             if(asset_model.active())
