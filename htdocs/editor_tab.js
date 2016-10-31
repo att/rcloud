@@ -1623,25 +1623,21 @@ var editor = function () {
                 });
         },
         step_history_undo: function() {
-
-            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
-
             var previous_version = history_manager.get_previous();
 
             if(!_.isUndefined(previous_version)) {
-                this.load_notebook(current_.notebook, previous_version).then(function() {
+                RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+                this.load_notebook(current_.notebook, previous_version).finally(function() {
                     RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
                 });
             }
         },
         step_history_redo: function() {
-
-            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
-
             var next_version = history_manager.get_next();
 
             if(!_.isUndefined(next_version)) {
-                this.load_notebook(current_.notebook, next_version).then(function() {
+                RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+                this.load_notebook(current_.notebook, next_version).finally(function() {
                     RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
                 });
             }
