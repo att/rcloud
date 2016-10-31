@@ -13,6 +13,7 @@ RCloud.UI.pull_and_replace = (function() {
         notebook_from_file_,
         same_notebook_error_ = 'You cannot pull from your current notebook; the source must be a different notebook.',
         invalid_notebook_id_error_ = 'Invalid notebook ID.',
+        not_found_notebook_error_ = 'The notebook could not be found.',
         show_dialog = function() {
             rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
                 if(val && val.indexOf(':') !== -1) {
@@ -114,7 +115,12 @@ RCloud.UI.pull_and_replace = (function() {
                 ]);
             }).catch(function(e) {
                 reset_pulling_state();
-                show_error(e.message);
+
+                if(e.message.indexOf('Not Found (404)') !== -1) {
+                    show_error(not_found_notebook_error_);
+                } else {
+                    show_error(e.message);
+                }
             });
 
         },
