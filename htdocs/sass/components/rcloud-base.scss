@@ -724,7 +724,8 @@ body .modal-dialog.full {
         color: red;
         margin-left: 152px;
         margin-top: 5px;
-        width: 275px;
+        width: 365px;
+        word-wrap: break-word;
     }
     
     &.pulling {
