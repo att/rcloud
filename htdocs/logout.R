@@ -32,5 +32,5 @@ run <- function(url, query, body, headers) {
   
   list("<html><head></head><body>Logout...</body></html>",
        "text/html",
-       paste0(deleteCookieHeaders,"\r\nRefresh: 0.1; url=", ret, sep=''))
+       paste0(deleteCookieHeaders(),"\r\nRefresh: 0.1; url=", ret, sep=''))
 }
