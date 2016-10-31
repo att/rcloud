@@ -86,18 +86,18 @@ RCloud.UI.pull_and_replace = (function() {
                 get_notebook_func = function() { return rcloud.get_notebook(value); };
             } else if(method === 'file') {
                 get_notebook_func = function() { return Promise.resolve(notebook_from_file_); };
-             } else if(method === 'url') {
-                 get_notebook_func = function() {
-                     var id = RCloud.utils.get_notebook_from_url(value);
-                     if(!id) {
-                         return Promise.reject(new Error('Invalid URL'));
-                     } else if(id === shell.gistname()) {
-                         return Promise.reject(new Error(same_notebook_error_));
-                     }else {
-                         return rcloud.get_notebook(id);
-                     }
-                 };
-             }
+            } else if(method === 'url') {
+                get_notebook_func = function() {
+                    var id = RCloud.utils.get_notebook_from_url(value);
+                    if(!id) {
+                        return Promise.reject(new Error('Invalid URL'));
+                    } else if(id === shell.gistname()) {
+                        return Promise.reject(new Error(same_notebook_error_));
+                    } else {
+                        return rcloud.get_notebook(id);
+                    }
+                };
+            }
 
             get_notebook_func().then(function(notebook) {
                 return Promise.all([
