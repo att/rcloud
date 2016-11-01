@@ -26,6 +26,8 @@ run <- function(url, query, body, headers)
 
   if (isTRUE(getConf("exec.auth") == "as-local")) { ## special case where RCloud is run in single-user mode, create token for the unix user
     usr <- unixtools::user.info()$name
+    ## if we already have a cookie, check its validity - if it's not valid, remove it as we need to generate a new one
+    if (isTRUE(cookies$user == usr) && !rcloud.support:::check.user.token.pair(usr, cookies$token)) cookies$user <- NULL
   } else  if (!is.null(getConf("exec.auth"))) {
     ret <- rcloud.support:::getConf("welcome.page")
     if (is.null(ret)) ret <- '/welcome.html'
