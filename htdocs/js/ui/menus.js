@@ -58,6 +58,21 @@ RCloud.UI.menu = (function() {
                     var item = extension_.get(menu_item);
                     if(!item || !item.$li)
                         throw new Error('menu disable fail on ' + menu_item);
+
+                    if(!enable) {
+                        item.enabled_action = item.action;
+                        item.action = function() {}    
+                        if(item.disabled_reason) {
+                            item.$li.find('a').attr('title', item.disabled_reason);
+                        }                
+                    } else {
+                        if(item.enabled_action) {
+                            item.action = item.enabled_action;
+                            delete item.enabled_action;
+                        }
+                        item.$li.find('a').removeAttr('title');
+                    }
+
                     item.$li.toggleClass('disabled', !enable);
                     return this;
                 },
@@ -74,7 +89,7 @@ RCloud.UI.menu = (function() {
                     return ret;
                 },
                 create_link: function(item) {
-                    var ret = $.el.li($.el.a({href: '#', id: item.key}, item.text));
+                    var ret = $.el.li($.el.a({href: '#', id: item.key }, item.text));
                     return ret;
                 },
                 create: function(elem) {
