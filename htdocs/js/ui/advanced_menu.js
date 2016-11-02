@@ -57,6 +57,7 @@ RCloud.UI.advanced_menu = (function() {
                     text: "Publish Notebook",
                     checkbox: true,
                     modes: ['edit'],
+                    disabled_reason: 'You cannot publish this notebook',
                     action: function(value) {
                         function publish_success(gistname, un) {
                             return function(val) {
