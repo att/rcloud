@@ -10,12 +10,13 @@ cookies <- function(a) {
 }
 
 create.notebook <- function(c, caps, body) {
-  body <- rawToChar(body)
+  if (is.raw(body)) body <- rawToChar(body)
   content <- fromJSON(body)
   new.nb <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$create_notebook, content)))
   if (!isTRUE(new.nb$ok)) stop(paste("failed to create new notebook",toString(new.nb),sep='\n'))
 
-  list(paste0('{"redirect":"/edit.html?notebook=', new.nb$content$id, '"}'), "application/json")
+  headers <- paste0("Location: /edit.html?notebook=", new.nb$content$id)
+  list("", "", headers, 302)
 }
 
 run <- function(url, query, body, headers) {
@@ -43,7 +44,7 @@ run <- function(url, query, body, headers) {
     anonymous <- FALSE
     init.cap <- caps$rcloud$session_init
     if (is.null(init.cap))
-      return(list("Unauthorized", "text/html", character(), 401))
+      return(list(unauthorized.page, "text/html", character(), 401))
     RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
     verb <- pex[1L]
     et <- paste("Error executing", verb)
@@ -55,3 +56,25 @@ run <- function(url, query, body, headers) {
     list(paste(et,"<pre>", paste(as.character(e), collapse='\n'), "</pre>"), "text/html", character(), 500L)
   })
 }
+
+unauthorized.page <- '
+<html>
+  <head>
+    <title>RCloud</title>
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/css/rcloud.css"/>
+  </head>
+  <body id="goodbye">
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="/login.R">RCloud</a>
+      </div>
+    </div>
+    <div class="container" id="main-div" style="margin-top: 100px;">
+      <p>To create an RCloud notebook you need to be logged in, but
+        you are currently logged out of RCloud.
+        <a href="/login.R">Log in</a> and try exporting again.</p>
+    </div>
+  </body>
+</html>
+'
