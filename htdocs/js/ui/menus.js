@@ -60,18 +60,13 @@ RCloud.UI.menu = (function() {
                         throw new Error('menu disable fail on ' + menu_item);
 
                     if(!enable) {
-                        item.enabled_action = item.action;
-                        item.action = function() {};
                         if(item.disabled_reason) {
                             item.$li.find('a').attr('title', item.disabled_reason);
                         }
                     } else {
-                        if(item.enabled_action) {
-                            item.action = item.enabled_action;
-                            delete item.enabled_action;
-                        }
                         item.$li.find('a').removeAttr('title');
                     }
+                    item.disabled = !enable;
 
                     item.$li.toggleClass('disabled', !enable);
                     return this;
@@ -80,9 +75,9 @@ RCloud.UI.menu = (function() {
                     // this is a mess. but it's a contained mess, right? (right?)
                     var ret = $.el.li($.el.a({href: '#', id: item.key}, $.el.i({class: 'icon-check'}), '\xa0', item.text));
                     item.checkbox_widget = ui_utils.checkbox_menu_item($(ret), function() {
-                        item.action(true);
+                        item.disabled || item.action(true);
                     }, function() {
-                        item.action(false);
+                        item.disabled || item.action(false);
                     });
                     if(item.value)
                         item.checkbox_widget.set_state(item.value);
@@ -103,6 +98,8 @@ RCloud.UI.menu = (function() {
                             elem = that.create_checkbox(item);
                         else
                             elem = that.create_link(item);
+                        if(item.disabled)
+                            that.enable(item, false);
                         item.$li = $(elem);
                         return elem;
                     })));
@@ -111,7 +108,7 @@ RCloud.UI.menu = (function() {
                         if(!item)
                             throw new Error('bad id in advanced menu');
                         if(!item.checkbox)
-                            item.action();
+                            item.disabled || item.action();
                     });
                     return this;
                 }
