@@ -157,6 +157,7 @@ RCloud.UI.pull_and_replace = (function() {
                     sort: 3000,
                     text: "Pull and Replace Notebook",
                     modes: ['edit'],
+                    disabled_reason: 'You cannot pull and replace into a read only notebook',
                     action: function() {
                         show_dialog();
                     }
