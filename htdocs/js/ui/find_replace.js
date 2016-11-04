@@ -30,6 +30,7 @@ RCloud.UI.find_replace = (function() {
         }
         replace_shown_ = replace;
 
+        var was_shown = find_dialog_ && find_dialog_.css("display") !== 'none';
         if(!find_dialog_) {
 
             var markup = $(_.template(
@@ -217,7 +218,7 @@ RCloud.UI.find_replace = (function() {
 
         }
 
-        if(replace) {
+        if(replace && was_shown) {
             replace_input_.focus();
         } else {
             find_input_.focus();
