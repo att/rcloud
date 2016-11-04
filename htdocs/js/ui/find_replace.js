@@ -6,8 +6,7 @@ RCloud.UI.find_replace = (function() {
         find_next_, find_last_, replace_next_, replace_all_, close_,
         replace_next_func_, replace_all_func_,
         find_previous_func_, find_next_func_,
-        shown_ = false, replace_mode_ = false,
-        find_next_func_, find_previous_func_,
+        shown_ = false,
         highlights_shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
@@ -17,14 +16,14 @@ RCloud.UI.find_replace = (function() {
 
     function generate_matches(match_index) {
 
-        active_match_ = undefined;    
+        active_match_ = undefined;
         build_regex(find_input_.val());
         highlight_all();
 
         if(find_input_.val().length) {
             active_match_ = _.isUndefined(match_index) ? 0 : match_index;
             show_matches();
-            active_transition('activate');            
+            active_transition('activate');
         } else {
             active_match_ = undefined;
             hide_matches();
@@ -43,7 +42,7 @@ RCloud.UI.find_replace = (function() {
         // matches_
         find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
         show_match_details(current_match, matches_.length);
-    };
+    }
 
     function matches_exist() {
         return matches_.length !== 0 && !isNaN(active_match_);
@@ -121,24 +120,22 @@ RCloud.UI.find_replace = (function() {
                 } else {
                      active_match_ = 0;
                 }
-                
+
                 active_transition('activate');
-            }
+            };
 
             find_previous_func_ = function() {
                 active_transition('deactivate');
-                
+
                 if(matches_exist()) {
                     active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
                     show_match_details(active_match_ + 1, matches_.length);
                 } else {
                     active_match_ = 0;
                 }
-                
-                active_transition('activate');
-            }
 
-            find_previous_func_ = find_previous;
+                active_transition('activate');
+            };
 
             find_next_.click(function(e) {
                 e.preventDefault();
@@ -269,7 +266,7 @@ RCloud.UI.find_replace = (function() {
 
             if(opts && opts.search_again) {
 
-                // get the cursor index: 
+                // get the cursor index:
                 var cursor_details = get_active_cell_cursor_details();
 
                 if(matches_.length && cursor_details) {
@@ -286,8 +283,8 @@ RCloud.UI.find_replace = (function() {
                         match_index = matches_.findIndex(function(match) {
                            return match.begin === found_match.begin &&
                                   match.end === found_match.end &&
-                                  match.index === found_match.index; 
-                        }); 
+                                  match.index === found_match.index;
+                        });
 
                         if(opts.previous) {
                             match_index = match_index - 1;
@@ -309,7 +306,7 @@ RCloud.UI.find_replace = (function() {
                     generate_matches(match_index);
                 }
 
-            } 
+            }
 
             if(replace) {
                 replace_input_.focus();
@@ -420,13 +417,13 @@ RCloud.UI.find_replace = (function() {
         if(!focussed_cell) {
             return undefined;
         }
-    
+
         var widget = focussed_cell.views[0].ace_widget();
 
         return {
             cell_index: focussed_cell.index,
             cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
-        }
+        };
     }
     function get_active_cell_selection() {
         var focussed_cell = get_focussed_cell();
@@ -492,7 +489,7 @@ RCloud.UI.find_replace = (function() {
     }
     function replace_current() {
         if(!matches_exist())
-            return;
+            return null;
 
         var match = matches_[active_match_];
         var cell = shell.notebook.model.cells[match.index];
