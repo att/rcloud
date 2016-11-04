@@ -20,12 +20,15 @@ create.notebook <- function(c, caps, body) {
 }
 
 run <- function(url, query, body, headers) {
-  if(is.null(body))
-    return(list("Method Not Allowed", "text/html", character(), 405))
-  headers <- if (is.raw(headers)) strsplit(rawToChar(headers), "\n", TRUE)[[1]] else character()
-  cookies <- cookies(headers)
-  et <- "Unable to connect to R back-end"
   tryCatch({
+    if(is.null(body)) {
+      ## This is a GET, needs to have a token that refers to a submission
+      body <- retrieve_submission(query[["token"]])
+    }
+    if (!is.raw(body)) body <- charToRaw(body)
+    headers <- if (is.raw(headers)) strsplit(rawToChar(headers), "\n", TRUE)[[1]] else character()
+    cookies <- cookies(headers)
+    et <- "Unable to connect to R back-end"
     if (is.null(path.info)) stop("incomplete path - needs a verb")
     pex <- strsplit(path.info, "/+")[[1L]]
     query <- as.list(query)
@@ -43,8 +46,17 @@ run <- function(url, query, body, headers) {
     if (!is.list(caps)) return(list(paste0(et, "<p><!-- error: ", as.character(caps)[1], " -->"), "text/html"))
     anonymous <- FALSE
     init.cap <- caps$rcloud$session_init
-    if (is.null(init.cap))
-      return(list(unauthorized.page, "text/html", character(), 401))
+    if (is.null(init.cap)) {
+      ## Request is not authenticated. We redirect to login.R and ask it
+      ## to redirect here again.
+      token <- store_submission(body)
+      headers <- paste0(
+        "Location: /login.R?redirect=/api.R/create",
+        utils::URLencode(paste0("?token=", token), reserved = TRUE)
+      )
+      return(list("", "", headers, 302))
+
+    }
     RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
     verb <- pex[1L]
     et <- paste("Error executing", verb)
@@ -57,24 +69,19 @@ run <- function(url, query, body, headers) {
   })
 }
 
-unauthorized.page <- '
-<html>
-  <head>
-    <title>RCloud</title>
-    <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
-    <link rel="stylesheet" type="text/css" href="/css/rcloud.css"/>
-  </head>
-  <body id="goodbye">
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="/login.R">RCloud</a>
-      </div>
-    </div>
-    <div class="container" id="main-div" style="margin-top: 100px;">
-      <p>To create an RCloud notebook you need to be logged in, but
-        you are currently logged out of RCloud.
-        <a href="/login.R">Log in</a> and try exporting again.</p>
-    </div>
-  </body>
-</html>
-'
+store_file <- function(token) {
+  file.path(dirname(tempdir()), token)
+}
+
+store_submission <- function(body) {
+  token <- paste(PKI::PKI.digest(body), collapse = "")
+  writeBin(body, store_file(token))
+  token
+}
+
+retrieve_submission <- function(token) {
+  file <- store_file(token)
+  body <- readBin(file, what = "raw", n = file.info(file)$size)
+  file.remove(file)
+  body
+}
