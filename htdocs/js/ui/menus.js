@@ -61,10 +61,10 @@ RCloud.UI.menu = (function() {
 
                     if(!enable) {
                         item.enabled_action = item.action;
-                        item.action = function() {}    
+                        item.action = function() {};
                         if(item.disabled_reason) {
                             item.$li.find('a').attr('title', item.disabled_reason);
-                        }                
+                        }
                     } else {
                         if(item.enabled_action) {
                             item.action = item.enabled_action;
@@ -230,5 +230,3 @@ RCloud.UI.menus = (function() {
         }
     };
 })();
-
-
