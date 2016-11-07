@@ -10,21 +10,25 @@ cookies <- function(a) {
 }
 
 create.notebook <- function(c, caps, body) {
-  body <- rawToChar(body)
+  if (is.raw(body)) body <- rawToChar(body)
   content <- fromJSON(body)
   new.nb <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$create_notebook, content)))
   if (!isTRUE(new.nb$ok)) stop(paste("failed to create new notebook",toString(new.nb),sep='\n'))
 
-  list(paste0('{"redirect":"/edit.html?notebook=', new.nb$content$id, '"}'), "application/json")
+  headers <- paste0("Location: /edit.html?notebook=", new.nb$content$id)
+  list("", "", headers, 302)
 }
 
 run <- function(url, query, body, headers) {
-  if(is.null(body))
-    return(list("Method Not Allowed", "text/html", character(), 405))
-  headers <- if (is.raw(headers)) strsplit(rawToChar(headers), "\n", TRUE)[[1]] else character()
-  cookies <- cookies(headers)
-  et <- "Unable to connect to R back-end"
   tryCatch({
+    if(is.null(body)) {
+      ## This is a GET, needs to have a token that refers to a submission
+      body <- retrieve_submission(query[["token"]])
+    }
+    if (!is.raw(body)) body <- charToRaw(body)
+    headers <- if (is.raw(headers)) strsplit(rawToChar(headers), "\n", TRUE)[[1]] else character()
+    cookies <- cookies(headers)
+    et <- "Unable to connect to R back-end"
     if (is.null(path.info)) stop("incomplete path - needs a verb")
     pex <- strsplit(path.info, "/+")[[1L]]
     query <- as.list(query)
@@ -42,8 +46,17 @@ run <- function(url, query, body, headers) {
     if (!is.list(caps)) return(list(paste0(et, "<p><!-- error: ", as.character(caps)[1], " -->"), "text/html"))
     anonymous <- FALSE
     init.cap <- caps$rcloud$session_init
-    if (is.null(init.cap))
-      return(list("Unauthorized", "text/html", character(), 401))
+    if (is.null(init.cap)) {
+      ## Request is not authenticated. We redirect to login.R and ask it
+      ## to redirect here again.
+      token <- store_submission(body)
+      headers <- paste0(
+        "Location: /login.R?redirect=/api.R/create",
+        utils::URLencode(paste0("?token=", token), reserved = TRUE)
+      )
+      return(list("", "", headers, 302))
+
+    }
     RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
     verb <- pex[1L]
     et <- paste("Error executing", verb)
@@ -54,4 +67,21 @@ run <- function(url, query, body, headers) {
   }, error=function(e) {
     list(paste(et,"<pre>", paste(as.character(e), collapse='\n'), "</pre>"), "text/html", character(), 500L)
   })
+}
+
+store_file <- function(token) {
+  file.path(dirname(tempdir()), token)
+}
+
+store_submission <- function(body) {
+  token <- paste(PKI::PKI.digest(body), collapse = "")
+  writeBin(body, store_file(token))
+  token
+}
+
+retrieve_submission <- function(token) {
+  file <- store_file(token)
+  body <- readBin(file, what = "raw", n = file.info(file)$size)
+  file.remove(file)
+  body
 }
