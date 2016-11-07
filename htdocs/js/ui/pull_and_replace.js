@@ -26,7 +26,9 @@ RCloud.UI.pull_and_replace = (function() {
                     // update pulled by method:
                     update_pulled_by(type, value);
                 }
-                else update_pulled_by('url');
+                else {
+                    update_pulled_by('url');
+                }
 
                 dialog_.modal({
                     keyboard: false
@@ -42,6 +44,8 @@ RCloud.UI.pull_and_replace = (function() {
             inputs_.forEach(function(input) {
                 input.val('');
             });
+
+            notebook_from_file_ = undefined;
 
             // default to URL for the next time:
             update_pulled_by('url');
@@ -75,16 +79,16 @@ RCloud.UI.pull_and_replace = (function() {
         },
         do_pull = function() {
 
+            var method = get_method(),
+                value = get_input().val();
+
+            var get_notebook_func, notebook;
+
             if(has_error()) {
                 return;
             }
 
             update_when_pulling();
-
-            var method = get_method(),
-                value = get_input().val();
-
-            var get_notebook_func, notebook;
 
             if(method === 'id') {
                 get_notebook_func = function() { 
@@ -95,7 +99,11 @@ RCloud.UI.pull_and_replace = (function() {
                 };
             } else if(method === 'file') {
                 get_notebook_func = function() { 
-                    return Promise.resolve(notebook_from_file_);     
+                    if(notebook_from_file_) {
+                        return Promise.resolve(notebook_from_file_);   
+                    } else {
+                        return Promise.reject(new Error('No file to upload'));
+                    }
                 };
             } else if(method === 'url') {
                 get_notebook_func = function() {
@@ -184,6 +192,7 @@ RCloud.UI.pull_and_replace = (function() {
             pull_notebook_file_.click(function() {
                 clear_error();
                 pull_notebook_file_.val(null);
+                notebook_from_file_ = undefined;
             }).change(function() {
                 upload_file(pull_notebook_file_[0].files[0]);
             });
