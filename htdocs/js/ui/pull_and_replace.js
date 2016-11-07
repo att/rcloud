@@ -31,7 +31,7 @@ RCloud.UI.pull_and_replace = (function() {
                 }
 
                 dialog_.modal({
-                    keyboard: false
+                    keyboard: true
                 });
             });
         },
