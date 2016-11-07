@@ -292,9 +292,8 @@ Notebook.create_controller = function(model)
             return model.get_selected_cells();
         },
         crop_cells: function() {
-
             if(!this.can_crop_cells())
-                return;
+                return Promise.resolve(null);
 
             var changes = refresh_buffers().concat(model.crop_cells());
             RCloud.UI.command_prompt.focus();
