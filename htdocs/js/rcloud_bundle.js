@@ -5111,6 +5111,7 @@ RCloud.UI.advanced_menu = (function() {
                     text: "Publish Notebook",
                     checkbox: true,
                     modes: ['edit'],
+                    disabled_reason: "You can't publish someone else's notebook",
                     action: function(value) {
                         function publish_success(gistname, un) {
                             return function(val) {
@@ -6355,51 +6356,33 @@ RCloud.UI.find_replace = (function() {
         find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
-        find_next_func_, find_previous_func_,
         highlights_shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
-        change_interval_;
+        change_interval_,
+        replace_shown_ = false;
 
-    function generate_matches(match_index) {
-
-        active_match_ = undefined;    
-        build_regex(find_input_.val());
-        highlight_all();
-
-        if(find_input_.val().length) {
-            active_match_ = _.isUndefined(match_index) ? 0 : match_index;
-            show_matches();
-            active_transition('activate');            
-        } else {
-            active_match_ = undefined;
-            hide_matches();
-        }
-
-        var current_match;
-
-        if(matches_.length === 0) {
-            current_match = '0';
-        } else if(!_.isUndefined(match_index)) {
-            current_match = (match_index + 1).toString();
-        } else {
-            current_match = '1';
-        }
-
-        // matches_
-        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
-        show_match_details(current_match, matches_.length);
-    };
-
-    function matches_exist() {
-        return matches_.length !== 0 && !isNaN(active_match_);
-    }
     function toggle_find_replace(replace, opts) {
         if(_.isUndefined(opts)) {
             opts = {};
         }
 
+        function find_next_on_keycode(e) {
+            if(e.keyCode===$.ui.keyCode.ENTER || (!ui_utils.is_a_mac() && e.keyCode === 114 /* f3 */)) {
+                e.preventDefault();
+                e.stopPropagation();
+                if(e.shiftKey)
+                    find_previous();
+                else
+                    find_next();
+                return false;
+            }
+            return undefined;
+        }
+        replace_shown_ = replace;
+
+        var was_shown = find_dialog_ && find_dialog_.css("display") !== 'none';
         if(!find_dialog_) {
 
             var markup = $(_.template(
@@ -6457,36 +6440,6 @@ RCloud.UI.find_replace = (function() {
                 });
             }
 
-            function find_next(reason) {
-                active_transition(reason || 'deactivate');
-
-                if(matches_exist()) {
-                     active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
-                     show_match_details(active_match_ + 1, matches_.length);
-                } else {
-                     active_match_ = 0;
-                }
-                
-                active_transition('activate');
-            }
-
-            find_next_func_ = find_next;
-
-            function find_previous() {
-                active_transition('deactivate');
-                
-                if(matches_exist()) {
-                    active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
-                    show_match_details(active_match_ + 1, matches_.length);
-                } else {
-                    active_match_ = 0;
-                }
-                
-                active_transition('activate');
-            }
-
-            find_previous_func_ = find_previous;
-
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -6504,29 +6457,13 @@ RCloud.UI.find_replace = (function() {
             replace_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if(matches_exist()) {
-                    var cell = replace_current();
-                    if(cell) {
-                        shell.notebook.controller.update_cell(cell)
-                            .then(function() {
-                                find_next('replace');
-                            });
-                    }
-                }
-                else
-                    find_next();
-                return false;
+                replace_next();
             });
 
             replace_all_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if(matches_exist()) {
-                    active_transition('deactivate');
-                    replace_rest();
-                }
-                else
-                    replace_all(find_input_.val(), replace_input_.val());
+                replace_all();
                 return false;
             });
 
@@ -6536,21 +6473,8 @@ RCloud.UI.find_replace = (function() {
             find_cycle_.push('find-close');
             replace_cycle_.push('find-close');
 
-            function find_next_on_enter(e) {
-                if(e.keyCode===$.ui.keyCode.ENTER) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if(e.shiftKey)
-                        find_previous();
-                    else
-                        find_next();
-                    return false;
-                }
-                return undefined;
-            }
-
-            find_input_.keydown(find_next_on_enter);
-            replace_input_.keydown(find_next_on_enter);
+            find_input_.keydown(find_next_on_keycode);
+            replace_input_.keydown(find_next_on_keycode);
 
             find_form_.keydown(function(e) {
                 switch(e.keyCode) {
@@ -6600,61 +6524,57 @@ RCloud.UI.find_replace = (function() {
             }, 250);
         }
 
-        //if(!shown_) {
+        generate_matches(opts.search_again ? active_match_ : undefined);
 
-            generate_matches(opts.search_again ? active_match_ : undefined);
+        if(opts && opts.search_again) {
 
-            if(opts && opts.search_again) {
+            // get the cursor index:
+            var cursor_details = get_active_cell_cursor_details();
 
-                // get the cursor index: 
-                var cursor_details = get_active_cell_cursor_details();
+            if(matches_.length && cursor_details) {
 
-                if(matches_.length && cursor_details) {
+                var match_index, found_match;
 
-                    var match_index, found_match;
+                found_match = _.find(matches_, function(match) {
+                    return (match.index === cursor_details.cell_index && match.begin >= cursor_details.cursor_index) ||
+                        match.index > cursor_details.cell_index;
 
-                    found_match = _.find(matches_, function(match) {
-                        return (match.index === cursor_details.cell_index && match.begin >= cursor_details.cursor_index) ||
-                            match.index > cursor_details.cell_index;
+                });
 
+                if(found_match) {
+                    match_index = matches_.findIndex(function(match) {
+                        return match.begin === found_match.begin &&
+                            match.end === found_match.end &&
+                            match.index === found_match.index;
                     });
 
-                    if(found_match) {
-                        match_index = matches_.findIndex(function(match) {
-                           return match.begin === found_match.begin &&
-                                  match.end === found_match.end &&
-                                  match.index === found_match.index; 
-                        }); 
+                    if(opts.previous) {
+                        match_index = match_index - 1;
 
-                        if(opts.previous) {
-                            match_index = match_index - 1;
-
-                            if(match_index < 0) {
-                                match_index = matches_.length - 1;
-                            }
-                        }
-
-                    } else if(matches_.length) {
-                        // no match from this point on:
-                        if(opts.next) {
-                            match_index = 0;
-                        } else {
+                        if(match_index < 0) {
                             match_index = matches_.length - 1;
                         }
                     }
 
-                    generate_matches(match_index);
+                } else if(matches_.length) {
+                    // no match from this point on:
+                    if(opts.next) {
+                        match_index = 0;
+                    } else {
+                        match_index = matches_.length - 1;
+                    }
                 }
 
-            } 
-
-            if(replace) {
-                replace_input_.focus();
-            } else {
-                find_input_.focus();
+                generate_matches(match_index);
             }
 
-        //} else {
+        }
+
+        if(replace && was_shown) {
+            replace_input_.focus();
+        } else {
+            find_input_.focus();
+        }
 
         if(highlights_shown_) {
 
@@ -6662,9 +6582,9 @@ RCloud.UI.find_replace = (function() {
             var active_cell_selection = get_active_cell_selection();
 
             if(opts.next) {
-                find_next_func_();
+                find_next();
             } else if(opts.previous) {
-                find_previous_func_();
+                find_previous();
             } else if(active_cell_selection !== null) {
                 find_input_.val(active_cell_selection);
             } else {
@@ -6679,6 +6599,39 @@ RCloud.UI.find_replace = (function() {
 
         highlights_shown_ = true;
         replace_mode_ = replace;
+    }
+
+    function generate_matches(match_index) {
+        active_match_ = undefined;
+        build_regex(find_input_.val());
+        highlight_all();
+
+        if(find_input_.val().length) {
+            active_match_ = _.isUndefined(match_index) ? 0 : match_index;
+            show_matches();
+            active_transition('activate');
+        } else {
+            active_match_ = undefined;
+            hide_matches();
+        }
+
+        var current_match;
+
+        if(matches_.length === 0) {
+            current_match = '0';
+        } else if(!_.isUndefined(match_index)) {
+            current_match = (match_index + 1).toString();
+        } else {
+            current_match = '1';
+        }
+
+        // matches_
+        find_match_[matches_.length === 0 ? 'addClass' : 'removeClass']('no-matches');
+        show_match_details(current_match, matches_.length);
+    }
+
+    function matches_exist() {
+        return matches_.length !== 0 && !isNaN(active_match_);
     }
 
     function hide_matches() {
@@ -6718,7 +6671,6 @@ RCloud.UI.find_replace = (function() {
         clearInterval(change_interval_);
         clear_highlights();
         find_dialog_.hide();
-        //shown_ = false;
     }
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     function escapeRegExp(string) {
@@ -6757,13 +6709,13 @@ RCloud.UI.find_replace = (function() {
         if(!focussed_cell) {
             return undefined;
         }
-    
+
         var widget = focussed_cell.views[0].ace_widget();
 
         return {
             cell_index: focussed_cell.index,
             cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
-        }
+        };
     }
     function get_active_cell_selection() {
         var focussed_cell = get_focussed_cell();
@@ -6827,9 +6779,48 @@ RCloud.UI.find_replace = (function() {
             matches_.push.apply(matches_, annotate_matches(matches, cell, n));
         });
     }
+    function find_next(reason) {
+        active_transition(reason || 'deactivate');
+
+        if(matches_exist()) {
+            active_match_ = (active_match_ + matches_.length + 1) % matches_.length;
+            show_match_details(active_match_ + 1, matches_.length);
+        } else {
+            active_match_ = 0;
+        }
+
+        active_transition('activate');
+    };
+    function find_previous() {
+        active_transition('deactivate');
+
+        if(matches_exist()) {
+            active_match_ = (active_match_ + matches_.length - 1) % matches_.length;
+            show_match_details(active_match_ + 1, matches_.length);
+        } else {
+            active_match_ = 0;
+        }
+
+        active_transition('activate');
+    };
+    function replace_next() {
+        if(matches_exist()) {
+            var cell = replace_current();
+            if(cell) {
+                shell.notebook.controller.update_cell(cell)
+                    .then(function() {
+                        find_next('replace');
+                    });
+            }
+        }
+        else
+            find_next();
+
+        return false;
+    };
     function replace_current() {
         if(!matches_exist())
-            return;
+            return null;
 
         var match = matches_[active_match_];
         var cell = shell.notebook.model.cells[match.index];
@@ -6846,7 +6837,18 @@ RCloud.UI.find_replace = (function() {
         }
         return cell.content(before + replacement + after) ? cell : null;
     }
-    function replace_all(find, replace) {
+    function replace_all() {
+        if(matches_exist()) {
+            active_transition('deactivate');
+            replace_rest();
+        }
+        else
+            replace_everywhere(find_input_.val(), replace_input_.val());
+        return false;
+    };
+    function replace_everywhere(find, replace) {
+        // gw: I can't figure out how this will ever get hit (how would we not have
+        // matches?), but I obviously thought we needed completely different logic for this
         highlight_all(null);
         if(!find || !find.length)
             return;
@@ -6873,10 +6875,11 @@ RCloud.UI.find_replace = (function() {
         active_match_ = undefined;
         shell.notebook.controller.apply_changes(changes);
     }
+
     var result = {
         init: function() {
             RCloud.UI.shortcut_manager.add([{
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_find',
                 description: 'Find text',
                 keys: {
@@ -6891,7 +6894,7 @@ RCloud.UI.find_replace = (function() {
                     toggle_find_replace(false);
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_find_next',
                 description: 'Find text (next)',
                 keys: {
@@ -6910,7 +6913,7 @@ RCloud.UI.find_replace = (function() {
                     });
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_find_previous',
                 description: 'Find text (previous)',
                 keys: {
@@ -6929,7 +6932,7 @@ RCloud.UI.find_replace = (function() {
                    });
                 }
             }, {
-                category: 'Notebook Management',
+                category: 'Search/Replace',
                 id: 'notebook_replace',
                 description: 'Replace text',
                 keys: {
@@ -6942,6 +6945,64 @@ RCloud.UI.find_replace = (function() {
                 },
                 modes: ['writeable'],
                 action: function() { toggle_find_replace(!shell.notebook.model.read_only()); }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_replace_text_match',
+                description: 'Replace next match',
+                keys: {
+                    win_mac: [
+                        ['alt', 'r']
+                    ]
+                },
+                modes: ['writeable'],
+                element_scope: '#find-form',
+                action: function() {
+                    if(replace_shown_) {
+                        replace_next();
+                    }
+                }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_replace_text_all',
+                description: 'Replace all matches',
+                keys: {
+                    win_mac: [
+                        ['alt', 'a']
+                    ]
+                },
+                modes: ['writeable'],
+                element_scope: '#find-form',
+                action: function() {
+                    if(replace_shown_) {
+                        replace_all();
+                    }
+                }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_goto_previous_match',
+                description: 'Go to previous search match',
+                keys: {
+                    mac: [
+                        ['shift', 'enter']
+                    ],
+                    win: [
+                        ['shift', 'enter'],
+                        ['shift', 'f3']
+                    ]
+                }
+            }, {
+                category: 'Search/Replace',
+                id: 'notebook_goto_next_match',
+                description: 'Go to next search match',
+                keys: {
+                    mac: [
+                        ['enter']
+                    ],
+                    win: [
+                        ['enter'],
+                        ['f3']
+                    ]
+                }
             }]);
         },
         hide_replace: function() {
@@ -7087,14 +7148,30 @@ RCloud.UI.shortcut_manager = (function() {
                                 var func_to_bind = function(e) {
 
                                     if (is_active(get_by_id(shortcut_to_add.id))) {
-                                        e.preventDefault();
+                                        
+                                        // anything that means the shortcut shouldn't be active?
+                                        var enable = true;
 
-                                        // invoke if conditions are met:
-                                        if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
-                                            !$('.modal').is(':visible')) {
-                                            shortcut.action(e);
+                                        if(!shortcut.enable_in_dialogs && $('.modal').is(':visible')) {
+                                            enable = false;
                                         }
 
+                                        if(shortcut.element_scope) {
+
+                                            var parent_element = $(shortcut.element_scope);
+                                            var focus_element = $(':focus');
+
+                                            if(parent_element.length && focus_element.length) {
+                                                enable = $.contains(parent_element.get(0), focus_element.get(0));
+                                            } else {
+                                                enable = false;
+                                            }
+                                        }
+
+                                        if(enable) {
+                                            e.preventDefault();
+                                            shortcut.action(e);
+                                        }
                                     }
                                 };
 
@@ -7103,7 +7180,6 @@ RCloud.UI.shortcut_manager = (function() {
                                 } else {
                                     window.Mousetrap().bind(binding, func_to_bind);
                                 }
-
                             });
                         }
                     }
@@ -7221,6 +7297,7 @@ RCloud.UI.shortcut_dialog = (function() {
                 'Code Prompt',
                 'Cell Management',
                 'Notebook Management',
+                'Search/Replace',
                 'General']);
             }
 
@@ -8625,6 +8702,8 @@ RCloud.UI.pull_and_replace = (function() {
         inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
         notebook_from_file_,
         same_notebook_error_ = 'You cannot pull from your current notebook; the source must be a different notebook.',
+        invalid_notebook_id_error_ = 'Invalid notebook ID.',
+        not_found_notebook_error_ = 'The notebook could not be found.',
         show_dialog = function() {
             rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
                 if(val && val.indexOf(':') !== -1) {
@@ -8637,10 +8716,12 @@ RCloud.UI.pull_and_replace = (function() {
                     // update pulled by method:
                     update_pulled_by(type, value);
                 }
-                else update_pulled_by('url');
+                else {
+                    update_pulled_by('url');
+                }
 
                 dialog_.modal({
-                    keyboard: false
+                    keyboard: true
                 });
             });
         },
@@ -8653,6 +8734,8 @@ RCloud.UI.pull_and_replace = (function() {
             inputs_.forEach(function(input) {
                 input.val('');
             });
+
+            notebook_from_file_ = undefined;
 
             // default to URL for the next time:
             update_pulled_by('url');
@@ -8669,8 +8752,6 @@ RCloud.UI.pull_and_replace = (function() {
                 // and set the value coming in:
                 get_input().val(pulled_method === 'file' ? '' : value);
             }
-
-            update_pull_button_state();
         },
         upload_file = function(file) {
             Notebook.read_from_file(file, {
@@ -8678,39 +8759,54 @@ RCloud.UI.pull_and_replace = (function() {
                     // TODO
                 },
                 on_error: function(message) {
+                    notebook_from_file_ = undefined;
                     show_error(message);
                 },
                 on_notebook_parsed: function(read_notebook) {
                     notebook_from_file_ = read_notebook;
-                    update_pull_button_state();
                 }
             });
         },
         do_pull = function() {
-
-            update_when_pulling();
 
             var method = get_method(),
                 value = get_input().val();
 
             var get_notebook_func, notebook;
 
+            if(has_error()) {
+                return;
+            }
+
+            update_when_pulling();
+
             if(method === 'id') {
-                get_notebook_func = function() { return rcloud.get_notebook(value); };
+                get_notebook_func = function() { 
+                    if(!value.match(new RegExp('^[0-9a-f]+$'))) {
+                        return Promise.reject(new Error(invalid_notebook_id_error_));
+                    }
+                    return rcloud.get_notebook(value); 
+                };
             } else if(method === 'file') {
-                get_notebook_func = function() { return Promise.resolve(notebook_from_file_); };
-             } else if(method === 'url') {
-                 get_notebook_func = function() {
-                     var id = RCloud.utils.get_notebook_from_url(value);
-                     if(!id) {
-                         return Promise.reject(new Error('Invalid URL'));
-                     } else if(id === shell.gistname()) {
-                         return Promise.reject(new Error(same_notebook_error_));
-                     }else {
-                         return rcloud.get_notebook(id);
-                     }
-                 };
-             }
+                get_notebook_func = function() { 
+                    if(notebook_from_file_) {
+                        return Promise.resolve(notebook_from_file_);   
+                    } else {
+                        return Promise.reject(new Error('No file to upload'));
+                    }
+                };
+            } else if(method === 'url') {
+                get_notebook_func = function() {
+                    var id = RCloud.utils.get_notebook_from_url(value);
+                    if(!id) {
+                        return Promise.reject(new Error('Invalid URL'));
+                    } else if(id === shell.gistname()) {
+                        return Promise.reject(new Error(same_notebook_error_));
+                    } else {
+                        return rcloud.get_notebook(id);
+                    }
+                };
+            }
 
             get_notebook_func().then(function(notebook) {
                 return Promise.all([
@@ -8721,7 +8817,12 @@ RCloud.UI.pull_and_replace = (function() {
                 ]);
             }).catch(function(e) {
                 reset_pulling_state();
-                show_error(e.message);
+
+                if(e.message.indexOf('Not Found (404)') !== -1) {
+                    show_error(not_found_notebook_error_);
+                } else {
+                    show_error(e.message);
+                }
             });
 
         },
@@ -8742,7 +8843,9 @@ RCloud.UI.pull_and_replace = (function() {
                 text: errorText
             }).appendTo($(dialog_).find('div[data-by="' + get_method() + '"]'));
 
-            update_pull_button_state();
+        },
+        has_error = function() {
+            return $(error_selector_).length;
         },
         update_when_pulling = function() {
             btn_pull_.text('Pulling');
@@ -8751,16 +8854,6 @@ RCloud.UI.pull_and_replace = (function() {
         reset_pulling_state = function() {
             btn_pull_.text('Pull');
             dialog_.removeClass('pulling');
-        },
-        update_pull_button_state = function() {
-            var enable = false;
-
-            if((get_method() === 'id' && get_input().val() != shell.gistname() && get_input().val()) ||
-               (get_method() !== 'id' && get_input().val()) && !$(error_selector_).is(':visible')) {
-                enable = true;
-            }
-
-            ui_utils[(enable ? 'enable' : 'disable') + '_bs_button'](btn_pull_);
         };
 
     return {
@@ -8770,6 +8863,7 @@ RCloud.UI.pull_and_replace = (function() {
                     sort: 3000,
                     text: "Pull and Replace Notebook",
                     modes: ['edit'],
+                    disabled_reason: "You can't pull and replace into a read only notebook",
                     action: function() {
                         show_dialog();
                     }
@@ -8785,34 +8879,19 @@ RCloud.UI.pull_and_replace = (function() {
                 update_pulled_by($(this).val());
             });
 
-            // inputs:
-            inputs_.forEach(function(input) {
-                input.bind(input.data('pull'), function() {
-                    setTimeout(function() {
-
-                        if(get_method() === 'id' && get_input().val() === shell.gistname()) {
-                            show_error(same_notebook_error_);
-                        } else {
-                            clear_error();
-                        }
-
-                        update_pull_button_state();
-                    }, 0);
-                });
-            });
-
             pull_notebook_file_.click(function() {
                 clear_error();
                 pull_notebook_file_.val(null);
-                update_pull_button_state();
+                notebook_from_file_ = undefined;
             }).change(function() {
                 upload_file(pull_notebook_file_[0].files[0]);
             });
 
             [pull_notebook_url_, pull_notebook_id_].forEach(function(control) {
                 control.keydown(function(e) {
-                    if(e.keyCode === $.ui.keyCode.ENTER && !btn_pull_.hasClass('disabled')) {
+                    if(e.keyCode === $.ui.keyCode.ENTER) {
                         do_pull();
+                        e.preventDefault();
                     }
                 });
             });
@@ -9357,6 +9436,16 @@ RCloud.UI.menu = (function() {
                     var item = extension_.get(menu_item);
                     if(!item || !item.$li)
                         throw new Error('menu disable fail on ' + menu_item);
+
+                    if(!enable) {
+                        if(item.disabled_reason) {
+                            item.$li.find('a').attr('title', item.disabled_reason);
+                        }
+                    } else {
+                        item.$li.find('a').removeAttr('title');
+                    }
+                    item.disabled = !enable;
+
                     item.$li.toggleClass('disabled', !enable);
                     return this;
                 },
@@ -9364,16 +9453,16 @@ RCloud.UI.menu = (function() {
                     // this is a mess. but it's a contained mess, right? (right?)
                     var ret = $.el.li($.el.a({href: '#', id: item.key}, $.el.i({class: 'icon-check'}), '\xa0', item.text));
                     item.checkbox_widget = ui_utils.checkbox_menu_item($(ret), function() {
-                        item.action(true);
+                        item.disabled || item.action(true);
                     }, function() {
-                        item.action(false);
+                        item.disabled || item.action(false);
                     });
                     if(item.value)
                         item.checkbox_widget.set_state(item.value);
                     return ret;
                 },
                 create_link: function(item) {
-                    var ret = $.el.li($.el.a({href: '#', id: item.key}, item.text));
+                    var ret = $.el.li($.el.a({href: '#', id: item.key }, item.text));
                     return ret;
                 },
                 create: function(elem) {
@@ -9387,6 +9476,8 @@ RCloud.UI.menu = (function() {
                             elem = that.create_checkbox(item);
                         else
                             elem = that.create_link(item);
+                        if(item.disabled)
+                            that.enable(item, false);
                         item.$li = $(elem);
                         return elem;
                     })));
@@ -9395,7 +9486,7 @@ RCloud.UI.menu = (function() {
                         if(!item)
                             throw new Error('bad id in advanced menu');
                         if(!item.checkbox)
-                            item.action();
+                            item.disabled || item.action();
                     });
                     return this;
                 }
@@ -9514,8 +9605,6 @@ RCloud.UI.menus = (function() {
         }
     };
 })();
-
-
 
 (function() {
 
