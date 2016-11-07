@@ -14,8 +14,11 @@ create.notebook <- function(c, caps, body) {
   content <- fromJSON(body)
   new.nb <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$create_notebook, content)))
   if (!isTRUE(new.nb$ok)) stop(paste("failed to create new notebook",toString(new.nb),sep='\n'))
+  id <- new.nb$content$id
+  RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$set_notebook_visibility, id, TRUE)))
+  RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$stars$star_notebook, id)))
 
-  headers <- paste0("Location: /edit.html?notebook=", new.nb$content$id)
+  headers <- paste0("Location: /edit.html?notebook=", id)
   list("", "", headers, 302)
 }
 
