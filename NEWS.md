@@ -1,5 +1,17 @@
 ## RCloud 1.7
 
+In addition to the below changes to RCloud core, this release also supports
+the following RStudio compatibility packages:
+
+* *rcloud.shiny* 0.4 should solve most compatibility problems, including file
+  download, data tables, and embedding HTML Widgets in Shiny dashboards.
+
+* *rcloud.flexdashboard* 1.0 supports dashboards using the flexdashboard
+  package, through the new `flexdashboard.html` selection in the View Types
+
+* *rcloud.rmd* support import and export of notebooks to the RStudio R Notebook
+  dialect of RMarkdown
+
 ### Features
 * Pull and replace contents of notebook. When maintaining multiple versions of a notebook
   (e.g. "develop" and "production"), or when collaborating on a notebook, it can be
@@ -35,6 +47,12 @@
 * Closing the find/replace dialog leaves the current match selected (if the
   notebook is editable). (#2204)
 
+* Keyboard shortcuts <kbd>f3</kbd> / <kbd>shift f3</kbd> (Windows/Linux) and <kbd>cmd g</kbd> /
+  <kbd>cmd shift g</kbd> for find next / find previous match. (#2192)
+
+* Keyboard shortcuts <kbd>alt r</kbd> for replace current match, <kbd>alt a</kbd> for
+  replace all matches (#2129)
+
 * Changing a cell's language leaves the focus in that cell (if the notebook is
   editable). (#2206)
 
@@ -59,6 +77,8 @@
 
 * Pressing right arrow or end shortcut while editing the notebook title cancelled the edit
   in Firefox. (#1988)
+
+* Could not click to position cursor in notebook title or asset name on Firefox. (#2312)
 
 * Uploading an unknown file type could cause the file to be downloaded. (#2008)
 
