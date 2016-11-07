@@ -98,7 +98,9 @@ rcloud.compute.init <- function(...) {
     if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
     ## FIXME: we cannot actually store the welcome message because it would appear twice
     .session$compute.init.result <- ""
-    paste0(ver, R.version.string, "<br>Welcome, ", .session$username)
+    host.info <- ""
+    if (hasConf("welcome.info")) host.info <- system(paste("echo", getConf("welcome.info")), intern=TRUE)
+    paste0(ver, R.version.string, " ", host.info, "<br>Welcome, ", .session$username)
 }
 
 ## WS init
