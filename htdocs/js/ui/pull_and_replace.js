@@ -58,8 +58,6 @@ RCloud.UI.pull_and_replace = (function() {
                 // and set the value coming in:
                 get_input().val(pulled_method === 'file' ? '' : value);
             }
-
-            update_pull_button_state();
         },
         upload_file = function(file) {
             Notebook.read_from_file(file, {
@@ -67,15 +65,19 @@ RCloud.UI.pull_and_replace = (function() {
                     // TODO
                 },
                 on_error: function(message) {
+                    notebook_from_file_ = undefined;
                     show_error(message);
                 },
                 on_notebook_parsed: function(read_notebook) {
                     notebook_from_file_ = read_notebook;
-                    update_pull_button_state();
                 }
             });
         },
         do_pull = function() {
+
+            if(has_error()) {
+                return;
+            }
 
             update_when_pulling();
 
@@ -92,7 +94,9 @@ RCloud.UI.pull_and_replace = (function() {
                     return rcloud.get_notebook(value); 
                 };
             } else if(method === 'file') {
-                get_notebook_func = function() { return Promise.resolve(notebook_from_file_); };
+                get_notebook_func = function() { 
+                    return Promise.resolve(notebook_from_file_);     
+                };
             } else if(method === 'url') {
                 get_notebook_func = function() {
                     var id = RCloud.utils.get_notebook_from_url(value);
@@ -141,7 +145,9 @@ RCloud.UI.pull_and_replace = (function() {
                 text: errorText
             }).appendTo($(dialog_).find('div[data-by="' + get_method() + '"]'));
 
-            update_pull_button_state();
+        },
+        has_error = function() {
+            return $(error_selector_).length;
         },
         update_when_pulling = function() {
             btn_pull_.text('Pulling');
@@ -150,16 +156,6 @@ RCloud.UI.pull_and_replace = (function() {
         reset_pulling_state = function() {
             btn_pull_.text('Pull');
             dialog_.removeClass('pulling');
-        },
-        update_pull_button_state = function() {
-            var enable = false;
-
-            if((get_method() === 'id' && get_input().val() != shell.gistname() && get_input().val()) ||
-               (get_method() !== 'id' && get_input().val()) && !$(error_selector_).is(':visible')) {
-                enable = true;
-            }
-
-            ui_utils[(enable ? 'enable' : 'disable') + '_bs_button'](btn_pull_);
         };
 
     return {
@@ -185,34 +181,18 @@ RCloud.UI.pull_and_replace = (function() {
                 update_pulled_by($(this).val());
             });
 
-            // inputs:
-            inputs_.forEach(function(input) {
-                input.bind(input.data('pull'), function() {
-                    setTimeout(function() {
-
-                        if(get_method() === 'id' && get_input().val() === shell.gistname()) {
-                            show_error(same_notebook_error_);
-                        } else {
-                            clear_error();
-                        }
-
-                        update_pull_button_state();
-                    }, 0);
-                });
-            });
-
             pull_notebook_file_.click(function() {
                 clear_error();
                 pull_notebook_file_.val(null);
-                update_pull_button_state();
             }).change(function() {
                 upload_file(pull_notebook_file_[0].files[0]);
             });
 
             [pull_notebook_url_, pull_notebook_id_].forEach(function(control) {
                 control.keydown(function(e) {
-                    if(e.keyCode === $.ui.keyCode.ENTER && !btn_pull_.hasClass('disabled')) {
+                    if(e.keyCode === $.ui.keyCode.ENTER) {
                         do_pull();
+                        e.preventDefault();
                     }
                 });
             });
