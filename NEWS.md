@@ -3,22 +3,22 @@
 In addition to the below changes to RCloud core, this release also supports
 the following RStudio compatibility packages:
 
-* *rcloud.shiny* 0.4 should solve most compatibility problems, including file
+* **rcloud.shiny** 0.4 should solve most compatibility problems, including file
   download, data tables, and embedding HTML Widgets in Shiny dashboards.
 
-* *rcloud.flexdashboard* 1.0 supports dashboards using the flexdashboard
+* **rcloud.flexdashboard** 1.0 supports dashboards using the flexdashboard
   package, through the new `flexdashboard.html` selection in the View Types
 
-* *rcloud.rmd* support import and export of notebooks to the RStudio R Notebook
+* **rcloud.rmd** supports import and export of notebooks to the RStudio R Notebook
   dialect of RMarkdown
 
 ### Features
-* Pull and replace contents of notebook. When maintaining multiple versions of a notebook
-  (e.g. "develop" and "production"), or when collaborating on a notebook, it can be
-  helpful to simply pull the current contents of another notebook and replace the current
-  contents. Pull and Replace from notebook (in the Advanced menu) allows you to pull from
-  another notebook on the same RCloud instance, or from a file. It creates a new version,
-  and it can be undone if needed. (#2285)
+* Pull and replace contents of notebook. It can be helpful to pull the current
+  contents of another notebook and replace the current contents when
+  maintaining multiple "branches of development" , or when collaborating on a
+  notebook, . Pull and Replace from notebook (in the Advanced menu) allows you
+  to pull from another notebook on the same RCloud instance, or from a
+  file. It creates a new version, and it can be undone if needed. (#2285)
 
 * Arrow up and down (or left and right) between cells when at the beginning or
   end of a cell. (#2007)
