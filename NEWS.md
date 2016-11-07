@@ -9,8 +9,9 @@ the following RStudio compatibility packages:
 * **rcloud.flexdashboard** 1.0 supports dashboards using the flexdashboard
   package, through the new `flexdashboard.html` selection in the View Types
 
-* **rcloud.rmd** supports import and export of notebooks to the RStudio R Notebook
-  dialect of RMarkdown
+* **rcloud.rmd** supports import and export of notebooks to the RStudio R
+  Notebook dialect of RMarkdown, including a "Publish to RCloud" action in the
+  RStudio Addins menu.
 
 ### Features
 * Pull and replace contents of notebook. It can be helpful to pull the current
