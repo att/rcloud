@@ -14,6 +14,10 @@
 * Option to clear the R session when running the whole notebook (active by
   default). (#1734)
 
+* New configuration option `Welcome.info` allows runtime-specific
+  content to be added to the welcome message on login. For example,
+  ``Welcome.info: on `hostname` `` will show the host used.
+
 ### Improvements
 * Exporting the notebook to a file or an R source file now exports only the selected
   cells, by default. You can control this behavior using the "Export only selected cells"
