@@ -20,6 +20,12 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     invisible(dev)
 }
 
+dev.resize <- function(width=510, height=510, dpi=100, device=RCloudDevice) {
+    ## we want to close the previous device so we're not exhausting the device space
+    if (!is.null(dev.list())) dev.off()
+    device(width=width, height=height, dpi=dpi)
+}
+
 ## locator
 .locator <- function(dev, ...) {
     if (is.null(dinfo <- .session$RCloudDevice[[dev]])) stop("non-existing RCloud device, aborting")
