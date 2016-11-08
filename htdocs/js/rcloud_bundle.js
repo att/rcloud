@@ -3115,12 +3115,15 @@ Notebook.Cell.create_model = function(content, language)
         get_execution_snapshot: function() {
             // freeze the cell as it is now, to execute it later
             var language = this.language() || 'Text'; // null is a synonym for Text
+            var version = this.parent_model.controller.current_version();
+            if(!version)
+                RCloud.UI.session_pane.append_text('Warning: executing unknown version, may be stale\n');
             return {
                 controller: this.controller,
                 json_rep: this.json(),
                 partname: Notebook.part_name(this.id(), language),
                 language: language,
-                version: this.parent_model.controller.current_gist().history[0].version
+                version: version
             };
         },
         set_focus: function() {
@@ -3869,6 +3872,7 @@ Notebook.create_model = function()
 Notebook.create_controller = function(model)
 {
     var current_gist_,
+        current_version_,
         dirty_ = false,
         save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
@@ -3926,6 +3930,7 @@ Notebook.create_controller = function(model)
                 notebook.user.login !== rcloud.username() ||
                 shell.is_view_mode();
         current_gist_ = notebook;
+        current_version_ = notebook.history[0].version;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
@@ -4029,6 +4034,7 @@ Notebook.create_controller = function(model)
         if (!changes.length && _.isUndefined(more)) {
             return Promise.cast(current_gist_);
         }
+        current_version_ = null;
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {}, creates = {};
@@ -4059,6 +4065,7 @@ Notebook.create_controller = function(model)
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
+                current_version_ = notebook.history[0].version;
                 model.update_files(notebook.files);
                 return notebook;
             })
@@ -4105,6 +4112,9 @@ Notebook.create_controller = function(model)
         current_gist: function() {
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
+        },
+        current_version: function() {
+            return current_version_;
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
@@ -4160,9 +4170,8 @@ Notebook.create_controller = function(model)
             return model.get_selected_cells();
         },
         crop_cells: function() {
-
             if(!this.can_crop_cells())
-                return;
+                return Promise.resolve(null);
 
             var changes = refresh_buffers().concat(model.crop_cells());
             RCloud.UI.command_prompt.focus();
