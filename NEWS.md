@@ -31,6 +31,8 @@ the following RStudio compatibility packages:
   content to be added to the welcome message on login. For example,
   ``Welcome.info: on `hostname` `` will show the host used.
 
+* Added `dev.resize()` function for easy resizing of RCloud plots
+
 ### Improvements
 * Exporting the notebook to a file or an R source file now exports only the selected
   cells, by default. You can control this behavior using the "Export only selected cells"
