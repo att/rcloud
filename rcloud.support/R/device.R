@@ -20,10 +20,16 @@ RCloudDevice <- function(width, height, dpi=100, ..., type='inline') {
     invisible(dev)
 }
 
-dev.resize <- function(width=510, height=510, dpi=100, device=RCloudDevice) {
+dev.resize <- function(width=510, height=510, reset=FALSE, ..., device=RCloudDevice) {
     ## we want to close the previous device so we're not exhausting the device space
-    if (!is.null(dev.list())) dev.off()
-    device(width=width, height=height, dpi=dpi)
+    old.par <- NULL
+    if (!is.null(dev.list())) {
+        if (!reset) old.par <- par(no.readonly=TRUE)
+        dev.off()
+    }
+    d <- device(width=width, height=height, ...)
+    if (!is.null(old.par)) par(old.par)
+    invisible(d)
 }
 
 ## locator
