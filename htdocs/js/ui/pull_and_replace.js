@@ -94,7 +94,10 @@ RCloud.UI.pull_and_replace = (function() {
                 get_notebook_func = function() { 
                     if(!value.match(new RegExp('^[0-9a-f]+$'))) {
                         return Promise.reject(new Error(invalid_notebook_id_error_));
+                    } else if(value.toLowerCase() === shell.gistname().toLowerCase()) {
+                        return Promise.reject(new Error(same_notebook_error_));
                     }
+
                     return rcloud.get_notebook(value); 
                 };
             } else if(method === 'file') {
