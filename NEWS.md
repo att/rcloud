@@ -50,6 +50,8 @@ the following RStudio compatibility packages:
 * Closing the find/replace dialog leaves the current match selected (if the
   notebook is editable). (#2204)
 
+* View type of a forked notebook is the same as the source of the fork (#2288)
+
 * Keyboard shortcuts <kbd>f3</kbd> / <kbd>shift f3</kbd> (Windows/Linux) and <kbd>cmd g</kbd> /
   <kbd>cmd shift g</kbd> for find next / find previous match. (#2192)
 
@@ -61,12 +63,17 @@ the following RStudio compatibility packages:
 
 * ESC loses the keyboard focus for the asset pane. (#2221)
 
+* shiny.html/mini.html would sporatically fail with `_` undefined. (#2348)
+
 ### Bugfixes
 * Attempting to anonymously open notebooks by name would fail with a missing
   function error.
 
 * Find/Replace dialog could show NaNs when the find text was not
   found. (#2248)
+
+* Exported encrypted notebooks would cause a variety of problems, so this is no longer
+  allowed (#1885, #2322, #2343) - in the future we may confirm and decrypt (#2354)
 
 * Could not paste into find dialog. (#2308)
 
@@ -90,6 +97,10 @@ the following RStudio compatibility packages:
 * Part of the find input was not clickable (#2286)
 
 * Could not close find dialog if there were matches and the last cell was deleted while dialog was open. (#2304)
+
+* Current notebook was unloaded and unrunnable if loading another notebook failed (#2258)
+
+* Plots displayed via the output context were not showing in mini.html (#2278)
 
 
 ## RCloud 1.6.1
