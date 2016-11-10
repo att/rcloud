@@ -79,7 +79,7 @@ RCloud.UI.pull_and_replace = (function() {
         },
         do_pull = function() {
             function get_notebook_by_id(id) {
-                if(!id.match(new RegExp('^[0-9a-f]+$'))) {
+                if(!Notebook.valid_gist_id(id)) {
                     return Promise.reject(new Error(invalid_notebook_id_error_));
                 } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
                     return Promise.reject(new Error(same_notebook_error_));

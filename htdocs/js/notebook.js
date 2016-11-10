@@ -25,3 +25,9 @@ Notebook.sanitize = function(notebook) {
         files[fn] = _.pick(files[fn], 'content');
     return notebook;
 };
+
+// a gist id is 20 or 32 chars of hex
+Notebook.valid_gist_id = function(str) {
+    return str.match(/^[a-f0-9]*$/i) !== null &&
+        [20,32].indexOf(str.length) !== -1;
+};
