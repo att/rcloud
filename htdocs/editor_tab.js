@@ -1341,6 +1341,7 @@ var editor = function () {
             version = version || null;
             var that = this;
             var before;
+            var last_notebook = shell.gistname(), last_version = shell.version();
             if(source) {
                 if(source==='default')
                     source = null; // drop it
@@ -1365,7 +1366,11 @@ var editor = function () {
                                               push_history: push_history}));
             })
                 .catch(function(xep) {
-                    return shell.improve_load_error(xep, gistname, version).then(function(message) {
+                    // session has been reset, must reload notebook
+                    return Promise.all([
+                        rcloud.load_notebook(last_notebook, last_version),
+                        shell.improve_load_error(xep, gistname, version)
+                    ]).spread(function(_, message) {
                         RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         throw xep;
                     });
