@@ -78,9 +78,16 @@ RCloud.UI.pull_and_replace = (function() {
             });
         },
         do_pull = function() {
+            function get_notebook_by_id(id) {
+                if(!id.match(new RegExp('^[0-9a-f]+$'))) {
+                    return Promise.reject(new Error(invalid_notebook_id_error_));
+                } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
+                    return Promise.reject(new Error(same_notebook_error_));
+                }
+                return rcloud.get_notebook(id);
+            };
 
-            var method = get_method(),
-                value = get_input().val();
+            var method = get_method();
 
             var get_notebook_func, notebook;
 
@@ -91,37 +98,26 @@ RCloud.UI.pull_and_replace = (function() {
             update_when_pulling();
 
             if(method === 'id') {
-                get_notebook_func = function() { 
-                    if(!value.match(new RegExp('^[0-9a-f]+$'))) {
-                        return Promise.reject(new Error(invalid_notebook_id_error_));
-                    } else if(value.toLowerCase() === shell.gistname().toLowerCase()) {
-                        return Promise.reject(new Error(same_notebook_error_));
-                    }
-
-                    return rcloud.get_notebook(value); 
-                };
+                get_notebook_func = get_notebook_by_id;
             } else if(method === 'file') {
-                get_notebook_func = function() { 
+                get_notebook_func = function() {
                     if(notebook_from_file_) {
-                        return Promise.resolve(notebook_from_file_);   
+                        return Promise.resolve(notebook_from_file_);
                     } else {
                         return Promise.reject(new Error('No file to upload'));
                     }
                 };
             } else if(method === 'url') {
-                get_notebook_func = function() {
-                    var id = RCloud.utils.get_notebook_from_url(value);
+                get_notebook_func = function(url) {
+                    var id = RCloud.utils.get_notebook_from_url(url);
                     if(!id) {
                         return Promise.reject(new Error('Invalid URL'));
-                    } else if(id === shell.gistname()) {
-                        return Promise.reject(new Error(same_notebook_error_));
-                    } else {
-                        return rcloud.get_notebook(id);
-                    }
+                    } else return get_notebook_by_id(id);
                 };
             }
 
-            get_notebook_func().then(function(notebook) {
+            var value = get_input().val();
+            get_notebook_func(value).then(function(notebook) {
                 return Promise.all([
                     rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value),
                     editor.pull_and_replace_notebook(notebook).then(function() {
