@@ -192,7 +192,7 @@ RCloud.UI.pull_and_replace = (function() {
                 upload_file(pull_notebook_file_[0].files[0]);
             });
 
-            [pull_notebook_url_, pull_notebook_id_].forEach(function(control) {
+            [pull_notebook_url_, pull_notebook_id_, select_by_, pull_notebook_file_].forEach(function(control) {
                 control.keydown(function(e) {
                     if(e.keyCode === $.ui.keyCode.ENTER) {
                         do_pull();
