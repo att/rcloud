@@ -121,14 +121,17 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook to File",
                     modes: ['edit'],
                     action: function() {
-
-                        get_selected_files().then(function(files) {
-                            return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
-                                notebook = Notebook.sanitize(notebook);
-                                notebook = prune_files(notebook, files);
-                                var gisttext = JSON.stringify(notebook);
-                                download_as_file(notebook.description + ".gist", gisttext, 'text/json');
-                                return notebook;
+                        rcloud.protection.get_notebook_cryptgroup(shell.gistname()).then(function(cryptgroup) {
+                            if(cryptgroup)
+                                alert("Exporting protected notebooks is not supported at this time (and will always export in the clear)");
+                            else get_selected_files().then(function(files) {
+                                return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
+                                    notebook = Notebook.sanitize(notebook);
+                                    notebook = prune_files(notebook, files);
+                                    var gisttext = JSON.stringify(notebook);
+                                    download_as_file(notebook.description + ".gist", gisttext, 'text/json');
+                                    return notebook;
+                                });
                             });
                         });
                     }
