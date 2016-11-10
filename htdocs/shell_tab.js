@@ -203,6 +203,10 @@ var shell = (function() {
                     });
                 return promise_fork
                     .then(function(notebook) {
+                        return shell.duplicate_notebook_attributes(gistname, notebook.id)
+                            .return(notebook);
+                    })
+                    .then(function(notebook) {
                         return [notebook, notebook.id, null];
                     });
             });
@@ -212,6 +216,15 @@ var shell = (function() {
                     .then(function(notebook) {
                         return [notebook, notebook.id, null];
                     });
+            });
+        }, duplicate_notebook_attributes(srcid, destid) {
+            var dupe_attrs = ['view-type'];
+            return Promise.all(dupe_attrs.map(function(attr) {
+                return rcloud.get_notebook_property(srcid, attr);
+            })).then(function(values) {
+                return Promise.all(dupe_attrs.map(function(attr, i) {
+                    return rcloud.set_notebook_property(destid, attr, values[i]);
+                }));
             });
         }, pull_and_replace_notebook: function(from_notebook) {
             return notebook_controller_.pull_and_replace_notebook(from_notebook);
