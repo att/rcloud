@@ -14,16 +14,14 @@ RCloud.UI.import_export = (function() {
         if(export_only_selected_files_) {
             var selected = shell.get_selected_cells();
 
-            if(selected) {
-                files = selected.map(function(cell) { 
-                    return cell.filename();
-                });
+            files = selected.map(function(cell) {
+                return cell.filename();
+            });
 
-                return Promise.resolve(files);
-            }
+            return Promise.resolve(files);
         }  else {
             return Promise.resolve([]);
-        }    
+        }
     }
 
     function prune_files(notebook, filesToKeep) {
@@ -32,7 +30,7 @@ RCloud.UI.import_export = (function() {
             _.difference(Object.keys(notebook.files), filesToKeep).forEach(function(fileToRemove) {
                 delete notebook.files[fileToRemove];
             });
-        } 
+        }
         return notebook;
     }
 
@@ -73,7 +71,7 @@ RCloud.UI.import_export = (function() {
                                     Promise.all(promises).then(function() {
                                         editor.highlight_imported_notebooks(succeeded);
                                     });
-                                    
+
                                     if(failed.length)
                                         RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
                                 });
@@ -192,13 +190,13 @@ RCloud.UI.import_export = (function() {
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
 
                             file_select
-                                .click(function() { 
-                                    ui_utils.disable_bs_button(import_button); 
+                                .click(function() {
+                                    ui_utils.disable_bs_button(import_button);
                                     [notebook_desc, notebook_status].forEach(function(el) { el.hide(); });
                                     file_select.val(null);
                                 })
-                                .change(function() { 
-                                    do_upload(file_select[0].files[0]); 
+                                .change(function() {
+                                    do_upload(file_select[0].files[0]);
                                 });
 
                             notebook_status = $('<span />');
@@ -219,7 +217,7 @@ RCloud.UI.import_export = (function() {
                                     if (e.which === $.ui.keyCode.ENTER && desc_length) {
                                         do_import();
                                         return false;
-                                    } 
+                                    }
 
                                     return true;
                                 });
