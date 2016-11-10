@@ -268,11 +268,6 @@ var shell = (function() {
                 return url;
             });
         }, open_from_github: function(notebook_or_url) {
-            // a gist id is 20 or 32 chars of hex
-            function isGistId(str) {
-                return str.match(/^[a-f0-9]*$/i) !== null &&
-                    [20,32].indexOf(str.length) !== -1;
-            }
             var ponents;
             if(notebook_or_url.indexOf('://') > 0) {
                 var prefix = gist_urls_['default'] || github_urls_['default'];
@@ -288,7 +283,7 @@ var shell = (function() {
                     // [{username}/]{gistid}/{version}
                     // there's an ambiguity between usernames and gist IDs
                     // so guess that if the first component is not a gist id, it's a username
-                    if(!isGistId(ponents[0]))
+                    if(!Notebook.valid_gist_id(ponents[0]))
                         ponents.splice(0,1);
                 }
                 else {

@@ -4321,6 +4321,8 @@ Notebook.create_controller = function(model)
             }).spread(apply_changes_and_load);
         },
         pull_and_replace_notebook: function(from_notebook) {
+            if(from_notebook.files['encrypted.notebook.content.bin.b64'])
+                return Promise.reject(new Error("Can't pull from encrypted notebook"));
             model.read_only(false);
             var changes = find_changes_from(current_gist_, from_notebook);
             return apply_changes_and_load(changes, shell.gistname());
@@ -4582,6 +4584,12 @@ Notebook.sanitize = function(notebook) {
     for(var fn in files)
         files[fn] = _.pick(files[fn], 'content');
     return notebook;
+};
+
+// a gist id is 20 or 32 chars of hex
+Notebook.valid_gist_id = function(str) {
+    return str.match(/^[a-f0-9]*$/i) !== null &&
+        [20,32].indexOf(str.length) !== -1;
 };
 
 (function() {
@@ -8395,16 +8403,14 @@ RCloud.UI.import_export = (function() {
         if(export_only_selected_files_) {
             var selected = shell.get_selected_cells();
 
-            if(selected) {
-                files = selected.map(function(cell) { 
-                    return cell.filename();
-                });
+            files = selected.map(function(cell) {
+                return cell.filename();
+            });
 
-                return Promise.resolve(files);
-            }
+            return Promise.resolve(files);
         }  else {
             return Promise.resolve([]);
-        }    
+        }
     }
 
     function prune_files(notebook, filesToKeep) {
@@ -8413,7 +8419,7 @@ RCloud.UI.import_export = (function() {
             _.difference(Object.keys(notebook.files), filesToKeep).forEach(function(fileToRemove) {
                 delete notebook.files[fileToRemove];
             });
-        } 
+        }
         return notebook;
     }
 
@@ -8454,7 +8460,7 @@ RCloud.UI.import_export = (function() {
                                     Promise.all(promises).then(function() {
                                         editor.highlight_imported_notebooks(succeeded);
                                     });
-                                    
+
                                     if(failed.length)
                                         RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
                                 });
@@ -8504,14 +8510,17 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook to File",
                     modes: ['edit'],
                     action: function() {
-
-                        get_selected_files().then(function(files) {
-                            return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
-                                notebook = Notebook.sanitize(notebook);
-                                notebook = prune_files(notebook, files);
-                                var gisttext = JSON.stringify(notebook);
-                                download_as_file(notebook.description + ".gist", gisttext, 'text/json');
-                                return notebook;
+                        rcloud.protection.get_notebook_cryptgroup(shell.gistname()).then(function(cryptgroup) {
+                            if(cryptgroup)
+                                alert("Exporting protected notebooks is not supported at this time (and will always export in the clear)");
+                            else get_selected_files().then(function(files) {
+                                return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
+                                    notebook = Notebook.sanitize(notebook);
+                                    notebook = prune_files(notebook, files);
+                                    var gisttext = JSON.stringify(notebook);
+                                    download_as_file(notebook.description + ".gist", gisttext, 'text/json');
+                                    return notebook;
+                                });
                             });
                         });
                     }
@@ -8573,13 +8582,13 @@ RCloud.UI.import_export = (function() {
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
 
                             file_select
-                                .click(function() { 
-                                    ui_utils.disable_bs_button(import_button); 
+                                .click(function() {
+                                    ui_utils.disable_bs_button(import_button);
                                     [notebook_desc, notebook_status].forEach(function(el) { el.hide(); });
                                     file_select.val(null);
                                 })
-                                .change(function() { 
-                                    do_upload(file_select[0].files[0]); 
+                                .change(function() {
+                                    do_upload(file_select[0].files[0]);
                                 });
 
                             notebook_status = $('<span />');
@@ -8600,7 +8609,7 @@ RCloud.UI.import_export = (function() {
                                     if (e.which === $.ui.keyCode.ENTER && desc_length) {
                                         do_import();
                                         return false;
-                                    } 
+                                    }
 
                                     return true;
                                 });
@@ -8777,47 +8786,42 @@ RCloud.UI.pull_and_replace = (function() {
             });
         },
         do_pull = function() {
+            function get_notebook_by_id(id) {
+                if(!Notebook.valid_gist_id(id)) {
+                    return Promise.reject(new Error(invalid_notebook_id_error_));
+                } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
+                    return Promise.reject(new Error(same_notebook_error_));
+                }
+                return rcloud.get_notebook(id);
+            };
 
-            var method = get_method(),
-                value = get_input().val();
+            var method = get_method();
 
             var get_notebook_func, notebook;
-
-            if(has_error()) {
-                return;
-            }
 
             update_when_pulling();
 
             if(method === 'id') {
-                get_notebook_func = function() { 
-                    if(!value.match(new RegExp('^[0-9a-f]+$'))) {
-                        return Promise.reject(new Error(invalid_notebook_id_error_));
-                    }
-                    return rcloud.get_notebook(value); 
-                };
+                get_notebook_func = get_notebook_by_id;
             } else if(method === 'file') {
-                get_notebook_func = function() { 
+                get_notebook_func = function() {
                     if(notebook_from_file_) {
-                        return Promise.resolve(notebook_from_file_);   
+                        return Promise.resolve(notebook_from_file_);
                     } else {
                         return Promise.reject(new Error('No file to upload'));
                     }
                 };
             } else if(method === 'url') {
-                get_notebook_func = function() {
-                    var id = RCloud.utils.get_notebook_from_url(value);
+                get_notebook_func = function(url) {
+                    var id = RCloud.utils.get_notebook_from_url(url);
                     if(!id) {
                         return Promise.reject(new Error('Invalid URL'));
-                    } else if(id === shell.gistname()) {
-                        return Promise.reject(new Error(same_notebook_error_));
-                    } else {
-                        return rcloud.get_notebook(id);
-                    }
+                    } else return get_notebook_by_id(id);
                 };
             }
 
-            get_notebook_func().then(function(notebook) {
+            var value = get_input().val();
+            get_notebook_func(value).then(function(notebook) {
                 return Promise.all([
                     rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value),
                     editor.pull_and_replace_notebook(notebook).then(function() {
@@ -8896,7 +8900,7 @@ RCloud.UI.pull_and_replace = (function() {
                 upload_file(pull_notebook_file_[0].files[0]);
             });
 
-            [pull_notebook_url_, pull_notebook_id_].forEach(function(control) {
+            [pull_notebook_url_, pull_notebook_id_, select_by_, pull_notebook_file_].forEach(function(control) {
                 control.keydown(function(e) {
                     if(e.keyCode === $.ui.keyCode.ENTER) {
                         do_pull();

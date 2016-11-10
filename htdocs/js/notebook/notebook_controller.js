@@ -450,6 +450,8 @@ Notebook.create_controller = function(model)
             }).spread(apply_changes_and_load);
         },
         pull_and_replace_notebook: function(from_notebook) {
+            if(from_notebook.files['encrypted.notebook.content.bin.b64'])
+                return Promise.reject(new Error("Can't pull from encrypted notebook"));
             model.read_only(false);
             var changes = find_changes_from(current_gist_, from_notebook);
             return apply_changes_and_load(changes, shell.gistname());
