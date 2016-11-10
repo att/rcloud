@@ -91,10 +91,6 @@ RCloud.UI.pull_and_replace = (function() {
 
             var get_notebook_func, notebook;
 
-            if(has_error()) {
-                return;
-            }
-
             update_when_pulling();
 
             if(method === 'id') {
