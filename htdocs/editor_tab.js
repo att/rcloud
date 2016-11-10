@@ -1169,7 +1169,7 @@ var editor = function () {
             RCloud.UI.notebook_title.make_editable(n, n.element, false);
     }
     var NOTEBOOK_LOAD_FAILS = 5;
-    function open_last_loadable() {
+    function open_last_loadable(skip_id) {
         var tries_left = NOTEBOOK_LOAD_FAILS;
         RCloud.UI.session_pane.allow_clear = false;
         return rcloud.config.get_recent_notebooks()
@@ -1183,6 +1183,8 @@ var editor = function () {
                 // a recursive error handler
                 function try_last() {
                     var last = sorted.pop();
+                    if(last[0] === skip_id)
+                        last = sorted.pop();
                     if(!last)
                         return result.new_notebook();
                     else
@@ -1261,7 +1263,7 @@ var editor = function () {
                             // if loading fails for a reason that is not actually a loading problem
                             // then don't keep trying.
                             if(xep.from_load)
-                                open_last_loadable();
+                                open_last_loadable(current_.notebook);
                             else throw xep;
                         });
                 }
@@ -1502,7 +1504,9 @@ var editor = function () {
                     remove_notebook_view(user, gistname);
                     var promise = rcloud.config.clear_recent_notebook(gistname);
                     if(gistname === current_.notebook)
-                        promise = promise.then(open_last_loadable);
+                        promise = promise.then(function() {
+                            return open_last_loadable();
+                        });
                     return promise;
                 });
         },
