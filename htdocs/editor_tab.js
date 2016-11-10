@@ -1261,7 +1261,8 @@ var editor = function () {
                             // if loading fails for a reason that is not actually a loading problem
                             // then don't keep trying.
                             if(xep.from_load)
-                                open_last_loadable();
+                                rcloud.config.clear_recent_notebook(current_.notebook)
+                                .then(open_last_loadable);
                             else throw xep;
                         });
                 }
