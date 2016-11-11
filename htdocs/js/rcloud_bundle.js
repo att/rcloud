@@ -11597,6 +11597,7 @@ RCloud.UI.session_pane = {
     error_dest_: null,
     clear_session_: null,
     allow_clear: true,
+    BUFFER_LIMIT: 10000,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
@@ -11651,7 +11652,6 @@ RCloud.UI.session_pane = {
     },
     should_scroll: function() {
         var scroll_bottom = $('#session-info-panel').scrollTop() + $('#session-info-panel').height() - $('#session-info-out').height();
-        console.log('scroll bottom', scroll_bottom);
         return scroll_bottom > -10;
     },
     scroll_to_end: function() {
@@ -11670,8 +11670,15 @@ RCloud.UI.session_pane = {
         // not trivial to maintain each output in some separate structure
         if (!document.getElementById("session-info-out"))
             $("#session-info").append($("<pre id='session-info-out'></pre>"));
+        var $info_out = $("#session-info-out");
+        var currtext = $info_out.text();
+        if(currtext.length > this.BUFFER_LIMIT) {
+            currtext = currtext.slice(currtext.length - this.BUFFER_LIMIT / 2);
+            $info_out.text(currtext);
+            console.log('truncated session log');
+        }
         var scroll = this.should_scroll();
-        $("#session-info-out").append(msg);
+        $info_out.append(msg);
         RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
         if(scroll)
             this.scroll_to_end();
