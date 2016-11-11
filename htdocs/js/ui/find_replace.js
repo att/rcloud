@@ -173,6 +173,20 @@ RCloud.UI.find_replace = (function() {
             }, 250);
         }
 
+        if(!highlights_shown_) {
+            var active_cell_selection = get_active_cell_selection();
+            if(active_cell_selection !== null) {
+                find_input_.val(active_cell_selection);
+            } else {
+                ui_utils.select_allowed_elements();
+                var text = window.getSelection().toString();
+
+                if(text) {
+                    find_input_.val(text);
+                }
+            }
+        }
+
         generate_matches(opts.search_again ? active_match_ : undefined);
 
         if(opts && opts.search_again) {
@@ -219,24 +233,11 @@ RCloud.UI.find_replace = (function() {
 
         }
 
-        if(opts.next) {
-            if(highlights_shown_)
+        if(highlights_shown_) {
+            if(opts.next) {
                 find_next();
-        } else if(opts.previous) {
-            if(highlights_shown_)
+            } else if(opts.previous) {
                 find_previous();
-        }
-        else {
-            var active_cell_selection = get_active_cell_selection();
-            if(active_cell_selection !== null) {
-                find_input_.val(active_cell_selection);
-            } else {
-                ui_utils.select_allowed_elements();
-                var text = window.getSelection().toString();
-
-                if(text) {
-                    find_input_.val(text);
-                }
             }
         }
 
