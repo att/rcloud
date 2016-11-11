@@ -30,7 +30,7 @@ RCloud.UI.find_replace = (function() {
         }
         replace_shown_ = replace;
 
-        var was_shown = find_dialog_ && find_dialog_.css("display") !== 'none';
+        var dialog_was_shown = find_dialog_ && find_dialog_.css("display") !== 'none';
         if(!find_dialog_) {
 
             var markup = $(_.template(
@@ -218,22 +218,16 @@ RCloud.UI.find_replace = (function() {
 
         }
 
-        if(replace && was_shown) {
-            replace_input_.focus();
-        } else {
-            find_input_.focus();
-        }
-
-        if(highlights_shown_) {
-
-            // find/replace dialog already shown:
-            var active_cell_selection = get_active_cell_selection();
-
-            if(opts.next) {
+        if(opts.next) {
+            if(highlights_shown_)
                 find_next();
-            } else if(opts.previous) {
+        } else if(opts.previous) {
+            if(highlights_shown_)
                 find_previous();
-            } else if(active_cell_selection !== null) {
+        }
+        else {
+            var active_cell_selection = get_active_cell_selection();
+            if(active_cell_selection !== null) {
                 find_input_.val(active_cell_selection);
             } else {
                 ui_utils.select_allowed_elements();
@@ -243,6 +237,12 @@ RCloud.UI.find_replace = (function() {
                     find_input_.val(text);
                 }
             }
+        }
+
+        if(replace && dialog_was_shown) {
+            replace_input_.focus();
+        } else {
+            find_input_.focus();
         }
 
         highlights_shown_ = true;
