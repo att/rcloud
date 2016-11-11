@@ -62,7 +62,7 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                var anonymous = !rcloud.username();
+                var anonymous = !window.rcloud || !rcloud.username();
                 RCloud.UI.fatal_dialog("Your session has been logged out.",
                                        anonymous ? "Reload" : "Reconnect",
                                        anonymous ? window.location.href : ui_utils.relogin_uri());
