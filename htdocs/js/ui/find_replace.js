@@ -61,6 +61,7 @@ RCloud.UI.find_replace = (function() {
             });
 
             find_details_.click(function() { find_input_.focus(); });
+            find_input_.click(function(e) { e.stopPropagation(); }); // click cursor
 
             // disabling clear results on blur for firefox, since its implementation
             // is either the only unbroken one or the only broken one (unclear)
