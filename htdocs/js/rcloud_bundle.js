@@ -6542,12 +6542,26 @@ RCloud.UI.find_replace = (function() {
             }, 250);
         }
 
+        if(!highlights_shown_) {
+            var active_cell_selection = get_active_cell_selection();
+            if(active_cell_selection !== null) {
+                find_input_.val(active_cell_selection);
+            } else {
+                ui_utils.select_allowed_elements();
+                var text = window.getSelection().toString();
+
+                if(text) {
+                    find_input_.val(text);
+                }
+            }
+        }
+
         generate_matches(opts.search_again ? active_match_ : undefined);
 
         if(opts && opts.search_again) {
 
             // get the cursor index:
-            var cursor_details = get_active_cell_cursor_details();
+            var cursor_details = get_active_cell_cursor_details(opts.next);
 
             if(matches_.length && cursor_details) {
 
@@ -6588,24 +6602,11 @@ RCloud.UI.find_replace = (function() {
 
         }
 
-        if(opts.next) {
-            if(highlights_shown_)
+        if(highlights_shown_) {
+            if(opts.next) {
                 find_next();
-        } else if(opts.previous) {
-            if(highlights_shown_)
+            } else if(opts.previous) {
                 find_previous();
-        }
-        else {
-            var active_cell_selection = get_active_cell_selection();
-            if(active_cell_selection !== null) {
-                find_input_.val(active_cell_selection);
-            } else {
-                ui_utils.select_allowed_elements();
-                var text = window.getSelection().toString();
-
-                if(text) {
-                    find_input_.val(text);
-                }
             }
         }
 
@@ -6721,7 +6722,7 @@ RCloud.UI.find_replace = (function() {
 
         return focussed_cell;
     }
-    function get_active_cell_cursor_details() {
+    function get_active_cell_cursor_details(use_end) {
         var focussed_cell = get_focussed_cell();
 
         if(!focussed_cell) {
@@ -6729,10 +6730,10 @@ RCloud.UI.find_replace = (function() {
         }
 
         var widget = focussed_cell.views[0].ace_widget();
-
+        var sel = widget.getSelectionRange();
         return {
             cell_index: focussed_cell.index,
-            cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
+            cursor_index: widget.session.doc.positionToIndex(use_end ? sel.end : sel.start)
         };
     }
     function get_active_cell_selection() {
