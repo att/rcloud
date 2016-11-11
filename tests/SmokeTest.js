@@ -197,9 +197,9 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
     //Verify for dataframe div
     casper.wait(5000).then(function () {
         console.log("Clicking on dataframe, from the workspace div");
-        this.waitForSelector("#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)", function(){
-            this.click('#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)');    
-        });        
+        this.waitForSelector("#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)", function () {
+            this.click('#enviewer-body > table:nth-child(1) > tr:nth-child(2) > td:nth-child(2) > a:nth-child(1)');
+        });
         this.wait(6000).then(function () {
             var df = this.fetchText("#viewer-body");
             console.log("Contents of Dataframe: \n\ " + df);
@@ -258,7 +258,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
 
             this.then(function () {
                 console.log("Deleting Uploaded asset from the Notebook");
-                this.click(x(".//*[@id='asset-list']/li[3]/a/span[2]/i"));
+                this.click(x(".//*[@id='asset-list']/li[3]/div/span[2]/i"));
                 this.test.assertSelectorDoesntHaveText("#asset-list", "PHONE.csv", "Confirmed that Asset has been successfully removed");
             });
         });
@@ -373,7 +373,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
         });
     });
 
-    casper.wait(8000)
+    casper.wait(8000);
 
     //Making notebook private
     casper.then(function () {
@@ -464,7 +464,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
         this.wait(7000);
         this.click('#main-div > p:nth-child(2) > a:nth-child(2)');
     });
-    
+
     casper.then(function () {
         this.wait(5000);
         this.click('.btn');
@@ -474,7 +474,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
 
     //Open Notebook.R as anonymous user
     casper.viewport(1024, 768).then(function () {
-        test.comment("Opening Notebook_R noteook as anonymous user")
+        test.comment("Opening Notebook_R noteook as anonymous user");
         casper.page = casper.newPage();
         casper.viewport(1024, 768).open(Notebook_R).then(function () {
             this.wait(8000);
@@ -486,7 +486,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
 
     //Open View.html notebook as anonymous user
     casper.viewport(1024, 768).then(function () {
-        test.comment("Opening View noteook as anonymous user")
+        test.comment("Opening View noteook as anonymous user");
         casper.page = casper.newPage();
         casper.viewport(1024, 768).open(View).then(function () {
             this.wait(8000);
@@ -498,7 +498,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
 
     //Mini.html for anonymous user
     casper.viewport(1024, 768).then(function () {
-        test.comment("Opening Mini.html noteook as anonymous user")
+        test.comment("Opening Mini.html noteook as anonymous user");
         casper.page = casper.newPage();
         casper.viewport(1024, 768).open(Mini).then(function () {
             this.wait(8000);
