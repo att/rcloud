@@ -56,7 +56,6 @@ RCloud.UI.session_pane = {
     },
     should_scroll: function() {
         var scroll_bottom = $('#session-info-panel').scrollTop() + $('#session-info-panel').height() - $('#session-info-out').height();
-        console.log('scroll bottom', scroll_bottom);
         return scroll_bottom > -10;
     },
     scroll_to_end: function() {
