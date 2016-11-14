@@ -62,10 +62,12 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                var anonymous = !rcloud.username();
-                RCloud.UI.fatal_dialog("Your session has been logged out.",
-                                       anonymous ? "Reload" : "Reconnect",
-                                       anonymous ? window.location.href : ui_utils.relogin_uri());
+                if(!window.rcloud) // e.g. websocket handshake cancelled
+                    RCloud.UI.fatal_dialog("Could not connect to server.", "Retry", window.location.href);
+                else if(!rcloud.username()) // anonymous
+                    RCloud.UI.fatal_dialog("Your session closed unexpectedly.", "Reload", window.location.href);
+                else // logged in
+                    RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
                 shutdown();
             }
         }
@@ -6542,12 +6544,26 @@ RCloud.UI.find_replace = (function() {
             }, 250);
         }
 
+        if(!highlights_shown_) {
+            var active_cell_selection = get_active_cell_selection();
+            if(active_cell_selection !== null) {
+                find_input_.val(active_cell_selection);
+            } else {
+                ui_utils.select_allowed_elements();
+                var text = window.getSelection().toString();
+
+                if(text) {
+                    find_input_.val(text);
+                }
+            }
+        }
+
         generate_matches(opts.search_again ? active_match_ : undefined);
 
         if(opts && opts.search_again) {
 
             // get the cursor index:
-            var cursor_details = get_active_cell_cursor_details();
+            var cursor_details = get_active_cell_cursor_details(opts.next);
 
             if(matches_.length && cursor_details) {
 
@@ -6588,24 +6604,11 @@ RCloud.UI.find_replace = (function() {
 
         }
 
-        if(opts.next) {
-            if(highlights_shown_)
+        if(highlights_shown_) {
+            if(opts.next) {
                 find_next();
-        } else if(opts.previous) {
-            if(highlights_shown_)
+            } else if(opts.previous) {
                 find_previous();
-        }
-        else {
-            var active_cell_selection = get_active_cell_selection();
-            if(active_cell_selection !== null) {
-                find_input_.val(active_cell_selection);
-            } else {
-                ui_utils.select_allowed_elements();
-                var text = window.getSelection().toString();
-
-                if(text) {
-                    find_input_.val(text);
-                }
             }
         }
 
@@ -6721,7 +6724,7 @@ RCloud.UI.find_replace = (function() {
 
         return focussed_cell;
     }
-    function get_active_cell_cursor_details() {
+    function get_active_cell_cursor_details(use_end) {
         var focussed_cell = get_focussed_cell();
 
         if(!focussed_cell) {
@@ -6729,10 +6732,10 @@ RCloud.UI.find_replace = (function() {
         }
 
         var widget = focussed_cell.views[0].ace_widget();
-
+        var sel = widget.getSelectionRange();
         return {
             cell_index: focussed_cell.index,
-            cursor_index: widget.session.doc.positionToIndex(widget.getCursorPosition())
+            cursor_index: widget.session.doc.positionToIndex(use_end ? sel.end : sel.start)
         };
     }
     function get_active_cell_selection() {
@@ -11596,6 +11599,7 @@ RCloud.UI.session_pane = {
     error_dest_: null,
     clear_session_: null,
     allow_clear: true,
+    BUFFER_LIMIT: 10000,
     body: function() {
         return RCloud.UI.panel_loader.load_snippet('session-info-snippet');
     },
@@ -11650,7 +11654,6 @@ RCloud.UI.session_pane = {
     },
     should_scroll: function() {
         var scroll_bottom = $('#session-info-panel').scrollTop() + $('#session-info-panel').height() - $('#session-info-out').height();
-        console.log('scroll bottom', scroll_bottom);
         return scroll_bottom > -10;
     },
     scroll_to_end: function() {
@@ -11669,8 +11672,15 @@ RCloud.UI.session_pane = {
         // not trivial to maintain each output in some separate structure
         if (!document.getElementById("session-info-out"))
             $("#session-info").append($("<pre id='session-info-out'></pre>"));
+        var $info_out = $("#session-info-out");
+        var currtext = $info_out.text();
+        if(currtext.length > this.BUFFER_LIMIT) {
+            currtext = currtext.slice(currtext.length - this.BUFFER_LIMIT / 2);
+            $info_out.text(currtext);
+            console.log('truncated session log');
+        }
         var scroll = this.should_scroll();
-        $("#session-info-out").append(msg);
+        $info_out.append(msg);
         RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
         if(scroll)
             this.scroll_to_end();

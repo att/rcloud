@@ -62,10 +62,12 @@ RClient = {
                 debugger;
             }
             if (!clean) {
-                var anonymous = !rcloud.username();
-                RCloud.UI.fatal_dialog("Your session has been logged out.",
-                                       anonymous ? "Reload" : "Reconnect",
-                                       anonymous ? window.location.href : ui_utils.relogin_uri());
+                if(!window.rcloud) // e.g. websocket handshake cancelled
+                    RCloud.UI.fatal_dialog("Could not connect to server.", "Retry", window.location.href);
+                else if(!rcloud.username()) // anonymous
+                    RCloud.UI.fatal_dialog("Your session closed unexpectedly.", "Reload", window.location.href);
+                else // logged in
+                    RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
                 shutdown();
             }
         }
