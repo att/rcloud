@@ -45,7 +45,7 @@ casper.test.begin("If there are no assets present, the Assets div should be uned
     casper.wait(5000);
 
     casper.then(function () {
-        this.click(x(".//*[@id='asset-list']/li[2]/a/span[2]/i"));
+        this.click(x(".//*[@id='asset-list']/li[2]/div/span[2]/i"));
         console.log('Deleting existing "scratch.R" asset');
         this.test.assertSelectorDoesntHaveText(x(".//*[@id='asset-list']"), 'scratch.R', "Successfully deleted the scratch.R asset");
     });

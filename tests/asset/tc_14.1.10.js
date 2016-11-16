@@ -13,8 +13,6 @@ casper.test.begin("Delete an asset by removing all its content", 4, function sui
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
     var URL;
-    var asset_name = 'JustCreatedAsset.R';
-    var fileName = "SampleFiles/PHONE.csv";
     var system = require('system');
     var currentFile = require('system').args[4];
     var curFilePath = fs.absolute(currentFile);
@@ -55,7 +53,7 @@ casper.test.begin("Delete an asset by removing all its content", 4, function sui
     });
 
     casper.reload(function () {
-        this.echo("loaded again");
+        this.echo("Reloading page again");
     });
 
     casper.wait(8000).then(function () {

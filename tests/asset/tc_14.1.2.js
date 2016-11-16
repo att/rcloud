@@ -80,23 +80,23 @@ casper.test.begin("Modify contents of an asset", 5, function suite(test) {
 
     casper.then(function (){
         console.log('Verifying whether the uploaded contentsa are present in Asset div or not');
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div"), 'PHONE.csv', 'Uploaded file is present in assets');
     });
 
     casper.wait(3000);
 
     casper.then(function(){
-        before = this.fetchText('.active > a:nth-child(1) > span:nth-child(1)');
+        before = this.fetchText(x(".//*[@id='asset-list']/li[3]/div/span[1]"));
         console.log("before Modifying asset name is:" + before);
     });
 
     casper.then(function (){
         var z = casper.evaluate(function triggerKeyDownEvent() {
-            jQuery(".active > a:nth-child(1) > span:nth-child(1)").text("Modified");
+            jQuery(".active > div:nth-child(1) > span:nth-child(1)").text("Modified");
             var e = jQuery.Event("keydown");
             e.which = 13;
             e.keyCode = 13;
-            jQuery(".active > a:nth-child(1) > span:nth-child(1)").trigger(e);
+            jQuery(".active > div:nth-child(1) > span:nth-child(1)").trigger(e);
             return true;
         });
         this.click(x(".//*[@id='rcloud-navbar-main']/li[4]"));
@@ -104,8 +104,8 @@ casper.test.begin("Modify contents of an asset", 5, function suite(test) {
     });
 
     casper.then(function(){
-        after = this.fetchText('.active > a:nth-child(1) > span:nth-child(1)');
-        console.log("before Modifying asset name is:" + after);
+        after = this.fetchText('.active > div:nth-child(1) > span:nth-child(1)');
+        console.log("after Modifying asset name is:" + after);
     });
 
     casper.then(function(){

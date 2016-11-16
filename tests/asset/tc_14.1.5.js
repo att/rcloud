@@ -131,7 +131,7 @@ casper.test.begin("Upload a file to another user's notebook after forking it ", 
 
     casper.then(function () {
         console.log('Verifying whether the uploaded contentsa are present in Asset div or not');
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'After forking, file can be uploaded and Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div"), 'PHONE.csv', 'After forking, file can be uploaded and Uploaded file is present in assets');
     });
 
     casper.run(function () {

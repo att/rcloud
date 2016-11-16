@@ -68,7 +68,7 @@ casper.test.begin("Duplicate names of assets shouldnot be created", 4, function 
         this.waitUntilVisible(x('//*[contains(text(), "added")]'), function then() {
             console.log("File has been uploaded");
         });
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div"), 'PHONE.csv', 'Uploaded file is present in assets');
     });
 
     casper.wait(3000).then(function () {

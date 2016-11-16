@@ -75,7 +75,7 @@ casper.test.begin("Editing/Modifying the uploaded asset file notebook which is a
         this.waitUntilVisible(x('//*[contains(text(), "added")]'), function then() {
             console.log("File has been uploaded");
         });
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
     });
 
     casper.then(function () {
@@ -201,9 +201,6 @@ casper.test.begin("Editing/Modifying the uploaded asset file notebook which is a
             this.test.assertNotEquals(before, after, "Confirmed that notebook is assigned to group");
         });
     });
-
-    casper.wait(5000);
-
 
     casper.run(function () {
         test.done();

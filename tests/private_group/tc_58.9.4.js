@@ -126,14 +126,14 @@ casper.test.begin("Deleting the uploaded asset file from the Private notebook", 
         this.waitUntilVisible(x('//*[contains(text(), "added")]'), function then() {
             console.log("File has been uploaded");
         });
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
     });
 
     casper.then(function () {
         console.log("Deleting uploaded asset");
-        this.click(x(".//*[@id='asset-list']/li[3]/a/span[2]/i"));
+        this.click(x(".//*[@id='asset-list']/li[3]/div/span[2]/i"));
         this.wait(3000);
-        this.test.assertSelectorDoesntHaveText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is not present in assets');
+        this.test.assertSelectorDoesntHaveText(x(".//*[@id='asset-list']/li[3]/div/span[1]"), 'PHONE.csv', 'Uploaded file is not present in assets');
     });
 
     casper.run(function () {
