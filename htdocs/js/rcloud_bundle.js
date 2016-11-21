@@ -6531,7 +6531,7 @@ RCloud.UI.find_replace = (function() {
         else
             replace_stuff_.hide();
 
-        if(_.isUndefined(change_interval_)) {
+        if(!change_interval_) {
             change_interval_ = setInterval(function() {
                 // get the value:
                 var old_value = find_input_.data('value'),
@@ -6690,6 +6690,7 @@ RCloud.UI.find_replace = (function() {
         find_input_.data('searchagain', find_input_.val());
 
         clearInterval(change_interval_);
+        change_interval_ = null;
         clear_highlights();
         find_dialog_.hide();
     }
