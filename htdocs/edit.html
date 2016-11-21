@@ -33,7 +33,7 @@
     <div id="rcloud-navbar-header" class="navbar-header"></div>
     <div class="nav-collapse">
       <ul id="rcloud-navbar-main" class="nav navbar-nav">
-        <li><a href="#"><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</a></span><small id="forked-from-desc"></small></li>
+        <li><div><span id="notebook-author"></span><span id="author-title-dash" style="display:none;">&nbsp;&ndash;&nbsp;</span><span id="rename-notebook" title="Change Title" style="display:none">[<span id="notebook-title"></span>]</div></span><small id="forked-from-desc"></small></li>
         <li><a href="#" id="readonly-notebook" style="display:none;">(read-only)</a></li>
         <li><a href="#"><span id="loading"><img id="loading-animation" src="/img/processing.gif" style="height: 20px;width:20px;margin:0"></img></span></a></li>
       </ul>
@@ -135,8 +135,8 @@
 
 <script type="text/html" id="help-snippet">
   <div id="help-wrapper" class="panel-body widget-vsize">
-    <a href="#" id="show-shortcuts" title="Show Keyboard Shortcuts">
-      <i class="icon-keyboard"></i>Keyboard
+    <a href="#" id="show-shortcuts" title="Show Shortcuts">
+      <i class="icon-keyboard"></i>Shortcuts
     </a>
     <div id="help-header">
       <form id="help-form" action="#">
@@ -153,6 +153,41 @@
     <div id="help-body"></div>
   </div>
 </script>
+
+<div id="pull-changes-dialog" class="modal fade in">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
+        <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+            <h3 class="modal-title">Pull and Replace Notebook</h3>
+        </div>
+        <div class="modal-body">
+          <p>Pull changes from another notebook into your current notebook.</p>
+          <label for="pull-changes-by">Notebook source:</label>
+          <select id="pull-changes-by">
+            <option value="url">URL</option>
+            <option value="id" selected="selected">Notebook id</option>          
+            <option value="file">File</option>
+          </select>
+          <div data-by="url">
+            <label for="pull-notebook-url">Notebook URL:</label>
+            <input type="text" data-pull="change paste keyup" id="pull-notebook-url" size="50" spellcheck="false" />
+          </div>
+          <div data-by="id">
+            <label for="pull-notebook-id">Notebook ID:</label>
+            <input type="text" data-pull="change paste keyup" id="pull-notebook-id" size="32" spellcheck="false" />
+          </div>          
+          <div data-by="file">
+            <input type="file" data-pull="change" id="pull-notebook-file" size="32" />
+          </div>
+        <div class="modal-footer">
+          <span class="btn btn-cancel">Cancel</span>
+          <span class="btn btn-primary">Pull</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script type="text/html" id="selection-bar-snippet">
   <div id="selection-bar">
@@ -427,7 +462,7 @@
         <div class="modal-content" style="background-color: rgba(255, 255, 255, 1.0)">
             <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-                <h4 class="modal-title" style="font-size: 20px">Keyboard shortcuts</h4>
+                <h4 class="modal-title" style="font-size: 20px">Shortcuts</h4>
             </div>
             <div class="modal-body" style="padding-top: 0; max-height:calc(100vh - 120px); overflow-y: auto;">
               <div id="shortcut-content"></div>
@@ -447,7 +482,11 @@
             <td>
               <% _.each(shortcut.keys, function(key_combo, index) { %>
                 <%if(index > 0) {%> / <%}%>
-                <kbd><%=key_combo%></kbd>
+                <%if(_.isObject(key_combo)) { %>
+                  <kbd><%=key_combo.keys%> click</kbd> <span>on the</span> <span class="target"><%=key_combo.target%></span>
+                <% } else { %>
+                  <kbd><%=key_combo%></kbd>
+                <% } %>
               <% }); %>
             </td>
             <td>

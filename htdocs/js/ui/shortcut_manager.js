@@ -24,7 +24,8 @@ RCloud.UI.shortcut_manager = (function() {
     function is_active(shortcut) {
         return shortcut.enabled && 
             _.contains(shortcut.modes, shell.notebook.model.read_only() ? 'readonly' : 'writeable') &&
-            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit');
+            _.contains(shortcut.on_page, shell.is_view_mode() ? 'view' : 'edit') &&
+            (!_.isFunction(shortcut.is_active) || (_.isFunction(shortcut.is_active) && shortcut.is_active()));
     }
 
     function convert_extension(shortcuts) {
@@ -53,36 +54,51 @@ RCloud.UI.shortcut_manager = (function() {
             // clean-up:
             var is_mac = ui_utils.is_a_mac();
 
-            if (shortcut.keys.hasOwnProperty('win_mac')) {
-                shortcut.bind_keys = shortcut.keys.win_mac;
-            } else {
-                shortcut.bind_keys = shortcut.keys[is_mac ? 'mac' : 'win'];
+            if(shortcut.keys) {
+                if (shortcut.keys.hasOwnProperty('win_mac')) {
+                    shortcut.bind_keys = shortcut.keys.win_mac;
+                } else {
+                    shortcut.bind_keys = shortcut.keys[is_mac ? 'mac' : 'win'];
+                }
+            }
+
+            // click keys, click on target + keys:
+            if (shortcut.click_keys) {
+                if(shortcut.click_keys.hasOwnProperty('win_mac')) {
+                    shortcut.click_keys.keys = shortcut.click_keys.win_mac;
+                } else if(shortcut.click_keys.hasOwnProperty('win') || shortcut.click_keys.hasOwnProperty('mac')) {
+                    // optional for click_keys:
+                    shortcut.click_keys.keys = shortcut.click_keys[is_mac ? 'mac' : 'win'];
+                }
             }
 
             // if this is a shortcut that needs to be added:
-            if (shortcut.bind_keys && shortcut.bind_keys.length) {
+            if ((shortcut.bind_keys && shortcut.bind_keys.length) || 
+                shortcut.click_keys) {
 
                 shortcut_to_add.key_desc = [];
 
                 // construct the key bindings:
-                for (var i = 0; i < shortcut.bind_keys.length; i++) {
+                if(shortcut.bind_keys) {
+                    for (var i = 0; i < shortcut.bind_keys.length; i++) {
 
-                    // ensure consistent order across definitions:
-                    var bind_keys = _
-                        .chain(shortcut.bind_keys[i])
-                        .map(function(element) {
-                            return element.toLowerCase(); })
-                        .sortBy(function(element) {
-                            var rank = {
-                                "command": 1,
-                                "ctrl": 2,
-                                "shift": 3
-                            };
-                            return rank[element];
-                        }).value();
+                        // ensure consistent order across definitions:
+                        var bind_keys = _
+                            .chain(shortcut.bind_keys[i])
+                            .map(function(element) {
+                                return element.toLowerCase(); })
+                            .sortBy(function(element) {
+                                var rank = {
+                                    "command": 1,
+                                    "ctrl": 2,
+                                    "shift": 3
+                                };
+                                return rank[element];
+                            }).value();
 
-                    // so that they can be compared:
-                    shortcut_to_add.key_desc.push(bind_keys.join('+'));
+                        // so that they can be compared:
+                        shortcut_to_add.key_desc.push(bind_keys.join('+'));
+                    }
                 }
 
                 // with existing shortcuts:
@@ -113,14 +129,30 @@ RCloud.UI.shortcut_manager = (function() {
                                 var func_to_bind = function(e) {
 
                                     if (is_active(get_by_id(shortcut_to_add.id))) {
-                                        e.preventDefault();
+                                        
+                                        // anything that means the shortcut shouldn't be active?
+                                        var enable = true;
 
-                                        // invoke if conditions are met:
-                                        if ((shortcut.enable_in_dialogs && $('.modal').is(':visible')) ||
-                                            !$('.modal').is(':visible')) {
-                                            shortcut.action(e);
+                                        if(!shortcut.enable_in_dialogs && $('.modal').is(':visible')) {
+                                            enable = false;
                                         }
 
+                                        if(shortcut.element_scope) {
+
+                                            var parent_element = $(shortcut.element_scope);
+                                            var focus_element = $(':focus');
+
+                                            if(parent_element.length && focus_element.length) {
+                                                enable = $.contains(parent_element.get(0), focus_element.get(0));
+                                            } else {
+                                                enable = false;
+                                            }
+                                        }
+
+                                        if(enable) {
+                                            e.preventDefault();
+                                            shortcut.action(e);
+                                        }
                                     }
                                 };
 
@@ -129,7 +161,6 @@ RCloud.UI.shortcut_manager = (function() {
                                 } else {
                                     window.Mousetrap().bind(binding, func_to_bind);
                                 }
-
                             });
                         }
                     }
@@ -155,9 +186,11 @@ RCloud.UI.shortcut_manager = (function() {
             // based on https://craig.is/killing/mice#api.stopCallback
             window.Mousetrap.prototype.stopCallback = function(e, element, combo) {
 
+                //console.log(e, element, combo);
+
                 // this only executes if the shortcut is *not* defined as global
                 var search_values = ['mousetrap', 'ace_text-input'],
-                    has_modifier = e.metaKey || e.ctrlKey || e.altKey;
+                    has_modifier = e.metaKey || e.ctrlKey || e.altKey || e.keyCode === 114; /* f3, special case */
 
                 // allow the event to be handled:
                 if (has_modifier && search_values.some(function(v) {
@@ -206,8 +239,6 @@ RCloud.UI.shortcut_manager = (function() {
             });
         },
         get_registered_shortcuts_by_category: function(sort_items) {
-
-            //console.log(extension_.sections.all.entries);
 
             var rank = _.map(sort_items, (function(item, index) {
                 return { key: item, value: index + 1 } }));

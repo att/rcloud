@@ -49,6 +49,7 @@ SEXP parse_headers(SEXP sRaw) {
             if (!(c < e && (*c == ' ' || *c == '\t'))) {
                 /* trim newlines */
                 while (r > val && (*r == '\n' || *r == '\t')) r--;
+                if (*r != '\n' && *r != '\t') r++;
                 SET_STRING_ELT(res, i, mkCharLen(val, r - val));
                 i++;
                 break;

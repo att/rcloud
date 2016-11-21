@@ -1,7 +1,8 @@
 ## auto-convert mime-type based on the extension because typically GitHub jsut gives us text/plain
 auto.convert.ext <- c(js = "application/javascript", css ="text/css", html = "text/html",
                       png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg",
-                      tiff = "image/tiff", tif = "image/tiff", svg = "image/svg+xml"
+                      tiff = "image/tiff", tif = "image/tiff", svg = "image/svg+xml",
+                      pdf = "application/pdf"
                       )
 
 cookies <- function(a) {

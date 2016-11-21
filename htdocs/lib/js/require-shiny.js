@@ -18,7 +18,7 @@ requirejs_config_obj = {
         "rserve": ["underscore"],
         "mini": ["rcloud_bundle"],
         "bootstrap": ["jquery-ui", "jquery"],
-        "rcloud_bundle": ["jquery.cookies.2.2.0"]
+        "rcloud_bundle": ["jquery.cookies.2.2.0", "rserve"]
     }
 };
 

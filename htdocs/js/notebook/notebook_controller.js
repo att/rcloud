@@ -1,6 +1,7 @@
 Notebook.create_controller = function(model)
 {
     var current_gist_,
+        current_version_,
         dirty_ = false,
         save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
@@ -58,6 +59,7 @@ Notebook.create_controller = function(model)
                 notebook.user.login !== rcloud.username() ||
                 shell.is_view_mode();
         current_gist_ = notebook;
+        current_version_ = notebook.history[0].version;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
@@ -105,8 +107,9 @@ Notebook.create_controller = function(model)
     }
 
     // calculate the changes needed to get back from the newest version in notebook
-    // back to what we are presently displaying (current_gist_)
-    function find_changes_from(notebook) {
+    // back to what we are presently displaying (current_gist_) or from to_notebook
+    // if this has been specified;
+    function find_changes_from(notebook, to_notebook) {
         function change_object(obj) {
             obj.name = function(n) { return n; };
             return obj;
@@ -115,7 +118,7 @@ Notebook.create_controller = function(model)
 
         // notebook files, current files
         var nf = notebook.files,
-            cf = _.extend({}, current_gist_.files); // dupe to keep track of changes
+            cf = _.extend({}, to_notebook ? to_notebook.files : current_gist_.files); // dupe to keep track of changes
 
         // find files which must be changed or removed to get from nf to cf
         for(var f in nf) {
@@ -160,6 +163,7 @@ Notebook.create_controller = function(model)
         if (!changes.length && _.isUndefined(more)) {
             return Promise.cast(current_gist_);
         }
+        current_version_ = null;
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {}, creates = {};
@@ -190,6 +194,7 @@ Notebook.create_controller = function(model)
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
+                current_version_ = notebook.history[0].version;
                 model.update_files(notebook.files);
                 return notebook;
             })
@@ -236,6 +241,9 @@ Notebook.create_controller = function(model)
         current_gist: function() {
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
+        },
+        current_version: function() {
+            return current_version_;
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
@@ -287,10 +295,12 @@ Notebook.create_controller = function(model)
         clear_all_selected_cells: function() {
             model.clear_all_selected_cells();
         },
+        get_selected_cells: function() {
+            return model.get_selected_cells();
+        },
         crop_cells: function() {
-
             if(!this.can_crop_cells())
-                return;
+                return Promise.resolve(null);
 
             var changes = refresh_buffers().concat(model.crop_cells());
             RCloud.UI.command_prompt.focus();
@@ -438,6 +448,13 @@ Notebook.create_controller = function(model)
             return rcloud.load_notebook(gistname, null).then(function(notebook) {
                 return [find_changes_from(notebook), gistname];
             }).spread(apply_changes_and_load);
+        },
+        pull_and_replace_notebook: function(from_notebook) {
+            if(from_notebook.files['encrypted.notebook.content.bin.b64'])
+                return Promise.reject(new Error("Can't pull from encrypted notebook"));
+            model.read_only(false);
+            var changes = find_changes_from(current_gist_, from_notebook);
+            return apply_changes_and_load(changes, shell.gistname());
         },
         fork_notebook: function(gistname, version) {
             model.read_only(false); // so that update_notebook doesn't throw

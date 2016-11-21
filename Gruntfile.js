@@ -52,6 +52,7 @@ module.exports = function (grunt) {
             "htdocs/js/ui/help_frame.js",
             "htdocs/js/ui/image_manager.js",
             "htdocs/js/ui/import_export.js",
+            "htdocs/js/ui/pull_and_replace.js",
             "htdocs/js/ui/init.js",
             "htdocs/js/ui/left_panel.js",
             "htdocs/js/ui/load_options.js",

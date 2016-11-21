@@ -60,7 +60,7 @@ RCloud.UI.ace_shortcuts = (function() {
                         ['ctrl', 'enter']
                     ]
                 }
-            }, {                                                        // !
+            }, {
                 category: 'Code Editor',
                 id: 'code_editor_cursor_start_of_line',
                 description: 'Cursor at beginning of line',
@@ -136,7 +136,7 @@ RCloud.UI.ace_shortcuts = (function() {
             {
                 category: 'Code Editor',
                 id: 'ace_move_lines_up',
-                description: 'Moves lines up',
+                description: 'Move lines up',
                 keys: { 
                     mac: [
                         ['option', 'up'] 

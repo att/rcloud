@@ -11,7 +11,7 @@ github.gist.url: https://gist.github.com/
 #gist.backend: gitgist
 #gist.git.root: ${ROOT}/data/gists
 rcs.engine: redis
-solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
-rcloud.alluser.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info
+#solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
+rcloud.alluser.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info, rcloud.htmlwidgets, rcloud.rmd, rcloud.flexdashboard
 rcloud.languages: rcloud.r, rcloud.python, rcloud.rmarkdown
 compute.separation.modes: IDE

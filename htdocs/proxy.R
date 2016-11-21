@@ -15,6 +15,8 @@
 parse.headers <- function(o) .Call(rcloud.support:::parse_headers, o)
 
 run <- function(url, query, body, headers) {
+    tryCatch({
+#   saveRDS(list(url=url, query=query, body=body, headers=headers), file=paste0("/tmp/proxy-",as.numeric(Sys.time()),"-",rnorm(1)))
     p <- strsplit(gsub("^/+","",url), "/", TRUE)[[1]]
     if (length(p) < 3) return(list("Invalid URL", "text/plain", character(), 404L))
     user <- p[2]
@@ -31,10 +33,16 @@ run <- function(url, query, body, headers) {
         return(list("Non-existent session", "text/plain", character(), 404L))
     fwd <- paste(p[-(1:3)], collapse='/')
     url <- paste0("http://", info$host, ":", port, "/", fwd)
-    if (isTRUE(any(nzchar(query)))) url <- paste0(url, "?", paste(URLencode(names(query)), "=", URLencode(query), sep='', collapse='&'))
+    if (isTRUE(any(nzchar(query)))) url <- paste0(url, "?", paste(URIencode(names(query)), "=", URIencode(query), sep='', collapse='&'))
     headers <- parse.headers(headers)
+
+    ## this is awful - if it's a form, it gets parsed and we have to piece it back - we need a way to disable that!
+    if (is.character(body) && !is.null(names(body))) body <- charToRaw(paste(names(body), URIencode(body), sep='=', collapse='&'))
+
     res <- if (!length(body)) httr::GET(url, config=add_headers(headers)) else httr::POST(url, body=body, config=add_headers(headers))
+    # saveRDS(list(url=url, query=query, body=body, headers=headers, res=res), file=paste0("/tmp/proxy-res-",as.numeric(Sys.time()),"-",rnorm(1)))
     # paste(capture.output(str(list(url=url, query=query, body=body, headers=headers, res=res))), collapse='\n')
+
     ## FIXME: we don't pass any headers other than content-type through.
     ## This is intentional as to avoid parsing/deparsing and duplication
     ## and they are not really relevant to the orignal request (since
@@ -45,4 +53,9 @@ run <- function(url, query, body, headers) {
     ct <- res$headers$`content-type`
     if (is.null(ct)) ct <- 'text/plain'
     list(res$content, ct, character(), res$status_code)
+    }, error=function(e) {
+        list(paste0("ERROR: ",paste(e$message, collapse="\n"),"\n",
+                    paste(capture.output({print(url); str(list(url=url,body=body,headers=headers))}),collapse="\n")),
+             "text/plain", 504)
+    })
 }

@@ -9439,7 +9439,8 @@ td {
     display: inline-block;
     border: 1px solid darkgray;
     padding: 1px;
-    background: white; }
+    background: white;
+    cursor: text; }
   #find-dialog .find, #find-dialog .replace {
     display: inline-block;
     padding: 6px 6px 0 6px; }
@@ -9479,7 +9480,8 @@ td {
   background-color: peru; }
 
 .ace_start.find-highlight {
-  position: absolute; }
+  position: absolute;
+  z-index: 10; }
 
 .inner-tab {
   padding: 30px; }
@@ -9523,7 +9525,8 @@ td {
 
 .nav-tabs > li.active > a,
 .nav-tabs > li.active > a,
-.nav-tabs > li.active > a {
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > div {
   color: #555555;
   cursor: default;
   background-color: #ffffff;
@@ -9538,6 +9541,13 @@ td {
 .navbar-nav > li {
   float: none;
   display: inline-block; }
+
+.navbar-nav > li > div {
+  color: #999;
+  display: inline; }
+  .navbar-nav > li > div:hover {
+    color: #fff;
+    cursor: pointer; }
 
 .navbar-nav > li > a {
   padding-top: 15px;
@@ -9612,6 +9622,11 @@ ul.recent-notebooks-list li a {
   overflow-y: auto; }
   #scratchpad-binary div {
     height: 0; }
+    #scratchpad-binary div.embed {
+      height: 100%; }
+  #scratchpad-binary embed {
+    width: 100%;
+    height: 100%; }
 
 #scratchpad-binary object {
   display: block; }
@@ -9642,7 +9657,7 @@ body .modal-dialog.full {
     width: 450px;
     float: left;
     margin-right: 20px; }
-    #shortcut-dialog .modal-dialog .category kbd {
+    #shortcut-dialog .modal-dialog .category kbd, #shortcut-dialog .modal-dialog .category .target, #shortcut-dialog .modal-dialog .category span {
       display: inline-block;
       padding: 3px 5px;
       font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
@@ -9654,12 +9669,40 @@ body .modal-dialog.full {
       border-bottom-color: #bbb;
       border-radius: 3px;
       box-shadow: inset 0 -1px 0 #bbb; }
+    #shortcut-dialog .modal-dialog .category span {
+      background: transparent;
+      border: none;
+      box-shadow: none; }
     #shortcut-dialog .modal-dialog .category table {
       width: 100%; }
       #shortcut-dialog .modal-dialog .category table td {
         padding: 3px 0; }
         #shortcut-dialog .modal-dialog .category table td:first-child {
           width: 45%; }
+
+#pull-changes-dialog {
+  pointer-events: auto; }
+  #pull-changes-dialog .btn-cancel, #pull-changes-dialog .close {
+    display: inline-block; }
+  #pull-changes-dialog label {
+    width: 150px;
+    margin-top: 10px; }
+  #pull-changes-dialog input {
+    margin-top: 10px; }
+  #pull-changes-dialog input[type="file"] {
+    margin-left: 153px; }
+  #pull-changes-dialog div[data-by] {
+    min-height: 70px; }
+  #pull-changes-dialog #pull-error {
+    color: red;
+    margin-left: 152px;
+    margin-top: 5px;
+    width: 365px;
+    word-wrap: break-word; }
+  #pull-changes-dialog.pulling {
+    pointer-events: none; }
+    #pull-changes-dialog.pulling .btn-cancel, #pull-changes-dialog.pulling .close {
+      display: none; }
 
 @media print {
   * {

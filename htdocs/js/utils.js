@@ -22,3 +22,8 @@ RCloud.utils.promise_sequence = function(collection, operator) {
 RCloud.utils.get_url_parameter = function(name) {
     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
 }
+
+RCloud.utils.get_notebook_from_url = function(url) {
+    var id = url.match(new RegExp('[?&]notebook=([^&#]*)'));
+    return id && id[1];
+}

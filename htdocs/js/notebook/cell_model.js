@@ -23,12 +23,15 @@ Notebook.Cell.create_model = function(content, language)
         get_execution_snapshot: function() {
             // freeze the cell as it is now, to execute it later
             var language = this.language() || 'Text'; // null is a synonym for Text
+            var version = this.parent_model.controller.current_version();
+            if(!version)
+                RCloud.UI.session_pane.append_text('Warning: executing unknown version, may be stale\n');
             return {
                 controller: this.controller,
                 json_rep: this.json(),
                 partname: Notebook.part_name(this.id(), language),
                 language: language,
-                version: this.parent_model.controller.current_gist().history[0].version
+                version: version
             };
         },
         set_focus: function() {

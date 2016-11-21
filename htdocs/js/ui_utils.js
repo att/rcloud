@@ -123,6 +123,17 @@ ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
     return newHeight;
 };
 
+ui_utils.ace_get_last = function(widget) {
+    var session =  widget.getSession(),
+        row = session.getLength() - 1,
+        column = session.getLine(row).length;
+
+    return {
+        row: row,
+        column: column
+    };
+}
+
 ui_utils.ace_set_pos = function(widget, row, column) {
     var sel = widget.getSelection();
     var range = sel.getRange();
@@ -136,6 +147,7 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var session = widget.getSession();
     var tab_handler = widget.commands.commandKeyBinding[0].tab;
 
+    widget.commands.removeCommand('gotoline');
     widget.commands.addCommands([
         {
             name: 'another autocomplete key',
@@ -154,14 +166,6 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     Autocomplete.startCommand.exec(widget, args, request);
                 else tab_handler.exec(widget, args, request);
             }
-        },
-        {
-            name: 'disable gotoline',
-            bindKey: {
-                win: "Ctrl-L",
-                mac: "Command-L"
-            },
-            exec: function() { return false; }
         },
         {
             name: 'execute-selection-or-line',
@@ -416,6 +420,16 @@ ui_utils.editable = function(elem$, command) {
         sel.removeAllRanges();
         sel.addRange(range);
     }
+    function setCaretPosition(position) {
+        var range = document.createRange();
+        var text_node = elem$.get(0).firstChild;
+        range.setStart(text_node, position);
+        range.setEnd(text_node, position);
+        selectRange(range);
+    };
+    function getCaretPosition() {
+        return window.getSelection().getRangeAt(0);
+    };
     function options() {
         return elem$.data('__editable');
     }
@@ -525,7 +539,7 @@ ui_utils.editable = function(elem$, command) {
             },
             'click.editable': function(e) {
                 e.stopPropagation();
-                // allow default action but don't bubble (causing eroneous reselection in notebook tree)
+                // allow default action but don't bubble (causing erroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
                 if(e.keyCode === $.ui.keyCode.ENTER) {
@@ -552,6 +566,25 @@ ui_utils.editable = function(elem$, command) {
                 } else if(e.keyCode === $.ui.keyCode.ESCAPE) {
                     elem$.blur(); // and cancel
                     window.getSelection().removeAllRanges();
+                } else if(e.keyCode === $.ui.keyCode.HOME) {
+                    setCaretPosition(0);
+                } else if(e.keyCode === $.ui.keyCode.END) {
+                    setCaretPosition(decode(elem$.text()).length);
+                } else if(e.keyCode === $.ui.keyCode.RIGHT) {
+                    if(e.ctrlKey || e.altKey) {
+                        var afterCaret = elem$.text().substring(getCaretPosition().startOffset);
+                        if((afterCaret.match(/ /g) || []).length == 0 || 
+                            (afterCaret.match(/ /g) || []).length == 1 && afterCaret[0] == ' ' ||
+                            (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
+                            e.preventDefault();
+                            setCaretPosition(decode(elem$.text()).length);
+                        }
+                    } else {
+                        if(getCaretPosition().startOffset === decode(elem$.text()).length - 1 ||
+                            (getCaretPosition().startOffset === 0 && getCaretPosition().endOffset === elem$.text().length)) {
+                            setCaretPosition(decode(elem$.text()).length);
+                        }
+                    }
                 }
                 return true;
             },

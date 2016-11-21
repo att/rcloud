@@ -1261,7 +1261,8 @@ var editor = function () {
                             // if loading fails for a reason that is not actually a loading problem
                             // then don't keep trying.
                             if(xep.from_load)
-                                open_last_loadable();
+                                rcloud.config.clear_recent_notebook(current_.notebook)
+                                .then(open_last_loadable);
                             else throw xep;
                         });
                 }
@@ -1340,6 +1341,7 @@ var editor = function () {
             version = version || null;
             var that = this;
             var before;
+            var last_notebook = shell.gistname(), last_version = shell.version();
             if(source) {
                 if(source==='default')
                     source = null; // drop it
@@ -1364,7 +1366,11 @@ var editor = function () {
                                               push_history: push_history}));
             })
                 .catch(function(xep) {
-                    return shell.improve_load_error(xep, gistname, version).then(function(message) {
+                    // session has been reset, must reload notebook
+                    return Promise.all([
+                        rcloud.load_notebook(last_notebook, last_version),
+                        shell.improve_load_error(xep, gistname, version)
+                    ]).spread(function(_, message) {
                         RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         throw xep;
                     });
@@ -1595,6 +1601,10 @@ var editor = function () {
             return shell.revert_notebook(gistname, version)
                 .then(this.load_callback({is_change: true, selroot: true}));
         },
+        pull_and_replace_notebook: function(from_notebook) {
+            return shell.pull_and_replace_notebook(from_notebook)
+                .then(this.load_callback({is_change: true, selroot: true}));
+        },
         show_history: function(node, opts) {
             if(_.isBoolean(opts))
                 opts = {toggle: opts};
@@ -1619,25 +1629,21 @@ var editor = function () {
                 });
         },
         step_history_undo: function() {
-
-            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
-
             var previous_version = history_manager.get_previous();
 
             if(!_.isUndefined(previous_version)) {
-                this.load_notebook(current_.notebook, previous_version).then(function() {
+                RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+                this.load_notebook(current_.notebook, previous_version).finally(function() {
                     RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
                 });
             }
         },
         step_history_redo: function() {
-
-            RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
-
             var next_version = history_manager.get_next();
 
             if(!_.isUndefined(next_version)) {
-                this.load_notebook(current_.notebook, next_version).then(function() {
+                RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
+                this.load_notebook(current_.notebook, next_version).finally(function() {
                     RCloud.UI.shortcut_manager.enable(['history_undo', 'history_redo']);
                 });
             }
@@ -1795,14 +1801,13 @@ var editor = function () {
                                         return update_notebook_from_gist(result, history, options.selroot);
                                     }));
 
-
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
+                     RCloud.UI.advanced_menu.enable('pull_and_replace_notebook', !shell.notebook.model.read_only());
                      promises.push(RCloud.UI.comments_frame.display_comments());
                      promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
                          RCloud.UI.advanced_menu.check('publish_notebook', p);
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
-
 
                      return Promise.all(promises).return(result);
                  });

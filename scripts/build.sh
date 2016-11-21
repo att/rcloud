@@ -43,8 +43,11 @@ if [ ! -e rcloud.support/DESCRIPTION ]; then
 fi
 
 # build JS (if available)
-if [ -d ./node_modules ]; then
+if [ \( -d ./node_modules \) -a \( -f node_modules/grunt-cli/bin/grunt \) ]; then
     node_modules/grunt-cli/bin/grunt
+else
+    echo "WARNING: JavaScript and CSS targets won't be built."
+    echo " run `npm install` from the RCloud root directory to enable these targets."
 fi
 
 # check if we need to worry about mathjax

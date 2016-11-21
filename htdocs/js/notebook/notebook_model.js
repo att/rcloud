@@ -216,6 +216,9 @@ Notebook.create_model = function()
             });
             RCloud.UI.selection_bar.update(this.cells);
         },
+        get_selected_cells: function() {
+            return this.cells.filter(function(cell) { return cell.is_selected(); });
+        },
         crop_cells: function() {
             var that = this, changes = [];
             _.chain(this.cells)

@@ -1,6 +1,7 @@
 RCloud.UI.run_button = (function() {
     var running_ = false,
         stopping_ = false,
+        do_reset_ = false,
         queue_ = [],
         cancels_ = [];
 
@@ -46,8 +47,13 @@ RCloud.UI.run_button = (function() {
         run: function() {
             if(running_)
                 this.stop();
-            else
-                shell.run_notebook();
+            else {
+                (do_reset_ ? RCloud.session.reset().then(function() {
+                    return rcloud.load_notebook(shell.gistname(), shell.version()); }) : Promise.resolve(undefined))
+                    .then(function() {
+                        shell.run_notebook();
+                    });
+            }
         },
         stop: function() {
             if(rcloud.has_compute_separation)
@@ -62,6 +68,12 @@ RCloud.UI.run_button = (function() {
             running_ = false;
             display('Run All', 'icon-play');
             highlight(false);
+        },
+        reset_on_run: function(v) {
+            if(!arguments.length)
+                return do_reset_;
+            do_reset_ = v;
+            return this;
         },
         enqueue: function(f, cancel) {
             var that = this;

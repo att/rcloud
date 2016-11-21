@@ -3,7 +3,7 @@ exportPattern("^rcloud.*") ## rcloud API
 exportPattern("^w.*")      ## wplot, wdc, wgeo...
 export(rcs.key, rcs.get, rcs.set, rcs.rm, rcs.incr, rcs.decr, rcs.list, usr.key)  ## RCS
 export(deferred.rcloud.result)
-export(RCloudDevice)
+export(RCloudDevice, dev.resize)
 
 ## other user-visible functions
 export(password, select, check.installation, show.iframe)
@@ -24,12 +24,6 @@ S3method(rcs.decr, RCSff)
 S3method(rcs.list, RCSff)
 
 S3method(print, deferred_result)
-
-export(print.htmlwidget)
-S3method(print, htmlwidget)
-S3method(as.character, htmlwidget)
-export(print.suppress_viewer)
-S3method(print, suppress_viewer)
 
 import(gist)
 import(knitr)

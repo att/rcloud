@@ -347,9 +347,17 @@ function create_cell_html_view(language, cell_model) {
 
         ace_widget_.resize();
 
+        ace_widget_.commands.removeCommand('findnext');
+        ace_widget_.commands.removeCommand('findprevious');
         ui_utils.install_common_ace_key_bindings(ace_widget_, function() {
             return language;
         });
+
+        var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
+            right_handler = ace_widget_.commands.commandKeyBinding[0].right,
+            up_handler = ace_widget_.commands.commandKeyBinding[0].up,
+            down_handler = ace_widget_.commands.commandKeyBinding[0].down;
+
         ace_widget_.commands.addCommands([{
             name: 'executeCell',
             bindKey: {
@@ -369,6 +377,122 @@ function create_cell_html_view(language, cell_model) {
             },
             exec: function() {
                 shell.run_notebook_from(cell_model.id());
+            }
+        }, {
+            name: 'left',
+            bindKey: {
+                win: 'left',
+                mac: 'left'
+            },
+            exec: function(widget, args, request) {
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+
+                if(cursor_position.row === 0 && cursor_position.column === 0) {
+                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                    if(prior_cell) {
+                        prior_cell.set_focus();
+
+                        var prior_widget = prior_cell.views[0].ace_widget();
+                        var last = ui_utils.ace_get_last(prior_widget);
+                        prior_widget.gotoLine(last.row + 1, last.column);
+
+                        use_default = false;
+                    }
+                }
+
+                if(use_default) {
+                    left_handler.exec(widget, args, request);    
+                }
+            }
+        }, {
+            name: 'right',
+            bindKey: {
+                win: 'right',
+                mac: 'right'
+            },
+            exec: function(widget, args, request) {
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+                var last = ui_utils.ace_get_last(ace_widget_);
+
+                if(cursor_position.column === last.column && cursor_position.row == last.row) {
+                    use_default = false;
+
+                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                    if(subsequent_cell) {
+                        subsequent_cell.set_focus();
+
+                        subsequent_cell.views[0].ace_widget()
+                            .gotoLine(0, 0);
+                    }
+                } 
+
+                if(use_default) {
+                    right_handler.exec(widget, args, request);
+                }
+            }
+        }, {
+            name: 'up',
+            bindKey: {
+                win: 'up',
+                mac: 'up'
+            },
+            exec: function(widget, args, request) {
+                
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+
+                if(cursor_position.row === 0) {
+                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
+
+                    if(prior_cell) {
+                        prior_cell.set_focus();
+
+                        var prior_widget = prior_cell.views[0].ace_widget();
+                        var last = ui_utils.ace_get_last(prior_widget);
+                        prior_widget.gotoLine(last.row + 1, cursor_position.column);
+
+                        use_default = false;
+                    }
+                }
+
+                if(use_default)
+                    up_handler.exec(widget, args, request);
+            }
+        }, {
+            name: 'down',
+            bindKey: {
+                win: 'down',
+                mac: 'down'
+            },
+            exec: function(widget, args, request) {
+                var use_default = true;
+
+                var cursor_position = ace_widget_.getCursorPosition();
+                var use_default = true;
+                var last = ui_utils.ace_get_last(ace_widget_);
+
+                if(cursor_position.row == last.row) {
+                    use_default = false;
+
+                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
+
+                    if(subsequent_cell) {
+                        subsequent_cell.set_focus();
+
+                        subsequent_cell.views[0].ace_widget()
+                            .gotoLine(1, cursor_position.column);
+                    }
+                } 
+
+                if(use_default)
+                    down_handler.exec(widget, args, request);
+
             }
         }, {
             name: 'navigateToPreviousCell',
@@ -962,6 +1086,11 @@ function create_cell_html_view(language, cell_model) {
 
             }
             return this;
+        },
+        select_highlight_range: function(begin, end) {
+            this.edit_source(true);
+            var ace_range = ui_utils.ace_range_of_character_range(ace_widget_, begin, end);
+            ace_widget_.getSelection().setSelectionRange(ace_range);
         }
     });
 

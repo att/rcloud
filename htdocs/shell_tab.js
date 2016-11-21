@@ -129,6 +129,9 @@ var shell = (function() {
         }, split_cell: function(cell_model, point1, point2) {
             return notebook_controller_.split_cell(cell_model, point1, point2);
         },
+        get_selected_cells: function() {
+            return notebook_controller_.get_selected_cells();
+        },
         load_notebook: function(gistname, version) {
             notebook_controller_.save();
             return do_load(function() {
@@ -200,6 +203,10 @@ var shell = (function() {
                     });
                 return promise_fork
                     .then(function(notebook) {
+                        return shell.duplicate_notebook_attributes(gistname, notebook.id)
+                            .return(notebook);
+                    })
+                    .then(function(notebook) {
                         return [notebook, notebook.id, null];
                     });
             });
@@ -210,6 +217,17 @@ var shell = (function() {
                         return [notebook, notebook.id, null];
                     });
             });
+        }, duplicate_notebook_attributes(srcid, destid) {
+            var dupe_attrs = ['view-type'];
+            return Promise.all(dupe_attrs.map(function(attr) {
+                return rcloud.get_notebook_property(srcid, attr);
+            })).then(function(values) {
+                return Promise.all(dupe_attrs.map(function(attr, i) {
+                    return rcloud.set_notebook_property(destid, attr, values[i]);
+                }));
+            });
+        }, pull_and_replace_notebook: function(from_notebook) {
+            return notebook_controller_.pull_and_replace_notebook(from_notebook);
         }, improve_load_error: function(xep, gistname, version) {
             var msg1 = "Could not open notebook " + gistname;
             if(version)
@@ -263,11 +281,6 @@ var shell = (function() {
                 return url;
             });
         }, open_from_github: function(notebook_or_url) {
-            // a gist id is 20 or 32 chars of hex
-            function isGistId(str) {
-                return str.match(/^[a-f0-9]*$/i) !== null &&
-                    [20,32].indexOf(str.length) !== -1;
-            }
             var ponents;
             if(notebook_or_url.indexOf('://') > 0) {
                 var prefix = gist_urls_['default'] || github_urls_['default'];
@@ -283,7 +296,7 @@ var shell = (function() {
                     // [{username}/]{gistid}/{version}
                     // there's an ambiguity between usernames and gist IDs
                     // so guess that if the first component is not a gist id, it's a username
-                    if(!isGistId(ponents[0]))
+                    if(!Notebook.valid_gist_id(ponents[0]))
                         ponents.splice(0,1);
                 }
                 else {

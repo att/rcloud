@@ -1,3 +1,111 @@
+## RCloud 1.7
+
+In addition to the below changes to RCloud core, this release also supports
+the following RStudio compatibility packages:
+
+* **rcloud.shiny** 0.4 should be 100% compatible with native Shiny, including
+  file download, data tables, and embedding HTML Widgets in Shiny dashboards.
+
+* **rcloud.flexdashboard** 1.0 supports dashboards using the flexdashboard
+  package, through the new `flexdashboard.html` selection in the View Types
+
+* **rcloud.rmd** supports import and export of notebooks to the RStudio R
+  Notebook dialect of RMarkdown, including a "Publish to RCloud" action in the
+  RStudio Addins menu.
+
+### Features
+* Pull and replace contents of notebook. It can be helpful to pull the current
+  contents of another notebook and replace the current contents when
+  maintaining multiple "branches of development" , or when collaborating on a
+  notebook, . Pull and Replace from notebook (in the Advanced menu) allows you
+  to pull from another notebook on the same RCloud instance, or from a
+  file. It creates a new version, and it can be undone if needed. (#2285)
+
+* Arrow up and down (or left and right) between cells when at the beginning or
+  end of a cell. (#2007)
+
+* Option to clear the R session when running the whole notebook (active by
+  default). (#1734)
+
+* New configuration option `Welcome.info` allows runtime-specific
+  content to be added to the welcome message on login. For example,
+  ``Welcome.info: on `hostname` `` will show the host used.
+
+* Added `dev.resize()` function for easy resizing of RCloud plots
+
+### Improvements
+* Exporting the notebook to a file or an R source file now exports only the selected
+  cells, by default. You can control this behavior using the "Export only selected cells"
+  option in Settings. (#1880)
+
+* To better encapsulate its dependencies, HTML Widgets support is now in a
+  separate package `rcloud.htmlwidgets`. It is recommended to add this package to
+  the `rcloud.alluser.addons` config, as shown in `rcloud.conf.samp`. (#2243)
+
+* Ability to open mini.html notebooks by name using `&user=...&path=...`
+  URLs. (#1034)
+
+* Preview PDF files in assets. (#2008)
+
+* Closing the find/replace dialog leaves the current match selected (if the
+  notebook is editable). (#2204)
+
+* View type of a forked notebook is the same as the source of the fork (#2288)
+
+* Keyboard shortcuts <kbd>f3</kbd> / <kbd>shift f3</kbd> (Windows/Linux) and <kbd>cmd g</kbd> /
+  <kbd>cmd shift g</kbd> for find next / find previous match. (#2192)
+
+* Keyboard shortcuts <kbd>alt r</kbd> for replace current match, <kbd>alt a</kbd> for
+  replace all matches (#2129)
+
+* Changing a cell's language leaves the focus in that cell (if the notebook is
+  editable). (#2206)
+
+* ESC loses the keyboard focus for the asset pane. (#2221)
+
+* shiny.html/mini.html would sporatically fail with `_` undefined. (#2348)
+
+* session pane output is limited to 10K in order to improve responsiveness and
+  possible crashes when there is a huge amount of output (#1997)
+
+### Bugfixes
+* Attempting to anonymously open notebooks by name would fail with a missing
+  function error.
+
+* Find/Replace dialog could show NaNs when the find text was not
+  found. (#2248)
+
+* Exported encrypted notebooks would cause a variety of problems, so this is no longer
+  allowed (#1885, #2322, #2343) - in the future we may confirm and decrypt (#2354)
+
+* Could not paste into find dialog. (#2308)
+
+* Find result was obscured by the current text selection. (#2130)
+
+* Find/Replace dialog could get stuck open on Firefox. (#2215)
+
+* Find/Replace count was not always shown on Firefox. (#2213)
+
+* Find highlights were incorrect on reopening the Find dialog. (#2299)
+
+* Pressing right arrow or end shortcut while editing the notebook title cancelled the edit
+  in Firefox. (#1988)
+
+* Could not click to position cursor in notebook title or asset name on Firefox. (#2312)
+
+* Uploading an unknown file type could cause the file to be downloaded. (#2008)
+
+* Revert shortcut was shown when not appropriate (#2220)
+
+* Part of the find input was not clickable (#2286)
+
+* Could not close find dialog if there were matches and the last cell was deleted while dialog was open. (#2304)
+
+* Current notebook was unloaded and unrunnable if loading another notebook failed (#2258)
+
+* Plots displayed via the output context were not showing in mini.html (#2278)
+
+
 ## RCloud 1.6.1
 
 ### Features
@@ -53,6 +161,9 @@
 
 * Title/tooltips shown for most buttons in the UI, text adapting where
   appropriate. (#1438 etc.)
+
+* Image assets in encrypted notebooks were displayed as garbage text, when opened
+  in a separate window. (#1893)
 
 
 ## RCloud 1.6

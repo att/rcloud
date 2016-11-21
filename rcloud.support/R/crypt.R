@@ -20,7 +20,7 @@ rcloud.decrypt <- function(x, key=get.user.key(), cipher=attr(x, "metadata")$cip
     if (!is.null(attr(x, "metadata")$sha1)) {
         sha1 <- raw2hex(PKI.digest(y, "SHA1"),"")
         if (!isTRUE(attr(x,"metadata")$sha1 == sha1))
-            stop("checksum mismatch - probably wrong key or ciper")
+            stop("checksum mismatch - probably wrong key or cipher")
     }
     enc <- attr(x, "metadata")$encoding
     if (!is.null(enc) && isTRUE(enc == "rds"))

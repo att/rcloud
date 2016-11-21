@@ -1,7 +1,37 @@
 RCloud.UI.import_export = (function() {
+
+    var export_only_selected_files_;
+
     function download_as_file(filename, content, mimetype) {
         var file = new Blob([content], {type: mimetype});
         saveAs(file, filename); // FileSaver.js
+    }
+
+    function get_selected_files() {
+
+        var files = [];
+
+        if(export_only_selected_files_) {
+            var selected = shell.get_selected_cells();
+
+            files = selected.map(function(cell) {
+                return cell.filename();
+            });
+
+            return Promise.resolve(files);
+        }  else {
+            return Promise.resolve([]);
+        }
+    }
+
+    function prune_files(notebook, filesToKeep) {
+        if(filesToKeep && filesToKeep.length) {
+            // remove the files that aren't required:
+            _.difference(Object.keys(notebook.files), filesToKeep).forEach(function(fileToRemove) {
+                delete notebook.files[fileToRemove];
+            });
+        }
+        return notebook;
     }
 
     return {
@@ -41,7 +71,7 @@ RCloud.UI.import_export = (function() {
                                     Promise.all(promises).then(function() {
                                         editor.highlight_imported_notebooks(succeeded);
                                     });
-                                    
+
                                     if(failed.length)
                                         RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
                                 });
@@ -91,11 +121,18 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook to File",
                     modes: ['edit'],
                     action: function() {
-                        return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
-                            notebook = Notebook.sanitize(notebook);
-                            var gisttext = JSON.stringify(notebook);
-                            download_as_file(notebook.description + ".gist", gisttext, 'text/json');
-                            return notebook;
+                        rcloud.protection.get_notebook_cryptgroup(shell.gistname()).then(function(cryptgroup) {
+                            if(cryptgroup)
+                                alert("Exporting protected notebooks is not supported at this time (and will always export in the clear)");
+                            else get_selected_files().then(function(files) {
+                                return rcloud.get_notebook(shell.gistname(), shell.version(), null, true).then(function(notebook) {
+                                    notebook = Notebook.sanitize(notebook);
+                                    notebook = prune_files(notebook, files);
+                                    var gisttext = JSON.stringify(notebook);
+                                    download_as_file(notebook.description + ".gist", gisttext, 'text/json');
+                                    return notebook;
+                                });
+                            });
                         });
                     }
                 },
@@ -113,33 +150,24 @@ RCloud.UI.import_export = (function() {
                             function do_upload(file) {
                                 notebook_status.hide();
                                 notebook_desc.hide();
-                                var fr = new FileReader();
-                                fr.onloadend = function(e) {
-                                    notebook_status.show();
-                                    try {
-                                        notebook = JSON.parse(fr.result);
+
+                                Notebook.read_from_file(
+                                    file, {
+                                        on_load_end: function() {
+                                            notebook_status.show();
+                                        },
+                                        on_error: function(message) {
+                                            notebook_status.text(message);
+                                        },
+                                        on_notebook_parsed: function(read_notebook) {
+                                            notebook = read_notebook;
+                                            notebook_status.text('');
+                                            notebook_desc_content.val(notebook.description);
+                                            notebook_desc.show();
+                                            ui_utils.enable_bs_button(import_button);
+                                        }
                                     }
-                                    catch(x) {
-                                        notebook_status.text("Invalid notebook format: couldn't parse JSON");
-                                        return;
-                                    }
-                                    if(!notebook.description) {
-                                        notebook_status.text('Invalid notebook format: has no description');
-                                        notebook = null;
-                                        return;
-                                    }
-                                    if(!notebook.files || _.isEmpty(notebook.files)) {
-                                        notebook_status.text('Invalid notebook format: has no files');
-                                        notebook = null;
-                                        return;
-                                    }
-                                    notebook_status.text('');
-                                    notebook_desc_content.val(notebook.description);
-                                    notebook_desc.show();
-                                    notebook = Notebook.sanitize(notebook);
-                                    ui_utils.enable_bs_button(import_button);
-                                };
-                                fr.readAsText(file);
+                                );
                             }
                             function do_import() {
 
@@ -165,13 +193,13 @@ RCloud.UI.import_export = (function() {
                             var file_select = $('<input type="file" id="notebook-file-upload" size="50"></input>');
 
                             file_select
-                                .click(function() { 
-                                    ui_utils.disable_bs_button(import_button); 
+                                .click(function() {
+                                    ui_utils.disable_bs_button(import_button);
                                     [notebook_desc, notebook_status].forEach(function(el) { el.hide(); });
                                     file_select.val(null);
                                 })
-                                .change(function() { 
-                                    do_upload(file_select[0].files[0]); 
+                                .change(function() {
+                                    do_upload(file_select[0].files[0]);
                                 });
 
                             notebook_status = $('<span />');
@@ -192,7 +220,7 @@ RCloud.UI.import_export = (function() {
                                     if (e.which === $.ui.keyCode.ENTER && desc_length) {
                                         do_import();
                                         return false;
-                                    } 
+                                    }
 
                                     return true;
                                 });
@@ -249,36 +277,42 @@ RCloud.UI.import_export = (function() {
                     text: "Export Notebook as R Source File",
                     modes: ['edit'],
                     action: function() {
-                        return rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
-                            var strings = [];
-                            var parts = [];
-                            _.each(notebook.files, function(file) {
-                                var filename = file.filename;
-                                if(/^part/.test(filename)) {
-                                    var number = parseInt(filename.slice(4).split('.')[0]);
-                                    if(!isNaN(number)) {
-                                        if (file.language === 'R')
-                                            parts[number] = "```{r}\n" + file.content + "\n```";
-                                        else
-                                            parts[number] = file.content;
+                        return get_selected_files().then(function(files) {
+                            rcloud.get_notebook(shell.gistname(), shell.version()).then(function(notebook) {
+                                var strings = [];
+                                var parts = [];
+                                notebook = prune_files(notebook, files);
+                                _.each(notebook.files, function(file) {
+                                    var filename = file.filename;
+                                    if(/^part/.test(filename)) {
+                                        var number = parseInt(filename.slice(4).split('.')[0]);
+                                        if(!isNaN(number)) {
+                                            if (file.language === 'R')
+                                                parts[number] = "```{r}\n" + file.content + "\n```";
+                                            else
+                                                parts[number] = file.content;
+                                        }
                                     }
-                                }
-                            });
-                            for (var i=0; i<parts.length; ++i)
-                                if (!_.isUndefined(parts[i]))
-                                    strings.push(parts[i]);
-                            strings.push("");
-                            rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
-                                // rserve.js length-1 array special case making our lives difficult again
-                                var purled_source = _.isString(purled_lines) ? purled_lines :
-                                        purled_lines.join("\n");
-                                download_as_file(notebook.description + ".R", purled_source, 'text/plain');
+                                });
+                                for (var i=0; i<parts.length; ++i)
+                                    if (!_.isUndefined(parts[i]))
+                                        strings.push(parts[i]);
+                                strings.push("");
+                                rcloud.purl_source(strings.join("\n")).then(function(purled_lines) {
+                                    // rserve.js length-1 array special case making our lives difficult again
+                                    var purled_source = _.isString(purled_lines) ? purled_lines :
+                                            purled_lines.join("\n");
+                                    download_as_file(notebook.description + ".R", purled_source, 'text/plain');
+                                });
                             });
                         });
                     }
                 }
             });
             return this;
+        },
+        export_only_selected_files: function(val) {
+            export_only_selected_files_ = val;
         }
     };
 })();
