@@ -3,8 +3,8 @@
 In addition to the below changes to RCloud core, this release also supports
 the following RStudio compatibility packages:
 
-* **rcloud.shiny** 0.4 should solve most compatibility problems, including file
-  download, data tables, and embedding HTML Widgets in Shiny dashboards.
+* **rcloud.shiny** 0.4 should be 100% compatible with native Shiny, including
+  file download, data tables, and embedding HTML Widgets in Shiny dashboards.
 
 * **rcloud.flexdashboard** 1.0 supports dashboards using the flexdashboard
   package, through the new `flexdashboard.html` selection in the View Types
@@ -64,6 +64,9 @@ the following RStudio compatibility packages:
 * ESC loses the keyboard focus for the asset pane. (#2221)
 
 * shiny.html/mini.html would sporatically fail with `_` undefined. (#2348)
+
+* session pane output is limited to 10K in order to improve responsiveness and
+  possible crashes when there is a huge amount of output (#1997)
 
 ### Bugfixes
 * Attempting to anonymously open notebooks by name would fail with a missing
