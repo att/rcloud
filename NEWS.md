@@ -1,3 +1,9 @@
+## RCloud 1.8
+
+### Improvements
+* Solr index update calls are non blocking (Requires R 3.3.x)
+
+
 ## RCloud 1.7
 
 In addition to the below changes to RCloud core, this release also supports
