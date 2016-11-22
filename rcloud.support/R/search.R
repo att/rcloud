@@ -15,10 +15,7 @@
   if(!is.null(solr.url)){
     solr.post.url <- httr::parse_url(solr.url)
     solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
-
-    resp <- tryCatch({
-      httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), config=httpConfig)   
-    }, error = function(e) {NULL})
+    mcparallel(httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), config=httpConfig) ,detach=TRUE)   
   }
 }
 
