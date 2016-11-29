@@ -15,22 +15,16 @@ casper.test.begin("Login to Main page (user is not logged-in to the Github accou
     var functions = require(fs.absolute('basicfunctions'));
 
     casper.start(rcloud_url, function () {
-        casper.page.injectJs('jquery-1.10.2.js');
+        functions.inject_jquery(casper);
     });
 
-    casper.viewport(1024, 768).then(function () {
+    casper.wait(2000).viewport(1024, 768).then(function () {
         functions.login(casper, github_username, github_password, rcloud_url);
     });
 
-    casper.wait(10000);
-
-
-    casper.viewport(1024, 768).then(function () {
-        this.wait(9000);
+    casper.wait(10000).viewport(1024, 768).then(function () {
         console.log("validating that the Main page has got loaded properly by detecting if some of its elements are visible. Here we are checking for Shareable Link and Logout options");
         functions.validation(casper);
-        this.wait(4000);
-
     });
 
     casper.run(function () {

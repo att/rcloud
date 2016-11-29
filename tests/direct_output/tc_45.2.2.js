@@ -3,7 +3,6 @@ Author: Prateek
 Description: This is a casperjs automated test script for,When a new cell is created  for pre executed cells, it should be in edit mode
 */
 
-
 //Begin test
 casper.test.begin("Created new cell should be in edit mode", 6, function suite(test) {
 

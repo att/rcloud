@@ -17,7 +17,7 @@ casper.test.begin("Delete an asset by removing all its content", 4, function sui
     var currentFile = require('system').args[4];
     var curFilePath = fs.absolute(currentFile);
     var curFilePath = curFilePath.replace(currentFile, '');
-    fileName = curFilePath + fileName;
+    var fileName = curFilePath + fileName;
 
     casper.start(rcloud_url, function () {
         functions.inject_jquery(casper);

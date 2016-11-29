@@ -12,7 +12,7 @@ casper.test.begin(" checking second cell status", 5, function suite(test) {
     var github_password = casper.cli.options.password;
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
-    var notebook_id = "17737e06532586851a9d";
+    var notebook_id = "2144d2081c63dd07e8ba07f01be26473";
     var title;
 
     casper.start(rcloud_url, function () {
@@ -48,14 +48,10 @@ casper.test.begin(" checking second cell status", 5, function suite(test) {
         this.test.assertNotEquals(author, github_username, "Confirmed that notebook belonging to different user has been opened");
     });
     
-    //Click on run button/icon
-    casper.then(function(){
-		this.click({type: 'xpath', path: '//*[@id="run-notebook"]'});
-		//this.wait(4000);
-	});
+    functions.runall(casper);
 	
-	casper.then(function(){
-		this.test.assertDoesntExist({ type :'css' , path: '.icon-circle-blank'}, '2nd cell is in queue');
+	casper.wait(2000).then(function(){
+		this.test.assertDoesntExist(".icon-circle-blank", '2nd cell is in queue');
 	});
 	
 	casper.run(function () {

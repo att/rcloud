@@ -73,7 +73,7 @@ casper.test.begin(" Special Characters Ex: !@#$%^&*()_+= ", 6, function suite(te
 
     //Checking for an error in session div
     casper.wait(5000).then(function () {
-        this.test.assertSelectorHasText(x(".//*[@id='session-info']/div"), 'error', "search item doesnot parse special charaters");
+        this.test.assertSelectorHasText("#search-results > h4:nth-child(1)", 'error', "search item does not parse special charaters, hence error occured");
     });
 
     casper.run(function () {

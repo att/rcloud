@@ -5,7 +5,7 @@
 
 //Begin
 
-casper.test.begin("Invoke locator function with plot in view.html", 8, function suite(test) {
+casper.test.begin("Invoke locator function with plot in view.html", 7, function suite(test) {
     var x = require('casper').selectcss;
     var github_username = casper.cli.options.username;
     var github_password = casper.cli.options.password;
@@ -46,10 +46,9 @@ casper.test.begin("Invoke locator function with plot in view.html", 8, function 
        
     //Add new cell and call locator() from that cell
     casper.wait(2000).then(function(){
-        functions.addnewcell(casper);
+        this.click("div.cell-control-bar:nth-child(1) > span:nth-child(1) > i:nth-child(1)");
+        this.wait(4000);
     });
-
-
 
     //add contents to new cell
     casper.wait(2000).then(function(){

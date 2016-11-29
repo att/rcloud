@@ -26,10 +26,6 @@ casper.test.begin("Upload a file to another user's notebook before forking it", 
         functions.login(casper, github_username, github_password, rcloud_url);
     });
 
-    casper.waitUntilVisible('#run-notebook', function () {
-        this.echo('waiting for page to open completely');
-    });
-
     casper.viewport(1024, 768).then(function () {
         this.wait(9000);
         console.log("validating that the Main page has got loaded properly by detecting if some of its elements are visible. Here we are checking for Shareable Link and Logout options");

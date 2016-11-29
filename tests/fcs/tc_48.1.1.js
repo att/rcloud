@@ -16,7 +16,7 @@ casper.test.begin(" Checking line numbers in editable mode", 6, function suite(t
     var input= 'a<-12\n a';
     
     casper.start(rcloud_url, function () {
-        casper.page.injectJs('jquery-1.10.2.js');
+       functions.inject_jquery(casper);
     });
     casper.wait(10000);
 

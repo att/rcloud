@@ -74,11 +74,11 @@ exports.create_notebook = function (casper) {
 exports.validation = function (casper) {
     return casper
         .wait(5000, function () {
-            this.wait(5000);
-            this.waitForSelector('.icon-share', function () {
+            this.wait(8000);
+            this.waitUntilVisible('.icon-share', function () {
                 this.test.assertExists('.icon-share', 'the element Shareable Link exists');
             });
-            this.wait(5000);
+            this.wait(8000);
             this.waitForSelector('div.btn > input:nth-child(1)', function () {
                 this.test.assertVisible("#rcloud-navbar-menu > li:nth-child(7) > a:nth-child(1)", 'Cell delete check box exists');
             });
@@ -162,7 +162,7 @@ exports.fork = function (casper) {
         .then(function () {
             this.test.assertExists({type: 'css', path: '.icon-code-fork'}, 'Fork option exists');
             this.test.assertTruthy(this.click({type: 'css', path: '.icon-code-fork'}), 'Fork option clicked');
-            this.wait(9000);
+            this.wait(12000);
         });
 };
 
@@ -180,7 +180,7 @@ exports.delete_notebooksIstarred = function (casper) {
     return casper
         .then(function () {
             this.then(function () {
-                this.mouse.move('.jqtree-selected > div:nth-child(1)');
+                this.mouse.move('.jqtree-selected > div:nth-child(1) > span:nth-child(1)');
                 this.waitUntilVisible('.jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(5) > i:nth-child(1)', function () {
                     this.click('.jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(5) > i:nth-child(1)');
                 });

@@ -148,14 +148,16 @@ casper.test.begin(" Delete a cell from multiple notebooks", 11, function suite(t
     casper.wait(5000);
 
     //counting number of Search results
-    casper.then(function () {
+    casper.wait(5000).then(function () {
         var counter = 0;
         do
         {
             counter = counter + 1;
             this.wait(2000);
         }
-        while (this.visible(x(".//*[@id='search-results']/table["+counter+"]/tbody/tr/td")));
+      //  while (this.visible(x(".//*[@id='search-results']/table["+counter+"]/tbody/tr/td")));
+        
+        while (this.visible(x(".//*[@id="+counter+"]/table/tbody/tr[2]/td/table/tbody/tr/td")));
 
         counter = counter - 1;
         this.echo("number of search results:" + counter);

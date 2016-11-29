@@ -17,7 +17,7 @@ casper.test.begin(" Select 'make private' icon to make notebook private", 4, fun
     var after;// To fetch the icon details after clicking on public/private icon
 
     casper.start(rcloud_url, function () {
-        casper.page.injectJs('jquery-1.10.2.js');
+        functions.inject_jquery(casper);
     });
     casper.wait(10000);
 

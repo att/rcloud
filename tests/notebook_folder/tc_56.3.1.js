@@ -51,8 +51,6 @@ casper.test.begin("Fork option visibility ",4, function suite(test) {
         }               
     });
 
-
-
     casper.wait(2000).then(function () {
         this.echo(counter);
         if (this.test.assertVisible({

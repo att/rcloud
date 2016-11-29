@@ -16,7 +16,7 @@ casper.test.begin(" Notebook rename:Alphabets,numbers and special characters", 4
     var title;
 
     casper.start(rcloud_url, function () {
-        casper.page.injectJs('jquery-1.10.2.js');
+        functions.inject_jquery(casper);
     });
 
     casper.wait(10000);

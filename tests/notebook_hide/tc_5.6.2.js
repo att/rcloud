@@ -22,7 +22,7 @@ casper.test.begin("Visibility of Public Notebooks", 6, function suite(test) {
     var i, j, k;
 
     casper.start(rcloud_url, function () {
-        casper.page.injectJs('jquery-1.10.2.js');
+        functions.inject_jquery(casper);
     });
     casper.wait(10000);
 

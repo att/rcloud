@@ -51,7 +51,7 @@ casper.test.begin("Write some code in the Prompt Cell", 4, function suite(test) 
     casper.wait(10000);
     
     casper.then(function(){
-        this.test.assertSelectorHasText({type:'xpath', path:'/html/body/div[3]/div/div[2]/div/div[3]/div[2]/div[2]/div'}, source_code, 'Confirmed that the content remains in the prompt cell after reload');
+        this.test.assertSelectorHasText(x(".//*[@id='command-prompt']/div[2]/div"), source_code, 'Confirmed that the content remains in the prompt cell after reload');
     });
 
     casper.run(function () {

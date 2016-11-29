@@ -5,7 +5,7 @@
 
 //Begin
 
-casper.test.begin("Invoke locator function with plot", 8, function suite(test) {
+casper.test.begin("Invoke locator function with plot", 7, function suite(test) {
     var x = require('casper').selectcss;
     var github_username = casper.cli.options.username;
     var github_password = casper.cli.options.password;
@@ -13,7 +13,6 @@ casper.test.begin("Invoke locator function with plot", 8, function suite(test) {
     var functions = require(fs.absolute('basicfunctions'));
     var input_code = "plot(1:10)";
     
-
     casper.start(rcloud_url, function () {
         functions.inject_jquery(casper);
     });
@@ -46,10 +45,9 @@ casper.test.begin("Invoke locator function with plot", 8, function suite(test) {
        
     //Add new cell and call locator() from that cell
     casper.wait(2000).then(function(){
-        functions.addnewcell(casper);
+        this.click("div.cell-control-bar:nth-child(1) > span:nth-child(1) > i:nth-child(1)");
+        console.log("adding one more cell")
     });
-
-
 
     //add contents to new cell
     casper.wait(2000).then(function(){

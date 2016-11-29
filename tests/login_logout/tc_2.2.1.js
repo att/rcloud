@@ -16,10 +16,8 @@ casper.test.begin("Log Back In -> user is logged-in to the Github account", 7, f
     var functions = require(fs.absolute('basicfunctions'));
 
     casper.start(rcloud_url, function () {
-        casper.page.injectJs('jquery-1.10.2.js');
+        functions.inject_jquery(casper);
     });
-
-    casper.wait(10000);
 
     casper.viewport(1024, 768).then(function () {
         functions.login(casper, github_username, github_password, rcloud_url);
