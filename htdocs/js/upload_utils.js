@@ -65,8 +65,6 @@
         return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
-                if(file.size > 750000)
-                    return Promise.reject(new Error('File ' + file.name + ' rejected: maximum asset size is 750KB'));
                 return text_or_binary_reader()(file)
                     .then(function(content) {
                         if(_.isString(content) && Notebook.empty_for_github(content))
