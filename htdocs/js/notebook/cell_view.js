@@ -134,7 +134,10 @@ function create_cell_html_view(language, cell_model) {
             notebook_cell_div.removeClass("selected");
         }
 
-        notebook_cell_div.find('.cell-control input[type="checkbox"]').prop('checked', cell_model.is_selected());
+        notebook_cell_div.find('.cell-control input[type="checkbox"]')
+            .prop('checked', cell_model.is_selected())
+            .focus();
+
     }
 
     //////////////////////////////////////////////////////////////////////////
