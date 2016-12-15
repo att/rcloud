@@ -19,7 +19,7 @@ create.notebook <- function(c, caps, body) {
   RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$stars$star_notebook, id)))
 
   headers <- paste0("Location: /edit.html?notebook=", id)
-  list("", "", headers, 302)
+  list("", "", headers, 302L)
 }
 
 run <- function(url, query, body, headers) {
@@ -57,7 +57,7 @@ run <- function(url, query, body, headers) {
         "Location: /login.R?redirect=/api.R/create",
         utils::URLencode(paste0("?token=", token), reserved = TRUE)
       )
-      return(list("", "", headers, 302))
+      return(list("", "", headers, 302L))
 
     }
     RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
