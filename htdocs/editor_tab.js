@@ -48,8 +48,8 @@ var editor = function () {
         show_terse_dates_ = false, // show terse date option for the user
         new_notebook_prefix_ = "Notebook ";
 
-    var github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so nothing happened.",
-                                  "If you want to fork the latest version, open your fork(s) in GitHub (through the Advanced menu) and delete them first."].join(' ');
+    var github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
+                                  "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' ');
 
     // work around oddities of rserve.js
     function each_r_list(list, f) {
@@ -1551,9 +1551,8 @@ var editor = function () {
                 .then(function(notebook) {
                     if(notebook_info_[notebook.id]) {
                         alert(github_nonfork_warning);
-                        return notebook;
                     }
-                    else return this.star_and_show(notebook, true, !!version);
+                    return this.star_and_show(notebook, true, !!version);
                 });
         },
         fork_folder: function(node, match, replace) {
