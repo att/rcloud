@@ -5,7 +5,7 @@
 
 //Begin
 
-casper.test.begin("Invoke locator function above the cell with plot",7,function suite(test) {
+casper.test.begin("Invoke locator function above the cell with plot",8,function suite(test) {
     var x = require('casper').selectcss;
     var github_username = casper.cli.options.username;
     var github_password = casper.cli.options.password;
@@ -28,6 +28,7 @@ casper.test.begin("Invoke locator function above the cell with plot",7,function 
         this.wait(9000);
         console.log("validating that the Main page has got loaded properly by detecting if some of its elements are visible. Here we are checking for Shareable Link and Logout options");
         functions.validation(casper);
+
     });
 
     //Create a new Notebook.
@@ -35,7 +36,7 @@ casper.test.begin("Invoke locator function above the cell with plot",7,function 
 
     //add a new cell and execute its contents
     casper.wait(2000).then(function(){
-        functions.addnewcell(casper); 
+        functions.addnewcell(casper);        
     });
 
 
@@ -58,8 +59,7 @@ casper.test.begin("Invoke locator function above the cell with plot",7,function 
     });
 
     casper.wait(2000).then(function(){
-        this.click("div.cell-control-bar:nth-child(1) > span:nth-child(1) > i:nth-child(1)");
-        this.wait(5000);
+        functions.addnewcell(casper);        
     });
 
     //add contents to new cell

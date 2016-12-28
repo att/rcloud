@@ -84,7 +84,7 @@ casper.test.begin(" Text with lexical error as Text Search ", 6, function suite(
     });
 
     casper.wait(5000).then(function () {
-        this.test.assertSelectorHasText("#search-results > h4:nth-child(1)", 'error', "search item does not parse special charaters, hence error occured");
+        this.test.assertSelectorHasText("#session-info-panel", 'error', "search item doesnot parse special charaters, hence error occured in session-info-panel");
     });
 
     casper.run(function () {

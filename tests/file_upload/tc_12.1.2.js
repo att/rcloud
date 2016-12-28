@@ -12,7 +12,7 @@ casper.test.begin("Upload a new File", 3, function suite(test) {
     var github_password = casper.cli.options.password;
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
-    var fileName = 'SampleFiles/PHONE.csv'; // File path directory
+    var fileName = 'SampleFiles/sample.csv'; // File path directory
     var URL;
     var system = require('system')
     var currentFile = require('system').args[4];

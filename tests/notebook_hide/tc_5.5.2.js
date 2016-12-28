@@ -21,7 +21,7 @@ casper.test.begin("Visibility of Private Notebooks", 6, function suite(test) {
     var new_user_password = 'musigma12';
 
     casper.start(rcloud_url, function () {
-        functions.inject_jquery(casper);
+        casper.page.injectJs('jquery-1.10.2.js');
     });
     casper.wait(10000);
 

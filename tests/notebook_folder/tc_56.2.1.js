@@ -11,7 +11,9 @@ casper.test.begin(" Renaming folder from the notebook's div ", 4,function suite(
     casper.start(rcloud_url, function () {
         functions.inject_jquery(casper);
     });
-    
+
+    casper.wait(10000);
+
     casper.viewport(1024, 768).then(function () {
         functions.login(casper, github_username, github_password, rcloud_url);
     });
@@ -47,7 +49,8 @@ casper.test.begin(" Renaming folder from the notebook's div ", 4,function suite(
         
     });
 
-    casper.then(function () {       
+    casper.then(function () {
+        
         var z = casper.evaluate(function triggerKeyDownEvent() {
             jQuery(".jqtree-selected > div:nth-child(1) > span:nth-child(1)").text("PREFIX_new/Notebook");
             var e = jQuery.Event("keydown");

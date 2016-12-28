@@ -34,7 +34,7 @@ casper.test.begin(" Verifying for Session div error", 4, function suite(test) {
     casper.then(function (){
         console.log("now opening a notebook with invalid Notebook ID");
         this.thenOpen(URL);
-        this.wait(8000);
+        this.wait(5000);
     });
 
     casper.then(function (){
@@ -43,7 +43,7 @@ casper.test.begin(" Verifying for Session div error", 4, function suite(test) {
     });
 
     casper.then(function (){
-        this.test.assertSelectorHasText(x(".//*[@id='session-info']/div/div[1]"), "Error: rcloud.load.notebook", "Session div has produced expected error message");
+        this.test.assertSelectorHasText(x(".//*[@id='session-info']/div/div[1]"), Error, "Session div has produced expected error message");
     });
 
     casper.run(function () {

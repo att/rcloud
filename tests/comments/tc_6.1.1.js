@@ -7,6 +7,7 @@
  */
 
 //Begin Test
+
 casper.test.begin(" Count of comments =0 when no comments are written ", 4, function suite(test) {
 
     var x = require('casper').selectXPath;
@@ -63,10 +64,11 @@ casper.test.begin(" Count of comments =0 when no comments are written ", 4, func
         this.click({ type : 'xpath' , path : '//*[@id="comment-submit"]'});
         this.echo('Clicking on comment button without entering any text');
         this.wait(2000);
-        this.test.assertNotVisible(x(".//*[@id='comments-container']/div/div[2]/div/div"),'No comments are written');
+        this.test.assertNotVisible({type : 'xpath' , path : '/html/body/div[3]/div/div[3]/div[1]/div/div/div[5]/div[2]/div/div/div/div[1]/div[3]/div[2]/div/div'},'No comments are written');
     });
     
     functions.delete_notebooksIstarred(casper);
+
 
     casper.run(function () {
         test.done();

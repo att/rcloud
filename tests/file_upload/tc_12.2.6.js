@@ -62,7 +62,7 @@ casper.test.begin("An empty file cannot be uploaded to a notebook", 3, function 
         });
     });
 
-    casper.wait(8000).then(function () {
+    casper.wait(2000).then(function () {
         this.wait(5000);
         this.waitUntilVisible(x('//*[contains(text(), "(unexpected) rcloud.update.notebook: Validation Failed (422)")]'), function then() {
             console.log("Empty file cannot be uploaded to assets");

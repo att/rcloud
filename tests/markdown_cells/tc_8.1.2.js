@@ -5,7 +5,7 @@ Description:A Markdown cell can be created by changing the language of prompt ce
 */
 
 //Begin Test
-casper.test.begin("Writing a code in markdown cell and executing it", 5, function suite(test) {
+casper.test.begin("Writing a code in markdown cell and executing it", 6, function suite(test) {
 	var x = require('casper').selectXPath;
     var github_username = casper.cli.options.username;
     var github_password = casper.cli.options.password;

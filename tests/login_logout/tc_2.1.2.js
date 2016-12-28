@@ -16,12 +16,15 @@ casper.test.begin("Logout of Github", 5, function suite(test) {
     var functions = require(fs.absolute('basicfunctions'));
 
     casper.start(rcloud_url, function () {
-        functions.inject_jquery(casper);
+        casper.page.injectJs('jquery-1.10.2.js');
     });
+
+    casper.wait(10000);
 
     casper.viewport(1024, 768).then(function () {
         functions.login(casper, github_username, github_password, rcloud_url);
     });
+
 
     casper.viewport(1024, 768).then(function () {
         this.wait(9000);

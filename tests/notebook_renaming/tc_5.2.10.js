@@ -16,7 +16,7 @@
         var title;
     
         casper.start(rcloud_url, function () {
-            functions.inject_jquery(casper);
+            casper.page.injectJs('jquery-1.10.2.js');
         });
     
         casper.wait(10000);

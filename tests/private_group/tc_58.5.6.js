@@ -44,7 +44,7 @@ casper.test.begin("Opening private notebook through shareable links as anonymous
         this.wait(2000)
         this.click(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)")
         this.then(function () {
-            this.wait(5000)
+            this.wait(3000)
             this.click('.group-link > a:nth-child(1)')
         });
         this.then(function () {
@@ -77,7 +77,7 @@ casper.test.begin("Opening private notebook through shareable links as anonymous
 
     casper.then(function () {
         this.waitForSelector(".group-link > a:nth-child(1)", function () {
-            this.wait(5000);
+            this.wait(3000);
             status = this.fetchText('.group-link > a:nth-child(1)');
             this.echo("Currnt status of notebook is " + status)
         });

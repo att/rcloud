@@ -18,7 +18,7 @@ casper.test.begin("Coalesce cells during execution", 6, function suite(test) {
     var errors = [];    
     
     casper.start(rcloud_url, function () {
-       functions.inject_jquery(casper);
+        casper.page.injectJs('jquery-1.10.2.js');
     });
     casper.wait(10000);
 

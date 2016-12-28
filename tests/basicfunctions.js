@@ -35,13 +35,16 @@ exports.login = function (casper, github_username, github_password, rcloud_url) 
                     this.click({type: 'css', path: "input.btn"});
                 });
 
-                casper.viewport(1366, 768).then(function () {
+                casper.wait(5000).viewport(1366, 768).then(function () {
                     if (this.getTitle().match(/Authorize RCloud/)) {
-                        this.click(".btn");
-                        console.log("Github Authorization completed");
+                        console.log("GitHub authorization page opened");
+                        this.waitForSelector(".btn", function () {
+                            this.click(".btn");
+                            console.log("Github Authorization completed");
+                        });
                     }
                     else {
-                        casper.viewport(1366, 768).then(function () {
+                        casper.wait(5000).viewport(1366, 768).then(function () {
                             this.wait(8000);
                             this.echo("The page title: " + this.getTitle());
                             console.log("RCloud Home page loaded");
@@ -62,11 +65,12 @@ exports.login = function (casper, github_username, github_password, rcloud_url) 
 exports.create_notebook = function (casper) {
     return casper
         .then(function () {
+            //----------
             var z = casper.evaluate(function () {
                 $('#new-notebook').click();
             });
             this.echo("New Notebook created");
-            this.wait(9000);
+            this.wait(10000);
         });
 };
 
@@ -120,8 +124,14 @@ exports.search1 = function (casper, search_Content) {
 exports.addnewcell = function (casper) {
     return casper
         .then(function () {
-            this.test.assertTruthy(this.click("span.cell-control > i:nth-child(1)", 'created new cell'), "New cell created");
-            this.wait(7000);
+            // this.test.assertTruthy(this.click("span.cell-control > i:nth-child(1)", 'created new cell'), "New cell created");
+            this.click("span.cell-control > i:nth-child(1)");
+            console.log("Clicking on ' + ' icon to add new cell");
+            this.wait(5000);
+            this.waitForSelector("div.cell-control-bar:nth-child(2) > span:nth-child(2) > i:nth-child(1)", function (){
+                this.test.assertExists("div.edit-code > div:nth-child(3) > div:nth-child(1)", "Cell is present. Hence confirmed new cell is created");
+            });
+            this.wait(8000);
         });
 };
 
@@ -129,8 +139,10 @@ exports.addnewcell = function (casper) {
 exports.addcontentstocell = function (casper, input_code) {
     return casper
         .then(function () {
+            this.wait(2000);
+            // this.waitForSelector("div.edit-code > div:nth-child(3) > div:nth-child(1)", function () {
+            // console.log("Cell is present to add contents to it");
             if (this.visible("div.edit-code > div:nth-child(3) > div:nth-child(1)")) {
-                this.test.pass('The cell is present');
                 console.log('Adding contents to the cell')
                 this.sendKeys("div.edit-code > div:nth-child(3) > div:nth-child(1)", input_code);
                 this.wait(4000);
@@ -140,6 +152,7 @@ exports.addcontentstocell = function (casper, input_code) {
             else {
                 this.test.fail('Cell is not present to pass the code content');
             }
+            // });
         });
 };
 

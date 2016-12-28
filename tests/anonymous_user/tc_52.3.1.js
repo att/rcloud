@@ -5,7 +5,7 @@
  */
 
 
-casper.test.begin("Shiny.html notebook opening as a Anonymous user", 4, function suite(test) {
+casper.test.begin("Shiny.html notebook opening as a Anonymous user", 8, function suite(test) {
 
     var x = require('casper').selectXPath;
     var github_username = casper.cli.options.username;
@@ -32,53 +32,55 @@ casper.test.begin("Shiny.html notebook opening as a Anonymous user", 4, function
         functions.validation(casper);
     });
 
-    functions.create_notebook(casper);
+    casper.thenOpen("http://127.0.0.1:8080/edit.html?notebook=8bd047b38db8c515426e", function () {
+        this.wait(5000);
+        functions.validation(casper);
+    });
 
-    //Pulling the mini notebook of another user's
     casper.then(function () {
-        this.click("li.dropdown:nth-child(3) > a:nth-child(1)");
-        this.evaluate(function () {
-            $('#pull_and_replace_notebook').click();
-        });
-        this.echo('opened pull and replcae dialog box');
         this.wait(2000);
+        functions.fork(casper);
+    });
+    
+    casper.then( function () {
+		this.wait(10000);
+		var temp1 = this.getCurrentUrl();
+        notebook_id = temp1.substring(41);
+        this.echo("Notebook Id is: " + notebook_id);
+        this.thenOpen(temp1);
+        this.wait(10000);
+	});
+    
+    casper.then(function () {
+		this.click(x(".//*[@id='rcloud-navbar-menu']/li[3]/a/b"));
+        console.log("Opening dropdown");
+        this.click(x(".//*[@id='publish_notebook']/i"));
+        console.log("Publishing Notebook");
+        this.wait(4000);
+    });
+    
+    casper.then(function () {
+        this.click(x(".//*[@id='view-mode']/b"));
+        console.log("Opening drop down to choose shiny");
+        this.wait(4000);
     });
 
-    //entering url
-    casper.wait(2000).then(function(){
-        casper.evaluate(function () {
-            $('#pull-notebook-url').val("http://127.0.0.1:8080/edit.html?notebook=8bd047b38db8c515426e");
-        });      
-        console.log("Clicking on pull button");
-        this.waitForSelector("div.modal-footer:nth-child(7) > span:nth-child(2)").thenClick("div.modal-footer:nth-child(7) > span:nth-child(2)");
-    }); 
-
-    casper.wait(3000).then(function (){
-        URL = this.getCurrentUrl();
-        this.echo(URL);
-        notebook_id = URL.substring(41);
-        this.echo("after pulling: " + notebook_id);
+    casper.then(function () {
+        this.click(x(".//*[@id='view-type']/li[4]/a"));
+        console.log("selecting shiny option from the drop down");
+        this.wait(1000);
     });
 
-    casper.then(function (){
-        this.reload();
-        this.wait(12000);
-    });
-
-    functions.runall(casper);
-
-    //publishing the notebook
-    casper.then(function (){
-        functions.open_advanceddiv(casper);
-        this.evaluate(function () {
-                    $('.icon-check-empty').click();
-                });
-    });
+    casper.then( function () {
+		var temp1 = this.getCurrentUrl();
+        notebook_id = temp1.substring(41,61);
+        this.echo("The Notebook Id: " + notebook_id);
+	});
 
     //logging out of RCloud
     casper.viewport(1366, 768).then(function () {
         console.log('Logging out of RCloud');
-        this.click("#rcloud-navbar-menu > li:nth-child(7) > a:nth-child(1)");
+        this.click("#rcloud-navbar-menu > li:nth-child(5) > a:nth-child(1)");
         this.wait(6000);
     });
 

@@ -44,7 +44,7 @@ casper.test.begin("Importing External private notebook", 10, function suite(test
         this.wait(2000)
         this.click(".jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)")
         this.then(function () {
-            this.wait(5000)
+            this.wait(3000)
             this.click('.group-link > a:nth-child(1)')
         });
         this.then(function () {
@@ -77,7 +77,7 @@ casper.test.begin("Importing External private notebook", 10, function suite(test
 
     casper.then(function () {
         this.waitForSelector(".group-link", function () {
-            this.wait(4000);
+            this.wait(3000);
             status = this.fetchText('.group-link');
             this.echo("Currnt status of notebook is " + status)
         });

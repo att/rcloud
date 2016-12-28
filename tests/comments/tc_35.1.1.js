@@ -39,7 +39,7 @@ casper.test.begin("Verifying the username along side the comment", 5, function s
 	 casper.wait(10000);
 	 
 	 casper.then(function(){
-		 this.test.assertSelectorHasText(".comment-header",github_username, "Comment has username along with it");
+		 this.test.assertSelectorHasText({ type: 'css', path: '.comment-header' },github_username);
 	 });
 	 
 	 casper.run(function () {
