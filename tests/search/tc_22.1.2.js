@@ -82,9 +82,7 @@ casper.test.begin(" Search after deleting a cell from a notebook", 8, function s
             counter = counter + 1;
             this.wait(2000);
         } 
-        //while (this.visible(x(".//*[@id="+counter+"]/table/tbody/tr[2]/td/table/tbody/tr/td")));
-        
-        while (this.visible(x(".//*[@id='search-results']/table/tbody/tr[" + counter + "]/td")));
+        while (this.visible(x(".//*[@id="+counter+"]/table/tbody/tr[2]/td/table/tbody/tr/td")));
                                  
         counter = counter - 1;
         this.echo("number of search results:" + counter);

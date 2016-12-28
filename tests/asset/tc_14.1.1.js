@@ -74,7 +74,7 @@ casper.test.begin("View contents of uploaded file in Assets div", 4, function su
 
     casper.then(function () {
         console.log('Verifying whether the uploaded contentsa are present in Asset div or not');
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div"), 'PHONE.csv', 'Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
     });
 
     casper.run(function () {

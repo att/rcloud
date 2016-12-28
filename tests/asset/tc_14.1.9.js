@@ -39,7 +39,6 @@ casper.test.begin("Add an asset to a notebook with no assets", 5, function suite
     casper.then(function () {
         URL = this.getCurrentUrl();
         this.thenOpen(URL);
-        this.wait(5000);
     });
 
     casper.wait(5000).then(function () {
@@ -48,11 +47,8 @@ casper.test.begin("Add an asset to a notebook with no assets", 5, function suite
                 return True;
             }
         });
-        this.click(x(".//*[@id='asset-list']/li[2]/div/span[2]/i"));
+        this.click(x(".//*[@id='asset-list']/li[2]/a/span[2]/i"));
         console.log('Deleting existing "scratch.R" asset');
-    });
-
-    casper.then(function (){
         this.test.assertSelectorDoesntHaveText(x(".//*[@id='asset-list']"), 'scratch.R', "Successfully deleted the scratch.R asset");
     });
 
@@ -68,14 +64,12 @@ casper.test.begin("Add an asset to a notebook with no assets", 5, function suite
     casper.then(function () {
         casper.setFilter("page.prompt", function (msg, currentValue) {
             if (msg === "Choose a filename for your asset") {
-                return asset_name;
+                return "JustCreatedAsset.R";
             }
         });
-        this.click("#new-asset");
+        this.click("#new-asset > a:nth-child(1)");
         this.echo("Creating a new asset");
     });
-
-    casper.wait(5000);
 
     casper.wait(15000).then(function () {
         this.test.assertSelectorHasText("#asset-list", asset_name, "Asset is added even though there were no assets present");

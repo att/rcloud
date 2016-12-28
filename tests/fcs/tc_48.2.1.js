@@ -15,7 +15,7 @@ casper.test.begin(" Checking line numbers in executing mode", 6, function suite(
     var notebook_id = "2c648b4f631d27da2859";
     
     casper.start(rcloud_url, function () {
-       functions.inject_jquery(casper);
+        casper.page.injectJs('jquery-1.10.2.js');
     });
     casper.wait(10000);
 

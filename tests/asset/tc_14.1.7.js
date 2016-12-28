@@ -73,13 +73,13 @@ casper.test.begin("Deleting an Assets div", 5, function suite(test) {
 
     casper.then(function () {
         console.log('Verifying whether the uploaded contentsa are present in Asset div or not');
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div"), 'PHONE.csv', 'Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
     });
 
 
     //Deleting a created asset
     casper.then(function () {
-        this.click(x(".//*[@id='asset-list']/li[3]/div/span[2]/i"));
+        this.click(x(".//*[@id='asset-list']/li[3]/a/span[2]/i"));
         console.log('clicking on delete icon');
         this.test.assertSelectorDoesntHaveText({
             type: 'xpath',

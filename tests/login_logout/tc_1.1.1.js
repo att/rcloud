@@ -14,7 +14,8 @@ casper.test.begin("Login to Main page (user is logged-in to the Github account)"
     var functions = require(fs.absolute('basicfunctions'));
 
     casper.start(rcloud_url, function () {
-        functions.inject_jquery(casper);
+        casper.page.injectJs('jquery-1.10.2.js');
+        console.log("First we need to create the scenario where user is logged in to Github but not to RCloud");
     });
 
     casper.viewport(1024, 768).then(function () {

@@ -11,7 +11,7 @@ casper.test.begin("Creating a combination of R and Markdown cells ", 9, function
     var github_password = casper.cli.options.password;
     var rcloud_url = casper.cli.options.url;
     var functions = require(fs.absolute('basicfunctions'));
-    var input_code = "a<-25; a";
+    var input_code = "'WELCOME TO RCLOUD'";
     var input_code1 = "a<-25; a"
 
     casper.start(rcloud_url, function () {
@@ -66,13 +66,10 @@ casper.test.begin("Creating a combination of R and Markdown cells ", 9, function
     casper.wait(4000).then(function () {
         this.click("#run-notebook");
         console.log("Saving the changes made to the notebook")
-        this.wait(5000);
-    });
-
-    casper.then(function (){
+        this.wait(3000);
         this.reload();
-        // this.wait(3000);
-    })
+        this.wait(3000);
+    });
 
     casper.wait(8000).then(function () {
         functions.runall(casper);

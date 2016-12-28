@@ -1,6 +1,6 @@
 //Begin Tests
 
-casper.test.begin("Create notebook folder using Notebook prefix", 4,function suite(test) {
+casper.test.begin("Create notebook folder using Notebook prefix", 5,function suite(test) {
 
     var x = require('casper').selectXPath;
     var github_username = casper.cli.options.username;
@@ -27,74 +27,57 @@ casper.test.begin("Create notebook folder using Notebook prefix", 4,function sui
         this.wait(4000);
     });
 
-    //Opening settings div
     casper.then(function () {
-        if (test.assertVisible(x(".//*[@id='settings-body']/div[7]/label/span"))) {
+        if (this.click("div.checkbox:nth-child(1)")) {
             this.echo('Settings div already open');
         }
         else {
             console.log('Opening settngs div');
-            this.click(x(".//*[@id='accordion-left']/div[3]/div[1]"))
+            this.click('#accordion-left > div:nth-child(3) > div:nth-child(1)');
             console.log('clicking on Settings div panel to open it');
             this.wait(3000);
         }
     });
 
-    //removing existing notebook prefix names from the notebook prefix text field
     casper.then(function () {
         for (var k = 1; k <= 10; k++) {
-            this.click(x(".//*[@id='settings-body']/div[9]/label/input"), {keepFocus: true});
+            this.click(x(".//*[@id='settings-body']/div[7]/label/input"), {keepFocus: true});
             this.page.sendEvent("keypress", casper.page.event.key.Delete);
         }
 
         for (var a = 1; a <= 30; a++) {
-            this.click(x(".//*[@id='settings-body']/div[9]/label/input"), {keepFocus: true});
+            this.click(x(".//*[@id='settings-body']/div[7]/label/input"), {keepFocus: true});
             this.page.sendEvent("keypress", casper.page.event.key.Backspace);
         }
         this.click("#command-prompt > textarea:nth-child(1)");
     });
 
-    //Entering desired notebok prefix
     casper.then(function () {
         this.wait(2000);
-        this.sendKeys(x(".//*[@id='settings-body']/div[9]/label/input"), notebook_prefix, {keepFocus: true});
+        this.sendKeys(x(".//*[@id='settings-body']/div[7]/label/input"), notebook_prefix, {keepFocus: true});
         this.page.sendEvent("keypress", casper.page.event.key.Enter);
         this.click("#command-prompt > textarea:nth-child(1)");
         this.wait(3000);
     });
 
-    //Reloading page to get reflection changes
-    casper.then(function (){
-        this.reload();
-        this.wait(6000);
-    });
+    functions.create_notebook(casper);
 
-    //creating new notebook
-    casper.then(function (){
-        this.wait(6000);
-        functions.create_notebook(casper);
-    });
-
-    casper.then(function(){
-        this.click('.jqtree-selected > div:nth-child(1) > span:nth-child(1)');
-        var after = this.fetchText('.jqtree-selected > div:nth-child(1) > span:nth-child(1)');
-        this.echo(after)
-        var folder_old=after.substring(0,6);
-        this.echo('Folder is created with name: ' + folder_old);
-        
+    casper.then(function () {
+        var s = this.fetchText(x(".//*[@id='notebook-title']"));
+        var n1 = s.substring(0,7);
+        this.echo('Notebook prefix name is: ' + n1);
+        this.test.assertEquals(n1, notebook_prefix, "Newly created notebook is created under" + notebook_prefix + "folder");
     });
 
     functions.create_notebook(casper);
 
-    casper.then(function(){
-        this.click('.jqtree-selected > div:nth-child(1) > span:nth-child(1)');
-        var after = this.fetchText('.jqtree-selected > div:nth-child(1) > span:nth-child(1)');
-        this.echo(after)
-        var folder_old=after.substring(0,6);
-        this.echo('Folder is created with name: ' + folder_old);    
+    casper.then(function () {
+        var j = this.fetchText(x(".//*[@id='notebook-title']"));
+        var m = j.substring(0,7)
+        this.echo('Notebook prefix name is: ' + m);
+        this.test.assertEquals(m, notebook_prefix, "Newly created notebook is created under" + notebook_prefix + "folder");
     });
 
-    //Deleting newly created notebooks so that it doesn't affect test results, when we run the script next time
     casper.then(function (){
         functions.delete_notebooksIstarred(casper);
         this.wait(8000);
@@ -102,15 +85,14 @@ casper.test.begin("Create notebook folder using Notebook prefix", 4,function sui
         this.wait(8000);
     });
 
-    //removing the notebook prefix name
     casper.then(function () {
         for (var j = 1; j <= 20; j++) {
-            this.click(x(".//*[@id='settings-body']/div[9]/label/input"), {keepFocus: true});
+            this.click(x(".//*[@id='settings-body']/div[7]/label/input"), {keepFocus: true});
             this.page.sendEvent("keypress", casper.page.event.key.Delete);
             // this.page.sendEvent("keypress", casper.page.event.key.Enter);
             }
         for (var u= 1; u <= 30; u++) {
-            this.click(x(".//*[@id='settings-body']/div[9]/label/input"), {keepFocus: true});
+            this.click(x(".//*[@id='settings-body']/div[7]/label/input"), {keepFocus: true});
             this.page.sendEvent("keypress", casper.page.event.key.Backspace);
         }
         this.click("#command-prompt > textarea:nth-child(1)");

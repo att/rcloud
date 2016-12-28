@@ -95,8 +95,8 @@ casper.test.begin("Accessing Notebook(Which is assigned to Group) as a member ",
     //Click on notebook info icon
     casper.wait(5000).then(function () {
         this.mouse.move('.jqtree-selected > div:nth-child(1) > span:nth-child(1)');
-        this.waitUntilVisible('.jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(5) > i:nth-child(1)', function () {
-            this.click('.jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(5) > i:nth-child(1)');
+        this.waitUntilVisible('.jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)', function () {
+            this.click('.jqtree-selected > div:nth-child(1) > span:nth-child(2) > span:nth-child(3) > span:nth-child(1) > span:nth-child(1) > i:nth-child(1)');
             console.log('Clicking notebook info');
         });   
     });
@@ -203,7 +203,6 @@ casper.test.begin("Accessing Notebook(Which is assigned to Group) as a member ",
 
     casper.then(function () {
         this.thenOpen(URL);
-        this.wait(2000);
     });
 
     casper.wait(8000).then(function () {

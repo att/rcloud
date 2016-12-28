@@ -76,13 +76,13 @@ casper.test.begin(".Re-upload the previously modified file", 5, function suite(t
 
     casper.then(function () {
         console.log('Verifying whether the uploaded contentsa are present in Asset div or not');
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div"), 'PHONE.csv', 'Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets');
     });
 
     casper.wait(3000);
 
     casper.then(function () {
-        before = this.fetchText('.active > div:nth-child(1) > span:nth-child(1)');
+        before = this.fetchText('.active > a:nth-child(1) > span:nth-child(1)');
         console.log("before Modifying asset name is:" + before);
     });
 

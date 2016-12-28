@@ -68,7 +68,7 @@ casper.test.begin("Upload file will be visible in assets div", 4, function suite
         this.waitUntilVisible(x('//*[contains(text(), "added")]'), function then() {
             console.log("File has been uploaded");
         });
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets div');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'Uploaded file is present in assets div');
     });
 
     casper.run(function () {

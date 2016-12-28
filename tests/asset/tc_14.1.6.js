@@ -49,7 +49,7 @@ casper.test.begin("Create a new asset directly in Assets div", 3, function suite
     });
     
     casper.then(function () {
-    	this.exists(x(".//*[@id='asset-list']/li[3]/div/span[2]/i"))
+		this.exists('.active > a:nth-child(1) > span:nth-child(1)');
 		console.log('Newly created asset exists');
 	});
 	

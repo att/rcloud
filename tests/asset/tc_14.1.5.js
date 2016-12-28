@@ -31,6 +31,10 @@ casper.test.begin("Upload a file to another user's notebook after forking it ", 
         functions.login(casper, github_username, github_password, rcloud_url);
     });
 
+    casper.waitUntilVisible('#run-notebook', function () {
+        this.echo('waiting for page to open completely');
+    });
+
     casper.viewport(1024, 768).then(function () {
         this.wait(9000);
         console.log("validating that the Main page has got loaded properly by detecting if some of its elements are visible. Here we are checking for Shareable Link and Logout options");
@@ -127,7 +131,7 @@ casper.test.begin("Upload a file to another user's notebook after forking it ", 
 
     casper.then(function () {
         console.log('Verifying whether the uploaded contentsa are present in Asset div or not');
-        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/div"), 'PHONE.csv', 'After forking, file can be uploaded and Uploaded file is present in assets');
+        this.test.assertSelectorHasText(x(".//*[@id='asset-list']/li[3]/a/span[1]"), 'PHONE.csv', 'After forking, file can be uploaded and Uploaded file is present in assets');
     });
 
     casper.run(function () {
