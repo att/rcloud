@@ -4,6 +4,10 @@
 
 (https://hub.docker.com/r/rcl0ud/rcloud/)
 
+## Installing using VM images
+
+(https://github.com/att/rcloud/wiki/Cloud-Images)
+
 ## Installing on your system
 ### Prerequisites
 
