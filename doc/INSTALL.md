@@ -13,14 +13,16 @@
 
 RCloud requires R 3.1.0 or higher and several R packages. If you want to compile R and all necessary packages from sources these are the necessary dependencies:
 
-    ## Ubuntu 14.04
+    ## Ubuntu 14.04 (or higher), Debian 8 (or higher) - dependencies:
     sudo apt-get install gcc g++ gfortran libcairo-dev libreadline-dev libxt-dev libjpeg-dev \
     libicu-dev libssl-dev libcurl4-openssl-dev subversion git automake make libtool \
-    libtiff-dev gettext redis-server rsync
+    libtiff-dev gettext redis-server rsync curl
 
-    ## to install R from the CRAN PPA (Note: stock R in the distro is too old!)
+    ## to install R from the CRAN PPA - Ubuntu 14.04 or Debian 8 only (skip this step on 16.04 or 9!):
     sudo add-apt-repository ppa:marutter/rrutter
     sudo apt-get update
+    
+    ## install R - alternatively you can install from sources
     sudo apt-get install r-base-dev
 
     ## RedHat/CentOS 6+
@@ -204,7 +206,7 @@ to `rcloud.conf`.
 
 For enhanced security RCloud can be configured to use a session key
 server instead of flat files. To install the reference server (it
-requires Java so e.g. `sudo apt-get install openjdk-7-jdk`), use
+requires Java so e.g. `sudo apt-get install openjdk-8-jdk`), use
 
     cd $ROOT
     mkdir services
