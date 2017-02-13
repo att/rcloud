@@ -226,13 +226,20 @@ var editor = function () {
 
 
     function as_folder_hierarchy(nodes, prefix, name_prefix) {
-        function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
-        var in_folders = nodes;
-        // tired of seeing the "method 'match' of undefined" error
-        if(_.some(in_folders, function(entry) {
+        function is_in_folder(v) {
+            return v.label.match(/([^/]+)\/(.+)/);
+        }
+        function is_bad_entry(entry) {
             return entry.label === undefined || entry.label === null;
-        }))
-           throw new Error("incomplete notebook entry (has it been shown yet?)");
+        }
+        var bad_entries = nodes.filter(is_bad_entry);
+        if(bad_entries.length) {
+            nodes = nodes.filter(function(entry) {
+                return !is_bad_entry(entry);
+            });
+            console.warn('bad entries:', bad_entries);
+        }
+        var in_folders = nodes;
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
