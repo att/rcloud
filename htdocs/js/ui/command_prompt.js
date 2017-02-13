@@ -75,8 +75,8 @@ RCloud.UI.command_prompt = (function() {
 
         ui_utils.install_common_ace_key_bindings(widget, result.language.bind(result));
 
-        var up_handler = widget.commands.commandKeyBinding[0].up,
-            down_handler = widget.commands.commandKeyBinding[0].down;
+        var up_handler = widget.commands.commandKeyBinding.up,
+            down_handler = widget.commands.commandKeyBinding.down;
         widget.commands.addCommands([
             {
                 name: 'execute',

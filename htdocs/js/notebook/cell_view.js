@@ -353,10 +353,10 @@ function create_cell_html_view(language, cell_model) {
             return language;
         });
 
-        var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
-            right_handler = ace_widget_.commands.commandKeyBinding[0].right,
-            up_handler = ace_widget_.commands.commandKeyBinding[0].up,
-            down_handler = ace_widget_.commands.commandKeyBinding[0].down;
+        var left_handler = ace_widget_.commands.commandKeyBinding.left,
+            right_handler = ace_widget_.commands.commandKeyBinding.right,
+            up_handler = ace_widget_.commands.commandKeyBinding.up,
+            down_handler = ace_widget_.commands.commandKeyBinding.down;
 
         ace_widget_.commands.addCommands([{
             name: 'executeCell',

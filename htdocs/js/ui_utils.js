@@ -145,7 +145,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
-    var tab_handler = widget.commands.commandKeyBinding[0].tab;
+    var tab_handler = widget.commands.commandKeyBinding.tab;
 
     widget.commands.removeCommand('gotoline');
     widget.commands.addCommands([
