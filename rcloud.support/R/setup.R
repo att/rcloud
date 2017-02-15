@@ -347,7 +347,7 @@ start.rcloud.common <- function(...) {
 
   ## set up the languages which will be supported by this session
   lang.list <- NULL
-  file.ext.list <- NULL
+  file.ext.list <- list(md = "Markdown")
   if (!identical(.session$mode, "call")) {
     lang.str <- getConf("rcloud.languages")
     if (!is.character(lang.str))

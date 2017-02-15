@@ -1,7 +1,12 @@
-## RCloud 1.8
+## RCloud 1.7.1
 
 ### Improvements
 * Solr index update calls are non blocking (Requires R 3.3.x)
+
+* Fix scrolling issues on cell focus, by updating Ace to 1.2.6 (#2379, #2380)
+
+* Markdown cells would switch to GCC Machine Description if they contained
+  certain content, making notebook unusable (#2178)
 
 
 ## RCloud 1.7
