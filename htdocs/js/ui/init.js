@@ -145,10 +145,10 @@ RCloud.UI.init = function() {
         description: 'Step back through the notebook\'s history',
         keys: {
             mac: [
-                ['command', 'z']
+                ['command', 'alt', 'z']
             ],
             win: [
-                ['ctrl', 'z']
+                ['ctrl', 'alt', 'z']
             ]
         },
         on_page: ['edit'],
