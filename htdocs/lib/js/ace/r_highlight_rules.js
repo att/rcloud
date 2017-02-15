@@ -17,14 +17,14 @@
  * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
  *
  */
-define("ace/mode/r_highlight_rules", function(require, exports, module)
+define("mode/r_highlight_rules", function(require, exports, module)
 {
 
    var oop = require("ace/lib/oop");
    var lang = require("ace/lib/lang");
    var TextHighlightRules = require("ace/mode/text_highlight_rules")
          .TextHighlightRules;
-   var TexHighlightRules = require("ace/mode/tex_highlight_rules").TexHighlightRules;
+   var TexHighlightRules = require("mode/tex_highlight_rules").TexHighlightRules;
 
    var RHighlightRules = function()
    {
