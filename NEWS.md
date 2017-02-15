@@ -3,17 +3,18 @@
 ### Improvements
 * Solr index update calls are non blocking (Requires R 3.3.x)
 
-* Fix scrolling issues on cell focus, by updating Ace to 1.2.6 (#2379, #2380)
-
-* Markdown cells would switch to GCC Machine Description if they contained
-  certain content, making notebook unusable (#2178)
-
 * Make keys for multiple cell deletion safer by changing the Windows shortcuts
   to <kbd>ctrl del</kbd> / <kbd>ctrl backspace</kbd>, and MacOS shortcut to
   <kbd>cmd backspace</kbd> shortcuts. Make it harder to accidentally hit the
   Undo shortcut by adding the <kbd>alt</kbd> modifier (now <kbd>ctrl alt
   z</kbd> on Windows/Linux and <kbd>cmd alt z</kbd> on MacOS, Redo is
   unaffected). (#2383)
+
+### Bugfixes
+* Fix scrolling issues on cell focus, by updating Ace to 1.2.6 (#2379, #2380)
+
+* Markdown cells would switch to GCC Machine Description if they contained
+  certain content, making notebook unusable (#2178)
 
 
 ## RCloud 1.7
