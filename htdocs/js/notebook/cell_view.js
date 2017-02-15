@@ -389,7 +389,7 @@ function create_cell_html_view(language, cell_model) {
                 var cursor_position = ace_widget_.getCursorPosition();
                 var use_default = true;
 
-                if(cursor_position.row === 0) {
+                if(cursor_position.row === 0 && cursor_position.column === 0) {
                     var prior_cell = cell_model.parent_model.prior_cell(cell_model);
 
                     if(prior_cell) {
@@ -397,7 +397,7 @@ function create_cell_html_view(language, cell_model) {
 
                         var prior_widget = prior_cell.views[0].ace_widget();
                         var last = ui_utils.ace_get_last(prior_widget);
-                        prior_widget.gotoLine(last.row + 1, cursor_position.column);
+                        prior_widget.gotoLine(last.row + 1, 0);
 
                         use_default = false;
                     }
@@ -416,10 +416,9 @@ function create_cell_html_view(language, cell_model) {
                 var use_default = true;
 
                 var cursor_position = ace_widget_.getCursorPosition();
-                var use_default = true;
                 var last = ui_utils.ace_get_last(ace_widget_);
 
-                if(cursor_position.row == last.row) {
+                if(cursor_position.row == last.row && cursor_position.column === last.column) {
                     use_default = false;
 
                     var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
@@ -428,7 +427,7 @@ function create_cell_html_view(language, cell_model) {
                         subsequent_cell.set_focus();
 
                         subsequent_cell.views[0].ace_widget()
-                            .gotoLine(1, cursor_position.column);
+                            .gotoLine(1, 0);
                     }
                 }
 
