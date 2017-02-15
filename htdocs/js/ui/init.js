@@ -206,13 +206,11 @@ RCloud.UI.init = function() {
         description: 'Remove selected cells',
         keys: {
             mac: [
-                ['del'],
-                ['backspace'],
                 ['command', 'backspace']
             ],
             win: [
-                ['del'],
-                ['backspace']
+                ['ctrl', 'del'],
+                ['ctrl', 'backspace']
             ]
         },
         modes: ['writeable'],
