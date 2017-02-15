@@ -404,7 +404,7 @@ function create_cell_html_view(language, cell_model) {
                 }
 
                 if(use_default) {
-                    left_handler.exec(widget, args, request);    
+                    left_handler.exec(widget, args, request);
                 }
             }
         }, {
@@ -430,7 +430,7 @@ function create_cell_html_view(language, cell_model) {
                         subsequent_cell.views[0].ace_widget()
                             .gotoLine(0, 0);
                     }
-                } 
+                }
 
                 if(use_default) {
                     right_handler.exec(widget, args, request);
@@ -443,7 +443,7 @@ function create_cell_html_view(language, cell_model) {
                 mac: 'up'
             },
             exec: function(widget, args, request) {
-                
+
                 var cursor_position = ace_widget_.getCursorPosition();
                 var use_default = true;
 
@@ -488,7 +488,7 @@ function create_cell_html_view(language, cell_model) {
                         subsequent_cell.views[0].ace_widget()
                             .gotoLine(1, cursor_position.column);
                     }
-                } 
+                }
 
                 if(use_default)
                     down_handler.exec(widget, args, request);
