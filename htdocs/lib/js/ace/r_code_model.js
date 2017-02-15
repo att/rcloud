@@ -921,49 +921,20 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
       return true;
    };
 
-   this.$onDocChange = function(evt)
+   this.$onDocChange = function(delta)
   {
-      // ace appears to have slipped too far for any of this code to work
-      // my changes are just to keep this from crashing...
-      var delta = evt;
-
-      if (delta.action === "insertLines")
+      if (delta.action === "insert")
       {
-         this.$insertNewRows(delta.range.start.row,
-                             delta.range.end.row - delta.range.start.row);
+         this.$insertNewRows(delta.start.row,
+                             delta.end.row - delta.start.row);
       }
-      else if (delta.action === "insertText")
+      else if (delta.action === "remove")
       {
-         if (this.$doc.isNewLine(delta.text))
-         {
-            this.$invalidateRow(delta.range.start.row);
-            this.$insertNewRows(delta.range.end.row, 1);
-         }
-         else
-         {
-            this.$invalidateRow(delta.range.start.row);
-         }
-      }
-      else if (delta.action === "removeLines")
-      {
-         this.$removeRows(delta.range.start.row,
-                          delta.range.end.row - delta.range.start.row);
-         this.$invalidateRow(delta.range.start.row);
-      }
-      else if (delta.action === "removeText")
-      {
-         if (this.$doc.isNewLine(delta.text))
-         {
-            this.$removeRows(delta.range.end.row, 1);
-            this.$invalidateRow(delta.range.start.row);
-         }
-         else
-         {
-            this.$invalidateRow(delta.range.start.row);
-         }
+         this.$removeRows(delta.start.row,
+                          delta.end.row - delta.start.row);
+         this.$invalidateRow(delta.start.row);
       }
 
-      // gw: ditto here
       this.$scopes.invalidateFrom(delta.start);
    };
    

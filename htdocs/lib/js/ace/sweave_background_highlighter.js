@@ -153,53 +153,22 @@ define("ace/mode/sweave_background_highlighter", function(require, exports, modu
          var markers = this.$rowState.splice(index, count);
       };
 
-      this.$onDocChange = function(evt)
+      this.$onDocChange = function(delta)
       {
-         var delta = evt;
-
-         if (delta.action === "insertLines")
+         if (delta.action === "insert")
          {
-            var newLineCount = delta.range.end.row - delta.range.start.row;
-            this.$insertNewRows(delta.range.start.row, newLineCount);
+            var newLineCount = delta.end.row - delta.start.row;
+            this.$insertNewRows(delta.start.row, newLineCount);
             for (var i = 0; i < newLineCount; i++)
-               this.$updateRow(delta.range.start.row + i);
-            this.$syncMarkers(delta.range.start.row);
+               this.$updateRow(delta.start.row + i);
+            this.$syncMarkers(delta.start.row);
          }
-         else if (delta.action === "insertText")
+         else if (delta.action === "remove")
          {
-            if (this.$doc.isNewLine(delta.text))
-            {
-               this.$insertNewRows(delta.range.end.row, 1);
-               this.$updateRow(delta.range.start.row);
-               this.$updateRow(delta.range.start.row + 1);
-               this.$syncMarkers(delta.range.start.row);
-            }
-            else
-            {
-               this.$updateRow(delta.range.start.row);
-               this.$syncMarkers(delta.range.start.row, 1);
-            }
-         }
-         else if (delta.action === "removeLines")
-         {
-            this.$removeRows(delta.range.start.row,
-                             delta.range.end.row - delta.range.start.row);
-            this.$updateRow(delta.range.start.row);
-            this.$syncMarkers(delta.range.start.row);
-         }
-         else if (delta.action === "removeText")
-         {
-            if (this.$doc.isNewLine(delta.text))
-            {
-               this.$removeRows(delta.range.end.row, 1);
-               this.$updateRow(delta.range.start.row);
-               this.$syncMarkers(delta.range.start.row);
-            }
-            else
-            {
-               this.$updateRow(delta.range.start.row);
-               this.$syncMarkers(delta.range.start.row, 1);
-            }
+            this.$removeRows(delta.start.row,
+                             delta.end.row - delta.start.row);
+            this.$updateRow(delta.start.row);
+            this.$syncMarkers(delta.start.row);
          }
       };
 
