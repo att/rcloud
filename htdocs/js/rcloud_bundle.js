@@ -900,7 +900,7 @@ ui_utils.ace_set_pos = function(widget, row, column) {
 ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
     var Autocomplete = ace.require("ace/autocomplete").Autocomplete;
     var session = widget.getSession();
-    var tab_handler = widget.commands.commandKeyBinding[0].tab;
+    var tab_handler = widget.commands.commandKeyBinding.tab;
 
     widget.commands.removeCommand('gotoline');
     widget.commands.addCommands([
@@ -2341,10 +2341,10 @@ function create_cell_html_view(language, cell_model) {
             return language;
         });
 
-        var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
-            right_handler = ace_widget_.commands.commandKeyBinding[0].right,
-            up_handler = ace_widget_.commands.commandKeyBinding[0].up,
-            down_handler = ace_widget_.commands.commandKeyBinding[0].down;
+        var left_handler = ace_widget_.commands.commandKeyBinding.left,
+            right_handler = ace_widget_.commands.commandKeyBinding.right,
+            up_handler = ace_widget_.commands.commandKeyBinding.up,
+            down_handler = ace_widget_.commands.commandKeyBinding.down;
 
         ace_widget_.commands.addCommands([{
             name: 'executeCell',
@@ -2367,10 +2367,10 @@ function create_cell_html_view(language, cell_model) {
                 shell.run_notebook_from(cell_model.id());
             }
         }, {
-            name: 'left',
+            name: 'up',
             bindKey: {
-                win: 'left',
-                mac: 'left'
+                win: 'up',
+                mac: 'up'
             },
             exec: function(widget, args, request) {
 
@@ -2385,65 +2385,7 @@ function create_cell_html_view(language, cell_model) {
 
                         var prior_widget = prior_cell.views[0].ace_widget();
                         var last = ui_utils.ace_get_last(prior_widget);
-                        prior_widget.gotoLine(last.row + 1, last.column);
-
-                        use_default = false;
-                    }
-                }
-
-                if(use_default) {
-                    left_handler.exec(widget, args, request);    
-                }
-            }
-        }, {
-            name: 'right',
-            bindKey: {
-                win: 'right',
-                mac: 'right'
-            },
-            exec: function(widget, args, request) {
-
-                var cursor_position = ace_widget_.getCursorPosition();
-                var use_default = true;
-                var last = ui_utils.ace_get_last(ace_widget_);
-
-                if(cursor_position.column === last.column && cursor_position.row == last.row) {
-                    use_default = false;
-
-                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
-
-                    if(subsequent_cell) {
-                        subsequent_cell.set_focus();
-
-                        subsequent_cell.views[0].ace_widget()
-                            .gotoLine(0, 0);
-                    }
-                } 
-
-                if(use_default) {
-                    right_handler.exec(widget, args, request);
-                }
-            }
-        }, {
-            name: 'up',
-            bindKey: {
-                win: 'up',
-                mac: 'up'
-            },
-            exec: function(widget, args, request) {
-                
-                var cursor_position = ace_widget_.getCursorPosition();
-                var use_default = true;
-
-                if(cursor_position.row === 0) {
-                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
-
-                    if(prior_cell) {
-                        prior_cell.set_focus();
-
-                        var prior_widget = prior_cell.views[0].ace_widget();
-                        var last = ui_utils.ace_get_last(prior_widget);
-                        prior_widget.gotoLine(last.row + 1, cursor_position.column);
+                        prior_widget.gotoLine(last.row + 1, 0);
 
                         use_default = false;
                     }
@@ -2462,10 +2404,9 @@ function create_cell_html_view(language, cell_model) {
                 var use_default = true;
 
                 var cursor_position = ace_widget_.getCursorPosition();
-                var use_default = true;
                 var last = ui_utils.ace_get_last(ace_widget_);
 
-                if(cursor_position.row == last.row) {
+                if(cursor_position.row == last.row && cursor_position.column === last.column) {
                     use_default = false;
 
                     var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
@@ -2474,9 +2415,9 @@ function create_cell_html_view(language, cell_model) {
                         subsequent_cell.set_focus();
 
                         subsequent_cell.views[0].ace_widget()
-                            .gotoLine(1, cursor_position.column);
+                            .gotoLine(1, 0);
                     }
-                } 
+                }
 
                 if(use_default)
                     down_handler.exec(widget, args, request);
@@ -4978,8 +4919,6 @@ RCloud.language = (function() {
         return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
-                if(file.size > 750000)
-                    return Promise.reject(new Error('File ' + file.name + ' rejected: maximum asset size is 750KB'));
                 return text_or_binary_reader()(file)
                     .then(function(content) {
                         if(_.isString(content) && Notebook.empty_for_github(content))
@@ -5888,8 +5827,8 @@ RCloud.UI.command_prompt = (function() {
 
         ui_utils.install_common_ace_key_bindings(widget, result.language.bind(result));
 
-        var up_handler = widget.commands.commandKeyBinding[0].up,
-            down_handler = widget.commands.commandKeyBinding[0].down;
+        var up_handler = widget.commands.commandKeyBinding.up,
+            down_handler = widget.commands.commandKeyBinding.down;
         widget.commands.addCommands([
             {
                 name: 'execute',
@@ -9068,10 +9007,10 @@ RCloud.UI.init = function() {
         description: 'Step back through the notebook\'s history',
         keys: {
             mac: [
-                ['command', 'z']
+                ['command', 'alt', 'z']
             ],
             win: [
-                ['ctrl', 'z']
+                ['ctrl', 'alt', 'z']
             ]
         },
         on_page: ['edit'],
@@ -9129,13 +9068,11 @@ RCloud.UI.init = function() {
         description: 'Remove selected cells',
         keys: {
             mac: [
-                ['del'],
-                ['backspace'],
                 ['command', 'backspace']
             ],
             win: [
-                ['del'],
-                ['backspace']
+                ['ctrl', 'del'],
+                ['ctrl', 'backspace']
             ]
         },
         modes: ['writeable'],
@@ -9171,26 +9108,6 @@ RCloud.UI.init = function() {
         },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
-    }, {
-        category: 'Cell Management',
-        id: 'arrow_next_cell',
-        description: 'Enter next cell (from end of current)',
-        keys: {
-            win_mac: [
-                ['right']
-            ]
-        },
-        modes: ['writeable']
-    }, {
-        category: 'Cell Management',
-        id: 'arrow_previous_cell',
-        description: 'Enter previous cell (from start of current)',
-        keys: {
-            win_mac: [
-                ['left']
-            ]
-        },
-        modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'arrow_next_cell_down',
@@ -11665,7 +11582,7 @@ RCloud.UI.session_pane = {
     append_text: function(msg) {
         // FIXME: dropped here from session.js, could be integrated better
         if(!$('#session-info').length) {
-            console.log('session log; ', msg);
+            console.log('session log: ', msg);
             return; // workaround for view mode
         }
         // one hacky way is to maintain a <pre> that we fill as we go
