@@ -155,7 +155,7 @@ define("ace/mode/sweave_background_highlighter", function(require, exports, modu
 
       this.$onDocChange = function(evt)
       {
-         var delta = evt.data;
+         var delta = evt;
 
          if (delta.action === "insertLines")
          {
