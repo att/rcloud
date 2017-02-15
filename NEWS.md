@@ -10,6 +10,10 @@
   z</kbd> on Windows/Linux and <kbd>cmd alt z</kbd> on MacOS, Redo is
   unaffected). (#2383)
 
+* Arrow keys to move between cells are more conservative. Arrow left/right
+  never go to previous/next cell. Arrow up/down first go to beginning/end of
+  line before going to previous/next cell. (#2381)
+
 ### Bugfixes
 * Fix scrolling issues on cell focus, by updating Ace to 1.2.6 (#2379, #2380)
 
