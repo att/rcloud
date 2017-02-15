@@ -12,7 +12,7 @@
  * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
  *
  */
-define('mode/r_scope_tree', function(require, exports, module) {
+define('ace/mode/r_scope_tree', function(require, exports, module) {
 
    function debuglog(str) {
       //console.log(str);

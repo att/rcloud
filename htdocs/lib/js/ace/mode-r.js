@@ -17,7 +17,7 @@
  * AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
  *
  */
-define("mode/r", function(require, exports, module)
+define("ace/mode/r", function(require, exports, module)
 {
    var Editor = require("ace/editor").Editor;
    var EditSession = require("ace/edit_session").EditSession;
@@ -27,21 +27,31 @@ define("mode/r", function(require, exports, module)
    var Tokenizer = require("ace/tokenizer").Tokenizer;
    var TextHighlightRules = require("ace/mode/text_highlight_rules")
          .TextHighlightRules;
-   var RHighlightRules = require("mode/r_highlight_rules").RHighlightRules;
-   var RCodeModel = require("mode/r_code_model").RCodeModel;
-   var RMatchingBraceOutdent = require("mode/r_matching_brace_outdent").RMatchingBraceOutdent;
-   var AutoBraceInsert = require("mode/auto_brace_insert").AutoBraceInsert;
+   var RHighlightRules = require("ace/mode/r_highlight_rules").RHighlightRules;
+   var RCodeModel = require("ace/mode/r_code_model").RCodeModel;
+   var FoldMode = require("./folding/cstyle").FoldMode;
+   var RMatchingBraceOutdent = require("ace/mode/r_matching_brace_outdent").RMatchingBraceOutdent;
+   var AutoBraceInsert = require("ace/mode/auto_brace_insert").AutoBraceInsert;
    var unicode = require("ace/unicode");
 
    var Mode = function(suppressHighlighting, doc, session)
    {
+      this.getCompletions = function(state, session, pos, prefix, callback) {
+          rcloud.get_completions('R', session.getValue(),
+                                 session.getDocument().positionToIndex(pos))
+              .then(function(ret) {
+                  callback(null, ret);
+              });
+      };
+      this.HighlightRules = RHighlightRules;
       if (suppressHighlighting)
          this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
       else
          this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
 
+      this.$highlightRules = new this.HighlightRules();
       this.codeModel = new RCodeModel(doc, this.$tokenizer, null);
-      this.foldingRules = this.codeModel;
+      this.foldingRules = new FoldMode();
    };
    oop.inherits(Mode, TextMode);
 
@@ -106,6 +116,7 @@ define("mode/r", function(require, exports, module)
          }
          return false;
       };
+      this.lineCommentStart = ["#"];
    }).call(Mode.prototype);
    exports.Mode = Mode;
 });
