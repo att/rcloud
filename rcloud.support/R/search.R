@@ -93,7 +93,7 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
                     ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste(sortby,orderby))
   query <- function(solr.url,source='',solr.auth.user=NULL,solr.auth.pwd=NULL) {
     solr.res <- .solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
-    saveRDS(solr.res, file = "/home/douglas/solr_res.rds")
+    
     rcloud.solr::parse.solr.res(solr.res, pagesize = pagesize, source = source)
   }
   if (isTRUE(all_sources)) {
