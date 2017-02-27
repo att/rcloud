@@ -27,3 +27,20 @@ RCloud.utils.get_notebook_from_url = function(url) {
     var id = url.match(new RegExp('[?&]notebook=([^&#]*)'));
     return id && id[1];
 }
+
+RCloud.utils.clean_r = function(obj) {
+    delete obj.r_attributes;
+    delete obj.r_type;
+    return obj;
+}
+
+RCloud.utils.split_number = function(name) {
+    var trnexp = /(\d+)$/;
+    
+    var res = trnexp.exec(name);
+    if(!res) {
+       return null;
+    }
+    
+    return [name.slice(0, res.index), res[1]];
+}

@@ -30,6 +30,7 @@ module.exports = function (grunt) {
             "htdocs/js/notebook/notebook_view.js",
             "htdocs/js/notebook/notebook_model.js",
             "htdocs/js/notebook/notebook_controller.js",
+            "htdocs/js/notebook/tree/notebook_tree.js",
             "htdocs/js/notebook/util.js",
             "htdocs/js/discovery_model.js",
             "htdocs/js/notebook.js",
