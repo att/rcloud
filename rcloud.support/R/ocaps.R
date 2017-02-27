@@ -33,8 +33,9 @@ wrap.all.js.funs <- function(v)
     v
 }
 
-oc.init.authenticate <- function(v, mode="IDE", client.version) {
-    if(client.version != .info$rcloud.info$version.string)
+oc.init.authenticate <- function(v, mode="IDE", client.version=NULL) {
+    if(!is.null(client.version) &&
+       !isTRUE(client.version == .info$rcloud.info$version.string))
       stop(paste('Please do a hard reload with ctrl-F5 (Windows/Linux) or cmd-shift-R (macOS)\nServer version', .info$rcloud.info$version.string, 'does not match client version', client.version))
     .session$mode <- mode
     if (RC.authenticate(v)) {
