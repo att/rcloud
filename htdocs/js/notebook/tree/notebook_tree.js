@@ -1,5 +1,7 @@
 function notebook_tree() {
     
+    this.notebook_open = new event(this);
+
     // major key is adsort_order and minor key is name (label)
     this.ordering = {
         HEADER: 0, // at top (unused)
@@ -1171,10 +1173,18 @@ notebook_tree.prototype = {
     tree_click: function(event) {
 
         if(event.node.id === 'showmore')
-            result.show_history(event.node.parent, false);
+            this.show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                result.open_notebook(event.node.gistname, event.node.version, event.node.source, true, true);
+                this.notebook_open.notify({ 
+                    // gistname, version, source, selroot, new_window
+                    gistname: event.node.gistname, 
+                    version: event.node.version,
+                    source: event.node.source, 
+                    selroot: true,
+                    new_window: true
+                });
+                //this.open_notebook(event.node.gistname, event.node.version, event.node.source, true, true);
             else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
@@ -1183,7 +1193,16 @@ notebook_tree.prototype = {
                     event.node.version == current_.version && event.node.version == null) // deliberately null-vague here
                     this.select_node(event.node).bind(this);
                 else
-                    result.open_notebook(event.node.gistname, event.node.version || null, event.node.source, event.node.root, false);
+                    this.notebook_open.notify({ 
+                        // gistname, version, source, selroot, new_window
+                        gistname: event.node.gistname, 
+                        version: event.node.version || null,
+                        source: event.node.source, 
+                        selroot: event.node.root,
+                        new_window: false
+                    });
+
+                    //this.open_notebook(event.node.gistname, event.node.version || null, event.node.source, event.node.root, false);
                 /*jshint eqnull:false */
             }
         }
@@ -1225,6 +1244,31 @@ notebook_tree.prototype = {
         // notebook folder name only editable when open
         if(n.full_name && !n.gistname)
             RCloud.UI.notebook_title.make_editable(n, n.element, false);
+    },
+
+    show_history: function(node, opts) {
+        var that = this;
+        if(_.isBoolean(opts))
+            opts = {toggle: opts};
+        var whither = opts.update ? 'same' : 'more';
+        if(node.children.length) {
+            if(!node.is_open) {
+                $tree_.tree('openNode', node);
+                return Promise.resolve(undefined);
+            }
+            if(opts.toggle) whither = 'hide';
+        }
+        return that.update_history_nodes(node, whither, null)
+            .then(function(node) {
+                var history_len = 0;
+                if(that.histories_[node.gistname]) {
+                    history_len = that.histories_[node.gistname].length;
+                }
+                if(history_len==1) { // FIXME: should be via UI.notebook_commands
+                    $(".history i",$(node.element)).addClass("button-disabled");
+                }
+                that.$tree_.tree('openNode', node);
+            });
     },
 
     open_last_loadable: function() {

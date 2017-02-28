@@ -2,6 +2,16 @@ var editor = function () {
 
     var new_notebook_prefix_ = "Notebook ",
         notebook_tree_ = new notebook_tree();
+    
+    notebook_tree_.notebook_open.attach(function (sender, args) {
+        result.open_notebook(
+            args.gistname,
+            args.version,
+            args.source,
+            args.selroot,
+            args.new_window
+        );
+    });    
 
     function get_notebook_info(gistname) {
         return notebook_tree_.get_notebook_info();
@@ -415,29 +425,6 @@ var editor = function () {
         pull_and_replace_notebook: function(from_notebook) {
             return shell.pull_and_replace_notebook(from_notebook)
                 .then(this.load_callback({is_change: true, selroot: true}));
-        },
-        show_history: function(node, opts) {
-            if(_.isBoolean(opts))
-                opts = {toggle: opts};
-            var whither = opts.update ? 'same' : 'more';
-            if(node.children.length) {
-                if(!node.is_open) {
-                    $tree_.tree('openNode', node);
-                    return Promise.resolve(undefined);
-                }
-                if(opts.toggle) whither = 'hide';
-            }
-            return update_history_nodes(node, whither, null)
-                .then(function(node) {
-                    var history_len = 0;
-                    if(histories_[node.gistname]) {
-                        history_len = histories_[node.gistname].length;
-                    }
-                    if(history_len==1) { // FIXME: should be via UI.notebook_commands
-                        $(".history i",$(node.element)).addClass("button-disabled");
-                    }
-                    $tree_.tree('openNode', node);
-                });
         },
         step_history_undo: function() {
             var previous_version = history_manager.get_previous();
