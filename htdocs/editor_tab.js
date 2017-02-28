@@ -1,7 +1,6 @@
 var editor = function () {
 
-    var show_terse_dates_ = false, // show terse date option for the user
-        new_notebook_prefix_ = "Notebook ",
+    var new_notebook_prefix_ = "Notebook ",
         notebook_tree_ = new notebook_tree();
 
     function get_notebook_info(gistname) {
@@ -137,7 +136,7 @@ var editor = function () {
                 console.log('load tree took ' + (window.performance.now() - start_widget_time));
         },*/
         find_next_copy_name: function(name) {
-            return find_next_copy_name(username_, name);
+            return notebook_tree_.find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
             version = version || null;
@@ -196,10 +195,10 @@ var editor = function () {
         },
         new_notebook: function() {
             var that = this;
-            return Promise.cast(find_next_copy_name(username_, new_notebook_prefix_ + '1'))
+            return Promise.cast(this.find_next_copy_name(username_, new_notebook_prefix_ + '1'))
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
-                    set_visibility(notebook.id, true);
+                    notebook_tree_.set_visibility(notebook.id, true);
                     that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
                 });
         },
@@ -259,23 +258,25 @@ var editor = function () {
                     current_.notebook;
             var user = opts.user ||
                     opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
-                    get_notebook_info(gistname).username;
+                    that.get_notebook_info(gistname).username;
             // keep selected if was (but don't try to select a removed notebook)
             if(gistname === current_.notebook && opts.selroot === undefined)
                 opts.selroot = true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
-                    set_num_stars(gistname, count);
-                    var entry = get_notebook_info(gistname);
+                    that.set_num_stars(gistname, count);
+                    var entry = that.get_notebook_info(gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
                                     node_id('interests', user, gistname));
                         throw new Error("attempt to star notebook we have no record of",
                                         node_id('interests', user, gistname));
                     }
-                    add_interest(user, gistname);
-                    if(my_friends_[user] === 1)
-                        change_folder_friendness(user);
+                    notebook_tree_.add_interest(user, gistname);
+
+                    if(notebook_tree_.my_friends_[user] === 1) 
+                        notebook_tree_.change_folder_friendness(user);
+
                     var p;
                     if(opts.notebook) {
                         if(opts.make_current)
@@ -284,29 +285,36 @@ var editor = function () {
                                 is_change: opts.is_change || false,
                                 selroot: 'interests'})(opts.notebook);
                         else
-                            p = notebook_tree_.update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                            p = that.notebook_tree_.update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
                     else {
-                        p = update_notebook_view(user, gistname, entry, opts.selroot);
+                        p = that.notebook_tree_.update_notebook_view(user, gistname, entry, opts.selroot);
                     }
                     return p.return(opts.notebook);
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
-                    set_num_stars(gistname, count);
-                    remove_interest(user, gistname);
-                    if(!my_friends_[user])
-                        change_folder_friendness(user);
-                    unstar_notebook_view(user, gistname, opts.selroot);
+                    that.set_num_stars(gistname, count);
+                    that.notebook_tree_.remove_interest(user, gistname);
+
+                    if(!notebook_tree_.my_friends_[user])
+                        that.notebook_tree_.change_folder_friendness(user);
+
+                    that.notebook_tree_.unstar_notebook_view(user, gistname, opts.selroot);
                 });
             }
+        },
+        remove_notebook_info: function(user, gistname) {
+            return user === username_ ?
+                rcloud.config.remove_notebook(gistname) :
+                Promise.resolve();
         },
         remove_notebook: function(user, gistname) {
             var that = this;
             return (!this.i_starred(gistname) ? Promise.resolve() :
                     this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
-                    remove_notebook_info(user, gistname);
+                    that.remove_notebook_info(user, gistname);
                     remove_notebook_view(user, gistname);
                     var promise = rcloud.config.clear_recent_notebook(gistname);
                     if(gistname === current_.notebook)
@@ -329,11 +337,11 @@ var editor = function () {
         },
         set_notebook_visibility: function(gistname, visible) {
             var promise = set_visibility(gistname, visible);
-            update_notebook_view(username_, gistname, get_notebook_info(gistname), false);
+            update_notebook_view(username_, gistname, this.get_notebook_info(gistname), false);
             return promise;
         },
         set_terse_dates: function(val) {
-            show_terse_dates_ = val;
+            notebook_tree_.show_terse_dates_ = val;
         },
         star_and_show: function(notebook, make_current, is_change) {
             return this.star_notebook(true, {notebook: notebook,
@@ -348,10 +356,11 @@ var editor = function () {
                 .return(notebook);
         },
         fork_notebook: function(is_mine, gistname, version) {
+            var that = this;
             return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    if(get_notebook_info(notebook.id)) {
+                    if(that.get_notebook_info(notebook.id)) {
                         alert(github_nonfork_warning);
                     }
                     return this.star_and_show(notebook, true, !!version);
@@ -370,7 +379,7 @@ var editor = function () {
                 else
                     promise_fork = rcloud.fork_notebook(node.gistname);
                 promises.push(promise_fork.then(function(notebook) {
-                    if(get_notebook_info(notebook.id))
+                    if(that.get_notebook_info(notebook.id))
                         return notebook.description;
                     else
                         return editor.star_and_show(notebook, false, false);
@@ -450,10 +459,11 @@ var editor = function () {
             }
         },
         update_recent_notebooks: function(data) {
+            var that = this;
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) {
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ;
+                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(that.get_notebook_info(kv[0])) ;
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
@@ -479,7 +489,7 @@ var editor = function () {
             for(var i = 0; i < sorted.length; i ++) {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
-                var currentNotebook = get_notebook_info(sorted[i][0]);
+                var currentNotebook = that.get_notebook_info(sorted[i][0]);
                 var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
                 var $desc;
@@ -577,9 +587,9 @@ var editor = function () {
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)
                         : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
-                            if(!get_notebook_info(result.id))
-                                set_notebook_info(result.id, {});
-                            options.source = get_notebook_info(result.id).source = source;
+                            if(!that.get_notebook_info(result.id))
+                                that.set_notebook_info(result.id, {});
+                            options.source = that.get_notebook_info(result.id).source = source;
                         });
                 return promise_source.then(function() {
                      var promises = []; // fetch and setup various ui "in parallel"

@@ -42,6 +42,8 @@ function notebook_tree() {
     this.path_tips_ = false; // debugging tool: show path tips on tree
     this.lazy_load_ = {}; // which users need loading
 
+    this.show_terse_dates_ = false;
+
     // view
     this.$tree_ = null;
 
@@ -125,7 +127,7 @@ notebook_tree.prototype = {
     },
 
     set_visibility: function(gistname, visible) {
-        var entry = get_notebook_info(gistname);
+        var entry = this.notebook_info_[gistname] || {};
         entry.visible = visible;
         this.notebook_info_[gistname] = entry;
         return rcloud.set_notebook_visibility(gistname, visible);
@@ -141,16 +143,10 @@ notebook_tree.prototype = {
         return p;
     },
 
-    remove_notebook_info: function(user, gistname) {
-        return user === username_ ?
-            rcloud.config.remove_notebook(gistname) :
-            Promise.resolve();
-    },
-
     update_notebook_model: function(user, gistname, description, time) {
         var that = this;
         return that.load_user_notebooks(user).then(function() {
-            var entry = that.get_notebook_info(gistname);
+            var entry = that.notebook_info_[gistname] || {};
 
             entry.username = user;
             entry.description = description;
@@ -224,13 +220,13 @@ notebook_tree.prototype = {
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     find_next_copy_name: function(username, description) {
         var that = this;
-        return load_user_notebooks(username)
+        return this.load_user_notebooks(username)
             .then(function() {
                 // get folder parent or user trunk
                 var pid = description.indexOf('/') === -1 ?
                         that.node_id("alls", username) :
                         that.node_id("alls", username, description.replace(/\/[^\/]*$/,''));
-                var parent = $tree_.tree('getNodeById', pid);
+                var parent = that.$tree_.tree('getNodeById', pid);
                 if(parent === undefined)
                     return description;
 
@@ -637,7 +633,7 @@ notebook_tree.prototype = {
     },
 
     insert_alpha: function(data, parent) {
-        var before = find_sort_point(data, parent);
+        var before = this.find_sort_point(data, parent);
         if(before)
             return this.$tree_.tree('addNodeBefore', data, before);
         else
@@ -681,15 +677,15 @@ notebook_tree.prototype = {
             }
             if(!skip_user) {
                 pdat = {
-                    label: mine ? "My Notebooks" : someone_elses(user),
+                    label: mine ? "My Notebooks" : that.someone_elses(user),
                     id: that.node_id(root, user),
                     sort_order: mine ? that.ordering.MYFOLDER : that.ordering.SUBFOLDER
                 };
-                parent = insert_alpha(pdat, parent);
+                parent = that.insert_alpha(pdat, parent);
             }
         }
         if(parent.delay_children)
-            load_children(parent);
+            that.load_children(parent);
         while('children' in path) {
             node = that.$tree_.tree('getNodeById', path.id);
             if(!node) {
@@ -718,12 +714,12 @@ notebook_tree.prototype = {
                 that.$tree_.tree('updateNode', node, data);
             else {
                 that.$tree_.tree('removeNode', node);
-                node = insert_alpha(data, parent);
-                remove_empty_parents(dp);
+                node = that.insert_alpha(data, parent);
+                that.remove_empty_parents(dp);
             }
         }
         else
-            node = insert_alpha(data, parent);
+            node = that.insert_alpha(data, parent);
         return node;
     },
 
@@ -768,7 +764,7 @@ notebook_tree.prototype = {
                 var min_same = d1.getMinutes() === d2.getMinutes();
                 var hour_same = d1.getHours() === d2.getHours();
                 var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
-                if(diff <= 60*1000 && hour_same && min_same && show_terse_dates_)
+                if(diff <= 60*1000 && hour_same && min_same && this.show_terse_dates_)
                     return null;
                 else
                     return format_date_time_stamp(d1, diff, isDateSame, true);
@@ -1087,26 +1083,26 @@ notebook_tree.prototype = {
 
     change_folder_friendness: function(user) {
         var that = this;
-        if(my_friends_[user]) {
-            var anode = $tree_.tree('getNodeById', that.node_id('alls', user));
+        if(that.my_friends_[user]) {
+            var anode = that.$tree_.tree('getNodeById', that.node_id('alls', user));
             var ftree;
             if(anode)
-                ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
+                ftree = that.duplicate_tree_data(anode, that.transpose_notebook('friends'));
             else { // this is a first-time load case
                 var mine = user === username_;
                 ftree = {
-                    label: mine ? "My Notebooks" : someone_elses(user),
+                    label: mine ? "My Notebooks" : that.someone_elses(user),
                     id: that.node_id('friends', user),
                     sort_order: mine ? that.ordering.MYFOLDER : that.ordering.SUBFOLDER
                 };
             }
-            var parent = $tree_.tree('getNodeById', that.node_id('friends'));
-            var node = insert_alpha(ftree, parent);
-            $tree_.tree('loadData', ftree.children, node);
+            var parent = that.$tree_.tree('getNodeById', that.node_id('friends'));
+            var node = that.insert_alpha(ftree, parent);
+            that.$tree_.tree('loadData', ftree.children, node);
         }
         else {
-            var n2 = $tree_.tree('getNodeById', that.node_id('friends', user));
-            $tree_.tree('removeNode', n2);
+            var n2 = that.$tree_.tree('getNodeById', that.node_id('friends', user));
+            that.$tree_.tree('removeNode', n2);
         }
     },
 
@@ -1116,7 +1112,7 @@ notebook_tree.prototype = {
         var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
         var date_part = (date.getMonth()+1) + '/' + date.getDate();
         var year_part = date.getFullYear().toString().substr(2,2);
-        if(diff < 24*60*60*1000 && isDateSame && show_terse_dates_ && for_version)
+        if(diff < 24*60*60*1000 && isDateSame && this.show_terse_dates_ && for_version)
             return time_part;
         else if(date.getFullYear() === now.getFullYear())
             return '<span>' + date_part + ' ' + time_part + '</span>';
