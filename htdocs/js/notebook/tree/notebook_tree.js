@@ -123,8 +123,8 @@ notebook_tree.prototype = {
     remove_interest: function(user, gistname) {
         if(this.my_stars_[gistname]) {
             delete this.my_stars_[gistname];
-            if(--my_friends_[user] === 0)
-                delete my_friends_[user];
+            if(--this.my_friends_[user] === 0)
+                delete this.my_friends_[user];
         }
     },
 
@@ -1034,10 +1034,10 @@ notebook_tree.prototype = {
     remove_node: function(node) {
         var parent = node.parent;
         ui_utils.fake_hover(node);
-        $tree_.tree('removeNode', node);
-        remove_empty_parents(parent);
+        this.$tree_.tree('removeNode', node);
+        this.remove_empty_parents(parent);
         if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
-            $tree_.tree('removeNode', parent);
+            this.$tree_.tree('removeNode', parent);
     },
 
     remove_notebook_view: function(user, gistname) {
@@ -1045,25 +1045,26 @@ notebook_tree.prototype = {
         function do_remove(id) {
             var node = $tree_.tree('getNodeById', id);
             if(node)
-                remove_node(node);
+                that.remove_node(node);
             else
                 console.log("tried to remove node that doesn't exist: " + id);
         }
         if(my_friends_[user])
-            do_remove(that.node_id('friends', user, gistname));
-        do_remove(that.node_id('alls', user, gistname));
+            that.do_remove(that.node_id('friends', user, gistname));
+
+        that.do_remove(that.node_id('alls', user, gistname));
     },
 
     unstar_notebook_view: function(user, gistname, selroot) {
         var that = this;
         var inter_id = that.node_id('interests', user, gistname);
-        var node = $tree_.tree('getNodeById', inter_id);
+        var node = that.$tree_.tree('getNodeById', inter_id);
         if(!node) {
             console.log("attempt to unstar notebook we didn't know was starred", inter_id);
             return;
         }
-        remove_node(node);
-        update_notebook_view(user, gistname, get_notebook_info(gistname), selroot);
+        that.remove_node(node);
+        that.update_notebook_view(user, gistname, that.get_notebook_info(gistname), selroot);
     },
 
     update_notebook_from_gist: function(result, history, selroot) {

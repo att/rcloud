@@ -14,7 +14,7 @@ var editor = function () {
     });    
 
     function get_notebook_info(gistname) {
-        return notebook_tree_.get_notebook_info();
+        return notebook_tree_.get_notebook_info(gistname);
     }
 
     function set_notebook_info(gistname, value) {
@@ -279,9 +279,9 @@ var editor = function () {
                     var entry = that.get_notebook_info(gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
-                                    node_id('interests', user, gistname));
+                                    notebook_tree_.node_id('interests', user, gistname));
                         throw new Error("attempt to star notebook we have no record of",
-                                        node_id('interests', user, gistname));
+                                        notebook_tree_.node_id('interests', user, gistname));
                     }
                     notebook_tree_.add_interest(user, gistname);
 
@@ -296,22 +296,22 @@ var editor = function () {
                                 is_change: opts.is_change || false,
                                 selroot: 'interests'})(opts.notebook);
                         else
-                            p = that.notebook_tree_.update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                            p = notebook_tree_.update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
                     else {
-                        p = that.notebook_tree_.update_notebook_view(user, gistname, entry, opts.selroot);
+                        p = notebook_tree_.update_notebook_view(user, gistname, entry, opts.selroot);
                     }
                     return p.return(opts.notebook);
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     that.set_num_stars(gistname, count);
-                    that.notebook_tree_.remove_interest(user, gistname);
+                    notebook_tree_.remove_interest(user, gistname);
 
                     if(!notebook_tree_.my_friends_[user])
-                        that.notebook_tree_.change_folder_friendness(user);
+                        notebook_tree_.change_folder_friendness(user);
 
-                    that.notebook_tree_.unstar_notebook_view(user, gistname, opts.selroot);
+                    notebook_tree_.unstar_notebook_view(user, gistname, opts.selroot);
                 });
             }
         },
@@ -336,7 +336,7 @@ var editor = function () {
         highlight_imported_notebooks: function(notebooks) {
 
             var nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
-                return $tree_.tree('getNodeById', node_id('interests', username_, notebook.id));
+                return $tree_.tree('getNodeById', notebook_tree_.node_id('interests', username_, notebook.id));
             });
 
             // get promises:
