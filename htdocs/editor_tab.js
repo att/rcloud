@@ -135,9 +135,9 @@ var editor = function () {
             if(start_widget_time)
                 console.log('load tree took ' + (window.performance.now() - start_widget_time));
         },*/
-        find_next_copy_name: function(name) {
-            return notebook_tree_.find_next_copy_name(username_, name);
-        },
+        // find_next_copy_name: function(name) {
+        //     return notebook_tree_.find_next_copy_name(username_, name);
+        // },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
             version = version || null;
             var that = this;
@@ -195,7 +195,8 @@ var editor = function () {
         },
         new_notebook: function() {
             var that = this;
-            return Promise.cast(this.find_next_copy_name(username_, new_notebook_prefix_ + '1'))
+
+            return Promise.cast(notebook_tree_.find_next_copy_name(username_, new_notebook_prefix_ + '1'))
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
                     notebook_tree_.set_visibility(notebook.id, true);
