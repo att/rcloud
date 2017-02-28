@@ -326,10 +326,10 @@ var editor = function () {
                     this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
                     that.remove_notebook_info(user, gistname);
-                    remove_notebook_view(user, gistname);
+                    notebook_tree_.remove_notebook_view(user, gistname);
                     var promise = rcloud.config.clear_recent_notebook(gistname);
                     if(gistname === current_.notebook)
-                        promise = promise.then(open_last_loadable);
+                        promise = promise.then(that.open_last_loadable);
                     return promise;
                 });
         },

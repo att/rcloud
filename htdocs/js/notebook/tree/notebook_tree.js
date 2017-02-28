@@ -1043,16 +1043,16 @@ notebook_tree.prototype = {
     remove_notebook_view: function(user, gistname) {
         var that = this;
         function do_remove(id) {
-            var node = $tree_.tree('getNodeById', id);
+            var node = that.$tree_.tree('getNodeById', id);
             if(node)
                 that.remove_node(node);
             else
                 console.log("tried to remove node that doesn't exist: " + id);
         }
-        if(my_friends_[user])
-            that.do_remove(that.node_id('friends', user, gistname));
+        if(that.my_friends_[user])
+            do_remove(that.node_id('friends', user, gistname));
 
-        that.do_remove(that.node_id('alls', user, gistname));
+        do_remove(that.node_id('alls', user, gistname));
     },
 
     unstar_notebook_view: function(user, gistname, selroot) {
