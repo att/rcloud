@@ -94,13 +94,12 @@ var editor = function () {
             return gist_sources_;
         },
         num_stars: function(gistname) {
-            return notebook_tree_.num_stars_[gistname] || 0;
+                return notebook_tree_.num_stars_[gistname] || 0;
         },
-        num_stars: function(gistname, count) {
+        set_num_stars: function(gistname, count) {
             notebook_tree_.num_stars_[gistname] = count;
         },
         num_stars_exists: function(notebook_id) {
-            //return false;
             return _.has(notebook_tree_.num_stars_, notebook_id);
         },
         i_starred: function(gistname) {
@@ -266,7 +265,7 @@ var editor = function () {
                 opts.selroot = true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
-                    num_stars(gistname, count);
+                    set_num_stars(gistname, count);
                     var entry = get_notebook_info(gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
@@ -294,7 +293,7 @@ var editor = function () {
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
-                    num_stars(gistname, count);
+                    set_num_stars(gistname, count);
                     remove_interest(user, gistname);
                     if(!my_friends_[user])
                         change_folder_friendness(user);

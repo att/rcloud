@@ -536,37 +536,7 @@ notebook_tree.prototype = {
         that.$tree_ = $("#editor-book-tree");
         that.$tree_.tree({
             data: data,
-            onCreateLi: function(node, $li) {
-                $li.css("min-height","15px");
-                var element = $li.find('.jqtree-element'),
-                    title = element.find('.jqtree-title');
-                title.css('color', node.color);
-
-                if(path_tips_)
-                    element.attr('title', node.id);
-
-                if(node.gistname) {
-                    if(node.source)
-                        title.addClass('foreign-notebook');
-                    else if(!node.visible)
-                        title.addClass('hidden-notebook');
-                }
-                if(node.version || node.id === 'showmore')
-                    title.addClass('history');
-                var date;
-                if(node.last_commit) {
-                    date = $.el.span({'class': 'notebook-date'},
-                                           that.display_date(node.last_commit));
-                }
-                var right = $.el.span({'class': 'notebook-right'}, date);
-                // if it was editable before, we need to restore that - either selected or open folder tree node
-                if(node.user === username_ && (that.$tree_.tree('isNodeSelected', node) ||
-                                               !node.gistname && node.full_name && node.is_open)){
-                    RCloud.UI.notebook_title.make_editable(node, $li, true);
-                }
-                RCloud.UI.notebook_commands.decorate($li, node, right);
-                element.append(right);
-            },
+            onCreateLi: that.on_create_tree_li.bind(this),
             selectable: true,
             useContextMenu: false,
             keyboardSupport: false
@@ -1170,7 +1140,6 @@ notebook_tree.prototype = {
         return $(this.display_date_html(ds))[0];
     },
 
-/*
     on_create_tree_li: function(node, $li) {
         $li.css("min-height","15px");
         var element = $li.find('.jqtree-element'),
@@ -1191,17 +1160,17 @@ notebook_tree.prototype = {
         var date;
         if(node.last_commit) {
             date = $.el.span({'class': 'notebook-date'},
-                                   display_date(node.last_commit));
+                                   this.display_date(node.last_commit));
         }
         var right = $.el.span({'class': 'notebook-right'}, date);
         // if it was editable before, we need to restore that - either selected or open folder tree node
-        if(node.user === username_ && ($tree_.tree('isNodeSelected', node) ||
-                                       !node.gistname && node.full_name && node.is_open))
+        if(node.user === username_ && (this.$tree_.tree('isNodeSelected', node) ||
+                                       !node.gistname && node.full_name && node.is_open)){
             RCloud.UI.notebook_title.make_editable(node, $li, true);
+        }   
         RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
     },
-*/
 
     tree_click: function(event) {
 
