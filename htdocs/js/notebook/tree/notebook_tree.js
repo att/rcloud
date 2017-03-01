@@ -693,7 +693,7 @@ notebook_tree.prototype = {
             node = that.$tree_.tree('getNodeById', path.id);
             if(!node) {
                 pdat = _.omit(path, 'children');
-                node = insert_alpha(pdat, parent);
+                node = that.insert_alpha(pdat, parent);
             }
             parent = node;
             path = path.children[0];
@@ -914,22 +914,37 @@ notebook_tree.prototype = {
         ui_utils.scroll_into_view(this.$tree_.parent(), 50, 100, null, $(node.element));
     },
 
-    highlight_imported: function(node) {
+    highlight_node: function(node) {
         var that = this;
         return function() {
             return new Promise(function(resolve) {
                 var p = node.parent;
                 while(p.sort_order===that.ordering.NOTEBOOK) {
-                    $tree_.tree('openNode', p);
+                    that.$tree_.tree('openNode', p);
                     p = p.parent;
                 }
-                ui_utils.scroll_into_view($tree_.parent(), 150, 150, function() {
+                ui_utils.scroll_into_view(that.$tree_.parent(), 150, 150, function() {
                     $(node.element).closest('.jqtree_common').effect('highlight', { color: '#fd0' }, 1500, function() {
                         resolve();
                     });
                 }, $(node.element));
             });
         };
+    }, 
+
+    highlight_notebooks: function(notebooks) {
+        var that = this;
+
+        var nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
+            return that.$tree_.tree('getNodeById', that.node_id('interests', username_, notebook.id));
+        });
+
+        // get promises:
+        nodes.map(function(node) {
+            return that.highlight_node(node);
+        }).reduce(function(cur, next) {
+            return cur.then(next);
+        }, Promise.resolve()).then(function() {});
     },
 
     select_node: function(node) {

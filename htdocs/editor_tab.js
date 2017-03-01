@@ -334,17 +334,7 @@ var editor = function () {
                 });
         },
         highlight_imported_notebooks: function(notebooks) {
-
-            var nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
-                return $tree_.tree('getNodeById', notebook_tree_.node_id('interests', username_, notebook.id));
-            });
-
-            // get promises:
-            nodes.map(function(node) {
-                return highlight_imported(node);
-            }).reduce(function(cur, next) {
-                return cur.then(next);
-            }, Promise.resolve()).then(function() {});
+            return notebook_tree_.highlight_notebooks(notebooks);           
         },
         set_notebook_visibility: function(gistname, visible) {
             var promise = notebook_tree_.set_visibility(gistname, visible);
