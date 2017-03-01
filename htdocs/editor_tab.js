@@ -347,8 +347,8 @@ var editor = function () {
             }, Promise.resolve()).then(function() {});
         },
         set_notebook_visibility: function(gistname, visible) {
-            var promise = set_visibility(gistname, visible);
-            update_notebook_view(username_, gistname, this.get_notebook_info(gistname), false);
+            var promise = notebook_tree_.set_visibility(gistname, visible);
+            notebook_tree_.update_notebook_view(username_, gistname, this.get_notebook_info(gistname), false);
             return promise;
         },
         set_terse_dates: function(val) {
@@ -365,6 +365,9 @@ var editor = function () {
                     return this.set_notebook_visibility(gistname, true);
                 })
                 .return(notebook);
+        },
+        show_history: function(node, opts) {        
+            notebook_tree_.show_history(node, opts);
         },
         fork_notebook: function(is_mine, gistname, version) {
             var that = this;
