@@ -71,9 +71,6 @@ var editor = function () {
                     return that.new_notebook();
             });
 
-
-
-
             $('.dropdown-toggle.recent-btn').dropdown();
 
             $('.recent-btn').click(function(e) {
@@ -420,7 +417,7 @@ var editor = function () {
                 .then(this.load_callback({is_change: true, selroot: true}));
         },
         step_history_undo: function() {
-            var previous_version = history_manager.get_previous();
+            var previous_version = notebook_tree_.get_previous();
 
             if(!_.isUndefined(previous_version)) {
                 RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
@@ -430,7 +427,7 @@ var editor = function () {
             }
         },
         step_history_redo: function() {
-            var next_version = history_manager.get_next();
+            var next_version = notebook_tree_.get_next();
 
             if(!_.isUndefined(next_version)) {
                 RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);

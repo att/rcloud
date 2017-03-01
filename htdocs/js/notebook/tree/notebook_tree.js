@@ -59,38 +59,40 @@ function notebook_tree() {
 
 notebook_tree.prototype = {
 
-    history_manager: {
-        get_current_notebook_histories : function() {
-            return histories_[current_.notebook];
-        },
-        get_current_notebook_history_index : function() {
-            return current_.version === null ?
-                0 :
-                that.find_index(this.get_current_notebook_histories(), function(h) {
-                    return h.version === current_.version;
-                });
-        },
-        get_history_by_index : function(index) {
-            return histories_[current_.notebook][index];
-        },
-        get_previous : function() {
-            // no version at latest:
-            var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index();
+    get_current_notebook_histories : function() {
+        return this.histories_[current_.notebook];
+    },
 
-            if(current_index === this.get_current_notebook_histories().length - 1) {
-                return undefined;   // already at first
-            } else {
-                return this.get_history_by_index(current_index + 1).version;
-            }
-        },
-        get_next : function() {
-            var current_index = this.get_current_notebook_history_index();
+    get_current_notebook_history_index : function() {
+        return current_.version === null ?
+            0 :
+            this.find_index(this.get_current_notebook_histories(), function(h) {
+                return h.version === current_.version;
+            });
+    },
 
-            if(current_index === 0) {
-                return undefined;
-            } else {
-                return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
-            }
+    get_history_by_index : function(index) {
+        return this.histories_[current_.notebook][index];
+    },
+
+    get_previous : function() {
+        // no version at latest:
+        var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index();
+
+        if(current_index === this.get_current_notebook_histories().length - 1) {
+            return undefined;   // already at first
+        } else {
+            return this.get_history_by_index(current_index + 1).version;
+        }
+    },
+
+    get_next : function() {
+        var current_index = this.get_current_notebook_history_index();
+
+        if(current_index === 0) {
+            return undefined;
+        } else {
+            return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
         }
     },
 
@@ -401,7 +403,7 @@ notebook_tree.prototype = {
             var id = that.node_id('interests', username);
             var mine = username === username_;
             var node = {
-                label: mine ? "My Notebooks" : someone_elses(username),
+                label: mine ? "My Notebooks" : this.someone_elses(username),
                 id: id,
                 sort_order: mine ? that.ordering.MYFOLDER : that.ordering.SUBFOLDER,
                 children: that.as_folder_hierarchy(notebook_nodes, id).sort(that.compare_nodes)
@@ -419,7 +421,7 @@ notebook_tree.prototype = {
         var mine = user === username_;
         var id = this.node_id(root, user);
         return {
-            label: mine ? "My Notebooks" : someone_elses(user),
+            label: mine ? "My Notebooks" : this.someone_elses(user),
             id: id,
             sort_order: mine ? this.ordering.MYFOLDER : this.ordering.SUBFOLDER,
             children: [{ label : 'loading...' }],
