@@ -31,26 +31,6 @@ var editor = function () {
         init: function(opts) {
             var that = this;
             username_ = rcloud.username();
-            /*
-            var promise = load_everything().then(function() {
-                if(opts.notebook) { // notebook specified in url
-                    return that.load_notebook(opts.notebook, opts.version, opts.source,
-                                              true, false, ui_utils.make_url('edit.html'));
-                } else if(!opts.new_notebook && current_.notebook) {
-                    return that.load_notebook(current_.notebook, current_.version)
-                        .catch(function(xep) {
-                            // if loading fails for a reason that is not actually a loading problem
-                            // then don't keep trying.
-                            if(xep.from_load)
-                                rcloud.config.clear_recent_notebook(current_.notebook)
-                                .then(open_last_loadable);
-                            else throw xep;
-                        });
-                }
-                else
-                    return that.new_notebook();
-            });
-*/
 
             var promise = notebook_tree_.load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
@@ -123,28 +103,6 @@ var editor = function () {
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
             RCloud.UI.fatal_dialog(message, "Reload", url);
         },
-        /*
-        create_book_tree_widget: function(data) {
-            var that = this;
-
-            var start_widget_time = window.performance ? window.performance.now() : 0;
-            $tree_ = $("#editor-book-tree");
-            $tree_.tree({
-                data: data,
-                onCreateLi: on_create_tree_li,
-                selectable: true,
-                useContextMenu: false,
-                keyboardSupport: false
-            });
-            $tree_.bind('tree.click', tree_click);
-            $tree_.bind('tree.open', tree_open);
-            $tree_.bind('tree.close', tree_close);
-            if(start_widget_time)
-                console.log('load tree took ' + (window.performance.now() - start_widget_time));
-        },*/
-        // find_next_copy_name: function(name) {
-        //     return notebook_tree_.find_next_copy_name(username_, name);
-        // },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
             version = version || null;
             var that = this;
