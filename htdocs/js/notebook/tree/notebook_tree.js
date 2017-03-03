@@ -112,8 +112,28 @@ notebook_tree.prototype = {
         return name + "'s Notebooks";
     },
 
+    get_notebook_star_count: function(gistname) {
+        return this.num_stars_[gistname] || 0;
+    },
+
+    set_notebook_star_count: function(gistname) {
+        this.num_stars_[gistname] = count;
+    },
+
+    notebook_star_count_exists: function(notebook_id) {
+        return _.has(this.num_stars_, notebook_id);
+    },
+
+    is_notebook_starred_by_current_user: function(gistname) {
+        return this.my_stars_[gistname] || false;
+    },
+
     get_notebook_info: function(gistname) {
         return this.notebook_info_[gistname] || {};
+    },
+
+    set_notebook_info: function(gistname, value) {
+        this.notebook_info_[gistname] = value;
     },
 
     add_interest: function(user, gistname) {
@@ -121,6 +141,14 @@ notebook_tree.prototype = {
             this.my_stars_[gistname] = true;
             this.my_friends_[user] = (this.my_friends_[user] || 0) + 1;
         }
+    },
+
+    get_my_star_count_by_friend: function(user) {
+        return this.my_friends_[user];
+    },
+
+    user_is_friend: function(user) {
+        return this.my_friends_[user];
     },
 
     remove_interest: function(user, gistname) {
@@ -1102,7 +1130,7 @@ notebook_tree.prototype = {
             });
     },
 
-    change_folder_friendness: function(user) {
+    toggle_folder_friendness: function(user) {
         var that = this;
         if(that.my_friends_[user]) {
             var anode = that.$tree_.tree('getNodeById', that.node_id('alls', user));

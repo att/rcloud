@@ -18,7 +18,7 @@ var editor = function () {
     }
 
     function set_notebook_info(gistname, value) {
-        notebook_tree_[gistname] = value;
+        notebook_tree_.set_notebook_info(gistname, value);
     }
 
     function update_url(opts) {
@@ -80,16 +80,16 @@ var editor = function () {
             return gist_sources_;
         },
         num_stars: function(gistname) {
-                return notebook_tree_.num_stars_[gistname] || 0;
+            return notebook_tree_.get_notebook_star_count(gistname);
         },
         set_num_stars: function(gistname, count) {
-            notebook_tree_.num_stars_[gistname] = count;
+            notebook_tree_.set_notebook_star_count(gistname, count);
         },
         num_stars_exists: function(notebook_id) {
-            return _.has(notebook_tree_.num_stars_, notebook_id);
+            return notebook_tree_.notebook_star_count_exists(notebook_id);
         },
         i_starred: function(gistname) {
-            return notebook_tree_.my_stars_[gistname] || false;
+            return notebook_tree_.is_notebook_starred_by_current_user(gistname);
         },
         current: function() {
             return current_;
@@ -198,9 +198,6 @@ var editor = function () {
                     return Promise.all(promises);
                 });
         },
-        // update_notebook_from_gist: function(notebook) {
-        //     return this._notebook_tree_.update_notebook_from_gist(notebook, notebook.history, false);
-        // },
         for_each_notebook: function(node, data, leaff, combinef) {
             var that = this;
             if(node.children && node.children.length) {
@@ -240,8 +237,9 @@ var editor = function () {
                     }
                     notebook_tree_.add_interest(user, gistname);
 
-                    if(notebook_tree_.my_friends_[user] === 1) 
-                        notebook_tree_.change_folder_friendness(user);
+                    // this is a new friend:
+                    if(notebook_tree_.get_my_star_count_by_friend(user) === 1) 
+                        notebook_tree_.toggle_folder_friendness(user);
 
                     var p;
                     if(opts.notebook) {
@@ -263,8 +261,9 @@ var editor = function () {
                     that.set_num_stars(gistname, count);
                     notebook_tree_.remove_interest(user, gistname);
 
-                    if(!notebook_tree_.my_friends_[user])
-                        notebook_tree_.change_folder_friendness(user);
+                    // user is no longer a friend
+                    if(!notebook_tree_.user_is_friend(user))
+                        notebook_tree_.toggle_folder_friendness(user);
 
                     notebook_tree_.unstar_notebook_view(user, gistname, opts.selroot);
                 });
