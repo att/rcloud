@@ -1316,48 +1316,5 @@ notebook_tree.prototype = {
                 }
                 that.$tree_.tree('openNode', node);
             });
-    },
-
-    open_last_loadable: function() {
-        var tries_left = NOTEBOOK_LOAD_FAILS;
-        RCloud.UI.session_pane.allow_clear = false;
-        return rcloud.config.get_recent_notebooks()
-            .then(function(recent) {
-                var sorted = _.chain(recent)
-                        .pairs()
-                        .filter(function(kv) { return kv[0] != 'r_attributes' && kv[0] != 'r_type'; })
-                        .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                        .sortBy(function(kv) { return kv[1]; })
-                        .value();
-                // a recursive error handler
-                function try_last() {
-                    var last = sorted.pop();
-                    if(!last)
-                        return result.new_notebook();
-                    else
-                        return result.load_notebook(last[0], null)
-                        .catch(function(err) {
-                            RCloud.UI.session_pane.post_rejection(err);
-                            if(/Not Found/.test(err))
-                                rcloud.config.clear_recent_notebook(last);
-                            // if we reach the limit, stop trying.  if loading fails for a reason that
-                            // is not actually a loading problem then stop trying.
-                            if(--tries_left === 0) {
-                                var quit_err = new Error("Failed to load " + NOTEBOOK_LOAD_FAILS + " notebooks. Quitting.");
-                                RCloud.UI.session_pane.post_rejection(quit_err);
-                                return Promise.resolve(false);
-                            }
-                            else if(err.from_load)
-                                return try_last();
-                            else
-                                return Promise.resolve(false);
-                        });
-                }
-                return try_last();
-            })
-            .then(function(res) {
-                RCloud.UI.session_pane.allow_clear = true;
-                return res;
-            });
-    }
+    }    
 }
