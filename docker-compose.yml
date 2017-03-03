@@ -1,0 +1,18 @@
+version: '2'
+services:
+  rcloud:
+    image: rcdev
+    ports:
+      - "8080:8080"
+    depends_on: 
+      - solr
+    volumes:
+      # This one stores the gists
+      - .\data:/data/rcloud/data
+      # This one loads any code in that you are likely to have changed
+      - .\rcloud.support:/data/rcloud/rcloud.support # so we don't have to full rebuild every time
+      - ..\rcloud.solr:/data/rcloud/rcloud.packages/rcloud.solr
+  solr:
+    image: rcsolr
+    ports:
+      - "8983:8983"
