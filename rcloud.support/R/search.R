@@ -82,15 +82,25 @@ update.solr <- function(notebook, starcount){
 }
 
 rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
+
+  qid <- tempfile(pattern = "query", fileext = ".json")
+  res <- list(query = query)
+
   url <- getConf("solr.url")
   if (is.null(url)) stop("solr is not enabled")
   
   ## FIXME: The Query comes URL encoded. From the search box? Replace all spaces with +
   ## Check if search terms are already URL encoded?
   if(nchar(query) > nchar(URLdecode(query))) query <- URLdecode(query)
+
+  res$URLdecodequery <- query
   
   solr.query <- list(q=query,start=start,rows=pagesize,indent="true",hl="true",hl.preserveMulti="true",hl.fragsize=0,hl.maxAnalyzedChars=-1
                     ,fl="description,id,user,updated_at,starcount",hl.fl="content,comments",sort=paste(sortby,orderby))
+  res$sol.query <- solr.query
+  res$pagesize <- pagesize
+  res$all_sources <- all_sources
+
   query <- function(solr.url,source='',solr.auth.user=NULL,solr.auth.pwd=NULL) {
     solr.res <- .solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
     
@@ -101,9 +111,15 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
     l <- lapply(.session$gist.sources.conf, function(src)
       if ("solr.url" %in% names(src)) query(src['solr.url'], src['gist.source'],src['solr.auth.user'],src['solr.auth.pwd'])
       else character(0))
-    unlist(c(list(main), l))
+    resp <- unlist(c(list(main), l))
   }
-  else query(url,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"))
+  else {
+    resp <- query(url,solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"))
+  }
+  res$response <- resp
+  json <- jsonlite::toJSON(res, pretty = TRUE, auto_unbox = TRUE)
+  writeLines(json, qid)
+  resp
 }
 
 stitch.search.result <- function(splitted, type,k) {
