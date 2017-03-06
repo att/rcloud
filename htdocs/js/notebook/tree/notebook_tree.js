@@ -3,14 +3,13 @@ function notebook_tree() {
     this.notebook_open = new event(this);
 
     // major key is adsort_order and minor key is name (label)
-    this.ordering = {
+    order = {
         HEADER: 0, // at top (unused)
         NOTEBOOK: 1,
         MYFOLDER: 2,
         SUBFOLDER: 4
     };
     this.CONFIG_VERSION = 1;
-    this.NOTEBOOK_LOAD_FAILS = 5;
 
     /* "Model-Model-View-Controller"
      .. or something ..
@@ -51,107 +50,103 @@ function notebook_tree() {
 
     // configuration stuff
     this.gist_sources_ = null; // valid gist sources on server
-
-    this.github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
-                                  "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' ');
-
 }
 
-notebook_tree.prototype = {
+notebook_tree.prototype = function() {
 
-    get_current_notebook_histories : function() {
+    var get_current_notebook_histories = function() {
         return this.histories_[current_.notebook];
     },
 
-    get_current_notebook_history_index : function() {
+    get_current_notebook_history_index  = function() {
         return current_.version === null ?
             0 :
-            this.find_index(this.get_current_notebook_histories(), function(h) {
+            find_index.call(this, get_current_notebook_histories.call(this), function(h) {
                 return h.version === current_.version;
             });
     },
 
-    get_history_by_index : function(index) {
+    get_history_by_index  = function(index) {
         return this.histories_[current_.notebook][index];
     },
 
-    get_previous : function() {
+    get_previous  = function() {
         // no version at latest:
-        var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index();
+        var current_index = current_.version === null ? 0 : get_current_notebook_history_index.call(this);
 
-        if(current_index === this.get_current_notebook_histories().length - 1) {
+        if(current_index === get_current_notebook_histories.call(this).length - 1) {
             return undefined;   // already at first
         } else {
-            return this.get_history_by_index(current_index + 1).version;
+            return get_history_by_index.call(this, current_index + 1).version;
         }
     },
 
-    get_next : function() {
-        var current_index = this.get_current_notebook_history_index();
+    get_next  = function() {
+        var current_index = get_current_notebook_history_index.call(this);
 
         if(current_index === 0) {
             return undefined;
         } else {
-            return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
+            return current_index - 1 === 0 ? null : get_history_by_index.call(this, current_index - 1).version;
         }
     },
 
     // work around oddities of rserve.js
-    each_r_list: function(list, f) {
+    each_r_list = function(list, f) {
         for(var key in list)
             if(key!=='r_attributes' && key!=='r_type')
                 f(key);
     },
 
-    r_vector: function(value) {
+    r_vector = function(value) {
         return _.isArray(value) ? value : [value];
     },
 
     //  Model functions
-    someone_elses: function(name) {
+    someone_elses = function(name) {
         return name + "'s Notebooks";
     },
 
-    get_notebook_star_count: function(gistname) {
+    get_notebook_star_count = function(gistname) {
         return this.num_stars_[gistname] || 0;
     },
 
-    set_notebook_star_count: function(gistname) {
+    set_notebook_star_count = function(gistname, count) {
         this.num_stars_[gistname] = count;
     },
 
-    notebook_star_count_exists: function(notebook_id) {
+    notebook_star_count_exists = function(notebook_id) {
         return _.has(this.num_stars_, notebook_id);
     },
 
-    is_notebook_starred_by_current_user: function(gistname) {
+    is_notebook_starred_by_current_user = function(gistname) {
         return this.my_stars_[gistname] || false;
     },
 
-    get_notebook_info: function(gistname) {
+    get_notebook_info = function(gistname) {
         return this.notebook_info_[gistname] || {};
     },
 
-    set_notebook_info: function(gistname, value) {
+    set_notebook_info = function(gistname, value) {
         this.notebook_info_[gistname] = value;
     },
 
-    add_interest: function(user, gistname) {
+    add_interest = function(user, gistname) {
         if(!this.my_stars_[gistname]) {
             this.my_stars_[gistname] = true;
             this.my_friends_[user] = (this.my_friends_[user] || 0) + 1;
         }
     },
 
-    get_my_star_count_by_friend: function(user) {
+    get_my_star_count_by_friend = function(user) {
         return this.my_friends_[user];
     },
 
-    user_is_friend: function(user) {
+    user_is_friend = function(user) {
         return this.my_friends_[user];
     },
 
-    remove_interest: function(user, gistname) {
+    remove_interest = function(user, gistname) {
         if(this.my_stars_[gistname]) {
             delete this.my_stars_[gistname];
             if(--this.my_friends_[user] === 0)
@@ -159,14 +154,18 @@ notebook_tree.prototype = {
         }
     },
 
-    set_visibility: function(gistname, visible) {
+    show_terse_dates = function(show_terse_dates) {
+        this.show_terse_dates_ = show_terse_dates;
+    },    
+
+    set_visibility = function(gistname, visible) {
         var entry = this.notebook_info_[gistname] || {};
         entry.visible = visible;
         this.notebook_info_[gistname] = entry;
         return rcloud.set_notebook_visibility(gistname, visible);
     },
 
-    add_notebook_info: function(user, gistname, entry) {
+    add_notebook_info = function(user, gistname, entry) {
         if(!this.notebook_info_[gistname])
             this.notebook_info_[gistname] = {};
         _.extend(this.notebook_info_[gistname], entry);
@@ -176,29 +175,29 @@ notebook_tree.prototype = {
         return p;
     },
 
-    update_notebook_model: function(user, gistname, description, time) {
+    update_notebook_model = function(user, gistname, description, time) {
         var that = this;
-        return that.load_user_notebooks(user).then(function() {
+        return load_user_notebooks.call(this, user).then(function() {
             var entry = that.notebook_info_[gistname] || {};
 
             entry.username = user;
             entry.description = description;
             entry.last_commit = time;
 
-            that.add_notebook_info(user, gistname, entry);
+            add_notebook_info.bind(that, user, gistname, entry);
             return entry; // note: let go of promise
         });
     },
 
     // View (tree) functions
-    node_id: function(root, username, gistname, version) {
+    node_id = function(root, username, gistname, version) {
         var ret = '';
         for(var i=0; i < arguments.length; ++i)
             ret = ret + '/' + arguments[i];
         return ret;
     },
     
-    compare_nodes: function(a, b) {
+    compare_nodes = function(a, b) {
         var so = a.sort_order-b.sort_order;
         if(so) return so;
         else {
@@ -226,39 +225,39 @@ notebook_tree.prototype = {
         }
     },
 
-    load_user_notebooks: function(username) {
+    load_user_notebooks = function(username) {
         var that = this;
         if(!this.lazy_load_[username])
             return Promise.resolve();
 
-        return that.get_notebooks_by_user(username).then(function(notebooks) {
+        return get_notebooks_by_user.call(this, username).then(function(notebooks) {
             // load "alls" tree for username, and duplicate to friends tree if needed
-            var pid = that.node_id("alls", username);
+            var pid = node_id("alls", username);
             var root = that.$tree_.tree('getNodeById', pid);
 
-            var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
-            var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes);
+            var notebook_nodes = convert_notebook_set("alls", username, notebooks);
+            var alls_data = as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes);
             that.$tree_.tree('loadData', alls_data, root);
 
             delete that.lazy_load_[username];
 
             if(that.my_friends_[username]) {
-                var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
-                var parent = that.$tree_.tree('getNodeById', that.node_id('friends', username));
+                var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
+                var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
                 that.$tree_.tree('loadData', ftree.children, parent);
             }
         });
     },
 
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
-    find_next_copy_name: function(username, description) {
+    find_next_copy_name = function(username, description) {
         var that = this;
-        return this.load_user_notebooks(username)
+        return load_user_notebooks.call(this, username)
             .then(function() {
                 // get folder parent or user trunk
                 var pid = description.indexOf('/') === -1 ?
-                        that.node_id("alls", username) :
-                        that.node_id("alls", username, description.replace(/\/[^\/]*$/,''));
+                        node_id("alls", username) :
+                        node_id("alls", username, description.replace(/\/[^\/]*$/,''));
                 var parent = that.$tree_.tree('getNodeById', pid);
                 if(parent === undefined)
                     return description;
@@ -284,7 +283,7 @@ notebook_tree.prototype = {
             });
     },
 
-    as_folder_hierarchy: function(nodes, prefix, name_prefix) {
+    as_folder_hierarchy = function(nodes, prefix, name_prefix) {
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
         var in_folders = nodes;
         var that = this;
@@ -314,9 +313,9 @@ notebook_tree.prototype = {
                 label: k,
                 full_name: full_name,
                 user: v[0].user,
-                sort_order: that.ordering.NOTEBOOK,
+                sort_order: order.NOTEBOOK,
                 id: id,
-                children: that.as_folder_hierarchy(children, id, full_name)
+                children: as_folder_hierarchy(children, id, full_name)
             };
         });
         var outside_folders = _.filter(nodes, function(v) {
@@ -325,10 +324,10 @@ notebook_tree.prototype = {
         outside_folders.forEach(function(v) {
             v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
         });
-        return outside_folders.concat(in_folders).sort(that.compare_nodes);
+        return outside_folders.concat(in_folders).sort(compare_nodes);
     },
 
-    convert_notebook_set: function(root, username, set) {
+    convert_notebook_set = function(root, username, set) {
         var that = this;
         var notebook_nodes = [];
         for(var name in set) {
@@ -341,8 +340,8 @@ notebook_tree.prototype = {
                 visible: attrs.visible,
                 source: attrs.source,
                 last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
-                id: that.node_id(root, username, name),
-                sort_order: that.ordering.NOTEBOOK,
+                id: node_id(root, username, name),
+                sort_order: order.NOTEBOOK,
                 fork_desc:attrs.fork_desc
             };
             notebook_nodes.push(result);
@@ -350,7 +349,7 @@ notebook_tree.prototype = {
         return notebook_nodes;
     },
 
-    get_infos_and_counts: function(ids) {
+    get_infos_and_counts = function(ids) {
         return Promise.all([
             rcloud.stars.get_multiple_notebook_star_counts(ids),
             rcloud.get_multiple_notebook_infos(ids)
@@ -362,27 +361,26 @@ notebook_tree.prototype = {
         });
     },
 
-    get_starred_info: function() {
+    get_starred_info = function() {
         var that = this;
         return rcloud.stars.get_my_starred_notebooks()
-            .then(that.get_infos_and_counts);
+            .then(get_infos_and_counts);
     },
 
-    get_recent_info: function() {
-        var that = this;
+    get_recent_info = function() {
         return rcloud.config.get_recent_notebooks()
             .then(function(recents) {
-                return that.get_infos_and_counts(Object.keys(recents));
+                return get_infos_and_counts(Object.keys(recents));
             });
     },
 
-    get_notebooks_by_user: function(username) {
+    get_notebooks_by_user = function(username) {
         var that = this,
             already_know = _.pick(this.notebook_info_, _.filter(Object.keys(this.notebook_info_), function(id) {
             return that.notebook_info_[id].username === username && !that.notebook_info_[id].recent_only;
         }));
         return rcloud.config.all_user_notebooks(username)
-            .then(that.get_infos_and_counts)
+            .then(get_infos_and_counts)
             .then(function(notebooks_stars) {
                 // merge these notebooks and stars
                 _.extend(that.notebook_info_, notebooks_stars.notebooks);
@@ -393,7 +391,7 @@ notebook_tree.prototype = {
             });
     },
 
-    populate_interests: function(my_stars_array) {
+    populate_interests = function(my_stars_array) {
         var that = this;
         function create_user_book_entry_map(books) {
             var users = {};
@@ -421,44 +419,44 @@ notebook_tree.prototype = {
         for (var username in interests) {
             var user_notebooks = interests[username];
             for(var gistname in user_notebooks) {
-                that.add_interest(username, gistname);
+                add_interest.call(this, username, gistname);
                 // sanitize... this shouldn't really happen...
                 if(!user_notebooks[gistname].description)
                     user_notebooks[gistname].description = "(no description)";
             }
 
-            var notebook_nodes = that.convert_notebook_set('interests', username, user_notebooks);
-            var id = that.node_id('interests', username);
+            var notebook_nodes = convert_notebook_set('interests', username, user_notebooks);
+            var id = node_id('interests', username);
             var mine = username === username_;
             var node = {
-                label: mine ? "My Notebooks" : this.someone_elses(username),
+                label: mine ? "My Notebooks" : someone_elses(username),
                 id: id,
-                sort_order: mine ? that.ordering.MYFOLDER : that.ordering.SUBFOLDER,
-                children: that.as_folder_hierarchy(notebook_nodes, id).sort(that.compare_nodes)
+                sort_order: mine ? order.MYFOLDER : order.SUBFOLDER,
+                children: as_folder_hierarchy(notebook_nodes, id).sort(compare_nodes)
             };
             user_nodes.push(node);
         }
         return {
             label: 'Notebooks I Starred',
             id: '/interests',
-            children: user_nodes.sort(that.compare_nodes)
+            children: user_nodes.sort(compare_nodes)
         };
     },
 
-    lazy_node: function(root, user) {
+    lazy_node = function(root, user) {
         var mine = user === username_;
-        var id = this.node_id(root, user);
+        var id = node_id(root, user);
         return {
-            label: mine ? "My Notebooks" : this.someone_elses(user),
+            label: mine ? "My Notebooks" : someone_elses(user),
             id: id,
-            sort_order: mine ? this.ordering.MYFOLDER : this.ordering.SUBFOLDER,
+            sort_order: mine ? order.MYFOLDER : order.SUBFOLDER,
             children: [{ label : 'loading...' }],
             user: user,
             root: root
         };
     },
 
-    populate_users: function(all_the_users) {
+    populate_users = function(all_the_users) {
         var that = this;
         if(_.isString(all_the_users))
             all_the_users = [all_the_users];
@@ -469,24 +467,24 @@ notebook_tree.prototype = {
             label: 'All Notebooks',
             id: '/alls',
             children: _.map(all_the_users, function(u) {
-                return that.lazy_node('alls', u);
-            }).sort(that.compare_nodes)
+                return lazy_node('alls', u);
+            }).sort(compare_nodes)
         };
     },
 
-    duplicate_tree_data: function(tree, f) {
+    duplicate_tree_data = function(tree, f) {
         console.assert(!tree.user || !this.lazy_load_[tree.user]);
         var t2 = f(tree);
         if(tree.children) {
             var ch2 = [];
             for(var i=0; i<tree.children.length; ++i)
-                ch2.push(this.duplicate_tree_data(tree.children[i], f));
+                ch2.push(duplicate_tree_data.call(this, tree.children[i], f));
             t2.children = ch2;
         }
         return t2;
     },
 
-    transpose_notebook: function(destroot, splice_user) {
+    transpose_notebook = function(destroot, splice_user) {
         var srcroot = '/alls/';
         if(splice_user)
             srcroot += splice_user + '/';
@@ -500,7 +498,7 @@ notebook_tree.prototype = {
         };
     },
 
-    create_notebook_root: function(src_trees, root, title, splice_user) {
+    create_notebook_root = function(src_trees, root, title, splice_user) {
         var reroot = transpose_notebook(root, splice_user);
         if(splice_user)
             src_trees = src_trees[0].children;
@@ -514,11 +512,11 @@ notebook_tree.prototype = {
         };
     },
 
-    alls_name: function(subtree) {
+    alls_name = function(subtree) {
         return subtree.id.replace("/alls/","");
     },
 
-    populate_friends: function(all_the_users) {
+    populate_friends = function(all_the_users) {
         var that = this;
         return {
             label: 'People I Starred',
@@ -526,12 +524,12 @@ notebook_tree.prototype = {
             children: all_the_users.filter(function(u) {
                 return that.my_friends_[u]>0;
             }).map(function(u) {
-                return that.lazy_node('friends', u);
-            }).sort(that.compare_nodes)
+                return lazy_node('friends', u);
+            }).sort(compare_nodes)
         };
     },
 
-    get_featured: function() {
+    get_featured = function() {
         var that = this;
         return rcloud.config.get_alluser_option('featured_users').then(function(featured) {
             featured_ = featured || [];
@@ -543,7 +541,7 @@ notebook_tree.prototype = {
                 return null;
 
             return get_notebooks_by_user(featured_[0]).then(function(notebooks) {
-                var notebook_nodes = that.convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
+                var notebook_nodes = convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
                     notebook.id = '/featured/' + notebook.gistname;
                     return notebook;
                 });
@@ -551,52 +549,52 @@ notebook_tree.prototype = {
                 return {
                     label: 'RCloud Sample Notebooks',
                     id: '/featured',
-                    children: that.as_folder_hierarchy(notebook_nodes, that.node_id('featured')).sort(that.compare_nodes)
+                    children: as_folder_hierarchy(notebook_nodes, node_id('featured')).sort(compare_nodes)
                 };
             });
 
         });
     },
 
-    create_book_tree_widget: function(data) {
+    create_book_tree_widget = function(data) {
         var that = this;
 
         var start_widget_time = window.performance ? window.performance.now() : 0;
         that.$tree_ = $("#editor-book-tree");
         that.$tree_.tree({
             data: data,
-            onCreateLi: that.on_create_tree_li.bind(this),
+            onCreateLi: on_create_tree_li.bind(this),
             selectable: true,
             useContextMenu: false,
             keyboardSupport: false
         });
 
-        that.$tree_.bind('tree.click', that.tree_click.bind(this));
-        that.$tree_.bind('tree.open', that.tree_open.bind(this));
-        that.$tree_.bind('tree.close', that.tree_close.bind(this));
+        that.$tree_.bind('tree.click', tree_click.bind(this));
+        that.$tree_.bind('tree.open', tree_open.bind(this));
+        that.$tree_.bind('tree.close', tree_close.bind(this));
 
         if(start_widget_time)
             console.log('load tree took ' + (window.performance.now() - start_widget_time));
     },
 
-    load_tree: function(root_data) {
-        this.create_book_tree_widget(root_data);
+    load_tree = function(root_data) {
+        create_book_tree_widget.call(this, root_data);
         var interests = this.$tree_.tree('getNodeById', "/interests");
         this.$tree_.tree('openNode', interests);
     },
 
-    load_children: function(n) {
+    load_children = function(n) {
         console.warn('redundant code?');
         this.$tree_.tree('loadData', n.delay_children, n);
         delete n.delay_children;
     },
 
-    load_everything: function() {
+    load_everything = function() {
         var that = this;
         return Promise.all([
             rcloud.get_users(),
-            this.get_starred_info(),
-            this.get_recent_info(),
+            get_starred_info.call(that),
+            get_recent_info.call(that),
             rcloud.get_gist_sources(),
             rcloud.config.get_user_option('notebook-path-tips')
         ])
@@ -618,29 +616,30 @@ notebook_tree.prototype = {
                 var featured_tree;
 
                 return Promise.all([rcloud.config.get_current_notebook(),
-                                    that.get_featured()
+                                    get_featured()
                                     ])
                     .spread(function(current, featured_notebooks) {
                         current_ = current;
                         that.num_stars_ = starred_info.num_stars;
                         featured_tree = featured_notebooks;
+
                     })
                     .then(function() {
 
-                        var alls_root = that.populate_users(all_the_users);
+                        var alls_root = populate_users.call(that, all_the_users);
 
                         return [
                             featured_tree,
-                            that.populate_interests(starred_info.notebooks),
-                            that.populate_friends(all_the_users),
+                            populate_interests.call(that, starred_info.notebooks),
+                            populate_friends.call(that, all_the_users),
                             alls_root
                         ].filter(function(t) { return !!t; });
 
                     });
             })
             .then(function(data) {
-                this.load_tree(data);
-            }.bind(this))
+                load_tree.call(that, data);
+            }.bind(that))
             .then(function() {
                 for(var book in that.invalid_notebooks_) {
                     var entry = that.invalid_notebooks_[book];
@@ -653,29 +652,29 @@ notebook_tree.prototype = {
             .catch(rclient.post_rejection);
     },
 
-    find_sort_point: function(data, parent) {
+    find_sort_point = function(data, parent) {
         // this could be a binary search but linear is probably fast enough
         // for a single insert, and it also could be out of order
         for(var i = 0; i < parent.children.length; ++i) {
             var child = parent.children[i];
-            var so = this.compare_nodes(data, child);
+            var so = compare_nodes.call(this, data, child);
             if(so<0)
                 return child;
         }
         return 0;
     },
 
-    insert_alpha: function(data, parent) {
-        var before = this.find_sort_point(data, parent);
+    insert_alpha = function(data, parent) {
+        var before = find_sort_point.call(this, data, parent);
         if(before)
             return this.$tree_.tree('addNodeBefore', data, before);
         else
             return this.$tree_.tree('appendNode', data, parent);
     },
 
-    remove_empty_parents: function(dp) {
+    remove_empty_parents = function(dp) {
         // remove any empty notebook hierarchy
-        while(dp.children.length===0 && dp.sort_order===this.ordering.NOTEBOOK) {
+        while(dp.children.length===0 && dp.sort_order===order.NOTEBOOK) {
             var dp2 = dp.parent;
             this.$tree_.tree('removeNode', dp);
             dp = dp2;
@@ -683,11 +682,11 @@ notebook_tree.prototype = {
     },
 
     // special case for #1867: skip user level of tree for featured users
-    skip_user_level: function(root) {
+    skip_user_level = function(root) {
         return root === 'featured' && featured_.length === 1;
     },
 
-    update_tree: function(root, user, gistname, path, last_chance, create) {
+    update_tree = function(root, user, gistname, path, last_chance, create) {
         var that = this;
         if(!root)
             throw new Error("need root");
@@ -696,40 +695,40 @@ notebook_tree.prototype = {
         if(!gistname)
             throw new Error("need gistname");
 
-        var skip_user = that.skip_user_level(root);
+        var skip_user = skip_user_level(root);
         // make sure parents exist
-        var parid = skip_user ? that.node_id(root) : that.node_id(root, user),
+        var parid = skip_user ? node_id(root) : node_id(root, user),
             parent = that.$tree_.tree('getNodeById', parid),
             pdat = null,
             node = null;
         if(!parent) {
             var mine = user === username_; // yes it is possible I'm not my own friend
-            parent = that.$tree_.tree('getNodeById', that.node_id(root));
+            parent = that.$tree_.tree('getNodeById', node_id(root));
             if(!parent) {
                 throw new Error("root '" + root + "' of notebook tree not found!");
             }
             if(!skip_user) {
                 pdat = {
-                    label: mine ? "My Notebooks" : that.someone_elses(user),
-                    id: that.node_id(root, user),
-                    sort_order: mine ? that.ordering.MYFOLDER : that.ordering.SUBFOLDER
+                    label: mine ? "My Notebooks" : someone_elses(user),
+                    id: node_id(root, user),
+                    sort_order: mine ? order.MYFOLDER : order.SUBFOLDER
                 };
-                parent = that.insert_alpha(pdat, parent);
+                parent = insert_alpha(pdat, parent);
             }
         }
         if(parent.delay_children)
-            that.load_children(parent);
+            load_children(parent);
         while('children' in path) {
             node = that.$tree_.tree('getNodeById', path.id);
             if(!node) {
                 pdat = _.omit(path, 'children');
-                node = that.insert_alpha(pdat, parent);
+                node = insert_alpha(pdat, parent);
             }
             parent = node;
             path = path.children[0];
         }
         var data = path;
-        var id = skip_user ? that.node_id(root, gistname) : that.node_id(root, user, gistname);
+        var id = skip_user ? node_id(root, gistname) : node_id(root, user, gistname);
         node = that.$tree_.tree('getNodeById', id);
         if(!node && !create)
             return null;
@@ -747,16 +746,16 @@ notebook_tree.prototype = {
                 that.$tree_.tree('updateNode', node, data);
             else {
                 that.$tree_.tree('removeNode', node);
-                node = that.insert_alpha(data, parent);
-                that.remove_empty_parents(dp);
+                node = insert_alpha.call(that, data, parent);
+                remove_empty_parents.call(that, dp);
             }
         }
         else
-            node = that.insert_alpha(data, parent);
+            node = insert_alpha.call(that, data, parent);
         return node;
     },
 
-    find_index: function(collection, filter) {
+    find_index = function(collection, filter) {
         for (var i = 0; i < collection.length; i++) {
             if(filter(collection[i], i, collection))
                 return i;
@@ -766,7 +765,7 @@ notebook_tree.prototype = {
 
     // add_history_nodes
     // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
-    update_history_nodes: function(node, whither, where) {
+    update_history_nodes = function(node, whither, where) {
         var INCR = 5;
         var debug_colors = false;
         var ellipsis = null;
@@ -778,7 +777,7 @@ notebook_tree.prototype = {
             return ellipsis ? n-1 : n;
         }
         function show_sha(history, sha) {
-            var sha_ind = that.find_index(history, function(hist) { return hist.version===sha; });
+            var sha_ind = find_index(history, function(hist) { return hist.version===sha; });
             if(sha_ind<0)
                 throw new Error("didn't find sha " + where + " in history");
             return sha_ind + INCR - 1; // show this many including curr (?)
@@ -801,7 +800,7 @@ notebook_tree.prototype = {
                 if(diff <= 60*1000 && hour_same && min_same && this.show_terse_dates_)
                     return null;
                 else
-                    return that.format_date_time_stamp(d1, diff, isDateSame, true);
+                    return format_date_time_stamp(d1, diff, isDateSame, true);
             }
 
             function display_date_for_entry(i) {
@@ -858,7 +857,7 @@ notebook_tree.prototype = {
             var nins, insf = null, starting = node.children.length===0;
             if(!starting) {
                 var first = node.children[0];
-                nins = that.find_index(history, function(h) { return h.version==first.version; });
+                nins = find_index(history, function(h) { return h.version==first.version; });
                 insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
             }
             else {
@@ -935,21 +934,21 @@ notebook_tree.prototype = {
         });
     },
 
-    scroll_into_view: function(node) {
+    scroll_into_view = function(node) {
         var p = node.parent;
-        while(p.sort_order===this.ordering.NOTEBOOK) {
+        while(p.sort_order===order.NOTEBOOK) {
             this.$tree_.tree('openNode', p);
             p = p.parent;
         }
         ui_utils.scroll_into_view(this.$tree_.parent(), 50, 100, null, $(node.element));
     },
 
-    highlight_node: function(node) {
+    highlight_node = function(node) {
         var that = this;
         return function() {
             return new Promise(function(resolve) {
                 var p = node.parent;
-                while(p.sort_order===that.ordering.NOTEBOOK) {
+                while(p.sort_order===order.NOTEBOOK) {
                     that.$tree_.tree('openNode', p);
                     p = p.parent;
                 }
@@ -962,48 +961,48 @@ notebook_tree.prototype = {
         };
     }, 
 
-    highlight_notebooks: function(notebooks) {
+    highlight_notebooks = function(notebooks) {
         var that = this;
 
         var nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
-            return that.$tree_.tree('getNodeById', that.node_id('interests', username_, notebook.id));
+            return that.$tree_.tree('getNodeById', node_id('interests', username_, notebook.id));
         });
 
         // get promises:
         nodes.map(function(node) {
-            return that.highlight_node(node);
+            return highlight_node(node);
         }).reduce(function(cur, next) {
             return cur.then(next);
         }, Promise.resolve()).then(function() {});
     },
 
-    select_node: function(node) {
+    select_node = function(node) {
         this.$tree_.tree('selectNode', node);
-        this.scroll_into_view(node);
+        scroll_into_view.call(this, node);
         if(node.user === username_)
             RCloud.UI.notebook_title.make_editable(node, node.element, true);
         else
             RCloud.UI.notebook_title.make_editable(null);
     },
 
-    select_history_node: function(node) {
+    select_history_node = function(node) {
         this.select_node(node);
         $(node.element).find('.jqtree-element:eq(0)').trigger('click');
     },
 
-    update_tree_entry: function(root, user, gistname, entry, create) {
+    update_tree_entry = function(root, user, gistname, entry, create) {
         var that = this;
         var data = {user: user,
                     label: entry.description,
                     last_commit: new Date(entry.last_commit),
-                    sort_order: that.ordering.NOTEBOOK,
+                    sort_order: order.NOTEBOOK,
                     source: entry.source,
                     visible: entry.visible};
 
         // always show the same number of history nodes as before
         var whither = 'hide', where = null;
-        var inter_path = that.as_folder_hierarchy([data], that.skip_user_level(root) ? that.node_id(root) : that.node_id(root, user))[0];
-        var node = that.update_tree(root, user, gistname, inter_path,
+        var inter_path = as_folder_hierarchy([data], skip_user_level(root) ? node_id(root) : node_id(root, user))[0];
+        var node = update_tree.call(that, root, user, gistname, inter_path,
                                function(node) {
                                    if(node.children.length) {
                                        whither = 'index';
@@ -1020,23 +1019,23 @@ notebook_tree.prototype = {
             whither = 'sha';
             where = current_.version;
         }
-        return that.update_history_nodes(node, whither, where);
+        return update_history_nodes.call(this, node, whither, where);
     },
     
-    update_notebook_view: function(user, gistname, entry, selroot) {
+    update_notebook_view = function(user, gistname, entry, selroot) {
         var that = this;
         function open_and_select(node) {
             if(current_.version) {
                 that.$tree_.tree('openNode', node);
-                var id = that.skip_user_level(node.root) ?
-                        that.node_id(node.root, gistname, current_.version) :
-                        that.node_id(node.root, user, gistname, current_.version);
+                var id = skip_user_level(node.root) ?
+                        node_id(node.root, gistname, current_.version) :
+                        node_id(node.root, user, gistname, current_.version);
                 var n2 = that.$tree_.tree('getNodeById', id);
                 if(!n2)
                     throw new Error('tree node was not created for current history');
                 node = n2;
             }
-            that.select_node(node);
+            select_node.call(that, node);
         }
         var p, i_starred = that.my_stars_[gistname] || false;
         var promises = [];
@@ -1045,7 +1044,7 @@ notebook_tree.prototype = {
                 i_starred ? 'interests' :
                 that.my_friends_[user] ? 'friends': 'alls';
         if(i_starred) {
-            p = that.update_tree_entry('interests', user, gistname, entry, true);
+            p = update_tree_entry.call(that, 'interests', user, gistname, entry, true);
             if(selroot==='interests')
                 p = p.then(open_and_select);
             promises.push(p);
@@ -1058,62 +1057,62 @@ notebook_tree.prototype = {
             }
         }
         if(that.my_friends_[user]) {
-            p = that.update_tree_entry('friends', user, gistname, entry, true);
+            p = update_tree_entry.call(that, 'friends', user, gistname, entry, true);
             if(selroot==='friends')
                 p = p.then(open_and_select);
             promises.push(p);
         }
         if(that.featured_.indexOf(user)>=0) {
-            p = that.update_tree_entry('featured', user, gistname, entry, true);
+            p = update_tree_entry.call(that, 'featured', user, gistname, entry, true);
             if(selroot==='featured')
                 p = p.then(open_and_select);
             promises.push(p);
         }
 
-        p = that.update_tree_entry('alls', user, gistname, entry, true);
+        p = update_tree_entry.call(that, 'alls', user, gistname, entry, true);
         if(selroot==='alls')
             p = p.then(open_and_select);
         promises.push(p);
         return Promise.all(promises);
     },
 
-    remove_node: function(node) {
+    remove_node = function(node) {
         var parent = node.parent;
         ui_utils.fake_hover(node);
         this.$tree_.tree('removeNode', node);
-        this.remove_empty_parents(parent);
+        remove_empty_parents(parent);
         if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
             this.$tree_.tree('removeNode', parent);
     },
 
-    remove_notebook_view: function(user, gistname) {
+    remove_notebook_view = function(user, gistname) {
         var that = this;
         function do_remove(id) {
             var node = that.$tree_.tree('getNodeById', id);
             if(node)
-                that.remove_node(node);
+                remove_node.call(that, node);
             else
                 console.log("tried to remove node that doesn't exist: " + id);
         }
         if(that.my_friends_[user])
-            do_remove(that.node_id('friends', user, gistname));
+            do_remove(node_id('friends', user, gistname));
 
-        do_remove(that.node_id('alls', user, gistname));
+        do_remove(node_id('alls', user, gistname));
     },
 
-    unstar_notebook_view: function(user, gistname, selroot) {
+    unstar_notebook_view = function(user, gistname, selroot) {
         var that = this;
-        var inter_id = that.node_id('interests', user, gistname);
+        var inter_id = node_id('interests', user, gistname);
         var node = that.$tree_.tree('getNodeById', inter_id);
         if(!node) {
             console.log("attempt to unstar notebook we didn't know was starred", inter_id);
             return;
         }
-        that.remove_node(node);
-        that.update_notebook_view(user, gistname, that.get_notebook_info(gistname), selroot);
+        remove_node.call(that, node);
+        update_notebook_view.call(that, user, gistname, get_notebook_info.call(that, gistname), selroot);
     },
 
-    update_notebook_from_gist: function(result, history, selroot) {
+    update_notebook_from_gist = function(result, history, selroot) {
         var user = result.user.login, gistname = result.id;
         var that = this;
         // we only receive history here if we're at HEAD, so use that if we get
@@ -1122,40 +1121,40 @@ notebook_tree.prototype = {
         if(history)
             that.histories_[gistname] = history;
 
-        return that.update_notebook_model(user, gistname,
+        return update_notebook_model.call(this, user, gistname,
                                      result.description,
                                      result.updated_at || result.history[0].committed_at)
             .then(function(entry) {
-                return that.update_notebook_view(user, gistname, entry, selroot);
+                return update_notebook_view.call(that, user, gistname, entry, selroot);
             });
     },
 
-    toggle_folder_friendness: function(user) {
+    toggle_folder_friendness = function(user) {
         var that = this;
         if(that.my_friends_[user]) {
-            var anode = that.$tree_.tree('getNodeById', that.node_id('alls', user));
+            var anode = that.$tree_.tree('getNodeById', node_id('alls', user));
             var ftree;
             if(anode)
-                ftree = that.duplicate_tree_data(anode, that.transpose_notebook('friends'));
+                ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
             else { // this is a first-time load case
                 var mine = user === username_;
                 ftree = {
-                    label: mine ? "My Notebooks" : that.someone_elses(user),
-                    id: that.node_id('friends', user),
-                    sort_order: mine ? that.ordering.MYFOLDER : that.ordering.SUBFOLDER
+                    label: mine ? "My Notebooks" : someone_elses(user),
+                    id: node_id('friends', user),
+                    sort_order: mine ? order.MYFOLDER : order.SUBFOLDER
                 };
             }
-            var parent = that.$tree_.tree('getNodeById', that.node_id('friends'));
-            var node = that.insert_alpha(ftree, parent);
+            var parent = that.$tree_.tree('getNodeById', node_id('friends'));
+            var node = insert_alpha(ftree, parent);
             that.$tree_.tree('loadData', ftree.children, node);
         }
         else {
-            var n2 = that.$tree_.tree('getNodeById', that.node_id('friends', user));
+            var n2 = that.$tree_.tree('getNodeById', node_id('friends', user));
             that.$tree_.tree('removeNode', n2);
         }
     },
 
-    format_date_time_stamp: function(date, diff, isDateSame, for_version) {
+    format_date_time_stamp = function(date, diff, isDateSame, for_version) {
         function pad(n) { return n<10 ? '0'+n : n; }
         var now = new Date();
         var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
@@ -1169,7 +1168,7 @@ notebook_tree.prototype = {
             return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
     },
 
-    display_date_html: function(ds) {
+    display_date_html = function(ds) {
         if(ds==='none')
             return '';
         if(typeof ds==='string')
@@ -1177,15 +1176,15 @@ notebook_tree.prototype = {
         var date = new Date(ds);
         var now = new Date();
         var diff = now - date;
-        return this.format_date_time_stamp(date, diff, true, false);
+        return format_date_time_stamp(date, diff, true, false);
     },
 
-    display_date: function(ds) {
+    display_date = function(ds) {
         // return an element
-        return $(this.display_date_html(ds))[0];
+        return $(display_date_html(ds))[0];
     },
 
-    on_create_tree_li: function(node, $li) {
+    on_create_tree_li = function(node, $li) {
         $li.css("min-height","15px");
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
@@ -1205,7 +1204,7 @@ notebook_tree.prototype = {
         var date;
         if(node.last_commit) {
             date = $.el.span({'class': 'notebook-date'},
-                                   this.display_date(node.last_commit));
+                                   display_date(node.last_commit));
         }
         var right = $.el.span({'class': 'notebook-right'}, date);
         // if it was editable before, we need to restore that - either selected or open folder tree node
@@ -1217,7 +1216,7 @@ notebook_tree.prototype = {
         element.append(right);
     },
 
-    tree_click: function(event) {
+    tree_click = function(event) {
 
         if(event.node.id === 'showmore')
             this.show_history(event.node.parent, false);
@@ -1262,19 +1261,19 @@ notebook_tree.prototype = {
         return false;
     },
 
-    reselect_node: function(f) {
+    reselect_node = function(f) {
         var selected_node = $tree_.tree('getSelectedNode');
         var that = this;
         return f().then(function() {
             var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
             if(node_to_select)
-                that.select_node(node_to_select);
+                select_node(node_to_select);
             else console.log('sorry, neglected to highlight ' + selected_node.id);
         });
     },
 
-    tree_open: function(event) {
+    tree_open = function(event) {
         var n = event.node;
 
         // notebook folder name only editable when open
@@ -1286,14 +1285,14 @@ notebook_tree.prototype = {
             load_user_notebooks(n.user);
     },
 
-    tree_close: function(event) {
+    tree_close = function(event) {
         var n = event.node;
         // notebook folder name only editable when open
         if(n.full_name && !n.gistname)
             RCloud.UI.notebook_title.make_editable(n, n.element, false);
     },
 
-    show_history: function(node, opts) {
+    show_history = function(node, opts) {
         var that = this;
         if(_.isBoolean(opts))
             opts = {toggle: opts};
@@ -1305,7 +1304,7 @@ notebook_tree.prototype = {
             }
             if(opts.toggle) whither = 'hide';
         }
-        return that.update_history_nodes(node, whither, null)
+        return update_history_nodes.call(that, node, whither, null)
             .then(function(node) {
                 var history_len = 0;
                 if(that.histories_[node.gistname]) {
@@ -1316,5 +1315,33 @@ notebook_tree.prototype = {
                 }
                 that.$tree_.tree('openNode', node);
             });
-    }    
-}
+    } 
+
+    return {
+        add_interest: add_interest,
+        find_next_copy_name: find_next_copy_name,
+        get_my_star_count_by_friend: get_my_star_count_by_friend,
+        get_next: get_next,
+        get_notebook_info: get_notebook_info,
+        get_notebook_star_count: get_notebook_star_count,
+        get_previous: get_previous,
+        highlight_notebooks: highlight_notebooks,
+        is_notebook_starred_by_current_user: is_notebook_starred_by_current_user,
+        load_everything: load_everything,
+        node_id: node_id,
+        notebook_star_count_exists: notebook_star_count_exists,
+        remove_interest: remove_interest,
+        remove_notebook_view: remove_notebook_view,
+        set_notebook_info: set_notebook_info,
+        set_notebook_star_count: set_notebook_star_count,
+        set_visibility: set_visibility,
+        show_history: show_history,
+        show_terse_dates: show_terse_dates,
+        toggle_folder_friendness: toggle_folder_friendness,
+        unstar_notebook_view: unstar_notebook_view,
+        update_notebook_from_gist: update_notebook_from_gist,
+        update_notebook_view: update_notebook_view,
+        user_is_friend: user_is_friend
+    };
+ 
+}();

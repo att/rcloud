@@ -1,6 +1,9 @@
 var editor = function () {
 
     var new_notebook_prefix_ = "Notebook ",
+        github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
+                                  "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
+        NOTEBOOK_LOAD_FAILS = 5,
         notebook_tree_ = new notebook_tree();
     
     notebook_tree_.notebook_open.attach(function (sender, args) {
@@ -102,6 +105,9 @@ var editor = function () {
             var url = ui_utils.make_url('edit.html', {notebook: current_.notebook, version: current_.version});
             message = "<p>Sorry, RCloud's internal state has become inconsistent.  Please reload to return to a working state.</p><p>" + message + "</p>";
             RCloud.UI.fatal_dialog(message, "Reload", url);
+        },
+        find_next_copy_name: function(name) {
+            return notebook_tree_.find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
             version = version || null;
@@ -296,7 +302,7 @@ var editor = function () {
             return promise;
         },
         set_terse_dates: function(val) {
-            notebook_tree_.show_terse_dates_ = val;
+            notebook_tree_.show_terse_dates(val);
         },
         star_and_show: function(notebook, make_current, is_change) {
             return this.star_notebook(true, {notebook: notebook,
