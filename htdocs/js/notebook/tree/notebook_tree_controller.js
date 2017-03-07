@@ -1,5 +1,8 @@
-function notebook_tree() {
+function notebook_tree_controller(model, view) {
     
+    this.model_ = model;
+    this.notebook_tree_view_ = view;
+
     this.notebook_open = new event(this);
 
     // major key is adsort_order and minor key is name (label)
@@ -30,7 +33,7 @@ function notebook_tree() {
      */
 
     // local model (all caches of stuff stored in RCS/github)
-    this.username_ = null; // cache of rcloud.username() so we're not reading a cookie
+    //this.username_ = null; // cache of rcloud.username() so we're not reading a cookie
     this.histories_ = {}; // cached notebook histories
     this.notebook_info_ = {}; // all notebooks we are aware of
     this.num_stars_ = {}; // number of stars for all known notebooks
@@ -52,7 +55,7 @@ function notebook_tree() {
     this.gist_sources_ = null; // valid gist sources on server
 }
 
-notebook_tree.prototype = function() {
+notebook_tree_controller.prototype = function() {
 
     var get_current_notebook_histories = function() {
         return this.histories_[current_.notebook];
@@ -170,7 +173,7 @@ notebook_tree.prototype = function() {
             this.notebook_info_[gistname] = {};
         _.extend(this.notebook_info_[gistname], entry);
         var p = rcloud.set_notebook_info(gistname, entry);
-        if(user === username_)
+        if(user === model_.username())
             p = p.then(function() { rcloud.config.add_notebook(gistname); });
         return p;
     },
