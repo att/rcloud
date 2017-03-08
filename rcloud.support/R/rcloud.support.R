@@ -204,7 +204,6 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
     if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
-    args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
     p <- res$content$files
@@ -214,12 +213,11 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
     ## extract the integer number
     i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
     result <- NULL
-    if (is.environment(args)) {
-      e <- args
-    } else {
-      e <- new.env(parent=.GlobalEnv)
-      if (is.list(args) && length(args)) for (arg in names(args)) if (nzchar(arg)) e[[arg]] <- args[[arg]]
-    }
+    e <- if (is.environment(args)) args else new.env(parent=.GlobalEnv)
+    if (is.list(args) && length(args))
+        for (arg in names(args))
+            if (nzchar(arg)) e[[arg]] <- args[[arg]]
+
     ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
