@@ -20,6 +20,9 @@
 * Markdown cells would switch to GCC Machine Description if they contained
   certain content, making notebook unusable (#2178)
 
+* The `args` argument in `rcloud.call.notebook` was always treated as
+  a list, making it impossible to use it as a target environment.
+
 ### Features
 
 * `rcloud.web` has been significantly expanded to allow manipulation
