@@ -27,6 +27,9 @@
   well as registration of event handlers (`rcw.on`, `rcw.off`) and
   evaluation in the context of an element (`rcw.in`).
 
+* `rcloud.execute.asset` has a parameter `env=` that can be used for R
+  assets to specify the environment in which to source the asset.
+
 ## RCloud 1.7
 
 In addition to the below changes to RCloud core, this release also supports
