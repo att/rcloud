@@ -36,7 +36,9 @@ on: function(div, handler, fn, data, k) {
 off: function(div, handler, k) {
  if (_.isFunction(handler)) { k = handler; $(div).off(); } else $(div).off(handler);
  k(true);
-}
+},
+cookies: function(k) { k(document.cookie); },
+url: function(k) { k({ url:document.location.href, query:document.location.search, path:document.location.pathname, origin:document.location.origin, hash:document.location.hash }); }
 })")
   }, error=function(...) warning("NOTE: rcloud.web can only be used in an RCloud session!"))
 }
@@ -76,4 +78,23 @@ rcw.in <- function(element, expr) {
     Rserve.context(ctx)
     on.exit({ rcloud.flush.plot(); rcloud.close.context(ctx) })
     expr
+}
+rcw.cookies <- function(raw=FALSE) {
+    cookies <- caps$cookies()
+    if (!raw) {
+        cookies <- as.list(sapply(strsplit(strsplit(cookies, ";\\s*")[[1]], "=", TRUE),
+                                  function(o) { x = URLdecode(o[2]); names(x) = URLdecode(o[1]); x}))
+    }
+    (cookies)
+}
+rcw.url <- function(detailed=TRUE) (if (detailed) caps$url() else caps$url()$url)
+rcw.parameters <- function() {
+    query <- gsub("^\\?", "", rcw.url()$query)
+    comp <- strsplit(query, "&", TRUE)[[1]]
+    nam<- gsub("=.*", "", comp)
+    n <- nchar(nam) + 2L
+    t <- nchar(comp)
+    val <- substr(comp, n, t)
+    names(val) <- nam
+    as.list(val)
 }
