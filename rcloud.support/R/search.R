@@ -1,47 +1,6 @@
 # Some intelligent parsing account for basics like /solr/notebook and /solr/notebook/ is essentially the same thing
 # Using httr::parse_url
 
-.solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"),isXML=FALSE) {
-  content_type <- "application/json"
-  body = paste("[",data,"]",sep='')
-  httpConfig <- httr::config()
-
-  # Check if Authentication info exists in the parameters
-  if(!is.null(solr.auth.user)) httpConfig <- c(httpConfig,httr::authenticate(solr.auth.user,solr.auth.pwd))
-  if(isXML){
-    content_type ="text/xml"
-    body=data
-    }
-  if(!is.null(solr.url)){
-    solr.post.url <- httr::parse_url(solr.url)
-    solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
-    mcparallel(httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), config=httpConfig) ,detach=TRUE)   
-  }
-}
-
-.solr.get <- function(query,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd")){
-  solr.get.url <- httr::parse_url(solr.url)
-  solr.get.url$path <- paste(solr.get.url$path,"select",sep="/")
-  solr.get.url$query <- query
-  # https://cwiki.apache.org/confluence/display/solr/Response+Writers
-  solr.get.url$query$wt<-"json"
-  httpConfig <- httr::config()
-  solr.res <- list(error=list(code=solr.get.url$hostname,msg="Unknown Error"))
-
-
-  if(!is.null(solr.auth.user)) httpConfig <- c(httpConfig,httr::authenticate(solr.auth.user,solr.auth.pwd))
-  resp <- tryCatch({
-    httr::GET(build_url(solr.get.url),content_type_json(),accept_json(),config=httpConfig)
-    }, 
-    error = function(e) {solr.res$error$msg = e},
-    warnings = function(w) {solr.res$error$msg = w}
-  ) 
-  
-  if(!is.null(resp$message)) solr.res$error$msg <- paste0(solr.get.url$hostname," : ",resp$message)
-    else if(!httr::http_error(resp)) solr.res <- fromJSON(content(resp, "parsed"))
-      else solr.res$error$msg <- rawToChar(resp$content)
-  return(solr.res)
-}
 
 update.solr <- function(notebook, starcount){
   #Update only notebooks which are visible
@@ -76,7 +35,7 @@ update.solr <- function(notebook, starcount){
     content.files <- toJSON(content.files)
     metadata.list$content$set <- content.files
     completedata <- toJSON(metadata.list)
-    .solr.post(data=completedata)
+    rcloud.solr:::.solr.post(data=completedata)
     }
   }
 }
@@ -102,7 +61,7 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   res$all_sources <- all_sources
 
   query <- function(solr.url,source='',solr.auth.user=NULL,solr.auth.pwd=NULL) {
-    solr.res <- .solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
+    solr.res <- rcloud.solr:::.solr.get(solr.url=solr.url,query=solr.query,solr.auth.user=solr.auth.user,solr.auth.pwd=solr.auth.pwd)
     
     res$solr.res <<- solr.res
 
@@ -132,7 +91,7 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
 
   ## query ID to see if it has existing comments
   query <- list(q=paste0("id:",id),start=0,rows=1000)
-  solr.res <- .solr.get(query=query)
+  solr.res <- rcloud.solr:::.solr.get(query=query)
   comment.content <- fromJSON(content)
 
   # Create reponse
@@ -144,14 +103,14 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
 
   ## send the update request
   metadata <- toJSON(res)
-  .solr.post(data=metadata)
+  rcloud.solr:::.solr.post(data=metadata)
   }
 }
 
 .solr.modify.comment <- function(id, content, cid) {
 
   query <- list(q=paste0("id:",id),start=0,rows=1000)
-  solr.res <- .solr.get(query=query)
+  solr.res <- rcloud.solr:::.solr.get(query=query)
 
   cids <- trimws(unlist(lapply(solr.res$response$docs,function(o){lapply(o$comments,function(p){strsplit(p,":")[[1]][1]})})))
   index <- match(cid,cids)
@@ -162,20 +121,20 @@ rcloud.search <-function(query, all_sources, sortby, orderby, start, pagesize) {
   res$id <- id
   res$comments$set <- solr.res$response$docs[[1]]$comments
   metadata <- toJSON(res)
-  .solr.post(data=metadata)
+  rcloud.solr:::.solr.post(data=metadata)
 }
 }
 
 .solr.delete.comment <- function(id, cid) {
   query <- list(q=paste0("id:",id),start=0,rows=1000)
-  solr.res <- .solr.get(query=query)
+  solr.res <- rcloud.solr:::.solr.get(query=query)
   index <- grep(cid, solr.res$response$docs[[1]]$comments)
   solr.res$response$docs[[1]]$comments <- solr.res$response$docs[[1]]$comments[-index]
   metadata <- paste0('{"id":"',id,'","comments":{"set":[\"',paste(solr.res$response$docs[[1]]$comments, collapse="\",\""),'\"]}}')
-  .solr.post(data=metadata)
+  rcloud.solr:::.solr.post(data=metadata)
 }
 
 .solr.delete.doc <- function(id){
     metadata <- paste0('<delete><id>',id,'</id></delete>')
-    .solr.post(data=metadata, isXML=TRUE)
+    rcloud.solr:::.solr.post(data=metadata, isXML=TRUE)
 }
