@@ -20,6 +20,12 @@
 * Markdown cells would switch to GCC Machine Description if they contained
   certain content, making notebook unusable (#2178)
 
+### Features
+
+* `rcloud.web` has been significantly expanded to allow manipulation
+  of the elements, styles, CSS (`rcw.attr`, `rcw.style`, `rcw.css`) as
+  well as registration of event handlers (`rcw.on`, `rcw.off`) and
+  evaluation in the context of an element (`rcw.in`).
 
 ## RCloud 1.7
 
