@@ -445,25 +445,25 @@ notebook_tree_controller.prototype = function() {
         return this.model_.load_everything();
     },
 
-    find_sort_point = function(data, parent) {
-        // this could be a binary search but linear is probably fast enough
-        // for a single insert, and it also could be out of order
-        for(var i = 0; i < parent.children.length; ++i) {
-            var child = parent.children[i];
-            var so = compare_nodes.call(this, data, child);
-            if(so<0)
-                return child;
-        }
-        return 0;
-    },
+    // find_sort_point = function(data, parent) {
+    //     // this could be a binary search but linear is probably fast enough
+    //     // for a single insert, and it also could be out of order
+    //     for(var i = 0; i < parent.children.length; ++i) {
+    //         var child = parent.children[i];
+    //         var so = compare_nodes.call(this, data, child);
+    //         if(so<0)
+    //             return child;
+    //     }
+    //     return 0;
+    // },
 
-    insert_alpha = function(data, parent) {
-        var before = find_sort_point.call(this, data, parent);
-        if(before)
-            return this.$tree_.tree('addNodeBefore', data, before);
-        else
-            return this.$tree_.tree('appendNode', data, parent);
-    },
+    // insert_alpha = function(data, parent) {
+    //     var before = find_sort_point.call(this, data, parent);
+    //     if(before)
+    //         return this.$tree_.tree('addNodeBefore', data, before);
+    //     else
+    //         return this.$tree_.tree('appendNode', data, parent);
+    // },
 
     // remove_empty_parents = function(dp) {
     //     // remove any empty notebook hierarchy

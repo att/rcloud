@@ -1,6 +1,8 @@
 function notebook_tree_view(model) {
     this.model_ = model;
 
+    var that = this;
+
     this.$tree_ = null;
 
     // attach model listeners
@@ -77,9 +79,49 @@ function notebook_tree_view(model) {
         console.warn('redundant code?');
         this.$tree_.tree('loadData', n.delay_children, n);
     });
+
+    this.model_.add_node_before.attach(function(sender, args) {
+        var that = this;
+        that.$tree_.tree('addNodeBefore', args.node_to_insert, args.parent); 
+    });
+
+    this.model_.append_node.attach(function(sender, args) {
+        var that = this;
+        that.$tree_.tree('appendNode', args.node_to_insert, args.parent);
+    });
 }
 
 notebook_tree_view.prototype = function() {
+
+    var getView = function() {
+        var _this = this; 
+        var getThis = function() {
+            return _this;
+        }
+        return getThis();
+    };
+
+    // this.model_.initialise_tree.attach(function(sender, args) {
+    //     var start_widget_time = window.performance ? window.performance.now() : 0;
+    //     that.$tree_ = $("#editor-book-tree");
+    //     that.$tree_.tree({
+    //         data: args.data,
+    //         onCreateLi: on_create_tree_li.bind(this),
+    //         selectable: true,
+    //         useContextMenu: false,
+    //         keyboardSupport: false
+    //     });
+
+    //     that.$tree_.bind('tree.click', tree_click.bind(this));
+    //     that.$tree_.bind('tree.open', tree_open.bind(this));
+    //     that.$tree_.bind('tree.close', tree_close.bind(this));
+
+    //     if(start_widget_time)
+    //         console.log('load tree took ' + (window.performance.now() - start_widget_time));
+
+    //     var interests = this.$tree_.tree('getNodeById', "/interests");
+    //     that.$tree_.tree('openNode', interests);
+    // });
 
     // var load_tree = function(root_data) {
     //     create_book_tree_widget.call(this, root_data);
@@ -108,7 +150,7 @@ notebook_tree_view.prototype = function() {
     //         console.log('load tree took ' + (window.performance.now() - start_widget_time));
     // },
     
-    tree_click = function(event) {
+    var tree_click = function(event) {
 
         if(event.node.id === 'showmore')
             this.show_history(event.node.parent, false);

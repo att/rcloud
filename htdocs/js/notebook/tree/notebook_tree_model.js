@@ -24,6 +24,8 @@ function notebook_tree_model(username, show_terse_dates) {
     this.update_notebook = new event(this);
     this.open_and_select = new event(this);
     this.load_children = new event(this);
+    this.add_node_before = new event(this);
+    this.append_node = new event(this);
 }
 
 notebook_tree_model.prototype = function() {
@@ -500,6 +502,51 @@ notebook_tree_model.prototype = function() {
         return Promise.all(promises);
     },
 
+    find_sort_point = function(data, parent) {
+        // this could be a binary search but linear is probably fast enough
+        // for a single insert, and it also could be out of order
+        for(var i = 0; i < parent.children.length; ++i) {
+            var child = parent.children[i];
+
+            var so = compare_nodes.call(this, data, child);
+            if(so<0) {
+                return child;
+            }
+        }
+
+        return 0;
+    },
+
+    insert_alpha = function(node_to_insert, parent) {
+        var before = find_sort_point.call(this, node_to_insert, parent);
+
+        if(before) {
+            //return this.$tree_.tree('addNodeBefore', node_to_insert, before);
+
+            this.add_node_before.notify({ 
+                node_to_insert: node_to_insert,
+                parent: parent
+            });
+
+            return node_to_insert;
+
+        } else {
+            //return this.$tree_.tree('appendNode', data, parent);
+
+            this.append_node.notify({
+                node_to_insert: node_to_insert,
+                parent: parent
+            });
+            
+            return node_to_insert;
+        }
+    },
+
+    get_node_by_id = function(id) {
+        var tree_nodes = _.flatten(_.pluck(this.tree_data_, 'children'));
+        return _.find(tree_nodes,function(child) { return child.id == id; });
+    }
+
     update_tree = function(root, user, gistname, path, last_chance, create) {
 
         var that = this;
@@ -514,14 +561,14 @@ notebook_tree_model.prototype = function() {
 
         // make sure parents exist
         var parid = skip_user ? node_id(root) : node_id(root, user),
-            parent = that.$tree_.tree('getNodeById', parid),
+            parent = get_node_by_id.call(that, parid); //that.$tree_.tree('getNodeById', parid),
             pdat = null,
             node = null;
 
         if(!parent) {
 
             var mine = user === username_; // yes it is possible I'm not my own friend
-            parent = that.$tree_.tree('getNodeById', node_id(root));
+            parent = get_node_by_id.call(that, node_id(root)); // that.$tree_.tree('getNodeById', node_id(root));
 
             if(!parent) {
                 throw new Error("root '" + root + "' of notebook tree not found!");
@@ -545,7 +592,7 @@ notebook_tree_model.prototype = function() {
         }
 
         while('children' in path) {
-            node = that.$tree_.tree('getNodeById', path.id);
+            node = get_node_by_id.call(that, path.id); // that.$tree_.tree('getNodeById', path.id);
             if(!node) {
                 pdat = _.omit(path, 'children');
                 node = insert_alpha(pdat, parent);
@@ -556,10 +603,11 @@ notebook_tree_model.prototype = function() {
 
         var data = path;
         var id = skip_user ? node_id(root, gistname) : node_id(root, user, gistname);
-        node = that.$tree_.tree('getNodeById', id);
+        node = get_node_by_id.call(that, id); // that.$tree_.tree('getNodeById', id);
 
-        if(!node && !create)
+        if(!node && !create) {
             return null;
+        }
 
         var children;
         data.gistname = gistname;
@@ -569,16 +617,21 @@ notebook_tree_model.prototype = function() {
 
         if(node) {
             children = node.children;
-            if(last_chance)
+
+            if(last_chance) {
                 last_chance(node); // hacky
+            }
+
             var dp = node.parent;
-            if(dp===parent && node.name===data.label)
+
+            if(dp === parent && node.name === data.label) {
                 that.$tree_.tree('updateNode', node, data);
-            else {
+            } else {
                 that.$tree_.tree('removeNode', node);
                 node = insert_alpha.call(that, data, parent);
                 remove_empty_parents.call(that, dp);
             }
+
         } else {
             node = insert_alpha.call(that, data, parent);
         }
@@ -668,7 +721,8 @@ notebook_tree_model.prototype = function() {
         })
         .then(function(data) {
 
-
+            // initial assignment: 
+            that.tree_data_ = data;
 
             that.initialise_tree.notify({ 
                 data: data
