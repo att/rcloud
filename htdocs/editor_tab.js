@@ -26,9 +26,10 @@ var editor = function () {
             var that = this;
             username_ = rcloud.username();
 
-            notebook_tree_controller_ = new notebook_tree_controller(
-                new notebook_tree_model(rcloud.username(), show_terse_dates_),
-                new notebook_tree_view()
+            var model = new notebook_tree_model(rcloud.username(), show_terse_dates_);
+
+            notebook_tree_controller_ = new notebook_tree_controller(model,
+                new notebook_tree_view(model)
             );
 
             notebook_tree_controller_.notebook_open.attach(function (sender, args) {
