@@ -5,14 +5,14 @@ var editor = function () {
         github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
-        notebook_tree_controller_;
+        tree_controller;
     
     function get_notebook_info(gistname) {
-        return notebook_tree_controller_.get_notebook_info(gistname);
+        return tree_controller_.get_notebook_info(gistname);
     }
 
     function set_notebook_info(gistname, value) {
-        notebook_tree_controller_.set_notebook_info(gistname, value);
+        tree_controller_.set_notebook_info(gistname, value);
     }
 
     function update_url(opts) {
@@ -26,13 +26,16 @@ var editor = function () {
             var that = this;
             username_ = rcloud.username();
 
-            var model = new notebook_tree_model(rcloud.username(), show_terse_dates_);
-
-            notebook_tree_controller_ = new notebook_tree_controller(model,
-                new notebook_tree_view(model)
+            var tree_model = new notebook_tree_model(
+                rcloud.username(), 
+                show_terse_dates_
             );
 
-            notebook_tree_controller_.notebook_open.attach(function (sender, args) {
+            tree_controller_ = new notebook_tree_controller(tree_model,
+                new notebook_tree_view(tree_model)
+            );
+
+            tree_controller_.notebook_open.attach(function (sender, args) {
                 result.open_notebook(
                     args.gistname,
                     args.version,
@@ -42,7 +45,7 @@ var editor = function () {
                 );
             });  
 
-            var promise = notebook_tree_controller_.load_everything().then(function() {
+            var promise = tree_controller_.load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
                     return that.load_notebook(opts.notebook, opts.version, opts.source,
                                               true, false, ui_utils.make_url('edit.html'));
@@ -90,16 +93,16 @@ var editor = function () {
             return gist_sources_;
         },
         num_stars: function(gistname) {
-            return notebook_tree_controller_.get_notebook_star_count(gistname);
+            return tree_controller_.get_notebook_star_count(gistname);
         },
         set_num_stars: function(gistname, count) {
-            notebook_tree_controller_.set_notebook_star_count(gistname, count);
+            tree_controller_.set_notebook_star_count(gistname, count);
         },
         num_stars_exists: function(notebook_id) {
-            return notebook_tree_controller_.notebook_star_count_exists(notebook_id);
+            return tree_controller_.notebook_star_count_exists(notebook_id);
         },
         i_starred: function(gistname) {
-            return notebook_tree_controller_.is_notebook_starred_by_current_user(gistname);
+            return tree_controller_.is_notebook_starred_by_current_user(gistname);
         },
         current: function() {
             return current_;
@@ -114,7 +117,7 @@ var editor = function () {
             RCloud.UI.fatal_dialog(message, "Reload", url);
         },
         find_next_copy_name: function(name) {
-            return notebook_tree_controller_.find_next_copy_name(username_, name);
+            return tree_controller_.find_next_copy_name(username_, name);
         },
         load_notebook: function(gistname, version, source, selroot, push_history, fail_url) {
             version = version || null;
@@ -174,10 +177,10 @@ var editor = function () {
         new_notebook: function() {
             var that = this;
 
-            return Promise.cast(notebook_tree_controller_.find_next_copy_name(username_, new_notebook_prefix_ + '1'))
+            return Promise.cast(tree_controller_.find_next_copy_name(username_, new_notebook_prefix_ + '1'))
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
-                    notebook_tree_controller_.set_visibility(notebook.id, true);
+                    tree_controller_.set_visibility(notebook.id, true);
                     that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
                 });
         },
@@ -244,15 +247,15 @@ var editor = function () {
                     var entry = that.get_notebook_info(gistname);
                     if(!entry.description && !opts.notebook) {
                         console.log("attempt to star notebook we have no record of",
-                                    notebook_tree_controller_.node_id('interests', user, gistname));
+                                    tree_controller_.node_id('interests', user, gistname));
                         throw new Error("attempt to star notebook we have no record of",
-                                        notebook_tree_controller_.node_id('interests', user, gistname));
+                                        tree_controller_.node_id('interests', user, gistname));
                     }
-                    notebook_tree_controller_.add_interest(user, gistname);
+                    tree_controller_.add_interest(user, gistname);
 
                     // this is a new friend:
-                    if(notebook_tree_controller_.get_my_star_count_by_friend(user) === 1) 
-                        notebook_tree_controller_.toggle_folder_friendness(user);
+                    if(tree_controller_.get_my_star_count_by_friend(user) === 1) 
+                        tree_controller_.toggle_folder_friendness(user);
 
                     var p;
                     if(opts.notebook) {
@@ -262,23 +265,23 @@ var editor = function () {
                                 is_change: opts.is_change || false,
                                 selroot: 'interests'})(opts.notebook);
                         else
-                            p = notebook_tree_controller_.update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
+                            p = tree_controller_.update_notebook_from_gist(opts.notebook, opts.notebook.history, opts.selroot);
                     }
                     else {
-                        p = notebook_tree_controller_.update_notebook_view(user, gistname, entry, opts.selroot);
+                        p = tree_controller_.update_notebook_view(user, gistname, entry, opts.selroot);
                     }
                     return p.return(opts.notebook);
                 });
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     that.set_num_stars(gistname, count);
-                    notebook_tree_controller_.remove_interest(user, gistname);
+                    tree_controller_.remove_interest(user, gistname);
 
                     // user is no longer a friend
-                    if(!notebook_tree_controller_.user_is_friend(user))
-                        notebook_tree_controller_.toggle_folder_friendness(user);
+                    if(!tree_controller_.user_is_friend(user))
+                        tree_controller_.toggle_folder_friendness(user);
 
-                    notebook_tree_controller_.unstar_notebook_view(user, gistname, opts.selroot);
+                    tree_controller_.unstar_notebook_view(user, gistname, opts.selroot);
                 });
             }
         },
@@ -293,7 +296,7 @@ var editor = function () {
                     this.star_notebook(false, {user: user, gistname: gistname, selroot: false}))
                 .then(function() {
                     that.remove_notebook_info(user, gistname);
-                    notebook_tree_controller_.remove_notebook_view(user, gistname);
+                    tree_controller_.remove_notebook_view(user, gistname);
                     var promise = rcloud.config.clear_recent_notebook(gistname);
                     if(gistname === current_.notebook)
                         promise = promise.then(that.open_last_loadable);
@@ -301,11 +304,11 @@ var editor = function () {
                 });
         },
         highlight_imported_notebooks: function(notebooks) {
-            return notebook_tree_controller_.highlight_notebooks(notebooks);           
+            return tree_controller_.highlight_notebooks(notebooks);           
         },
         set_notebook_visibility: function(gistname, visible) {
-            var promise = notebook_tree_controller_.set_visibility(gistname, visible);
-            notebook_tree_controller_.update_notebook_view(username_, gistname, this.get_notebook_info(gistname), false);
+            var promise = tree_controller_.set_visibility(gistname, visible);
+            tree_controller_.update_notebook_view(username_, gistname, this.get_notebook_info(gistname), false);
             return promise;
         },
         set_terse_dates: function(val) {
@@ -324,7 +327,7 @@ var editor = function () {
                 .return(notebook);
         },
         show_history: function(node, opts) {        
-            notebook_tree_controller_.show_history(node, opts);
+            tree_controller_.show_history(node, opts);
         },
         fork_notebook: function(is_mine, gistname, version) {
             var that = this;
@@ -387,7 +390,7 @@ var editor = function () {
                 .then(this.load_callback({is_change: true, selroot: true}));
         },
         step_history_undo: function() {
-            var previous_version = notebook_tree_controller_.get_previous();
+            var previous_version = tree_controller_.get_previous();
 
             if(!_.isUndefined(previous_version)) {
                 RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
@@ -397,7 +400,7 @@ var editor = function () {
             }
         },
         step_history_redo: function() {
-            var next_version = notebook_tree_controller_.get_next();
+            var next_version = tree_controller_.get_next();
 
             if(!_.isUndefined(next_version)) {
                 RCloud.UI.shortcut_manager.disable(['history_undo', 'history_redo']);
@@ -600,7 +603,7 @@ var editor = function () {
                                     : rcloud.stars.get_notebook_star_count(result.id).then(function(count) {
                                         that.num_stars(result.id, count);
                                     })).then(function() {
-                                        return notebook_tree_controller_.update_notebook_from_gist(result, history, options.selroot);
+                                        return tree_controller_.update_notebook_from_gist(result, history, options.selroot);
                                     }));
 
                      RCloud.UI.comments_frame.set_foreign(!!options.source);

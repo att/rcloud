@@ -1,105 +1,99 @@
 function notebook_tree_view(model) {
+
+    "use strict";
+
     this.model_ = model;
-
-    var that = this;
-
     this.$tree_ = null;
+    
+    var view_obj = this;
 
-    // attach model listeners
-    this.model_.remove_tree_node.attach(function(sender, args) {
-        var node = this.$tree_.tree('getNodeById', args.id);
-        if(node) {
-            this.remove_node.call(that, node);
-        } else {
-            console.log("tried to remove node that doesn't exist: " + args.id);
-        }
-    });
-
-    this.model_.initialise_tree.attach(function(sender, args) {
-        var that = this;
-
-        var start_widget_time = window.performance ? window.performance.now() : 0;
-        that.$tree_ = $("#editor-book-tree");
-        that.$tree_.tree({
-            data: args.data,
-            onCreateLi: on_create_tree_li.bind(this),
-            selectable: true,
-            useContextMenu: false,
-            keyboardSupport: false
+    //attachListeners = function() {
+        // attach model listeners
+        this.model_.remove_tree_node.attach(function(sender, args) {
+            var node = view_obj.$tree_.tree('getNodeById', args.id);
+            if(node) {
+                view_obj.remove_node(node);
+            } else {
+                console.log("tried to remove node that doesn't exist: " + args.id);
+            }
         });
 
-        that.$tree_.bind('tree.click', tree_click.bind(this));
-        that.$tree_.bind('tree.open', tree_open.bind(this));
-        that.$tree_.bind('tree.close', tree_close.bind(this));
+        this.model_.initialise_tree.attach(function(sender, args) {
 
-        if(start_widget_time)
-            console.log('load tree took ' + (window.performance.now() - start_widget_time));
+            var start_widget_time = window.performance ? window.performance.now() : 0;
+            view_obj.$tree_ = $("#editor-book-tree");
+            view_obj.$tree_.tree({
+                data: args.data,
+                onCreateLi: view_obj.on_create_tree_li.bind(view_obj),
+                selectable: true,
+                useContextMenu: false,
+                keyboardSupport: false
+            });
 
-        var interests = this.$tree_.tree('getNodeById', "/interests");
-        this.$tree_.tree('openNode', interests);
-    });
+            // $tree_.bind('tree.click', tree_click);
+            // $tree_.bind('tree.open', tree_open);
+            // $tree_.bind('tree.close', tree_close);
 
-    this.model_.update_notebook.attach(function(sender, args) {
+            view_obj.$tree_.bind('tree.click', view_obj.tree_click.bind(view_obj));
+            view_obj.$tree_.bind('tree.open', view_obj.tree_open.bind(view_obj));
+            view_obj.$tree_.bind('tree.close', view_obj.tree_close.bind(view_obj));
 
-    });
+            if(start_widget_time)
+                console.log('load tree took ' + (window.performance.now() - start_widget_time));
 
-    this.model_.load_by_user.attach(function(sender, args) {
-        
-        var root = this.$tree_.tree('getNodeById', args.pid);
-        that.$tree_.tree('loadData', args.data, root);
+            var interests = view_obj.$tree_.tree('getNodeById', "/interests");
+            view_obj.$tree_.tree('openNode', interests);
+        });
 
-/*
-        // TODO: duplicate logic, though I think it should be in the model, and the
-        // duplciated data should be passed in:
+        // model_.update_notebook.attach(function(sender, args) {
 
-        if(args.duplicate) {
-            var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
-            var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
-            that.$tree_.tree('loadData', ftree.children, parent);
-        }
-*/
-    });
+        // });
 
-    this.model_.open_and_select.attach(function(sender, args) {
-        var node = args.node;
-        if(args.isHistorical) {
-            that.$tree_.tree('openNode', args.node);
-            var n2 = that.$tree_.tree('getNodeById', id);
+        this.model_.load_by_user.attach(function(sender, args) {
+            
+            var root = view_obj.$tree_.tree('getNodeById', args.pid);
+            view_obj.$tree_.tree('loadData', args.data, root);
 
-            if(!n2)
-                throw new Error('tree node was not created for current history');
-                    
-            node = n2;
-        }
+    /*
+            // TODO: duplicate logic, though I think it should be in the model, and the
+            // duplciated data should be passed in:
 
-        select_node(node);
-    });
+            if(args.duplicate) {
+                var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
+                var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
+                that.$tree_.tree('loadData', ftree.children, parent);
+            }
+    */
+        });
 
-    this.model_.load_children.attach(function(sender, args) {
-        console.warn('redundant code?');
-        this.$tree_.tree('loadData', n.delay_children, n);
-    });
+        this.model_.open_and_select.attach(function(sender, args) {
+            var node = args.node;
+            if(args.isHistorical) {
+                view_obj.$tree_.tree('openNode', args.node);
+                var n2 = view_obj.$tree_.tree('getNodeById', id);
 
-    this.model_.add_node_before.attach(function(sender, args) {
-        var that = this;
-        that.$tree_.tree('addNodeBefore', args.node_to_insert, args.parent); 
-    });
+                if(!n2)
+                    throw new Error('tree node was not created for current history');
+                        
+                node = n2;
+            }
 
-    this.model_.append_node.attach(function(sender, args) {
-        var that = this;
-        that.$tree_.tree('appendNode', args.node_to_insert, args.parent);
-    });
-}
+            select_node(node);
+        });
 
-notebook_tree_view.prototype = function() {
+        this.model_.load_children.attach(function(sender, args) {
+            console.warn('redundant code?');
+            $view_obj.tree('loadData', n.delay_children, n);
+        });
 
-    var getView = function() {
-        var _this = this; 
-        var getThis = function() {
-            return _this;
-        }
-        return getThis();
-    };
+        this.model_.add_node_before.attach(function(sender, args) {
+            view_obj.$tree_.tree('addNodeBefore', args.node_to_insert, args.parent); 
+        });
+
+        this.model_.append_node.attach(function(sender, args) {
+            view_obj.$tree_.tree('appendNode', args.node_to_insert, args.parent);
+        });
+    //}
 
     // this.model_.initialise_tree.attach(function(sender, args) {
     //     var start_widget_time = window.performance ? window.performance.now() : 0;
@@ -149,14 +143,17 @@ notebook_tree_view.prototype = function() {
     //     if(start_widget_time)
     //         console.log('load tree took ' + (window.performance.now() - start_widget_time));
     // },
-    
-    var tree_click = function(event) {
+}
+
+notebook_tree_view.prototype = {
+
+    tree_click: function(event) {
 
         if(event.node.id === 'showmore')
-            this.show_history(event.node.parent, false);
+            show_history(event.node.parent, false);
         else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey)
-                this.notebook_open.notify({ 
+                notebook_open.notify({ 
                     // gistname, version, source, selroot, new_window
                     gistname: event.node.gistname, 
                     version: event.node.version,
@@ -170,9 +167,9 @@ notebook_tree_view.prototype = function() {
                 /*jshint eqnull:true */
                 if(event.node.gistname === current_.notebook &&
                     event.node.version == current_.version && event.node.version == null) // deliberately null-vague here
-                    this.select_node(event.node).bind(this);
+                    select_node(event.node);
                 else
-                    this.notebook_open.notify({ 
+                    notebook_open.notify({ 
                         // gistname, version, source, selroot, new_window
                         gistname: event.node.gistname, 
                         version: event.node.version || null,
@@ -192,45 +189,44 @@ notebook_tree_view.prototype = function() {
         return false;
     },
 
-    select_node = function(node) {
-        this.$tree_.tree('selectNode', node);
-        scroll_into_view.call(this, node);
+    select_node: function(node) {
+        $tree_.tree('selectNode', node);
+        scroll_into_view(node);
         if(node.user === username_)
             RCloud.UI.notebook_title.make_editable(node, node.element, true);
         else
             RCloud.UI.notebook_title.make_editable(null);
     },
 
-    scroll_into_view = function(node) {
+    scroll_into_view: function(node) {
         var p = node.parent;
         while(p.sort_order===order.NOTEBOOK) {
-            this.$tree_.tree('openNode', p);
+            $tree_.tree('openNode', p);
             p = p.parent;
         }
-        ui_utils.scroll_into_view(this.$tree_.parent(), 50, 100, null, $(node.element));
+        ui_utils.scroll_into_view($tree_.parent(), 50, 100, null, $(node.element));
     },
 
-    remove_node = function(node) {
+    remove_node: function(node) {
         var parent = node.parent;
         ui_utils.fake_hover(node);
-        this.$tree_.tree('removeNode', node);
+        $tree_.tree('removeNode', node);
         remove_empty_parents(parent);
         if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
-            this.$tree_.tree('removeNode', parent);
+            $tree_.tree('removeNode', parent);
     },
 
-    remove_empty_parents = function(dp) {
+    remove_empty_parents: function(dp) {
         // remove any empty notebook hierarchy
         while(dp.children.length===0 && dp.sort_order===order.NOTEBOOK) {
             var dp2 = dp.parent;
-            this.$tree_.tree('removeNode', dp);
+            $tree_.tree('removeNode', dp);
             dp = dp2;
         }
     },
 
-    reselect_node = function(f) {
+    reselect_node: function(f) {
         var selected_node = $tree_.tree('getSelectedNode');
-        var that = this;
         return f().then(function() {
             var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
@@ -240,7 +236,7 @@ notebook_tree_view.prototype = function() {
         });
     },
 
-    tree_open = function(event) {
+    tree_open: function(event) {
         var n = event.node;
 
         // notebook folder name only editable when open
@@ -248,19 +244,18 @@ notebook_tree_view.prototype = function() {
             RCloud.UI.notebook_title.make_editable(n, n.element, true);
         $('#collapse-notebook-tree').trigger('size-changed');
 
-        if(n.user && this.lazy_load_[n.user])
+        if(n.user && lazy_load_[n.user])
             load_user_notebooks(n.user);
     },
 
-    tree_close = function(event) {
+    tree_close: function(event) {
         var n = event.node;
         // notebook folder name only editable when open
         if(n.full_name && !n.gistname)
             RCloud.UI.notebook_title.make_editable(n, n.element, false);
     },
 
-    show_history = function(node, opts) {
-        var that = this;
+    show_history: function(node, opts) {
         if(_.isBoolean(opts))
             opts = {toggle: opts};
         var whither = opts.update ? 'same' : 'more';
@@ -284,7 +279,7 @@ notebook_tree_view.prototype = function() {
             });
     },  
 
-    format_date_time_stamp = function(date, diff, isDateSame, for_version) {
+    format_date_time_stamp: function(date, diff, isDateSame, for_version) {
         function pad(n) { return n<10 ? '0'+n : n; }
         var now = new Date();
         var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
@@ -298,12 +293,12 @@ notebook_tree_view.prototype = function() {
             return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
     },
 
-    display_date = function(ds) {
+    display_date: function(ds) {
         // return an element
-        return $(display_date_html(ds))[0];
+        return $(this.display_date_html(ds))[0];
     },
 
-    display_date_html = function(ds) {
+    display_date_html: function(ds) {
         if(ds==='none')
             return '';
         if(typeof ds==='string')
@@ -311,11 +306,10 @@ notebook_tree_view.prototype = function() {
         var date = new Date(ds);
         var now = new Date();
         var diff = now - date;
-        return format_date_time_stamp(date, diff, true, false);
+        return this.format_date_time_stamp(date, diff, true, false);
     }, 
 
-    highlight_node = function(node) {
-        var that = this;
+    highlight_node: function(node) {
         return function() {
             return new Promise(function(resolve) {
                 var p = node.parent;
@@ -332,8 +326,7 @@ notebook_tree_view.prototype = function() {
         };
     }, 
 
-    highlight_notebooks = function(notebooks) {
-        var that = this;
+    highlight_notebooks: function(notebooks) {
 
         var nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
             return that.$tree_.tree('getNodeById', node_id('interests', username_, notebook.id));
@@ -347,7 +340,7 @@ notebook_tree_view.prototype = function() {
         }, Promise.resolve()).then(function() {});
     }, 
     
-    on_create_tree_li = function(node, $li) {
+    on_create_tree_li: function(node, $li) {
 
         $li.css("min-height","15px");
 
@@ -356,7 +349,7 @@ notebook_tree_view.prototype = function() {
 
         title.css('color', node.color);
 
-        if(path_tips_) {
+        if(this.model_.path_tips_) {
             element.attr('title', node.id);
         }
 
@@ -375,7 +368,7 @@ notebook_tree_view.prototype = function() {
         var date;
 
         if(node.last_commit) {
-            date = $.el.span({'class': 'notebook-date'}, display_date(node.last_commit));
+            date = $.el.span({'class': 'notebook-date'}, this.display_date(node.last_commit));
         }
 
         var right = $.el.span({'class': 'notebook-right'}, date);
@@ -387,9 +380,11 @@ notebook_tree_view.prototype = function() {
 
         RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
-    };
-
-    return {
+    }
+/*
+    var that = {
         highlight_notebooks: highlight_notebooks
-    };
-}();
+    }
+
+    return that;*/
+}
