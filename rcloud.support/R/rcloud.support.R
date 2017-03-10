@@ -353,7 +353,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
-        update.solr(res, star.count)
+        rcloud.solr::update.solr(res, star.count)
     }
     aug.res
 }
@@ -500,7 +500,7 @@ rcloud.is.notebook.visible <- function(id)
 rcloud.set.notebook.visibility <- function(id, value){
   rcloud.set.notebook.property(id, "visible", value != 0);
   if(value){
-    response <- update.solr(rcloud.get.notebook(id,raw=TRUE),rcloud.notebook.star.count(id))
+    response <- rcloud.solr::update.solr(rcloud.get.notebook(id,raw=TRUE),rcloud.notebook.star.count(id))
   } else {response <- rcloud.solr:::.solr.delete.doc(id)}
 }
 
