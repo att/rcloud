@@ -34,6 +34,7 @@ RCloud.UI.command_prompt = (function() {
         session.on('change', set_ace_height);
 
         widget.setTheme("ace/theme/chrome");
+        session.setNewLineMode('unix');
         session.setOption('indentedSoftWrap', false);
         session.setUseWrapMode(true);
         widget.resize();
