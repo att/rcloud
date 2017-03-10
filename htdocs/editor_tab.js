@@ -75,7 +75,9 @@ var editor = function () {
         if(!my_stars_[gistname]) {
             my_stars_[gistname] = true;
             my_friends_[user] = (my_friends_[user] || 0) + 1;
+            return true;
         }
+        return false;
     }
 
     function remove_interest(user, gistname) {
@@ -83,7 +85,9 @@ var editor = function () {
             delete my_stars_[gistname];
             if(--my_friends_[user] === 0)
                 delete my_friends_[user];
+            return true;
         }
+        else return false;
     }
 
     function set_visibility(gistname, visible) {
@@ -1478,8 +1482,7 @@ var editor = function () {
                         throw new Error("attempt to star notebook we have no record of",
                                         node_id('interests', user, gistname));
                     }
-                    add_interest(user, gistname);
-                    if(my_friends_[user] === 1)
+                    if(add_interest(user, gistname) && my_friends_[user] === 1)
                         change_folder_friendness(user);
                     var p;
                     if(opts.notebook) {
@@ -1499,8 +1502,7 @@ var editor = function () {
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
-                    remove_interest(user, gistname);
-                    if(!my_friends_[user])
+                    if(remove_interest(user, gistname) && !my_friends_[user])
                         change_folder_friendness(user);
                     unstar_notebook_view(user, gistname, opts.selroot);
                 });

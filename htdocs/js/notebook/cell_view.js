@@ -307,6 +307,8 @@ function create_cell_html_view(language, cell_model) {
         });
 
         widget.setTheme("ace/theme/chrome");
+        session.setNewLineMode('unix');
+        session.setOption('indentedSoftWrap', false);
         session.setUseWrapMode(true);
         return {
             widget: widget,
