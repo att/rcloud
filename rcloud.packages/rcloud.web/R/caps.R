@@ -38,7 +38,8 @@ off: function(div, handler, k) {
  k(true);
 },
 cookies: function(k) { k(document.cookie); },
-url: function(k) { k({ url:document.location.href, query:document.location.search, path:document.location.pathname, origin:document.location.origin, hash:document.location.hash }); }
+url: function(k) { k({ url:document.location.href, query:document.location.search, path:document.location.pathname, origin:document.location.origin, hash:document.location.hash }); },
+setLocation: function(loc,k) { document.location.href=loc; k(loc); }
 })")
   }, error=function(...) warning("NOTE: rcloud.web can only be used in an RCloud session!"))
 }
@@ -88,6 +89,9 @@ rcw.cookies <- function(raw=FALSE) {
     (cookies)
 }
 rcw.url <- function(detailed=TRUE) (if (detailed) caps$url() else caps$url()$url)
+
+rcw.redirect <- function(url) caps$setLocation(url)
+
 rcw.parameters <- function() {
     query <- gsub("^\\?", "", rcw.url()$query)
     comp <- strsplit(query, "&", TRUE)[[1]]
