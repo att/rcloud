@@ -128,7 +128,7 @@ rcw.set("#info", "Loading...")
 ## add a call-back that will be called on a click
 rcw.on("#button", click=function(...) rcw.set("#info", "You clicked on me!"))
 
-## ... click ont eh button and see what happens :)
+## ... click on the button and see what happens :)
 
 ## let's also change the color on the text randomly
 rcw.on("#button", click=function(...)
