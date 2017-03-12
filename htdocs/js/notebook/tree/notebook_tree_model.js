@@ -472,9 +472,9 @@ notebook_tree_model.prototype = {
             that.open_and_select.notify({ 
                 isHistorical: that.current_.version,
                 node: node,
-                id: skip_user_level(node.root) ?
-                    node_id(node.root, gistname, that.current_.version) :
-                    node_id(node.root, user, gistname, that.current_.version),
+                id: that.skip_user_level(node.root) ?
+                    that.node_id(node.root, gistname, that.current_.version) :
+                    that.node_id(node.root, user, gistname, that.current_.version),
             });
         }
 
@@ -520,14 +520,14 @@ notebook_tree_model.prototype = {
     find_sort_point: function(data, parent) {
         // this could be a binary search but linear is probably fast enough
         // for a single insert, and it also could be out of order
-        for(var i = 0; i < parent.children.length; ++i) {
-            var child = parent.children[i];
+        // for(var i = 0; i < parent.children.length; ++i) {
+        //     var child = parent.children[i];
 
-            var so = this.compare_nodes(data, child);
-            if(so<0) {
-                return child;
-            }
-        }
+        //     var so = this.compare_nodes(data, child);
+        //     if(so<0) {
+        //         return child;
+        //     }
+        // }
 
         return 0;
     },
@@ -688,7 +688,9 @@ notebook_tree_model.prototype = {
             where = current_.version;
         }
 
-        return update_history_nodes.call(this, node, whither, where);
+        //return update_history_nodes.call(this, node, whither, where);
+
+        return Promise.resolve(node);
     },
 
     // add_history_nodes
