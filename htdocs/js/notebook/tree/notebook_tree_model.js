@@ -398,21 +398,15 @@ notebook_tree_model.prototype = {
                         
             delete that.lazy_load_[username];
 
-/*
-
-    // todo: duplicate:::::
             if(that.my_friends_[username]) {
-                var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
-                var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
-                that.$tree_.tree('loadData', ftree.children, parent);
+                // TODO
+                // model equivalent of
+                // duplicate_tree_data(root, transpose_notebook('friends'))
             }
-*/
-
-
 
             that.load_by_user.notify({ 
                 pid: that.node_id('alls', username),
-                data: [], // TODO: data,
+                data: alls_data,
                 duplicate: that.my_friends_[username]
             });
         });
@@ -520,14 +514,14 @@ notebook_tree_model.prototype = {
     find_sort_point: function(data, parent) {
         // this could be a binary search but linear is probably fast enough
         // for a single insert, and it also could be out of order
-        // for(var i = 0; i < parent.children.length; ++i) {
-        //     var child = parent.children[i];
+        for(var i = 0; i < parent.children.length; ++i) {
+            var child = parent.children[i];
 
-        //     var so = this.compare_nodes(data, child);
-        //     if(so<0) {
-        //         return child;
-        //     }
-        // }
+            var so = this.compare_nodes(data, child);
+            if(so<0) {
+                return child;
+            }
+        }
 
         return 0;
     },

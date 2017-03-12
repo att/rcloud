@@ -54,16 +54,12 @@ function notebook_tree_view(model) {
             var root = view_obj.$tree_.tree('getNodeById', args.pid);
             view_obj.$tree_.tree('loadData', args.data, root);
 
-    /*
-            // TODO: duplicate logic, though I think it should be in the model, and the
-            // duplciated data should be passed in:
-
             if(args.duplicate) {
-                var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
-                var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
-                that.$tree_.tree('loadData', ftree.children, parent);
+                // TODO
+                //var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
+                //var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
+                //that.$tree_.tree('loadData', ftree.children, parent);
             }
-    */
         });
 
         this.model_.open_and_select.attach(function(sender, args) {
