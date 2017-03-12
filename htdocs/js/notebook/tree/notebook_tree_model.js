@@ -398,6 +398,9 @@ notebook_tree_model.prototype = {
                         
             delete that.lazy_load_[username];
 
+            // add nodes to the model:
+            that.load_tree_data(alls_data, pid);
+
             if(that.my_friends_[username]) {
                 // TODO
                 // model equivalent of
@@ -554,6 +557,14 @@ notebook_tree_model.prototype = {
     get_node_by_id: function(id) {
         var tree_nodes = _.flatten(_.pluck(this.tree_data_, 'children'));
         return _.find(tree_nodes,function(child) { return child.id == id; });
+    },
+
+    load_tree_data: function(data, parent) {
+        var parent_node = this.get_node_by_id(parent);
+        
+        if(parent_node) {
+            parent_node.children = data;
+        }
     },
 
     update_tree: function(root, user, gistname, path, last_chance, create) {
