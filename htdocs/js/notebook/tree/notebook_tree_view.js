@@ -91,7 +91,8 @@ function notebook_tree_view(model) {
         });
 
         this.model_.append_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('appendNode', args.node_to_insert, args.parent);
+            view_obj.$tree_.tree('appendNode', args.node_to_insert, 
+                view_obj.$tree.tree('getNodeById', args.parent));
         });
     //}
 
@@ -349,9 +350,9 @@ notebook_tree_view.prototype = {
 
         title.css('color', node.color);
 
-        if(this.model_.path_tips_) {
+        //if(this.model_.path_tips_) {
             element.attr('title', node.id);
-        }
+        //}
 
         if(node.gistname) {
             if(node.source) {

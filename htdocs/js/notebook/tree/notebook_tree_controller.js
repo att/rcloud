@@ -556,176 +556,176 @@ notebook_tree_controller.prototype = {
         return -1;
     },
 
-    // add_history_nodes
-    // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
-    update_history_nodes: function(node, whither, where) {
-        var INCR = 5;
-        var debug_colors = false;
-        var ellipsis = null;
-        var that = this;
-        if(node.children.length && node.children[node.children.length-1].id == 'showmore')
-            ellipsis = node.children[node.children.length-1];
-        function curr_count() {
-            var n = node.children.length;
-            return ellipsis ? n-1 : n;
-        }
-        function show_sha(history, sha) {
-            var sha_ind = find_index(history, function(hist) { return hist.version===sha; });
-            if(sha_ind<0)
-                throw new Error("didn't find sha " + where + " in history");
-            return sha_ind + INCR - 1; // show this many including curr (?)
-        }
+    // // add_history_nodes
+    // // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
+    // update_history_nodes: function(node, whither, where) {
+    //     var INCR = 5;
+    //     var debug_colors = false;
+    //     var ellipsis = null;
+    //     var that = this;
+    //     if(node.children.length && node.children[node.children.length-1].id == 'showmore')
+    //         ellipsis = node.children[node.children.length-1];
+    //     function curr_count() {
+    //         var n = node.children.length;
+    //         return ellipsis ? n-1 : n;
+    //     }
+    //     function show_sha(history, sha) {
+    //         var sha_ind = find_index(history, function(hist) { return hist.version===sha; });
+    //         if(sha_ind<0)
+    //             throw new Error("didn't find sha " + where + " in history");
+    //         return sha_ind + INCR - 1; // show this many including curr (?)
+    //     }
 
-        function process_history(nshow) {
-            function do_color(dat, color) {
-                if(debug_colors)
-                    dat.color = color;
-            }
+    //     function process_history(nshow) {
+    //         function do_color(dat, color) {
+    //             if(debug_colors)
+    //                 dat.color = color;
+    //         }
 
-            function get_date_diff(d1,d2) {
-                var now = new Date();
-                d1 = new Date(d1);
-                d2 = new Date(d2);
-                var diff = d1 - d2;
-                var min_same = d1.getMinutes() === d2.getMinutes();
-                var hour_same = d1.getHours() === d2.getHours();
-                var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
-                if(diff <= 60*1000 && hour_same && min_same && this.show_terse_dates_)
-                    return null;
-                else
-                    return format_date_time_stamp(d1, diff, isDateSame, true);
-            }
+    //         function get_date_diff(d1,d2) {
+    //             var now = new Date();
+    //             d1 = new Date(d1);
+    //             d2 = new Date(d2);
+    //             var diff = d1 - d2;
+    //             var min_same = d1.getMinutes() === d2.getMinutes();
+    //             var hour_same = d1.getHours() === d2.getHours();
+    //             var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
+    //             if(diff <= 60*1000 && hour_same && min_same && this.show_terse_dates_)
+    //                 return null;
+    //             else
+    //                 return format_date_time_stamp(d1, diff, isDateSame, true);
+    //         }
 
-            function display_date_for_entry(i) {
-                var hist = history[i];
-                var d;
-                if(i+1 < history.length) {
-                    d = get_date_diff(hist.committed_at, history[i + 1].committed_at);
-                }
-                else
-                    d = new Date(hist.committed_at);
-                return d || 'none';
-            }
-            function make_hist_node(color, i, force_date) {
-                var hist = history[i];
-                var hdat = _.clone(node);
-                var sha = hist.version.substring(0, 10);
-                var d;
-                hdat.committed_at = new Date(hist.committed_at);
-                hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
-                hdat.label = (hist.tag?hist.tag:sha);
-                hdat.version = hist.version;
-                hdat.id = node.id + '/' + hdat.version;
-                do_color(hdat, color);
-                return hdat;
-            }
-            function update_hist_node(node, i) {
-                var hist = history[i];
-                var sha = hist.version.substring(0, 10);
-                var attrs = {
-                    label: (hist.tag?hist.tag:sha)
-                };
-                that.$tree_.tree('updateNode', node, attrs);
-            }
-            var history = that.histories_[node.gistname].slice(1); // first item is current version
-            if(!history)
-                return;
-            var children = [];
-            nshow = Math.min(nshow, history.length);
+    //         function display_date_for_entry(i) {
+    //             var hist = history[i];
+    //             var d;
+    //             if(i+1 < history.length) {
+    //                 d = get_date_diff(hist.committed_at, history[i + 1].committed_at);
+    //             }
+    //             else
+    //                 d = new Date(hist.committed_at);
+    //             return d || 'none';
+    //         }
+    //         function make_hist_node(color, i, force_date) {
+    //             var hist = history[i];
+    //             var hdat = _.clone(node);
+    //             var sha = hist.version.substring(0, 10);
+    //             var d;
+    //             hdat.committed_at = new Date(hist.committed_at);
+    //             hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
+    //             hdat.label = (hist.tag?hist.tag:sha);
+    //             hdat.version = hist.version;
+    //             hdat.id = node.id + '/' + hdat.version;
+    //             do_color(hdat, color);
+    //             return hdat;
+    //         }
+    //         function update_hist_node(node, i) {
+    //             var hist = history[i];
+    //             var sha = hist.version.substring(0, 10);
+    //             var attrs = {
+    //                 label: (hist.tag?hist.tag:sha)
+    //             };
+    //             that.$tree_.tree('updateNode', node, attrs);
+    //         }
+    //         var history = that.histories_[node.gistname].slice(1); // first item is current version
+    //         if(!history)
+    //             return;
+    //         var children = [];
+    //         nshow = Math.min(nshow, history.length);
 
-            if(debug_colors)
-                for(var ii = 0, ee = curr_count(); ii<ee; ++ii)
-                    $tree_.tree('updateNode', node.children[ii], {color: ''});
+    //         if(debug_colors)
+    //             for(var ii = 0, ee = curr_count(); ii<ee; ++ii)
+    //                 $tree_.tree('updateNode', node.children[ii], {color: ''});
 
-            // remove forced date on version above ellipsis, if any
-            if(ellipsis) {
-                that.$tree_.tree('updateNode',
-                            node.children[node.children.length-2],
-                            {
-                                last_commit: display_date_for_entry(node.children.length-2)
-                            });
-            }
+    //         // remove forced date on version above ellipsis, if any
+    //         if(ellipsis) {
+    //             that.$tree_.tree('updateNode',
+    //                         node.children[node.children.length-2],
+    //                         {
+    //                             last_commit: display_date_for_entry(node.children.length-2)
+    //                         });
+    //         }
 
-            // insert at top
-            var nins, insf = null, starting = node.children.length===0;
-            if(!starting) {
-                var first = node.children[0];
-                nins = find_index(history, function(h) { return h.version==first.version; });
-                insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
-            }
-            else {
-                nins = nshow;
-                insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
-            }
-            for(var i=0; i<nins; ++i)
+    //         // insert at top
+    //         var nins, insf = null, starting = node.children.length===0;
+    //         if(!starting) {
+    //             var first = node.children[0];
+    //             nins = find_index(history, function(h) { return h.version==first.version; });
+    //             insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
+    //         }
+    //         else {
+    //             nins = nshow;
+    //             insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
+    //         }
+    //         for(var i=0; i<nins; ++i)
 
-            var count = curr_count();
-            // updates
-            for(i = nins; i<count; ++i)
-                update_hist_node(node.children[i], i);
+    //         var count = curr_count();
+    //         // updates
+    //         for(i = nins; i<count; ++i)
+    //             update_hist_node(node.children[i], i);
 
-            // add or trim bottom
-            if(count < nshow) { // top up
-                if(ellipsis)
-                    insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, ellipsis); };
-                else
-                    insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
-                for(i=count; i<nshow; ++i)
-                    insf(make_hist_node('mediumpurple', i, i==nshow-1));
-            }
-            else if(count > nshow) // trim any excess
-                for(i=count-1; i>=nshow; --i)
-                    that.$tree_.tree('removeNode', node.children[i]);
+    //         // add or trim bottom
+    //         if(count < nshow) { // top up
+    //             if(ellipsis)
+    //                 insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, ellipsis); };
+    //             else
+    //                 insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
+    //             for(i=count; i<nshow; ++i)
+    //                 insf(make_hist_node('mediumpurple', i, i==nshow-1));
+    //         }
+    //         else if(count > nshow) // trim any excess
+    //             for(i=count-1; i>=nshow; --i)
+    //                 that.$tree_.tree('removeNode', node.children[i]);
 
 
-            // hide or show ellipsis
-            if(ellipsis) {
-                if(nshow === history.length) {
-                    that.$tree_.tree('removeNode', ellipsis);
-                    ellipsis = null;
-                }
-            }
-            else {
-                if(nshow < history.length) {
-                    var data = {
-                        label: '...',
-                        id: 'showmore'
-                    };
-                    ellipsis = that.$tree_.tree('appendNode', data, node);
-                }
-            }
-        }
-        var nshow;
-        if(whither==='hide') {
-            for(var i = node.children.length-1; i >= 0; --i)
-                that.$tree_.tree('removeNode', node.children[i]);
-            return Promise.resolve(node);
-        }
-        else if(whither==='index')
-            nshow = Math.max(where, INCR);
-        else if(whither==='same')
-            nshow = curr_count();
-        else if(whither==='more')
-            nshow = curr_count() + INCR;
-        else if(whither==='sha') {
-            if(that.histories_[node.gistname])
-                nshow = show_sha(that.histories_[node.gistname], where);
-        }
-        else throw new Error("update_history_nodes don't understand how to seek '" + whither + "'");
+    //         // hide or show ellipsis
+    //         if(ellipsis) {
+    //             if(nshow === history.length) {
+    //                 that.$tree_.tree('removeNode', ellipsis);
+    //                 ellipsis = null;
+    //             }
+    //         }
+    //         else {
+    //             if(nshow < history.length) {
+    //                 var data = {
+    //                     label: '...',
+    //                     id: 'showmore'
+    //                 };
+    //                 ellipsis = that.$tree_.tree('appendNode', data, node);
+    //             }
+    //         }
+    //     }
+    //     var nshow;
+    //     if(whither==='hide') {
+    //         for(var i = node.children.length-1; i >= 0; --i)
+    //             that.$tree_.tree('removeNode', node.children[i]);
+    //         return Promise.resolve(node);
+    //     }
+    //     else if(whither==='index')
+    //         nshow = Math.max(where, INCR);
+    //     else if(whither==='same')
+    //         nshow = curr_count();
+    //     else if(whither==='more')
+    //         nshow = curr_count() + INCR;
+    //     else if(whither==='sha') {
+    //         if(that.histories_[node.gistname])
+    //             nshow = show_sha(that.histories_[node.gistname], where);
+    //     }
+    //     else throw new Error("update_history_nodes don't understand how to seek '" + whither + "'");
 
-        if(that.histories_[node.gistname]) {
-            process_history(nshow);
-            return Promise.resolve(node);
-        }
-        else
-            return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
-                that.histories_[node.gistname] = notebook.history;
-                if(whither==='sha')
-                    nshow = show_sha(that.histories_[node.gistname], where);
-                process_history(nshow);
-                return node;
-        });
-    },
+    //     if(that.histories_[node.gistname]) {
+    //         process_history(nshow);
+    //         return Promise.resolve(node);
+    //     }
+    //     else
+    //         return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
+    //             that.histories_[node.gistname] = notebook.history;
+    //             if(whither==='sha')
+    //                 nshow = show_sha(that.histories_[node.gistname], where);
+    //             process_history(nshow);
+    //             return node;
+    //     });
+    // },
 
     // scroll_into_view = function(node) {
     //     var p = node.parent;
