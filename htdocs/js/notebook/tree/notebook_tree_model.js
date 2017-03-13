@@ -722,7 +722,7 @@ notebook_tree_model.prototype = {
             //var dp = node.parent;
             var dp = this.get_parent(node.id);
 
-            if(dp === parent && node.name === data.label) {
+            if(dp === parent && node.label === data.label) {
 
                 this.update_node.notify({
                     node: node,
