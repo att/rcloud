@@ -68,12 +68,8 @@ notebook_tree_controller.prototype = {
         this.show_terse_dates_ = show_terse_dates;
     },    
 
-    // TODO: examine this function:
     set_visibility: function(gistname, visible) {
-        var entry = notebook_info_[gistname] || {};
-        entry.visible = visible;
-        notebook_info_[gistname] = entry;
-        return rcloud.set_notebook_visibility(gistname, visible);
+        return this.model_.set_visibility(gistname, visible);
     },
 
     load_everything: function() {
@@ -121,5 +117,10 @@ notebook_tree_controller.prototype = {
 
     show_history: function(node, opts) {
         this.view_.show_history(node, opts);
+    },
+
+    // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
+    find_next_copy_name: function (username, description) {
+        return this.model_.find_next_copy_name(username, description);
     }
 };

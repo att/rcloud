@@ -127,6 +127,13 @@ notebook_tree_model.prototype = {
         this.notebook_info_[gistname] = value;
     },
 
+    set_visibility: function(gistname, visible) {
+        var entry = this.notebook_info_[gistname] || {};
+        entry.visible = visible;
+        this.notebook_info_[gistname] = entry;
+        return rcloud.set_notebook_visibility(gistname, visible);
+    },
+
     add_interest: function(user, gistname) {
         if(!this.my_stars_[gistname]) {
             this.my_stars_[gistname] = true;
@@ -135,18 +142,18 @@ notebook_tree_model.prototype = {
     },
 
     get_my_star_count_by_friend:function(user) {
-        return my_friends_[user];
+        return this.my_friends_[user];
     },
 
     user_is_friend: function(user) {
-        return my_friends_[user];
+        return this.my_friends_[user];
     },
 
     remove_interest: function(user, gistname) {
-        if(my_stars_[gistname]) {
-            delete my_stars_[gistname];
-            if(--my_friends_[user] === 0)
-                delete my_friends_[user];
+        if(this.my_stars_[gistname]) {
+            delete this.my_stars_[gistname];
+            if(--this.my_friends_[user] === 0)
+                delete this.my_friends_[user];
         }
     },
 
@@ -837,6 +844,49 @@ notebook_tree_model.prototype = {
                 return i;
         }
         return -1;
+    },
+
+    find_next_copy_name: function (username, description) {
+        var that = this;
+        return this.load_user_notebooks(username)
+            .then(function() {
+                
+                // get folder parent or user trunk
+                var pid = description.indexOf('/') === -1 ?
+                        that.node_id("alls", username) :
+                        that.node_id("alls", username, description.replace(/\/[^\/]*$/,''));
+
+                var parent = that.get_node_by_id(pid);// $tree_.tree('getNodeById', pid);
+
+                if(parent === undefined) {
+                    return description;
+                }
+
+                var map = _.object(_.map(parent.children, function(c) { 
+                    return [c.full_name, true]; 
+                }));
+
+                if(!map[description]) {
+                    return description;
+                }
+
+                var match, base, n;
+
+                if((match = RCloud.utils.split_number(description))) {
+                    base = match[0];
+                    n = +match[1];
+                } else {
+                    base = description + ' ';
+                    n = 1;
+                }
+
+                var copy_name;
+                do
+                    copy_name = base + (++n);
+                while(map[copy_name]);
+
+                return copy_name;
+            });
     },
 
     // add_history_nodes

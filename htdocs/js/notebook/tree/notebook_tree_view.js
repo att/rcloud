@@ -262,19 +262,22 @@ notebook_tree_view.prototype = {
         var n = event.node;
 
         // notebook folder name only editable when open
-        if(n.full_name && n.user === username_ && !n.gistname)
+        if(n.full_name && n.user === username_ && !n.gistname) {
             RCloud.UI.notebook_title.make_editable(n, n.element, true);
+        }
+
         $('#collapse-notebook-tree').trigger('size-changed');
 
-        if(n.user && lazy_load_[n.user])
-            load_user_notebooks(n.user);
+        if(n.user && this.model_.lazy_load_[n.user])
+            this.model_.load_user_notebooks(n.user);
     },
 
     tree_close: function(event) {
         var n = event.node;
         // notebook folder name only editable when open
-        if(n.full_name && !n.gistname)
+        if(n.full_name && !n.gistname) {
             RCloud.UI.notebook_title.make_editable(n, n.element, false);
+        }
     },
 
     show_history: function(node, opts) {
