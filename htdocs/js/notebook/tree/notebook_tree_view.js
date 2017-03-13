@@ -5,6 +5,8 @@ function notebook_tree_view(model) {
     this.model_ = model;
     this.$tree_ = null;
     
+    this.notebook_open = new event(this);
+
     var view_obj = this;
 
     //attachListeners = function() {
@@ -370,6 +372,7 @@ notebook_tree_view.prototype = {
 
         title.css('color', node.color);
 
+        // TODO: reinstate conditional
         //if(this.model_.path_tips_) {
             element.attr('title', node.id);
         //}
@@ -402,10 +405,4 @@ notebook_tree_view.prototype = {
         RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
     }
-/*
-    var that = {
-        highlight_notebooks: highlight_notebooks
-    }
-
-    return that;*/
 }
