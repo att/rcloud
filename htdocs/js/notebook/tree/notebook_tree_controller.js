@@ -240,9 +240,9 @@ notebook_tree_controller.prototype = {
     // },
 
     // View (tree) functions
-    node_id: function(root, username, gistname, version) {
-        return model_.node_id(root, username, gistname, version);
-    },
+    // node_id: function(root, username, gistname, version) {
+    //     return model_.node_id(root, username, gistname, version);
+    // },
  
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     find_next_copy_name: function(username, description) {
@@ -360,53 +360,53 @@ notebook_tree_controller.prototype = {
                 _.extend(notebooks_stars.notebooks, already_know);
                 return notebooks_stars.notebooks;
             });
-    },
+    },   
 
-    
+    // duplicate_tree_data: function(tree, f) {
+    //     console.assert(!tree.user || !lazy_load_[tree.user]);
+    //     var t2 = f(tree);
+    //     if(tree.children) {
+    //         var ch2 = [];
+    //         for(var i=0; i<tree.children.length; ++i)
+    //             ch2.push(duplicate_tree_data.call( tree.children[i], f));
+    //         t2.children = ch2;
+    //     }
+    //     return t2;
+    // },
 
-    duplicate_tree_data: function(tree, f) {
-        console.assert(!tree.user || !lazy_load_[tree.user]);
-        var t2 = f(tree);
-        if(tree.children) {
-            var ch2 = [];
-            for(var i=0; i<tree.children.length; ++i)
-                ch2.push(duplicate_tree_data.call( tree.children[i], f));
-            t2.children = ch2;
-        }
-        return t2;
-    },
+    // transpose_notebook: function(destroot, splice_user) {
+    //     var srcroot = '/alls/';
+    //     if(splice_user)
+    //         srcroot += splice_user + '/';
+    //     return function(datum) {
+    //         if(datum.delay_children)
+    //             load_children(datum);
+    //         var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order", "version");
+    //         d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
+    //         d2.root = destroot;
+    //         return d2;
+    //     };
+    // },
 
-    transpose_notebook: function(destroot, splice_user) {
-        var srcroot = '/alls/';
-        if(splice_user)
-            srcroot += splice_user + '/';
-        return function(datum) {
-            if(datum.delay_children)
-                load_children(datum);
-            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order", "version");
-            d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
-            d2.root = destroot;
-            return d2;
-        };
-    },
+    // COULD ONLY FIND ONE INSTANCE OF THIS:
+    // create_notebook_root: function(src_trees, root, title, splice_user) {
+    //     var reroot = transpose_notebook(root, splice_user);
+    //     if(splice_user)
+    //         src_trees = src_trees[0].children;
+    //     var subtrees = src_trees.map(function(subtree) {
+    //         return duplicate_tree_data(subtree, reroot);
+    //     });
+    //     return {
+    //         label: title,
+    //         id: '/'+root,
+    //         children: subtrees
+    //     };
+    // },
 
-    create_notebook_root: function(src_trees, root, title, splice_user) {
-        var reroot = transpose_notebook(root, splice_user);
-        if(splice_user)
-            src_trees = src_trees[0].children;
-        var subtrees = src_trees.map(function(subtree) {
-            return duplicate_tree_data(subtree, reroot);
-        });
-        return {
-            label: title,
-            id: '/'+root,
-            children: subtrees
-        };
-    },
-
-    alls_name: function(subtree) {
-        return subtree.id.replace("/alls/","");
-    },
+    // COULD ONLY FIND ONE INSTANCE OF THIS
+    // alls_name: function(subtree) {
+    //     return subtree.id.replace("/alls/","");
+    // },
 
     // get_featured: function(() {
     //     var that = this;
@@ -475,9 +475,9 @@ notebook_tree_controller.prototype = {
     // },
 
     // special case for #1867: skip user level of tree for featured users
-    skip_user_level: function(root) {
-        return root === 'featured' && featured_.length === 1;
-    },
+    // skip_user_level: function(root) {
+    //     return root === 'featured' && featured_.length === 1;
+    // },
 
     // update_tree: function((root, user, gistname, path, last_chance, create) {
     //     var that = this;
@@ -548,13 +548,13 @@ notebook_tree_controller.prototype = {
     //     return node;
     // },
 
-    find_index: function(collection, filter) {
-        for (var i = 0; i < collection.length; i++) {
-            if(filter(collection[i], i, collection))
-                return i;
-        }
-        return -1;
-    },
+    // find_index: function(collection, filter) {
+    //     for (var i = 0; i < collection.length; i++) {
+    //         if(filter(collection[i], i, collection))
+    //             return i;
+    //     }
+    //     return -1;
+    // },
 
     // // add_history_nodes
     // // whither is 'hide' - erase all, 'index' - show thru index, 'sha' - show thru sha, 'more' - show INCR more
@@ -939,28 +939,31 @@ notebook_tree_controller.prototype = {
     },
 
     toggle_folder_friendness: function(user) {
-        var that = this;
-        if(that.my_friends_[user]) {
-            var anode = that.$tree_.tree('getNodeById', node_id('alls', user));
-            var ftree;
-            if(anode)
-                ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
-            else { // this is a first-time load case
-                var mine = user === username_;
-                ftree = {
-                    label: mine ? "My Notebooks" : someone_elses(user),
-                    id: node_id('friends', user),
-                    sort_order: mine ? order.MYFOLDER : order.SUBFOLDER
-                };
-            }
-            var parent = that.$tree_.tree('getNodeById', node_id('friends'));
-            var node = insert_alpha(ftree, parent);
-            that.$tree_.tree('loadData', ftree.children, node);
-        }
-        else {
-            var n2 = that.$tree_.tree('getNodeById', node_id('friends', user));
-            that.$tree_.tree('removeNode', n2);
-        }
+
+        this.model_.toggle_folder_friendness(user);
+
+        // var that = this;
+        // if(that.my_friends_[user]) {
+        //     var anode = that.$tree_.tree('getNodeById', node_id('alls', user));
+        //     var ftree;
+        //     if(anode)
+        //         ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
+        //     else { // this is a first-time load case
+        //         var mine = user === username_;
+        //         ftree = {
+        //             label: mine ? "My Notebooks" : someone_elses(user),
+        //             id: node_id('friends', user),
+        //             sort_order: mine ? order.MYFOLDER : order.SUBFOLDER
+        //         };
+        //     }
+        //     var parent = that.$tree_.tree('getNodeById', node_id('friends'));
+        //     var node = insert_alpha(ftree, parent);
+        //     that.$tree_.tree('loadData', ftree.children, node);
+        // }
+        // else {
+        //     var n2 = that.$tree_.tree('getNodeById', node_id('friends', user));
+        //     that.$tree_.tree('removeNode', n2);
+        // }
     },
 
     // format_date_time_stamp = function(date, diff, isDateSame, for_version) {

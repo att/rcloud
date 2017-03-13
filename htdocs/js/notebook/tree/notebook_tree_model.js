@@ -530,6 +530,11 @@ notebook_tree_model.prototype = {
     },
 
     insert_alpha: function(node_to_insert, parent) {
+
+        if(typeof parent === 'string') {
+            parent = this.get_node_by_id(parent);
+        }
+
         var before = this.find_sort_point(node_to_insert, parent);
 
         if(before) {
@@ -555,9 +560,49 @@ notebook_tree_model.prototype = {
     },
 
     get_node_by_id: function(id) {
-        var tree_nodes = _.flatten(_.pluck(this.tree_data_, 'children'));
-        return _.find(tree_nodes,function(child) { return child.id == id; });
+
+        var found;
+
+        function traverse(o) {
+            for (i in o) {
+                if (!!o[i] && typeof(o[i])=="object") {
+                    
+                    if(o[i].id === id) {
+                        found = o[i];
+                        break;
+                        return;
+                    }
+                    
+                    //console.log(i, o[i])
+                    traverse(o[i] );
+                }
+            }
+        }  
+
+        //console.log('TRAVERSE: ', traverse(this.tree_data_));
+
+        //var tree_nodes = _.flatten(_.pluck(this.tree_data_, 'children'));
+        //return _.find(tree_nodes,function(child) { return child.id == id; });
+
+        traverse(this.tree_data_);
+
+        return found;
     },
+
+    // get_node_by_id: function(id) {
+    //     if(element.title == matchingTitle){
+    //         return element;
+    //     }else if (element.children != null){
+    //         var i;
+    //         var result = null;
+    //         for(i=0; result == null && i < element.children.length; i++){
+    //             result = searchTree(element.children[i], matchingTitle);
+    //         }
+    //         return result;
+    //     }
+       
+    //     return null;
+    // },
 
     load_tree_data: function(data, parent) {
         var parent_node = this.get_node_by_id(parent);
@@ -565,6 +610,32 @@ notebook_tree_model.prototype = {
         if(parent_node) {
             parent_node.children = data;
         }
+    },
+
+    duplicate_tree_data: function(tree, f) {
+        console.assert(!tree.user || !this.lazy_load_[tree.user]);
+        var t2 = f(tree);
+        if(tree.children) {
+            var ch2 = [];
+            for(var i=0; i<tree.children.length; ++i)
+                ch2.push(duplicate_tree_data.call( tree.children[i], f));
+            t2.children = ch2;
+        }
+        return t2;
+    },
+
+    transpose_notebook: function(destroot, splice_user) {
+        var srcroot = '/alls/';
+        if(splice_user)
+            srcroot += splice_user + '/';
+        return function(datum) {
+            if(datum.delay_children)
+                load_children(datum);
+            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order", "version");
+            d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
+            d2.root = destroot;
+            return d2;
+        };
     },
 
     update_tree: function(root, user, gistname, path, last_chance, create) {
@@ -597,7 +668,7 @@ notebook_tree_model.prototype = {
             if(!skip_user) {
                 pdat = {
                     label: mine ? "My Notebooks" : someone_elses(user),
-                    id: node_id(root, user),
+                    id: this.node_id(root, user),
                     sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
                 };
                 parent = this.insert_alpha(pdat, parid);
@@ -696,6 +767,40 @@ notebook_tree_model.prototype = {
         //return update_history_nodes.call(this, node, whither, where);
 
         return Promise.resolve(node);
+    },
+
+    toggle_folder_friendness: function(user) {
+
+        var that = this;
+        if(that.my_friends_[user]) {
+            var anode = that.$tree_.tree('getNodeById', node_id('alls', user));
+            var ftree;
+            if(anode)
+                ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
+            else { // this is a first-time load case
+                var mine = user === username_;
+                ftree = {
+                    label: mine ? "My Notebooks" : someone_elses(user),
+                    id: node_id('friends', user),
+                    sort_order: mine ? order.MYFOLDER : order.SUBFOLDER
+                };
+            }
+            var parent = that.$tree_.tree('getNodeById', node_id('friends'));
+            var node = insert_alpha(ftree, parent);
+            that.$tree_.tree('loadData', ftree.children, node);
+        }
+        else {
+            var n2 = that.$tree_.tree('getNodeById', node_id('friends', user));
+            that.$tree_.tree('removeNode', n2);
+        }
+    },
+
+    find_index: function(collection, filter) {
+        for (var i = 0; i < collection.length; i++) {
+            if(filter(collection[i], i, collection))
+                return i;
+        }
+        return -1;
     },
 
     // add_history_nodes
