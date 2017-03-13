@@ -592,6 +592,24 @@ notebook_tree_model.prototype = {
         return found;
     },
 
+    get_parent: function(id) {
+        var parent;
+
+        function traverse(items) {
+            for(var loop = 0; loop < items.length; loop++) {
+                if(items[loop].id === id) {
+                    return parent;
+                }
+                if(items[loop].children) {
+                    parent = items[loop];
+                    return traverse(items[loop].children);
+                }
+            }
+        }  
+
+        return traverse(this.tree_data_);
+    },
+
     load_tree_data: function(data, parent) {
         var parent_node = this.get_node_by_id(parent);
         
@@ -701,7 +719,8 @@ notebook_tree_model.prototype = {
                 last_chance(node); // hacky
             }
 
-            var dp = node.parent;
+            //var dp = node.parent;
+            var dp = this.get_parent(node.id);
 
             if(dp === parent && node.name === data.label) {
 
@@ -1091,6 +1110,13 @@ notebook_tree_model.prototype = {
 
             // initial assignment: 
             this.tree_data_ = data;
+
+
+//console.log(JSON.stringify(data));
+
+console.log(data);
+
+
 
             this.initialise_tree.notify({ 
                 data: data
