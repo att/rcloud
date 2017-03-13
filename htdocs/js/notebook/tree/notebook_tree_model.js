@@ -32,6 +32,8 @@ function notebook_tree_model(username, show_terse_dates) {
     this.load_children = new event(this),
     this.add_node_before = new event(this),
     this.append_node = new event(this),
+    this.update_node = new event(this),
+    this.remove_node = new event(this),
 
     // major key is adsort_order and minor key is name (label)
     this.order = {
@@ -466,12 +468,21 @@ notebook_tree_model.prototype = {
         var that = this;
 
         function open_and_select(node) {
+
+            var id;
+            
+            if(that.current_.version) {
+                id = that.skip_user_level(node.root) ?
+                    that.node_id(node.root, gistname, that.current_.version) :
+                    that.node_id(node.root, user, gistname, that.current_.version);
+            } else {
+                id = node.id;
+            }
+
             that.open_and_select.notify({ 
                 isHistorical: that.current_.version,
                 node: node,
-                id: that.skip_user_level(node.root) ?
-                    that.node_id(node.root, gistname, that.current_.version) :
-                    that.node_id(node.root, user, gistname, that.current_.version),
+                id: id
             });
         }
 
@@ -517,12 +528,14 @@ notebook_tree_model.prototype = {
     find_sort_point: function(data, parent) {
         // this could be a binary search but linear is probably fast enough
         // for a single insert, and it also could be out of order
-        for(var i = 0; i < parent.children.length; ++i) {
-            var child = parent.children[i];
+        if(parent.children) {        
+            for(var i = 0; i < parent.children.length; ++i) {
+                var child = parent.children[i];
 
-            var so = this.compare_nodes(data, child);
-            if(so<0) {
-                return child;
+                var so = this.compare_nodes(data, child);
+                if(so<0) {
+                    return child;
+                }
             }
         }
 
@@ -542,7 +555,7 @@ notebook_tree_model.prototype = {
 
             this.add_node_before.notify({ 
                 node_to_insert: node_to_insert,
-                parent: before
+                parent_id: before.id
             });
 
             return node_to_insert;
@@ -552,7 +565,7 @@ notebook_tree_model.prototype = {
 
             this.append_node.notify({
                 node_to_insert: node_to_insert,
-                parent: parent
+                parent: parent.id
             });
             
             return node_to_insert;
@@ -566,43 +579,18 @@ notebook_tree_model.prototype = {
         function traverse(o) {
             for (i in o) {
                 if (!!o[i] && typeof(o[i])=="object") {
-                    
                     if(o[i].id === id) {
                         found = o[i];
                         break;
-                        return;
                     }
-                    
-                    //console.log(i, o[i])
                     traverse(o[i] );
                 }
             }
         }  
 
-        //console.log('TRAVERSE: ', traverse(this.tree_data_));
-
-        //var tree_nodes = _.flatten(_.pluck(this.tree_data_, 'children'));
-        //return _.find(tree_nodes,function(child) { return child.id == id; });
-
         traverse(this.tree_data_);
-
         return found;
     },
-
-    // get_node_by_id: function(id) {
-    //     if(element.title == matchingTitle){
-    //         return element;
-    //     }else if (element.children != null){
-    //         var i;
-    //         var result = null;
-    //         for(i=0; result == null && i < element.children.length; i++){
-    //             result = searchTree(element.children[i], matchingTitle);
-    //         }
-    //         return result;
-    //     }
-       
-    //     return null;
-    // },
 
     load_tree_data: function(data, parent) {
         var parent_node = this.get_node_by_id(parent);
@@ -716,11 +704,23 @@ notebook_tree_model.prototype = {
             var dp = node.parent;
 
             if(dp === parent && node.name === data.label) {
+
+                this.update_node.notify({
+                    node: node,
+                    data: data
+                });
+
                 //$tree_.tree('updateNode', node, data);
             } else {
                 //$tree_.tree('removeNode', node);
-                node = that.insert_alpha(data, parid);
-                that.remove_empty_parents(dp);
+
+                this.remove_node.notify({
+                    node: node
+                });
+
+                node = this.insert_alpha(data, parid);
+                // TODO
+                //this.remove_empty_parents(dp);
             }
 
         } else {
@@ -729,6 +729,15 @@ notebook_tree_model.prototype = {
 
         return node;
     },
+
+    // remove_empty_parents: function(dp) {
+    //     // remove any empty notebook hierarchy
+    //     while(dp.children.length===0 && dp.sort_order===order.NOTEBOOK) {
+    //         var dp2 = dp.parent;
+    //         this.$tree_.tree('removeNode', dp);
+    //         dp = dp2;
+    //     }
+    // },
 
     update_tree_entry: function(root, user, gistname, entry, create) {
         var that = this;
@@ -746,7 +755,7 @@ notebook_tree_model.prototype = {
         
         var node = that.update_tree(root, user, gistname, inter_path,
                                function(node) {
-                                   if(node.children.length) {
+                                   if(node.children && node.children.length) {
                                        whither = 'index';
                                        where = node.children.length;
                                        if(node.children[where-1].id==='showmore')
@@ -813,7 +822,7 @@ notebook_tree_model.prototype = {
         var debug_colors = false;
         var ellipsis = null;
         var that = this;
-        if(node.children.length && node.children[node.children.length-1].id == 'showmore')
+        if(node.children && node.children.length && node.children[node.children.length-1].id == 'showmore')
             ellipsis = node.children[node.children.length-1];
         function curr_count() {
             var n = node.children.length;

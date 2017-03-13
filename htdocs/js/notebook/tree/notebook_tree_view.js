@@ -64,14 +64,17 @@ function notebook_tree_view(model) {
 
         this.model_.open_and_select.attach(function(sender, args) {
             var node = args.node;
-            if(args.isHistorical) {
-                view_obj.$tree_.tree('openNode', args.node);
-                var n2 = view_obj.$tree_.tree('getNodeById', id);
 
-                if(!n2)
+            if(args.isHistorical) {
+                view_obj.$tree_.tree('openNode', 
+                    view_obj.$tree_.tree('getNodeById', args.node.id));
+
+                node = view_obj.$tree_.tree('getNodeById', args.id);
+
+                if(!node)
                     throw new Error('tree node was not created for current history');
-                        
-                node = n2;
+            } else {
+                node = view_obj.$tree_.tree('getNodeById', args.id);
             }
 
             view_obj.select_node(node);
@@ -83,12 +86,27 @@ function notebook_tree_view(model) {
         });
 
         this.model_.add_node_before.attach(function(sender, args) {
-            view_obj.$tree_.tree('addNodeBefore', args.node_to_insert, args.parent); 
+            // view_obj.$tree_.tree('addNodeBefore', args.node_to_insert, 
+            //     view_obj.$tree_.tree('getNodeById', args.parent_id)); 
+
+            view_obj.$tree_.tree('addNodeBefore',
+                args.node_to_insert,
+                view_obj.$tree_.tree('getNodeById', args.parent_id)); 
         });
 
         this.model_.append_node.attach(function(sender, args) {
             view_obj.$tree_.tree('appendNode', args.node_to_insert, 
-                view_obj.$tree_.tree('getNodeById', args.parent));
+                view_obj.$tree_.tree('getNodeById', args.parent_id));
+        });
+
+        this.model_.update_node.attach(function(sender, args) {
+            view_obj.$tree_.tree('updateNode', 
+                view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
+        });
+    
+        this.model_.remove_node.attach(function(sender, args) {
+            view_obj.$tree_.tree('removeNode', 
+                view_obj.$tree_.tree('getNodeById', args.node.id));
         });
     //}
 
@@ -163,10 +181,10 @@ notebook_tree_view.prototype = {
                 // just select - and this enables editability
                 /*jshint eqnull:true */
                 if(event.node.gistname === current_.notebook &&
-                    event.node.version == current_.version && event.node.version == null) // deliberately null-vague here
-                    select_node(event.node);
-                else
-                    notebook_open.notify({ 
+                    event.node.version == current_.version && event.node.version == null) { // deliberately null-vague here
+                    this.select_node(event.node);
+                } else {
+                    this.notebook_open.notify({ 
                         // gistname, version, source, selroot, new_window
                         gistname: event.node.gistname, 
                         version: event.node.version || null,
@@ -174,6 +192,7 @@ notebook_tree_view.prototype = {
                         selroot: event.node.root,
                         new_window: false
                     });
+                }
                 /*jshint eqnull:false */
             }
         }
@@ -197,7 +216,7 @@ notebook_tree_view.prototype = {
 
     scroll_into_view: function(node) {
         var p = node.parent;
-        while(p.sort_order===order.NOTEBOOK) {
+        while(p.sort_order === this.model_.order.NOTEBOOK) {
             this.$tree_.tree('openNode', p);
             p = p.parent;
         }
@@ -208,14 +227,14 @@ notebook_tree_view.prototype = {
         var parent = node.parent;
         ui_utils.fake_hover(node);
         $tree_.tree('removeNode', node);
-        remove_empty_parents(parent);
-        if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
+        this.remove_empty_parents(parent);
+        if(node.root === 'interests' && node.user !== this.model_.username_ && parent.children.length === 0)
             $tree_.tree('removeNode', parent);
     },
 
     remove_empty_parents: function(dp) {
         // remove any empty notebook hierarchy
-        while(dp.children.length===0 && dp.sort_order===order.NOTEBOOK) {
+        while(dp.children.length===0 && dp.sort_order === this.model_.order.NOTEBOOK) {
             var dp2 = dp.parent;
             $tree_.tree('removeNode', dp);
             dp = dp2;
@@ -307,10 +326,11 @@ notebook_tree_view.prototype = {
     }, 
 
     highlight_node: function(node) {
+        var that = this;
         return function() {
             return new Promise(function(resolve) {
                 var p = node.parent;
-                while(p.sort_order===order.NOTEBOOK) {
+                while(p.sort_order === this.model_.order.NOTEBOOK) {
                     that.$tree_.tree('openNode', p);
                     p = p.parent;
                 }
