@@ -57,7 +57,7 @@ function notebook_tree_view(model) {
             if(args.duplicate_data) {
 
                 view_obj.$tree_.tree('loadData', args.duplicate_data, 
-                    view_obj.$tree_.tree('getNodeById', duplicate_parent_id));
+                    view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
 
                 // TODO
                 //var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));

@@ -632,7 +632,7 @@ notebook_tree_model.prototype = {
         if(tree.children) {
             var ch2 = [];
             for(var i=0; i<tree.children.length; ++i)
-                ch2.push(this.duplicate_tree_data.call( tree.children[i], f));
+                ch2.push(this.duplicate_tree_data(tree.children[i], f));
             t2.children = ch2;
         }
         return t2;
