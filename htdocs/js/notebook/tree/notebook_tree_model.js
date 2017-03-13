@@ -394,6 +394,7 @@ notebook_tree_model.prototype = {
             // load "alls" tree for username, and duplicate to friends tree if needed
             var pid = that.node_id("alls", username);
             //var root = that.$tree_.tree('getNodeById', pid);
+            var root = that.get_node_by_id(pid);
 
             var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
             var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes);
@@ -403,16 +404,23 @@ notebook_tree_model.prototype = {
             // add nodes to the model:
             that.load_tree_data(alls_data, pid);
 
+            var duplicate_data;
             if(that.my_friends_[username]) {
-                // TODO
-                // model equivalent of
-                // duplicate_tree_data(root, transpose_notebook('friends'))
+                // update model for friend's notebooks:
+                var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
+
+                // add nodes to the model:
+                that.load_tree_data(ftree.children, that.node_id('friends', username));
+
+                // for the view:
+                duplicate_data = ftree.children;
             }
 
             that.load_by_user.notify({ 
                 pid: that.node_id('alls', username),
                 data: alls_data,
-                duplicate: that.my_friends_[username]
+                duplicate_data: duplicate_data,
+                duplicate_parent_id: that.node_id('friends', username)
             });
         });
     },
@@ -624,7 +632,7 @@ notebook_tree_model.prototype = {
         if(tree.children) {
             var ch2 = [];
             for(var i=0; i<tree.children.length; ++i)
-                ch2.push(duplicate_tree_data.call( tree.children[i], f));
+                ch2.push(this.duplicate_tree_data.call( tree.children[i], f));
             t2.children = ch2;
         }
         return t2;

@@ -51,10 +51,14 @@ function notebook_tree_view(model) {
 
         this.model_.load_by_user.attach(function(sender, args) {
             
-            var root = view_obj.$tree_.tree('getNodeById', args.pid);
+            var root = view_obj.$tree_.tree('getNodeById', args.pid);  
             view_obj.$tree_.tree('loadData', args.data, root);
 
-            if(args.duplicate) {
+            if(args.duplicate_data) {
+
+                view_obj.$tree_.tree('loadData', args.duplicate_data, 
+                    view_obj.$tree_.tree('getNodeById', duplicate_parent_id));
+
                 // TODO
                 //var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
                 //var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
