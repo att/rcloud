@@ -651,6 +651,47 @@ notebook_tree_model.prototype = {
     },
 
     get_parent: function(id) {
+  
+        var found_parent = false;
+        
+        function has_child(node, id) {
+            return _.find(node.children, function(c) {
+            return c.id === id;
+            });
+        }
+        
+        function traverse(obj) {
+            for(var key in obj) {
+                if (_.isArray(obj[key])) {
+                    obj[key].forEach(function(node){
+                    if(_.isObject(node)) {
+                        traverse(node);
+                    }
+                    });
+                }
+
+                if (_.isObject(obj[key])) {
+                    
+                    if(obj[key].hasOwnProperty('children')) {
+                        if(has_child(obj[key], id)) {
+                            //console.log(obj[key]);
+                            found_parent = obj[key];
+                        }
+                    }
+                    
+                    if(found_parent) 
+                        return found_parent;
+                    else
+                        traverse(obj[key]);
+                }
+            }
+        }
+        
+        return traverse(tree);
+    },
+
+    /*
+    get_parent: function(id) {
         var parent;
 
         function traverse(items) {
@@ -667,6 +708,7 @@ notebook_tree_model.prototype = {
 
         return traverse(this.tree_data_);
     },
+    */
 
     load_tree_data: function(data, parent) {
         var parent_node = this.get_node_by_id(parent);
@@ -1211,6 +1253,8 @@ notebook_tree_model.prototype = {
 
             // initial assignment: 
             this.tree_data_ = data;
+
+console.log(JSON.stringify(data));
 
             this.initialise_tree.notify({ 
                 data: data
