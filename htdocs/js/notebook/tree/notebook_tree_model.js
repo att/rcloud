@@ -701,7 +701,7 @@ notebook_tree_model.prototype = {
                     id: this.node_id(root, user),
                     sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
                 };
-                parent = this.insert_alpha(pdat, parid);
+                parent = this.insert_alpha(pdat, parent);
             }
         }
 
@@ -716,7 +716,7 @@ notebook_tree_model.prototype = {
             node = this.get_node_by_id(path.id); // that.$tree_.tree('getNodeById', path.id);
             if(!node) {
                 pdat = _.omit(path, 'children');
-                node = this.insert_alpha(pdat, parid);
+                node = this.insert_alpha(pdat, parent);
             }
             parent = node;
             path = path.children[0];
@@ -761,13 +761,13 @@ notebook_tree_model.prototype = {
                     node: node
                 });
 
-                node = this.insert_alpha(data, parid);
+                node = this.insert_alpha(data, parent);
                 // TODO
                 //this.remove_empty_parents(dp);
             }
 
         } else {
-            node = that.insert_alpha(data, parid);
+            node = that.insert_alpha(data, parent);
         }
 
         return node;
