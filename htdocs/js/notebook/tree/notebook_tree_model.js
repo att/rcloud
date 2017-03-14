@@ -589,7 +589,7 @@ notebook_tree_model.prototype = {
 
             this.append_node.notify({
                 node_to_insert: node_to_insert,
-                parent: parent.id
+                parent_id: parent.id
             });
             
             return node_to_insert;
