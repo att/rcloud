@@ -687,7 +687,7 @@ notebook_tree_model.prototype = {
             }
         }
         
-        return traverse(tree);
+        return traverse(this.tree_data_);
     },
 
     /*
