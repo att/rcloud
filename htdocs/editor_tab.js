@@ -163,16 +163,17 @@ var editor = function () {
             if(new_window) {
                 var url = ui_utils.make_url('edit.html', {notebook: gistname, version: version, source: source});
                 window.open(url, "_blank");
-            }
-            else
+            } else {
                 this.load_notebook(gistname, version, source, selroot, null);
+            }
         },
         new_notebook_prefix: function(_) {
             if(arguments.length) {
                 new_notebook_prefix_ = _;
                 return this;
+            } else { 
+                return new_notebook_prefix_;
             }
-            else return new_notebook_prefix_;
         },
         new_notebook: function() {
             var that = this;
