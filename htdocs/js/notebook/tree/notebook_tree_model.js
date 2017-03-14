@@ -549,12 +549,15 @@ notebook_tree_model.prototype = {
 
                 var so = this.compare_nodes(data, child);
                 if(so<0) {
-                    return child;
+                    return {
+                        child: child,
+                        position: i
+                    }
                 }
             }
         }
 
-        return 0;
+        return undefined;
     },
 
     insert_alpha: function(node_to_insert, parent) {
@@ -568,15 +571,21 @@ notebook_tree_model.prototype = {
         if(before) {
             //return this.$tree_.tree('addNodeBefore', node_to_insert, before);
 
+            // splice children:
+            parent.children.splice(before.position, 0, node_to_insert);
+
             this.add_node_before.notify({ 
                 node_to_insert: node_to_insert,
-                parent_id: before.id
+                parent_id: before.child.id
             });
 
             return node_to_insert;
 
         } else {
             //return this.$tree_.tree('appendNode', data, parent);
+
+            // add node to model:
+            parent.children.push(node_to_insert);
 
             this.append_node.notify({
                 node_to_insert: node_to_insert,
