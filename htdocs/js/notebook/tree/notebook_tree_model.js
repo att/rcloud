@@ -552,7 +552,7 @@ notebook_tree_model.prototype = {
                     return {
                         child: child,
                         position: i
-                    }
+                    };
                 }
             }
         }
@@ -1177,13 +1177,6 @@ notebook_tree_model.prototype = {
 
             // initial assignment: 
             this.tree_data_ = data;
-
-
-//console.log(JSON.stringify(data));
-
-console.log(data);
-
-
 
             this.initialise_tree.notify({ 
                 data: data

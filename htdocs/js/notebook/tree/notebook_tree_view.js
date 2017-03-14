@@ -9,161 +9,106 @@ function notebook_tree_view(model) {
 
     var view_obj = this;
 
-    //attachListeners = function() {
-        // attach model listeners
-        this.model_.remove_tree_node.attach(function(sender, args) {
-            var node = view_obj.$tree_.tree('getNodeById', args.id);
-            if(node) {
-                view_obj.remove_node(node);
-            } else {
-                console.log("tried to remove node that doesn't exist: " + args.id);
-            }
+    // attach model listeners
+    this.model_.remove_tree_node.attach(function(sender, args) {
+        var node = view_obj.$tree_.tree('getNodeById', args.id);
+        if(node) {
+            view_obj.remove_node(node);
+        } else {
+            console.log("tried to remove node that doesn't exist: " + args.id);
+        }
+    });
+
+    this.model_.initialise_tree.attach(function(sender, args) {
+
+        var start_widget_time = window.performance ? window.performance.now() : 0;
+        view_obj.$tree_ = $("#editor-book-tree");
+        view_obj.$tree_.tree({
+            data: args.data,
+            onCreateLi: view_obj.on_create_tree_li.bind(view_obj),
+            selectable: true,
+            useContextMenu: false,
+            keyboardSupport: false
         });
 
-        this.model_.initialise_tree.attach(function(sender, args) {
+        view_obj.$tree_.bind('tree.click', view_obj.tree_click.bind(view_obj));
+        view_obj.$tree_.bind('tree.open', view_obj.tree_open.bind(view_obj));
+        view_obj.$tree_.bind('tree.close', view_obj.tree_close.bind(view_obj));
 
-            var start_widget_time = window.performance ? window.performance.now() : 0;
-            view_obj.$tree_ = $("#editor-book-tree");
-            view_obj.$tree_.tree({
-                data: args.data,
-                onCreateLi: view_obj.on_create_tree_li.bind(view_obj),
-                selectable: true,
-                useContextMenu: false,
-                keyboardSupport: false
-            });
+        if(start_widget_time)
+            console.log('load tree took ' + (window.performance.now() - start_widget_time));
 
-            // $tree_.bind('tree.click', tree_click);
-            // $tree_.bind('tree.open', tree_open);
-            // $tree_.bind('tree.close', tree_close);
+        var interests = view_obj.$tree_.tree('getNodeById', "/interests");
+        view_obj.$tree_.tree('openNode', interests);
+    });
 
-            view_obj.$tree_.bind('tree.click', view_obj.tree_click.bind(view_obj));
-            view_obj.$tree_.bind('tree.open', view_obj.tree_open.bind(view_obj));
-            view_obj.$tree_.bind('tree.close', view_obj.tree_close.bind(view_obj));
+    // model_.update_notebook.attach(function(sender, args) {
 
-            if(start_widget_time)
-                console.log('load tree took ' + (window.performance.now() - start_widget_time));
-
-            var interests = view_obj.$tree_.tree('getNodeById', "/interests");
-            view_obj.$tree_.tree('openNode', interests);
-        });
-
-        // model_.update_notebook.attach(function(sender, args) {
-
-        // });
-
-        this.model_.load_by_user.attach(function(sender, args) {
-            
-            var root = view_obj.$tree_.tree('getNodeById', args.pid);  
-            view_obj.$tree_.tree('loadData', args.data, root);
-
-            if(args.duplicate_data) {
-
-                view_obj.$tree_.tree('loadData', args.duplicate_data, 
-                    view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
-
-                // TODO
-                //var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
-                //var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
-                //that.$tree_.tree('loadData', ftree.children, parent);
-            }
-        });
-
-        this.model_.open_and_select.attach(function(sender, args) {
-            var node = args.node;
-
-            if(args.isHistorical) {
-                view_obj.$tree_.tree('openNode', 
-                    view_obj.$tree_.tree('getNodeById', args.node.id));
-
-                node = view_obj.$tree_.tree('getNodeById', args.id);
-
-                if(!node)
-                    throw new Error('tree node was not created for current history');
-            } else {
-                node = view_obj.$tree_.tree('getNodeById', args.id);
-            }
-
-            view_obj.select_node(node);
-        });
-
-        this.model_.load_children.attach(function(sender, args) {
-            console.warn('redundant code?');
-            view_obj.tree('loadData', n.delay_children, n);
-        });
-
-        this.model_.add_node_before.attach(function(sender, args) {
-            // view_obj.$tree_.tree('addNodeBefore', args.node_to_insert, 
-            //     view_obj.$tree_.tree('getNodeById', args.parent_id)); 
-
-            view_obj.$tree_.tree('addNodeBefore',
-                args.node_to_insert,
-                view_obj.$tree_.tree('getNodeById', args.parent_id)); 
-        });
-
-        this.model_.append_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('appendNode', args.node_to_insert, 
-                view_obj.$tree_.tree('getNodeById', args.parent_id));
-        });
-
-        this.model_.update_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('updateNode', 
-                view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
-        });
-    
-        this.model_.remove_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('removeNode', 
-                view_obj.$tree_.tree('getNodeById', args.node.id));
-        });
-    //}
-
-    // this.model_.initialise_tree.attach(function(sender, args) {
-    //     var start_widget_time = window.performance ? window.performance.now() : 0;
-    //     that.$tree_ = $("#editor-book-tree");
-    //     that.$tree_.tree({
-    //         data: args.data,
-    //         onCreateLi: on_create_tree_li.bind(this),
-    //         selectable: true,
-    //         useContextMenu: false,
-    //         keyboardSupport: false
-    //     });
-
-    //     that.$tree_.bind('tree.click', tree_click.bind(this));
-    //     that.$tree_.bind('tree.open', tree_open.bind(this));
-    //     that.$tree_.bind('tree.close', tree_close.bind(this));
-
-    //     if(start_widget_time)
-    //         console.log('load tree took ' + (window.performance.now() - start_widget_time));
-
-    //     var interests = this.$tree_.tree('getNodeById', "/interests");
-    //     that.$tree_.tree('openNode', interests);
     // });
 
-    // var load_tree = function(root_data) {
-    //     create_book_tree_widget.call(this, root_data);
-    //     var interests = this.$tree_.tree('getNodeById', "/interests");
-    //     this.$tree_.tree('openNode', interests);
-    // },
-    
-    // create_book_tree_widget = function(data) {
-    //     var that = this;
+    this.model_.load_by_user.attach(function(sender, args) {
+        
+        var root = view_obj.$tree_.tree('getNodeById', args.pid);  
+        view_obj.$tree_.tree('loadData', args.data, root);
 
-    //     var start_widget_time = window.performance ? window.performance.now() : 0;
-    //     that.$tree_ = $("#editor-book-tree");
-    //     that.$tree_.tree({
-    //         data: data,
-    //         onCreateLi: on_create_tree_li.bind(this),
-    //         selectable: true,
-    //         useContextMenu: false,
-    //         keyboardSupport: false
-    //     });
+        if(args.duplicate_data) {
 
-    //     that.$tree_.bind('tree.click', tree_click.bind(this));
-    //     that.$tree_.bind('tree.open', tree_open.bind(this));
-    //     that.$tree_.bind('tree.close', tree_close.bind(this));
+            view_obj.$tree_.tree('loadData', args.duplicate_data, 
+                view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
 
-    //     if(start_widget_time)
-    //         console.log('load tree took ' + (window.performance.now() - start_widget_time));
-    // },
+            // TODO
+            //var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
+            //var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
+            //that.$tree_.tree('loadData', ftree.children, parent);
+        }
+    });
+
+    this.model_.open_and_select.attach(function(sender, args) {
+        var node = args.node;
+
+        if(args.isHistorical) {
+            view_obj.$tree_.tree('openNode', 
+                view_obj.$tree_.tree('getNodeById', args.node.id));
+
+            node = view_obj.$tree_.tree('getNodeById', args.id);
+
+            if(!node)
+                throw new Error('tree node was not created for current history');
+        } else {
+            node = view_obj.$tree_.tree('getNodeById', args.id);
+        }
+
+        view_obj.select_node(node);
+    });
+
+    this.model_.load_children.attach(function(sender, args) {
+        console.warn('redundant code?');
+        view_obj.tree('loadData', n.delay_children, n);
+    });
+
+    this.model_.add_node_before.attach(function(sender, args) {
+        // view_obj.$tree_.tree('addNodeBefore', args.node_to_insert, 
+        //     view_obj.$tree_.tree('getNodeById', args.parent_id)); 
+
+        view_obj.$tree_.tree('addNodeBefore',
+            args.node_to_insert,
+            view_obj.$tree_.tree('getNodeById', args.parent_id)); 
+    });
+
+    this.model_.append_node.attach(function(sender, args) {
+        view_obj.$tree_.tree('appendNode', args.node_to_insert, 
+            view_obj.$tree_.tree('getNodeById', args.parent_id));
+    });
+
+    this.model_.update_node.attach(function(sender, args) {
+        view_obj.$tree_.tree('updateNode', 
+            view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
+    });
+
+    this.model_.remove_node.attach(function(sender, args) {
+        view_obj.$tree_.tree('removeNode', 
+            view_obj.$tree_.tree('getNodeById', args.node.id));
+    });
 }
 
 notebook_tree_view.prototype = {
