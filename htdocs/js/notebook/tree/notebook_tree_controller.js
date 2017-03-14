@@ -93,18 +93,8 @@ notebook_tree_controller.prototype = {
         
     },
 
-    // TODO
-    // remove this function:
     unstar_notebook_view: function(user, gistname, selroot) {
-        var that = this;
-        var inter_id = node_id('interests', user, gistname);
-        var node = that.$tree_.tree('getNodeById', inter_id);
-        if(!node) {
-            console.log("attempt to unstar notebook we didn't know was starred", inter_id);
-            return;
-        }
-        remove_node.call(that, node);
-        update_notebook_view.call(that, user, gistname, get_notebook_info.call(that, gistname), selroot);
+        this.model_.unstar_notebook_view(user, gistname, selroot);
     },
 
     update_notebook_from_gist: function(result, history, selroot) {

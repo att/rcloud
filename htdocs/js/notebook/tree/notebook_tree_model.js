@@ -478,6 +478,40 @@ notebook_tree_model.prototype = {
         return root === 'featured' && this.featured_.length === 1;
     },
 
+    remove_node_from_tree: function(node) {
+
+        // remove from model and fire event:
+        var parent = this.get_parent(node.id);
+
+        parent.children = _.without(parent.children, _.findWhere(parent.children, {
+            id: node.id
+        }));
+
+        this.remove_node.notify({
+            node: node
+        });
+
+        // TODO:
+        // remove empty parents, get list of nodes and pass to view, as
+        // additional parameter
+        // var parent = this.get_parent(node.id);
+        //remove_empty_parents(parent);
+        //if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
+        //    $tree_.tree('removeNode', parent);
+
+    },
+
+    unstar_notebook_view: function(user, gistname, selroot) {
+        var inter_id = this.node_id('interests', user, gistname);
+        var node = this.get_node_by_id(inter_id); // that.$tree_.tree('getNodeById', inter_id);
+        if(!node) {
+            console.log("attempt to unstar notebook we didn't know was starred", inter_id);
+            return;
+        }
+        this.remove_node_from_tree(node);
+        this.update_notebook_view(user, gistname, this.get_notebook_info(gistname), selroot);
+    },
+
     update_notebook_view: function(user, gistname, entry, selroot) {
 
         var that = this;
@@ -548,7 +582,7 @@ notebook_tree_model.prototype = {
                 var child = parent.children[i];
 
                 var so = this.compare_nodes(data, child);
-                if(so<0) {
+                if(so < 0) {
                     return {
                         child: child,
                         position: i
