@@ -49,13 +49,16 @@ var editor = function () {
                 if(opts.notebook) { // notebook specified in url
                     return that.load_notebook(opts.notebook, opts.version, opts.source,
                                               true, false, ui_utils.make_url('edit.html'));
-                } else if(!opts.new_notebook && current_.notebook) {
-                    return that.load_notebook(current_.notebook, current_.version)
+                } else if(!opts.new_notebook && tree_controller_.get_current().notebook) {
+
+                    var current = tree_controller_.get_current();
+
+                    return that.load_notebook(current.notebook, current.version)
                         .catch(function(xep) {
                             // if loading fails for a reason that is not actually a loading problem
                             // then don't keep trying.
                             if(xep.from_load)
-                                rcloud.config.clear_recent_notebook(current_.notebook)
+                                rcloud.config.clear_recent_notebook(current.notebook)
                                 .then(open_last_loadable);
                             else throw xep;
                         });

@@ -50,6 +50,10 @@ notebook_tree_model.prototype = {
         return this.username_;
     },
 
+    get_current: function() {
+        return this.current_;
+    },
+
     get_current_notebook_histories: function() {
         return this.histories_[this.current_.notebook];
     },
