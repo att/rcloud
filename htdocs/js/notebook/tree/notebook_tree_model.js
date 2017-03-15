@@ -494,15 +494,20 @@ notebook_tree_model.prototype = {
         this.remove_node.notify({
             node: node
         });
-
-        // TODO:
+        
         // remove empty parents, get list of nodes and pass to view, as
         // additional parameter
-        // var parent = this.get_parent(node.id);
         //remove_empty_parents(parent);
+        this.remove_empty_parents(parent);
+
         //if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
         //    $tree_.tree('removeNode', parent);
-
+        if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0){
+            this.remove_node.notify({
+                node: parent
+            });
+        }
+        //$tree_.tree('removeNode', parent);
     },
 
     unstar_notebook_view: function(user, gistname, selroot) {
@@ -830,7 +835,7 @@ notebook_tree_model.prototype = {
             //var dp = node.parent;
             var dp = this.get_parent(node.id);
 
-            if(dp === parent && node.label === data.label) {
+            if(dp === parent && node.name /*.label*/ === data.label) {
 
                 this.update_node.notify({
                     node: node,
@@ -846,8 +851,8 @@ notebook_tree_model.prototype = {
                 });
 
                 node = this.insert_alpha(data, parent);
-                // TODO
-                //this.remove_empty_parents(dp);
+
+                this.remove_empty_parents(dp);
             }
 
         } else {
@@ -857,14 +862,24 @@ notebook_tree_model.prototype = {
         return node;
     },
 
-    // remove_empty_parents: function(dp) {
-    //     // remove any empty notebook hierarchy
-    //     while(dp.children.length===0 && dp.sort_order===order.NOTEBOOK) {
-    //         var dp2 = dp.parent;
-    //         this.$tree_.tree('removeNode', dp);
-    //         dp = dp2;
-    //     }
-    // },
+    remove_empty_parents: function(dp) {
+        // remove any empty notebook hierarchy
+        while(!dp.children.length && dp.sort_order === this.order.NOTEBOOK) {
+            var dp2 = this.get_parent(dp.id);
+
+            // remove from model:
+            dp2.children = _.without(dp2.children, _.findWhere(dp2.children, {
+                id: dp.id
+            }));
+
+            this.remove_node.notify({
+                node: node
+            });
+            //this.$tree_.tree('removeNode', dp);
+
+            dp = dp2;
+        }
+    },
 
     update_tree_entry: function(root, user, gistname, entry, create) {
         var that = this;
@@ -906,28 +921,37 @@ notebook_tree_model.prototype = {
     },
 
     toggle_folder_friendness: function(user) {
-
-        var that = this;
-        if(that.my_friends_[user]) {
-            var anode = that.$tree_.tree('getNodeById', node_id('alls', user));
+        if(this.my_friends_[user]) {
+            // hello, friend:
+            //var anode = that.$tree_.tree('getNodeById', node_id('alls', user));
+            var anode = this.get_node_by_id(this.node_id('alls', user));
             var ftree;
-            if(anode)
-                ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
-            else { // this is a first-time load case
+
+            if(anode) {
+                ftree = this.duplicate_tree_data(anode, this.transpose_notebook('friends'));
+            } else { // this is a first-time load case
                 var mine = user === username_;
                 ftree = {
-                    label: mine ? "My Notebooks" : someone_elses(user),
-                    id: node_id('friends', user),
-                    sort_order: mine ? order.MYFOLDER : order.SUBFOLDER
+                    label: mine ? "My Notebooks" : this.someone_elses(user),
+                    id: this.node_id('friends', user),
+                    sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
                 };
             }
-            var parent = that.$tree_.tree('getNodeById', node_id('friends'));
-            var node = insert_alpha(ftree, parent);
-            that.$tree_.tree('loadData', ftree.children, node);
-        }
-        else {
-            var n2 = that.$tree_.tree('getNodeById', node_id('friends', user));
-            that.$tree_.tree('removeNode', n2);
+            //var parent = that.$tree_.tree('getNodeById', node_id('friends'));
+            var parent = this.get_node_by_id(this.node_id('friends'));
+            var node = this.insert_alpha(ftree, parent);
+
+            // TODO: event
+            //that.$tree_.tree('loadData', ftree.children, node);
+        } else {
+            // no longer a friend, so get rid of them:
+            //var n2 = that.$tree_.tree('getNodeById', node_id('friends', user));
+
+            var n2 = this.get_node_by_id(this.node_id('friends', user));
+
+            // TODO: event
+            //that.$tree_.tree('removeNode', n2);
+            this.remove_node_from_tree(n2);
         }
     },
 
