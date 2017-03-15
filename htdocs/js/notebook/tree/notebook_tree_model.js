@@ -623,6 +623,10 @@ notebook_tree_model.prototype = {
             //return this.$tree_.tree('appendNode', data, parent);
 
             // add node to model:
+            if(!parent.children) {
+                parent.children = [];
+            }
+
             parent.children.push(node_to_insert);
 
             this.append_node.notify({
@@ -777,7 +781,7 @@ notebook_tree_model.prototype = {
 
             if(!skip_user) {
                 pdat = {
-                    label: mine ? "My Notebooks" : someone_elses(user),
+                    label: mine ? "My Notebooks" : this.someone_elses(user),
                     id: this.node_id(root, user),
                     sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
                 };
