@@ -300,9 +300,12 @@ start.rcloud.common <- function(...) {
   })
   options(help_type="html")
   options(browser = function(url, ...) {
-    if(grepl("^http://127.0.0.1:", url))
-      .rc.oobSend("browsePath", gsub("^http://[^/]+", "", url))
-    else
+      if (grepl("^http://127.0.0.1:", url)) {
+          path <-  gsub("^http://[^/]+", "", url)
+          ## mangle paths for internal help to use the help.R proxy
+          path <- gsub("^(/library/|/doc/)", "/help.R\\1", path)
+          .rc.oobSend("browsePath", path)
+    } else
       .rc.oobSend("browseURL", url)
   })
 
