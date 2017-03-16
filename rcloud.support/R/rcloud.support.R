@@ -502,8 +502,15 @@ rcloud.set.notebook.visibility <- function(id, value){
   } else {response <- .solr.delete.doc(id)}
 }
 
+## "Import External Notebook" - a slight misnomer since this
+## is hard-coded to only support GitHub imports
 rcloud.port.notebooks <- function(url, books, prefix) {
-  foreign.ctx <- create.github.context(url)
+  ## FIXME: this bypasses the gist API and conencts to GitHub directly.
+  ## The fact that this works is purely incidental, because githubgist
+  ## happens to re-use the github object as a base for its own context.
+  ## That is never guaranteed to the the case, so this needs to be fixed
+  ## to use create.gist.context() properly.
+  foreign.ctx <- github::create.github.context(url)
 
   Map(function(notebook) {
     getg <- get.gist(notebook, ctx = foreign.ctx)
