@@ -84,7 +84,7 @@ rcloud.augment.notebook <- function(res) {
 rcloud.fail.if.unpublished <- function(f)
   function(id, ...)
     if (!rcloud.is.notebook.published(id)) {
-      stop("Notebook does not exist or has not been published")
+      stop("Notebook \"", URLencode(id, TRUE), "\" does not exist or has not been published")
     } else f(id, ...)
 
 rcloud.unauthenticated.load.notebook <-
