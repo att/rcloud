@@ -58,6 +58,8 @@ oc.init <- function(...) { ## this is the payload of the OCinit message
     make.oc(oc.init.authenticate)
 }
 
+.httpd <- function(url, query, body, headers) tools:::httpd(url, query, body, headers)
+
 compute.ocaps <- function(mode, authenticated) {
     if (isTRUE(.session$separate.compute)) {
         .Call(Rserve:::Rserve_forward_stdio)
@@ -77,7 +79,8 @@ compute.ocaps <- function(mode, authenticated) {
         load_notebook = if (authenticated) make.oc(rcloud.load.notebook.compute) else make.oc(rcloud.unauthenticated.load.notebook.compute),
         render_plot = make.oc(rcloud.render.plot),
         render_formats = make.oc(rcloud.available.render.formats),
-        help = make.oc(rcloud.help)
+        help = make.oc(rcloud.help),
+        R_httpd = make.oc(.httpd)
         )
     if (authenticated) c(caps, list(
         compute_init = make.oc(rcloud.compute.init),
@@ -143,6 +146,7 @@ unauthenticated.ocaps <- function(mode, compute)
       get_fork_count = make.oc(rcloud.unauthenticated.get.fork.count),
       get_multiple_fork_counts = make.oc(rcloud.unauthenticated.multiple.notebook.fork.counts),
       get_users = make.oc(rcloud.get.users),
+      R_httpd = compute$R_httpd,
 
       # javascript.R
       setup_js_installer = compute$setup_js_installer,
@@ -237,6 +241,7 @@ authenticated.ocaps <- function(mode)
       get_multiple_fork_counts = make.oc(rcloud.multiple.notebook.fork.counts),
       call_notebook = compute$call_notebook,
       get_completions = compute$get_completions,
+      R_httpd = compute$R_httpd,
 
       # This will cause bugs, because some notebooks want a
       # call_fastrweb_notebook...
