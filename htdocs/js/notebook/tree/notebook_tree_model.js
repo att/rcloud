@@ -34,6 +34,7 @@ function notebook_tree_model(username, show_terse_dates) {
     this.append_node = new event(this),
     this.update_node = new event(this),
     this.remove_node = new event(this),
+    this.fake_hover = new event(this),
 
     // major key is adsort_order and minor key is name (label)
     this.order = {
@@ -182,21 +183,31 @@ notebook_tree_model.prototype = {
     remove_notebook_view: function(user, gistname) {
 
         // function do_remove(id) {
-        //     var node = that.$tree_.tree('getNodeById', id);
+        //     var node = $tree_.tree('getNodeById', id);
         //     if(node)
-        //         remove_node.call(that, node);
+        //         remove_node(node);
         //     else
         //         console.log("tried to remove node that doesn't exist: " + id);
         // }
-        if(my_friends_[user]){
-            remove_tree_node.notify({ 
-                id: node_id('friends', user, gistname)
-            });
+        // if(my_friends_[user])
+        //     do_remove(node_id('friends', user, gistname));
+        // do_remove(node_id('alls', user, gistname));
+
+        function do_remove(id) {
+            //var node = $tree_.tree('getNodeById', id);
+            var node = get_node_by_id(id);
+            if(node) {
+                this.remove_node(node);
+            } else {
+                console.log("tried to remove node that doesn't exist: " + id);
+            }
         }
 
-        remove_tree_node.notify({
-            id: node_id('alls', user, gistname)
-        });
+        if(my_friends_[user]) {
+            do_remove(this.node_id('friends', user, gistname));
+        }
+
+        do_remove(this.node_id('alls', user, gistname));
     },
 
     populate_users: function(all_the_users) {
@@ -482,15 +493,39 @@ notebook_tree_model.prototype = {
         return root === 'featured' && this.featured_.length === 1;
     },
 
-    remove_node_from_tree: function(node) {
+    update_tree_node: function(node, data) {
+        
+        _.extend(node, data);
 
-        // remove from model and fire event:
+        this.update_node.notify({
+            node: node,
+            data: data
+        });
+    },
+
+    remove_tree_node: function(node) {
+
+        // var parent = node.parent;
+        // ui_utils.fake_hover(node);
+        // $tree_.tree('removeNode', node);
+        // remove_empty_parents(parent);
+
+        // if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
+        //     $tree_.tree('removeNode', parent);
+
+        // get parent:
         var parent = this.get_parent(node.id);
 
+        this.fake_hover.notify({
+            node: node
+        });
+
+        // remove node from model:
         parent.children = _.without(parent.children, _.findWhere(parent.children, {
             id: node.id
         }));
 
+        // notify view of removal:
         this.remove_node.notify({
             node: node
         });
@@ -517,7 +552,7 @@ notebook_tree_model.prototype = {
             console.log("attempt to unstar notebook we didn't know was starred", inter_id);
             return;
         }
-        this.remove_node_from_tree(node);
+        this.remove_tree_node(node);
         this.update_notebook_view(user, gistname, this.get_notebook_info(gistname), selroot);
     },
 
@@ -835,12 +870,9 @@ notebook_tree_model.prototype = {
             //var dp = node.parent;
             var dp = this.get_parent(node.id);
 
-            if(dp === parent && node.name /*.label*/ === data.label) {
+            if(dp === parent && node./*name*/label === data.label) {
 
-                this.update_node.notify({
-                    node: node,
-                    data: data
-                });
+                this.update_tree_node(node, data);
 
                 //$tree_.tree('updateNode', node, data);
             } else {
@@ -951,7 +983,7 @@ notebook_tree_model.prototype = {
 
             // TODO: event
             //that.$tree_.tree('removeNode', n2);
-            this.remove_node_from_tree(n2);
+            this.remove_tree_node(n2);
         }
     },
 

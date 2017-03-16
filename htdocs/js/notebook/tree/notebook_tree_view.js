@@ -106,16 +106,13 @@ function notebook_tree_view(model) {
     });
 
     this.model_.remove_node.attach(function(sender, args) {
-
         var node = view_obj.$tree_.tree('getNodeById', args.node.id);
-
         ui_utils.fake_hover(node);
-
         view_obj.$tree_.tree('removeNode', node);
+    });
 
-        // TODO: remove empty parents (additional parameter)
-
-        // TODO: remove friend root node if no more friend notebooks
+    this.model_.fake_hover.attach(function(sender, args) {
+        ui_utils.fake_hover(node);
     });
 }
 
