@@ -258,8 +258,8 @@ var editor = function () {
                     tree_controller_.add_interest(user, gistname);
 
                     // this is a new friend:
-                    if(tree_controller_.get_my_star_count_by_friend(user) === 1) 
-                        tree_controller_.toggle_folder_friendness(user);
+                    //if(tree_controller_.get_my_star_count_by_friend(user) === 1) 
+                    //    tree_controller_.toggle_folder_friendness(user);
 
                     var p;
                     if(opts.notebook) {
@@ -282,8 +282,8 @@ var editor = function () {
                     tree_controller_.remove_interest(user, gistname);
 
                     // user is no longer a friend
-                    if(!tree_controller_.user_is_friend(user))
-                        tree_controller_.toggle_folder_friendness(user);
+                    //if(!tree_controller_.user_is_friend(user))
+                    //    tree_controller_.toggle_folder_friendness(user);
 
                     tree_controller_.unstar_notebook_view(user, gistname, opts.selroot);
                 });

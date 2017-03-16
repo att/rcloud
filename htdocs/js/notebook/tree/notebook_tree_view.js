@@ -81,6 +81,16 @@ function notebook_tree_view(model) {
         view_obj.select_node(node);
     });
 
+    this.model_.select_node.attach(function(sender, args) {
+        var node = view_obj.$tree_.tree('getNodeById', args.node.id);
+        view_obj.$tree_.tree('selectNode', node);
+        view_obj.scroll_into_view(node);
+        if(node.user === sender.username_)
+            RCloud.UI.notebook_title.make_editable(node, node.element, true);
+        else
+            RCloud.UI.notebook_title.make_editable(null);
+    });
+
     this.model_.load_children.attach(function(sender, args) {
         console.warn('redundant code?');
         view_obj.tree('loadData', n.delay_children, n);
