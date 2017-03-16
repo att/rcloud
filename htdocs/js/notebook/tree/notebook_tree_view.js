@@ -10,7 +10,7 @@ function notebook_tree_view(model) {
     var view_obj = this;
 
     // attach model listeners
-    this.model_.remove_tree_node.attach(function(sender, args) {
+    this.model_.on_remove_tree_node.attach(function(sender, args) {
         var node = view_obj.$tree_.tree('getNodeById', args.id);
         if(node) {
             view_obj.remove_node(node);
@@ -19,7 +19,7 @@ function notebook_tree_view(model) {
         }
     });
 
-    this.model_.initialise_tree.attach(function(sender, args) {
+    this.model_.on_initialise_tree.attach(function(sender, args) {
 
         var start_widget_time = window.performance ? window.performance.now() : 0;
         view_obj.$tree_ = $("#editor-book-tree");
@@ -46,7 +46,7 @@ function notebook_tree_view(model) {
 
     // });
 
-    this.model_.load_by_user.attach(function(sender, args) {
+    this.model_.on_load_by_user.attach(function(sender, args) {
         
         var root = view_obj.$tree_.tree('getNodeById', args.pid);  
         view_obj.$tree_.tree('loadData', args.data, root);
@@ -63,7 +63,7 @@ function notebook_tree_view(model) {
         }
     });
 
-    this.model_.open_and_select.attach(function(sender, args) {
+    this.model_.on_open_and_select.attach(function(sender, args) {
         var node = args.node;
 
         if(args.isHistorical) {
@@ -81,7 +81,7 @@ function notebook_tree_view(model) {
         view_obj.select_node(node);
     });
 
-    this.model_.select_node.attach(function(sender, args) {
+    this.model_.on_select_node.attach(function(sender, args) {
         var node = view_obj.$tree_.tree('getNodeById', args.node.id);
         view_obj.$tree_.tree('selectNode', node);
         view_obj.scroll_into_view(node);
@@ -91,12 +91,12 @@ function notebook_tree_view(model) {
             RCloud.UI.notebook_title.make_editable(null);
     });
 
-    this.model_.load_children.attach(function(sender, args) {
+    this.model_.on_load_children.attach(function(sender, args) {
         console.warn('redundant code?');
-        view_obj.tree('loadData', n.delay_children, n);
+        view_obj.$tree_.tree('loadData', n.delay_children, n);
     });
 
-    this.model_.add_node_before.attach(function(sender, args) {
+    this.model_.on_add_node_before.attach(function(sender, args) {
         // view_obj.$tree_.tree('addNodeBefore', args.node_to_insert, 
         //     view_obj.$tree_.tree('getNodeById', args.parent_id)); 
 
@@ -105,23 +105,28 @@ function notebook_tree_view(model) {
             view_obj.$tree_.tree('getNodeById', args.parent_id)); 
     });
 
-    this.model_.append_node.attach(function(sender, args) {
+    this.model_.on_append_node.attach(function(sender, args) {
         view_obj.$tree_.tree('appendNode', args.node_to_insert, 
             view_obj.$tree_.tree('getNodeById', args.parent_id));
     });
 
-    this.model_.update_node.attach(function(sender, args) {
+    this.model_.on_load_data.attach(function(sender, args) {
+        view_obj.$tree_.tree('loadData', args.children, 
+            view_obj.$tree_.tree('getNodeById', args.node.id));        
+    });
+
+    this.model_.on_update_node.attach(function(sender, args) {
         view_obj.$tree_.tree('updateNode', 
             view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
     });
 
-    this.model_.remove_node.attach(function(sender, args) {
+    this.model_.on_remove_node.attach(function(sender, args) {
         var node = view_obj.$tree_.tree('getNodeById', args.node.id);
         ui_utils.fake_hover(node);
         view_obj.$tree_.tree('removeNode', node);
     });
 
-    this.model_.fake_hover.attach(function(sender, args) {
+    this.model_.on_fake_hover.attach(function(sender, args) {
         ui_utils.fake_hover(node);
     });
 }
