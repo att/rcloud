@@ -23,6 +23,8 @@
 * The `args` argument in `rcloud.call.notebook` was always treated as
   a list, making it impossible to use it as a target environment.
 
+* Help now works for packages in private libraries as well (#2394)
+
 ### Features
 
 * `rcloud.web` has been significantly expanded to allow manipulation
