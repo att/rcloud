@@ -1136,11 +1136,14 @@ notebook_tree_model.prototype = {
         }
 
         function show_sha(history, sha) {
-            var sha_ind = find_index(history, function(hist) { return hist.version===sha; });
+            var sha_ind = find_index(history, function(hist) { 
+                return hist.version===sha; 
+            });
             
-            if(sha_ind<0) {
+            if(sha_ind < 0) {
                 throw new Error("didn't find sha " + where + " in history");
             }
+
             return sha_ind + INCR - 1; // show this many including curr (?)
         }
 
@@ -1187,7 +1190,7 @@ notebook_tree_model.prototype = {
                 var d;
                 hdat.committed_at = new Date(hist.committed_at);
                 hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
-                hdat.label = (hist.tag?hist.tag:sha);
+                hdat.label = hist.tag ? hist.tag : sha;
                 hdat.version = hist.version;
                 hdat.id = node.id + '/' + hdat.version;
                 do_color(hdat, color);
@@ -1198,8 +1201,9 @@ notebook_tree_model.prototype = {
                 var hist = history[i];
                 var sha = hist.version.substring(0, 10);
                 var attrs = {
-                    label: (hist.tag?hist.tag:sha)
+                    label: hist.tag ? hist.tag : sha;
                 };
+
                 that.$tree_.tree('updateNode', node, attrs);
             }
 
@@ -1311,7 +1315,7 @@ notebook_tree_model.prototype = {
                 if(whither==='sha') {
                     nshow = show_sha(that.histories_[node.gistname], where);
                 }
-                
+
                 process_history(nshow);
                 return node;
             });
