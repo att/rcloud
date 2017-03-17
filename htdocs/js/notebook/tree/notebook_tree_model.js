@@ -147,20 +147,20 @@ notebook_tree_model.prototype = {
         }
     },
 
-    get_my_star_count_by_friend:function(user) {
-        return this.my_friends_[user];
-    },
-
-    user_is_friend: function(user) {
-        return this.my_friends_[user];
-    },
-
     remove_interest: function(user, gistname) {
         if(this.my_stars_[gistname]) {
             delete this.my_stars_[gistname];
             if(--this.my_friends_[user] === 0)
                 delete this.my_friends_[user];
         }
+    },
+
+    get_my_star_count_by_friend:function(user) {
+        return this.my_friends_[user];
+    },
+
+    user_is_friend: function(user) {
+        return this.my_friends_[user];
     },
 
     get_notebooks_by_user: function(username) {
@@ -1045,6 +1045,13 @@ notebook_tree_model.prototype = {
             //$tree_.tree('removeNode', n2);
     
             var n2 = this.get_node_by_id(this.node_id('friends', user));
+
+            // remove this node from the model:
+            var parent = this.get_parent(n2.id);
+            parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                id: n2.id
+            }));
+
             this.on_remove_node.notify({
                 node: n2
             });
