@@ -90,7 +90,7 @@ notebook_tree_controller.prototype = {
     },
     
     update_notebook_view: function(user, gistname, entry, selroot) {
-        this.model_.update_notebook_view(user, gistname, entry, selroot);
+        return this.model_.update_notebook_view(user, gistname, entry, selroot);
     },
 
     remove_notebook_view: function(user, gistname) {

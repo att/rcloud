@@ -183,17 +183,6 @@ notebook_tree_model.prototype = {
 
     remove_notebook_view: function(user, gistname) {
 
-        // function do_remove(id) {
-        //     var node = $tree_.tree('getNodeById', id);
-        //     if(node)
-        //         remove_node(node);
-        //     else
-        //         console.log("tried to remove node that doesn't exist: " + id);
-        // }
-        // if(my_friends_[user])
-        //     do_remove(node_id('friends', user, gistname));
-        // do_remove(node_id('alls', user, gistname));
-
         function do_remove(id) {
             //var node = $tree_.tree('getNodeById', id);
             var node = get_node_by_id(id);
@@ -504,56 +493,16 @@ notebook_tree_model.prototype = {
         });
     },
 
-/*
-    remove_tree_node: function(node) {
-
-        // var parent = node.parent;
-        // ui_utils.fake_hover(node);
-        // $tree_.tree('removeNode', node);
-        // remove_empty_parents(parent);
-
-        // if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
-        //     $tree_.tree('removeNode', parent);
-
-        // get parent:
-        var parent = this.get_parent(node.id);
-
-        this.on_fake_hover.notify({
-            node: node
-        });
-
-        // remove node from model:
-        parent.children = _.without(parent.children, _.findWhere(parent.children, {
-            id: node.id
-        }));
-
-        // notify view of removal:
-        this.on_remove_node.notify({
-            node: node
-        });
-        
-        // remove empty parents, get list of nodes and pass to view, as
-        // additional parameter
-        //remove_empty_parents(parent);
-        this.remove_empty_parents(parent);
-
-        //if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0)
-        //    $tree_.tree('removeNode', parent);
-        if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0){
-            this.on_remove_node.notify({
-                node: parent
-            });
-        }
-        //$tree_.tree('removeNode', parent);
-    },
-*/
-
     remove_node: function(node) {
+
         //var parent = node.parent;
-        //var node = typeof node === 'string' ? get_node_by_id(node) : get_node_by_id(node.id);
+        var node = this.get_node_by_id(node.id);
         var parent = this.get_parent(node.id);
 
         //ui_utils.fake_hover(node);
+        this.on_fake_hover.notify({
+            node: node
+        });
         //$tree_.tree('removeNode', node);
 
         // remove node from model:
@@ -571,6 +520,13 @@ notebook_tree_model.prototype = {
         if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0){
             //$tree_.tree('removeNode', parent);
 
+            // remove node from model:
+            var interests_node = this.get_node_by_id('/interests');
+            interests_node.children = _.without(interests_node.children, _.findWhere(interests_node.children, {
+                id: parent.id
+            }));
+            
+            // remove from tree:
             this.on_remove_node.notify({
                 node: parent
             });
@@ -589,70 +545,6 @@ notebook_tree_model.prototype = {
         this.remove_node(node);
         return this.update_notebook_view(user, gistname, this.get_notebook_info(gistname), selroot);
     },
-/*
-    update_notebook_view: function(user, gistname, entry, selroot) {
-
-        var that = this;
-
-        function open_and_select(node) {
-
-            var id;
-            
-            if(that.current_.version) {
-                id = that.skip_user_level(node.root) ?
-                    that.node_id(node.root, gistname, that.current_.version) :
-                    that.node_id(node.root, user, gistname, that.current_.version);
-            } else {
-                id = node.id;
-            }
-
-            that.on_open_and_select.notify({ 
-                isHistorical: that.current_.version,
-                node: node,
-                id: id
-            });
-        }
-
-        var p, i_starred = that.my_stars_[gistname] || false;
-        var promises = [];
-        if(selroot === true)
-            selroot = that.featured_.indexOf(user) >=0 ? 'featured' :
-                i_starred ? 'interests' :
-                that.my_friends_[user] ? 'friends': 'alls';
-        if(i_starred) {
-            p = that.update_tree_entry('interests', user, gistname, entry, true);
-            if(selroot==='interests')
-                p = p.then(open_and_select);
-            promises.push(p);
-        }
-        if(gistname === current_.notebook) {
-            var starn = RCloud.UI.navbar.control('star_notebook');
-            if(starn) {
-                starn.set_fill(i_starred);
-                starn.set_count(that.num_stars_[gistname]);
-            }
-        }
-        if(that.my_friends_[user]) {
-            p = that.update_tree_entry('friends', user, gistname, entry, true);
-            if(selroot==='friends')
-                p = p.then(open_and_select);
-            promises.push(p);
-        }
-        if(that.featured_.indexOf(user)>=0) {
-            p = that.update_tree_entry('featured', user, gistname, entry, true);
-            if(selroot==='featured')
-                p = p.then(open_and_select);
-            promises.push(p);
-        }
-
-        p = that.update_tree_entry('alls', user, gistname, entry, true);
-        if(selroot==='alls')
-            p = p.then(open_and_select);
-        promises.push(p);
-        return Promise.all(promises);
-    },
-*/
-
 
     update_notebook_view: function(user, gistname, entry, selroot) {
 
@@ -1008,7 +900,8 @@ notebook_tree_model.prototype = {
                 }));
 
                 this.on_remove_node.notify({
-                    node: node
+                    node: dp,
+                    fake_hover: false
                 });
                 //this.$tree_.tree('removeNode', dp);
 

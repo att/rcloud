@@ -113,12 +113,16 @@ function notebook_tree_view(model) {
 
     this.model_.on_remove_node.attach(function(sender, args) {
         var node = view_obj.$tree_.tree('getNodeById', args.node.id);
-        ui_utils.fake_hover(node);
+
+        if(args.fake_hover) {
+            ui_utils.fake_hover(node);
+        }
+        
         view_obj.$tree_.tree('removeNode', node);
     });
 
     this.model_.on_fake_hover.attach(function(sender, args) {
-        ui_utils.fake_hover(node);
+        ui_utils.fake_hover(view_obj.$tree_.tree('getNodeById', args.node.id));
     });
 }
 
