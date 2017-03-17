@@ -10,15 +10,6 @@ function notebook_tree_view(model) {
     var view_obj = this;
 
     // attach model listeners
-    this.model_.on_remove_tree_node.attach(function(sender, args) {
-        var node = view_obj.$tree_.tree('getNodeById', args.id);
-        if(node) {
-            view_obj.remove_node(node);
-        } else {
-            console.log("tried to remove node that doesn't exist: " + args.id);
-        }
-    });
-
     this.model_.on_initialise_tree.attach(function(sender, args) {
 
         var start_widget_time = window.performance ? window.performance.now() : 0;

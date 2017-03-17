@@ -24,7 +24,6 @@ function notebook_tree_model(username, show_terse_dates) {
 
     this.CONFIG_VERSION = 1,
 
-    this.on_remove_tree_node = new event(this),
     this.on_initialise_tree = new event(this),
     this.on_load_by_user = new event(this),
     //this.update_notebook = new event(this),
