@@ -132,6 +132,24 @@ function notebook_tree_view(model) {
     this.model_.on_show_history.attach(function(sender, args) {
         console.info('I am showing some history nodes, apparently...');
     });
+
+    this.model_.remove_history_nodes.attach(function(sender, args) {
+        var node = view_obj.$tree_.tree('getNodeById', args.node.id);
+
+        if (node.children) {
+            if(args.from_index) {
+                // remove everything from:
+                for(i = node.children.length - 1; i >= args.from_index; --i) {
+                    view_obj.$tree_.tree('removeNode', node.children[i]);
+                }
+            } else {
+                // get rid of everything:
+                for (var i = node.children.length-1; i >= 0; i--) {
+                    view_obj.$tree_.tree('removeNode', node.children[i]);
+                }
+            }
+        }
+    });
 }
 
 notebook_tree_view.prototype = {

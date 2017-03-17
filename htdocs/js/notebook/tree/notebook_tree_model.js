@@ -38,6 +38,7 @@ function notebook_tree_model(username, show_terse_dates) {
     this.on_load_data = new event(this),
     this.on_show_history = new event(this),
     this.on_open_node = new event(this),
+    this.remove_history_nodes = new event(this),
 
     // major key is adsort_order and minor key is name (label)
     this.order = {
@@ -1287,9 +1288,17 @@ notebook_tree_model.prototype = {
 
         var nshow;
         if(whither==='hide') {
-            for(var i = node.children.length-1; i >= 0; --i) {
-                that.$tree_.tree('removeNode', node.children[i]);
-            }
+            // for(var i = node.children.length-1; i >= 0; --i) {
+            //     that.$tree_.tree('removeNode', node.children[i]);
+            // }
+
+            // reset:
+            node.children = [];
+
+            this.remove_history_nodes.notify({
+               node: node 
+            });
+
             return Promise.resolve(node);
         } else if(whither==='index') {
             nshow = Math.max(where, INCR);
