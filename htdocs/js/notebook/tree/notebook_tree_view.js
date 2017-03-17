@@ -124,6 +124,14 @@ function notebook_tree_view(model) {
     this.model_.on_fake_hover.attach(function(sender, args) {
         ui_utils.fake_hover(view_obj.$tree_.tree('getNodeById', args.node.id));
     });
+
+    this.model_.on_open_node.attach(function(sender, args) {
+        view_obj.$tree_.tree('removeNode', view_obj.$tree_.tree('getNodeById', args.node.id));
+    });
+
+    this.model_.on_show_history.attach(function(sender, args) {
+        console.info('I am showing some history nodes, apparently...');
+    });
 }
 
 notebook_tree_view.prototype = {
@@ -240,29 +248,29 @@ notebook_tree_view.prototype = {
         }
     },
 
-    show_history: function(node, opts) {
-        if(_.isBoolean(opts))
-            opts = {toggle: opts};
-        var whither = opts.update ? 'same' : 'more';
-        if(node.children.length) {
-            if(!node.is_open) {
-                $tree_.tree('openNode', node);
-                return Promise.resolve(undefined);
-            }
-            if(opts.toggle) whither = 'hide';
-        }
-        return update_history_nodes.call(that, node, whither, null)
-            .then(function(node) {
-                var history_len = 0;
-                if(that.histories_[node.gistname]) {
-                    history_len = that.histories_[node.gistname].length;
-                }
-                if(history_len==1) { // FIXME: should be via UI.notebook_commands
-                    $(".history i",$(node.element)).addClass("button-disabled");
-                }
-                that.$tree_.tree('openNode', node);
-            });
-    },  
+    // show_history: function(node, opts) {
+    //     if(_.isBoolean(opts))
+    //         opts = {toggle: opts};
+    //     var whither = opts.update ? 'same' : 'more';
+    //     if(node.children.length) {
+    //         if(!node.is_open) {
+    //             $tree_.tree('openNode', node);
+    //             return Promise.resolve(undefined);
+    //         }
+    //         if(opts.toggle) whither = 'hide';
+    //     }
+    //     return update_history_nodes.call(that, node, whither, null)
+    //         .then(function(node) {
+    //             var history_len = 0;
+    //             if(that.histories_[node.gistname]) {
+    //                 history_len = that.histories_[node.gistname].length;
+    //             }
+    //             if(history_len==1) { // FIXME: should be via UI.notebook_commands
+    //                 $(".history i",$(node.element)).addClass("button-disabled");
+    //             }
+    //             that.$tree_.tree('openNode', node);
+    //         });
+    // },  
 
     format_date_time_stamp: function(date, diff, isDateSame, for_version) {
         function pad(n) { return n<10 ? '0'+n : n; }

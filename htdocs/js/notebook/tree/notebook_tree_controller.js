@@ -110,7 +110,7 @@ notebook_tree_controller.prototype = {
     },
 
     show_history: function(node, opts) {
-        this.view_.show_history(node, opts);
+        this.model_.show_history(node, opts);
     },
 
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
