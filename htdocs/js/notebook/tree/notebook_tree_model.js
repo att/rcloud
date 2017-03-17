@@ -951,35 +951,35 @@ notebook_tree_model.prototype = {
         return Promise.resolve(node);
     },
     
-    change_folder_friendness: function(user) {
-        if(this.my_friends_[user]) {
-            //var anode = $tree_.tree('getNodeById', node_id('alls', user));
-            var anode = this.get_node_by_id(this.node_id('alls', user));
-            var ftree;
-            if(anode) {
-                //ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
-                ftree = this.duplicate_tree_data(anode, this.transpose_notebook('friends'));
-            } else { // this is a first-time load case
-                var mine = user === username_;
-                ftree = {
-                    label: mine ? "My Notebooks" : this.someone_elses(user),
-                    id: this.node_id('friends', user),
-                    sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
-                };
-            }
-            //var parent = $tree_.tree('getNodeById', node_id('friends'));
-            var parent = this.get_node_by_id(this.node_id('friends'));
-            //var node = insert_alpha(ftree, parent);
-            var node = this.insert_alpha(ftree, parent);
+    // change_folder_friendness: function(user) {
+    //     if(this.my_friends_[user]) {
+    //         //var anode = $tree_.tree('getNodeById', node_id('alls', user));
+    //         var anode = this.get_node_by_id(this.node_id('alls', user));
+    //         var ftree;
+    //         if(anode) {
+    //             //ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
+    //             ftree = this.duplicate_tree_data(anode, this.transpose_notebook('friends'));
+    //         } else { // this is a first-time load case
+    //             var mine = user === username_;
+    //             ftree = {
+    //                 label: mine ? "My Notebooks" : this.someone_elses(user),
+    //                 id: this.node_id('friends', user),
+    //                 sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
+    //             };
+    //         }
+    //         //var parent = $tree_.tree('getNodeById', node_id('friends'));
+    //         var parent = this.get_node_by_id(this.node_id('friends'));
+    //         //var node = insert_alpha(ftree, parent);
+    //         var node = this.insert_alpha(ftree, parent);
 
-            // this is done in insert_alpha call
-            //$tree_.tree('loadData', ftree.children, node);
-        }
-        else {
-            var n2 = $tree_.tree('getNodeById', node_id('friends', user));
-            $tree_.tree('removeNode', n2);
-        }
-    },
+    //         // this is done in insert_alpha call
+    //         //$tree_.tree('loadData', ftree.children, node);
+    //     }
+    //     else {
+    //         var n2 = $tree_.tree('getNodeById', node_id('friends', user));
+    //         $tree_.tree('removeNode', n2);
+    //     }
+    // },
 
     // toggle_folder_friendness: function(user) {
     //     if(this.my_friends_[user]) {
