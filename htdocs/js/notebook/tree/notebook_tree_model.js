@@ -558,7 +558,7 @@ notebook_tree_model.prototype = {
                 //$tree_.tree('openNode', node);
                 var id = that.skip_user_level(node.root) ?
                         that.node_id(node.root, gistname, that.current_.version) :
-                        node_id(node.root, user, gistname, that.current_.version);
+                        that.node_id(node.root, user, gistname, that.current_.version);
                 //var n2 = $tree_.tree('getNodeById', id);
                 if(!n2)
                     throw new Error('tree node was not created for current history');
@@ -947,9 +947,9 @@ notebook_tree_model.prototype = {
             where = current_.version;
         }
 
-        //return update_history_nodes.call(this, node, whither, where);
+        return this.update_history_nodes(node, whither, where);
 
-        return Promise.resolve(node);
+        //return Promise.resolve(node);
     },
     
     // change_folder_friendness: function(user) {
@@ -1202,10 +1202,14 @@ notebook_tree_model.prototype = {
                 var hist = history[i];
                 var sha = hist.version.substring(0, 10);
                 var attrs = {
-                    label: hist.tag ? hist.tag : sha;
+                    label: hist.tag ? hist.tag : sha
                 };
 
-                that.$tree_.tree('updateNode', node, attrs);
+                //that.$tree_.tree('updateNode', node, attrs);
+
+                this._on_update_node.notify({
+                    node: node
+                });
             }
 
             var history = that.histories_[node.gistname].slice(1); // first item is current version
@@ -1219,14 +1223,27 @@ notebook_tree_model.prototype = {
 
             if(debug_colors) {
                 for(var ii = 0, ee = curr_count(); ii<ee; ++ii) {
-                    $tree_.tree('updateNode', node.children[ii], {color: ''});
+                    //$tree_.tree('updateNode', node.children[ii], {color: ''});
+                    this.on_update_node.notify({
+                        node: node.children[i],
+                        data: {
+                            color: ''
+                        }
+                    });
                 }
             }
 
             // remove forced date on version above ellipsis, if any
             if(ellipsis) {
-                that.$tree_.tree('updateNode', node.children[node.children.length-2], {
-                    last_commit: display_date_for_entry(node.children.length-2)
+                //that.$tree_.tree('updateNode', node.children[node.children.length-2], {
+                 //   last_commit: display_date_for_entry(node.children.length-2)
+                //});
+
+                this.on_update_node.notify({
+                    node: node.children[node.children.length - 2],
+                    data: {
+                        last_commit: display_date_for_entry(node.children.length-2)
+                    }
                 });
             }
 
@@ -1238,10 +1255,26 @@ notebook_tree_model.prototype = {
             if(!starting) {
                 var first = node.children[0];
                 nins = find_index(history, function(h) { return h.version==first.version; });
-                insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
+                //insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
+                insf = function(dat) {
+                    this.on_add_node_before.notify({
+                        node: dat,
+                        data: first
+                    });
+                    // TODO: return the model node?
+                };
             } else {
                 nins = nshow;
-                insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
+                //insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
+
+                insf = function(dat) {
+                    this.on_append_node.notify({
+                        node_to_insert: dat,
+                        parent_id: node.id
+                    });
+                };
+
+                // TODO: return the node?
             }
 
             for(var i=0; i<nins; ++i)
@@ -1255,24 +1288,54 @@ notebook_tree_model.prototype = {
             // add or trim bottom
             if(count < nshow) { // top up
                 if(ellipsis) {
-                    insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, ellipsis); };
+                    insf = function(data) {
+                        this.on_add_node_before.notify({
+                            node_to_insert: dat, 
+                            parent_id: ellipsis
+                        });
+                    };
+
+                    // TODO: return node?
+
+                    //insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, ellipsis); };
                 } else {
-                    insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
+                    //insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
+
+                    insf = function(dat) {
+                        this.on_append_node.notify({
+                            node_to_insert: dat,
+                            parent_id: node.id
+                        });
+                    };
                 }
 
                 for(i=count; i<nshow; ++i) {
-                    insf(make_hist_node('mediumpurple', i, i==nshow-1));
+                    insf.call(this, make_hist_node('mediumpurple', i, i==nshow-1));
                 }
             } else if(count > nshow) { // trim any excess
-                for(i=count-1; i>=nshow; --i) {
+
+                /*
+                for(i = count-1; i >= nshow; --i) {
                     that.$tree_.tree('removeNode', node.children[i]);
-                }
+                }*/
+
+                node.children = node.children.splice(0, nshow);
+
+                this.remove_history_nodes.notify({
+                    node: node,
+                    from_index: nshow
+                });
             }
 
             // hide or show ellipsis
             if(ellipsis) {
                 if(nshow === history.length) {
-                    that.$tree_.tree('removeNode', ellipsis);
+                    //that.$tree_.tree('removeNode', ellipsis);
+
+                    this.on_remove_node.notify({
+                        node: ellipsis
+                    });
+
                     ellipsis = null;
                 }
             } else {
@@ -1281,7 +1344,12 @@ notebook_tree_model.prototype = {
                         label: '...',
                         id: 'showmore'
                     };
-                    ellipsis = that.$tree_.tree('appendNode', data, node);
+                    //ellipsis = that.$tree_.tree('appendNode', data, node);
+
+                    this.on_append_node.notify({
+                        node_to_insert: data,
+                        parent_id: node.id
+                    });
                 }
             }
         }
@@ -1315,13 +1383,13 @@ notebook_tree_model.prototype = {
         }
 
         if(that.histories_[node.gistname]) {
-            process_history(nshow);
+            process_history.call(that, nshow);
             return Promise.resolve(node);
         } else {
             return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
                 that.histories_[node.gistname] = notebook.history;
 
-                if(whither==='sha') {
+                if(whither === 'sha') {
                     nshow = show_sha(that.histories_[node.gistname], where);
                 }
 
@@ -1421,9 +1489,10 @@ notebook_tree_model.prototype = {
                 }
                 that.$tree_.tree('openNode', node);*/
 
-                this.on_show_history.notify({
-                    /* params */
-                });
+                // TODO:
+                // this.on_show_history.notify({
+                //     /* params */
+                // });
             });
     },
 

@@ -130,7 +130,12 @@ function notebook_tree_view(model) {
     });
 
     this.model_.on_show_history.attach(function(sender, args) {
-        console.info('I am showing some history nodes, apparently...');
+        if(args.history_len === 1) { // FIXME: should be via UI.notebook_commands
+            $(".history i",$(node.element)).addClass("button-disabled");
+        }
+
+        that.$tree_.tree('openNode', 
+            view_obj.$tree_.tree('getNodeById', args.node.id));
     });
 
     this.model_.remove_history_nodes.attach(function(sender, args) {
