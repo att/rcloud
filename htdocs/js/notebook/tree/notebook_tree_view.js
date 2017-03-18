@@ -134,7 +134,7 @@ function notebook_tree_view(model) {
             $(".history i",$(node.element)).addClass("button-disabled");
         }
 
-        that.$tree_.tree('openNode', 
+        view_obj.$tree_.tree('openNode', 
             view_obj.$tree_.tree('getNodeById', args.node.id));
     });
 

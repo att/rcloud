@@ -1453,19 +1453,22 @@ notebook_tree_model.prototype = {
     },
 
     show_history: function(node, opts) {
+
+        var that = this;
+
         if(_.isBoolean(opts)) {
             opts = {toggle: opts};
         }
 
         var whither = opts.update ? 'same' : 'more';
 
-        var node = this.get_node_by_id(node.id);
+        var node = that.get_node_by_id(node.id);
 
         if(node.children && node.children.length) {
             if(!node.is_open) {
                 //this.open
                 //$tree_.tree('openNode', node);
-                this.on_open_node.notify({
+                that.on_open_node.notify({
                     node: node
                 });
 
@@ -1477,22 +1480,22 @@ notebook_tree_model.prototype = {
             }
         }
 
-        return this.update_history_nodes(node, whither, null)
+        return that.update_history_nodes(node, whither, null)
             .then(function(node) {
-                /*
+                
                 var history_len = 0;
                 if(that.histories_[node.gistname]) {
                     history_len = that.histories_[node.gistname].length;
                 }
-                if(history_len==1) { // FIXME: should be via UI.notebook_commands
-                    $(".history i",$(node.element)).addClass("button-disabled");
-                }
-                that.$tree_.tree('openNode', node);*/
+                // if(history_len==1) { // FIXME: should be via UI.notebook_commands
+                //     $(".history i",$(node.element)).addClass("button-disabled");
+                // }
+                /*that.$tree_.tree('openNode', node);*/
 
-                // TODO:
-                // this.on_show_history.notify({
-                //     /* params */
-                // });
+                that.on_show_history.notify({
+                    node: node,
+                    history_len: history_len
+                });
             });
     },
 
