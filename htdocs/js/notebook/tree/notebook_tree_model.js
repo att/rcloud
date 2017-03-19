@@ -1260,6 +1260,9 @@ notebook_tree_model.prototype = {
                 nins = find_index(history, function(h) { return h.version==first.version; });
                 //insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
                 insf = function(dat) {
+
+                    parent.children.splice(nins, 0, node_to_insert);
+
                     this.on_add_node_before.notify({
                         node: dat,
                         data: first
@@ -1271,6 +1274,13 @@ notebook_tree_model.prototype = {
                 //insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
 
                 insf = function(dat) {
+
+                    if(!node.children) {
+                        node.children = [];
+                    }
+
+                    node.children.push(dat);
+
                     this.on_append_node.notify({
                         node_to_insert: dat,
                         parent_id: node.id
@@ -1278,6 +1288,7 @@ notebook_tree_model.prototype = {
                 };
 
                 // TODO: return the node?
+                
             }
 
             for(var i=0; i<nins; ++i)
@@ -1291,7 +1302,11 @@ notebook_tree_model.prototype = {
             // add or trim bottom
             if(count < nshow) { // top up
                 if(ellipsis) {
-                    insf = function(data) {
+                    insf = function(dat) {
+
+                        //TODO: 
+                        //parent.children.splice(nins, 0, node_to_insert);
+
                         this.on_add_node_before.notify({
                             node_to_insert: dat, 
                             parent_id: ellipsis
@@ -1305,6 +1320,13 @@ notebook_tree_model.prototype = {
                     //insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
 
                     insf = function(dat) {
+
+                        if(!node.children) {
+                            node.children = [];
+                        }
+
+                        node.children.push(dat);
+
                         this.on_append_node.notify({
                             node_to_insert: dat,
                             parent_id: node.id
@@ -1348,6 +1370,8 @@ notebook_tree_model.prototype = {
                         id: 'showmore'
                     };
                     //ellipsis = that.$tree_.tree('appendNode', data, node);
+
+                    // TODO: append showmore?
 
                     this.on_append_node.notify({
                         node_to_insert: data,
