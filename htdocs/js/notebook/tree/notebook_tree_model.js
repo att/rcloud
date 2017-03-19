@@ -560,6 +560,9 @@ notebook_tree_model.prototype = {
                         that.node_id(node.root, gistname, that.current_.version) :
                         that.node_id(node.root, user, gistname, that.current_.version);
                 //var n2 = $tree_.tree('getNodeById', id);
+
+                var n2 = that.get_node_by_id(id);
+
                 if(!n2)
                     throw new Error('tree node was not created for current history');
                 node = n2;
@@ -1123,21 +1126,8 @@ notebook_tree_model.prototype = {
         var ellipsis = null;
         var that = this;
 
-        if(!node.children) {
-            node.children = [];
-        }
-
-        if(node.children && node.children.length && node.children[node.children.length-1].id == 'showmore') {
-            ellipsis = node.children[node.children.length-1];
-        }
-
-        function curr_count() {
-            var n = node.children.length;
-            return ellipsis ? n-1 : n;
-        }
-
-        function show_sha(history, sha) {
-            var sha_ind = find_index(history, function(hist) { 
+        var show_sha = function(history, sha) {
+            var sha_ind = that.find_index(history, function(hist) { 
                 return hist.version===sha; 
             });
             
@@ -1148,7 +1138,20 @@ notebook_tree_model.prototype = {
             return sha_ind + INCR - 1; // show this many including curr (?)
         }
 
+        if(!node.children) {
+            node.children = [];
+        }
+
+        if(node.children && node.children.length && node.children[node.children.length-1].id == 'showmore') {
+            ellipsis = node.children[node.children.length-1];
+        }
+
         function process_history(nshow) {
+
+            function curr_count() {
+                var n = node.children.length;
+                return ellipsis ? n-1 : n;
+            }
 
             function do_color(dat, color) {
                 if(debug_colors)
@@ -1310,7 +1313,7 @@ notebook_tree_model.prototype = {
                 }
 
                 for(i=count; i<nshow; ++i) {
-                    insf.call(this, make_hist_node('mediumpurple', i, i==nshow-1));
+                    insf.call(that, make_hist_node('mediumpurple', i, i==nshow-1));
                 }
             } else if(count > nshow) { // trim any excess
 
@@ -1393,9 +1396,9 @@ notebook_tree_model.prototype = {
                     nshow = show_sha(that.histories_[node.gistname], where);
                 }
 
-                process_history(nshow);
+                process_history.bind(that, nshow);
                 return node;
-            });
+            }.bind(that));
         }
     },
 
