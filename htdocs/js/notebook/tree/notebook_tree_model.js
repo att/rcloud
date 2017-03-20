@@ -1298,7 +1298,8 @@ notebook_tree_model.prototype = {
             }
 
             for(var i=0; i<nins; ++i){
-                insf.call(that, make_hist_node('green', i, starting && i==nins-1));
+                var history_node = make_hist_node('green', i, starting && i==nins-1);
+                insf.call(that, history_node);
             }
 
             var count = curr_count();
@@ -1438,7 +1439,7 @@ notebook_tree_model.prototype = {
                     nshow = show_sha(that.histories_[node.gistname], where);
                 }
 
-                process_history.bind(that, nshow);
+                process_history.call(that, nshow);
                 return node;
             }.bind(that));
         }
