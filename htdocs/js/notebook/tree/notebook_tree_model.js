@@ -1296,11 +1296,14 @@ notebook_tree_model.prototype = {
                 
             }
 
-            for(var i=0; i<nins; ++i)
-                var count = curr_count();
+            for(var i=0; i<nins; ++i){
+                insf.call(that, make_hist_node('green', i, starting && i==nins-1));
+            }
+
+            var count = curr_count();
 
             // updates
-            for(i = nins; i<count; ++i) {
+            for(i = nins; i<count; ++i){
                 update_hist_node(node.children[i], i);
             }
 
