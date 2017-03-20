@@ -1194,7 +1194,10 @@ notebook_tree_model.prototype = {
 
             function make_hist_node(color, i, force_date) {
                 var hist = history[i];
-                var hdat = _.clone(node);
+                //var hdat = _.clone(node);
+                var hdat = {};
+                _.extend(hdat, node);
+                delete hdat.children;
                 var sha = hist.version.substring(0, 10);
                 var d;
                 hdat.committed_at = new Date(hist.committed_at);
@@ -1347,7 +1350,8 @@ notebook_tree_model.prototype = {
                 }
 
                 for(i=count; i<nshow; ++i) {
-                    insf.call(that, make_hist_node('mediumpurple', i, i==nshow-1));
+                    var history_node = make_hist_node('mediumpurple', i, i==nshow-1);
+                    insf.call(that, history_node);
                 }
             } else if(count > nshow) { // trim any excess
 
