@@ -161,19 +161,19 @@ notebook_tree_view.prototype = {
 
     tree_click: function(event) {
 
-        if(event.node.id === 'showmore')
-            show_history(event.node.parent, false);
-        else if(event.node.gistname) {
-            if(event.click_event.metaKey || event.click_event.ctrlKey)
+        if(event.node.id === 'showmore'){
+            //show_history(event.node.parent, false);
+            this.model_.update_history(event.node.parent, false);
+        } else if(event.node.gistname) {
+            if(event.click_event.metaKey || event.click_event.ctrlKey) {
                 notebook_open.notify({ 
-                    // gistname, version, source, selroot, new_window
                     gistname: event.node.gistname, 
                     version: event.node.version,
                     source: event.node.source, 
                     selroot: true,
                     new_window: true
                 });
-            else {
+            } else {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
                 /*jshint eqnull:true */
@@ -192,13 +192,13 @@ notebook_tree_view.prototype = {
                 }
                 /*jshint eqnull:false */
             }
-        }
-        else {
+        } else {
             if(!event.node.is_open) {
                 $tree_.tree('openNode', event.node);
                 ui_utils.fake_hover(event.node);
             }
         }
+
         return false;
     },
 

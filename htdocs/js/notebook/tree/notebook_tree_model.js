@@ -1126,6 +1126,11 @@ notebook_tree_model.prototype = {
         var ellipsis = null;
         var that = this;
 
+        function curr_count() {
+            var n = node.children.length;
+            return ellipsis ? n-1 : n;
+        }
+
         var show_sha = function(history, sha) {
             var sha_ind = that.find_index(history, function(hist) { 
                 return hist.version===sha; 
@@ -1147,11 +1152,6 @@ notebook_tree_model.prototype = {
         }
 
         function process_history(nshow) {
-
-            function curr_count() {
-                var n = node.children.length;
-                return ellipsis ? n-1 : n;
-            }
 
             function do_color(dat, color) {
                 if(debug_colors)
@@ -1479,17 +1479,19 @@ notebook_tree_model.prototype = {
         });
     },
 
-    show_history: function(node, opts) {
+    //show_history: function(node, opts) {
+    update_history: function(node, opts) {
 
         var that = this;
 
         if(_.isBoolean(opts)) {
-            opts = {toggle: opts};
+            opts = {
+                toggle: opts
+            };
         }
 
-        var whither = opts.update ? 'same' : 'more';
-
-        var node = that.get_node_by_id(node.id);
+        var whither = opts.update ? 'same' : 'more',
+            node = that.get_node_by_id(node.id);
 
         if(node.children && node.children.length) {
             if(!node.is_open) {
