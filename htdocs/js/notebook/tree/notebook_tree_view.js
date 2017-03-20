@@ -197,6 +197,8 @@ notebook_tree_view.prototype = {
                 $tree_.tree('openNode', event.node);
                 ui_utils.fake_hover(event.node);
             }
+
+            this.model_.set_node_open_status(event.node, event.node.is_open);
         }
 
         return false;

@@ -496,6 +496,11 @@ notebook_tree_model.prototype = {
         });
     },
 
+    set_node_open_status: function(node, is_open) {
+        var node = this.get_node_by_id(node.id);
+        node.is_open = is_open;
+    },
+
     remove_node: function(node) {
 
         //var parent = node.parent;
@@ -1257,7 +1262,7 @@ notebook_tree_model.prototype = {
 
             if(!starting) {
                 var first = node.children[0];
-                nins = find_index(history, function(h) { return h.version==first.version; });
+                nins = that.find_index(history, function(h) { return h.version==first.version; });
                 //insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
                 insf = function(dat) {
 
@@ -1505,7 +1510,7 @@ notebook_tree_model.prototype = {
             }
 
             if(opts.toggle) { 
-                whither = 'hide';
+               whither = 'hide';
             }
         }
 
@@ -1525,6 +1530,8 @@ notebook_tree_model.prototype = {
                     node: node,
                     history_len: history_len
                 });
+
+                node.is_open = true;
             });
     },
 
