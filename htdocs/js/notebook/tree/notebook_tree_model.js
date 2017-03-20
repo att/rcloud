@@ -1362,6 +1362,12 @@ notebook_tree_model.prototype = {
                 if(nshow === history.length) {
                     //that.$tree_.tree('removeNode', ellipsis);
 
+                    // parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                    //     id: node.id
+                    // }));
+
+                    //ellipsis
+
                     this.on_remove_node.notify({
                         node: ellipsis
                     });
@@ -1377,6 +1383,7 @@ notebook_tree_model.prototype = {
                     //ellipsis = that.$tree_.tree('appendNode', data, node);
 
                     // TODO: append showmore?
+                    node.children.push(data);
 
                     this.on_append_node.notify({
                         node_to_insert: data,
