@@ -658,7 +658,7 @@ notebook_tree_model.prototype = {
 
             this.on_add_node_before.notify({ 
                 node_to_insert: node_to_insert,
-                parent_id: before.child.id
+                existing_node: before.child
             });
 
             return node_to_insert;
@@ -940,7 +940,7 @@ notebook_tree_model.prototype = {
                                    if(node.children && node.children.length) {
                                        whither = 'index';
                                        where = node.children.length;
-                                       if(node.children[where-1].id==='showmore')
+                                       if(node.children[where-1].id.startsWith('showmore'))
                                            --where;
                                    }
                                }, create);
@@ -1152,7 +1152,7 @@ notebook_tree_model.prototype = {
             node.children = [];
         }
 
-        if(node.children && node.children.length && node.children[node.children.length-1].id == 'showmore') {
+        if(node.children && node.children.length && node.children[node.children.length-1].id.startsWith('showmore')) {
             ellipsis = node.children[node.children.length-1];
         }
 
@@ -1215,8 +1215,9 @@ notebook_tree_model.prototype = {
 
                 //that.$tree_.tree('updateNode', node, attrs);
 
-                this._on_update_node.notify({
-                    node: node
+                this.on_update_node.notify({
+                    node: node,
+                    data: attrs
                 });
             }
 
@@ -1269,8 +1270,8 @@ notebook_tree_model.prototype = {
                     parent.children.splice(nins, 0, node_to_insert);
 
                     this.on_add_node_before.notify({
-                        node: dat,
-                        data: first
+                        node_to_insert: dat,
+                        existing_node: first
                     });
                     // TODO: return the model node?
                 };
@@ -1304,7 +1305,7 @@ notebook_tree_model.prototype = {
 
             // updates
             for(i = nins; i<count; ++i){
-                update_hist_node(node.children[i], i);
+                update_hist_node.call(that, node.children[i], i);
             }
 
             // add or trim bottom
@@ -1315,9 +1316,11 @@ notebook_tree_model.prototype = {
                         //TODO: 
                         //parent.children.splice(nins, 0, node_to_insert);
 
+                        node.children.splice(node.children.length - 1, 0, dat);
+
                         this.on_add_node_before.notify({
                             node_to_insert: dat, 
-                            parent_id: ellipsis
+                            existing_node: ellipsis
                         });
                     };
 
@@ -1381,7 +1384,7 @@ notebook_tree_model.prototype = {
                 if(nshow < history.length) {
                     var data = {
                         label: '...',
-                        id: 'showmore'
+                        id: 'showmore-' + node.id    // unique name
                     };
                     //ellipsis = that.$tree_.tree('appendNode', data, node);
 

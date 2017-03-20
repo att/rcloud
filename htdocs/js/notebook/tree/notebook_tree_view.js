@@ -93,7 +93,7 @@ function notebook_tree_view(model) {
 
         view_obj.$tree_.tree('addNodeBefore',
             args.node_to_insert,
-            view_obj.$tree_.tree('getNodeById', args.parent_id)); 
+            view_obj.$tree_.tree('getNodeById', args.existing_node.id)); 
     });
 
     this.model_.on_append_node.attach(function(sender, args) {
@@ -161,7 +161,7 @@ notebook_tree_view.prototype = {
 
     tree_click: function(event) {
 
-        if(event.node.id === 'showmore'){
+        if(event.node.id.startsWith('showmore')){
             //show_history(event.node.parent, false);
             this.model_.update_history(event.node.parent, false);
         } else if(event.node.gistname) {
@@ -194,7 +194,7 @@ notebook_tree_view.prototype = {
             }
         } else {
             if(!event.node.is_open) {
-                $tree_.tree('openNode', event.node);
+                this.$tree_.tree('openNode', event.node);
                 ui_utils.fake_hover(event.node);
             }
 
