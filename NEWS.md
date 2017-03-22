@@ -30,7 +30,10 @@
 * `rcloud.web` has been significantly expanded to allow manipulation
   of the elements, styles, CSS (`rcw.attr`, `rcw.style`, `rcw.css`) as
   well as registration of event handlers (`rcw.on`, `rcw.off`) and
-  evaluation in the context of an element (`rcw.in`).
+  evaluation in the context of an element (`rcw.in`). In addition, it
+  provides functions related to the current document to retrieve URL,
+  cookies and facilitate re-direction: `rcw.url()`, `rcw.cookies()`
+  and `rcw.redirect()`.
 
 * `rcloud.execute.asset` has a parameter `env=` that can be used for R
   assets to specify the environment in which to source the asset.
