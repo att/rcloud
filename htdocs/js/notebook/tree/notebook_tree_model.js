@@ -68,7 +68,7 @@ notebook_tree_model.prototype = {
     get_current_notebook_history_index: function() {
         return current_.version === null ?
             0 :
-            find_index(get_current_notebook_histories, function(h) {
+            this.find_index(this.get_current_notebook_histories(), function(h) {
                 return h.version === this.current_.version;
             });
     },
@@ -79,7 +79,7 @@ notebook_tree_model.prototype = {
 
     get_previous: function() {
         // no version at latest:
-        var current_index = current_.version === null ? 0 : get_current_notebook_history_index.call(this);
+        var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index.call(this);
 
         if(current_index === this.get_current_notebook_histories(length - 1)) {
             return undefined;   // already at first
