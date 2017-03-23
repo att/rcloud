@@ -116,5 +116,9 @@ notebook_tree_controller.prototype = {
     // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
     find_next_copy_name: function (username, description) {
         return this.model_.find_next_copy_name(username, description);
+    },
+
+    remove_notebook_view: function(user, gistname) {
+        this.model_.remove_notebook_view(user, gistname);
     }
 };

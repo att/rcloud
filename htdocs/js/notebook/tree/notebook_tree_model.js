@@ -198,7 +198,7 @@ notebook_tree_model.prototype = {
             }
         }
 
-        if(my_friends_[user]) {
+        if(this.my_friends_[user]) {
             do_remove(this.node_id('friends', user, gistname));
         }
 
