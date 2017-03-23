@@ -16,6 +16,10 @@ function notebook_tree_controller(model, view) {
 
 notebook_tree_controller.prototype = {
     
+    set_current: function(current) {
+        this.model_.set_current(current);
+    },
+
     get_current: function() {
         return this.model_.get_current();
     },

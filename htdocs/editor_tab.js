@@ -568,7 +568,9 @@ var editor = function () {
                  selroot: null,
                  push_history: true}, opts);
             return function(result) {
-                current_ = {notebook: result.id, version: options.version};
+                var current = { notebook: result.id, version: options.version };
+                tree_controller_.set_current(current);
+                current_ = current;
                 var tag;
                 var find_version = _.find(result.history, function(x) { return x.version === options.version; });
                 if(find_version)

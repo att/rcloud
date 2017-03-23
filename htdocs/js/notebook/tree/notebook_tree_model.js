@@ -53,6 +53,10 @@ notebook_tree_model.prototype = {
         return this.username_;
     },
 
+    set_current: function(current) {
+        this.current_ = current;
+    },
+
     get_current: function() {
         return this.current_;
     },
