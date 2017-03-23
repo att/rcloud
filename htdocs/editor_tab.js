@@ -5,7 +5,7 @@ var editor = function () {
         github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
-        tree_controller;
+        tree_controller_;
     
     function get_notebook_info(gistname) {
         return tree_controller_.get_notebook_info(gistname);

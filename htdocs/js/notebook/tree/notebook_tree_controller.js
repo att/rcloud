@@ -93,10 +93,6 @@ notebook_tree_controller.prototype = {
         return this.model_.update_notebook_view(user, gistname, entry, selroot);
     },
 
-    remove_notebook_view: function(user, gistname) {
-        
-    },
-
     unstar_notebook_view: function(user, gistname, selroot) {
         this.model_.unstar_notebook_view(user, gistname, selroot);
     },
