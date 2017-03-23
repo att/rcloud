@@ -1267,13 +1267,11 @@ notebook_tree_model.prototype = {
                 if(nshow === history.length) {
                     //that.$tree_.tree('removeNode', ellipsis);
 
-                    // parent.children = _.without(parent.children, _.findWhere(parent.children, {
-                    //     id: node.id
-                    // }));
+                    var parent = this.get_parent(ellipsis.id);
 
-                    //ellipsis
-
-                    //TODO: remove ellipsis
+                    parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                        id: ellipsis.id
+                    }));
 
                     this.on_remove_node.notify({
                         node: ellipsis
