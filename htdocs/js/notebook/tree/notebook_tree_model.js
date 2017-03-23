@@ -188,11 +188,13 @@ notebook_tree_model.prototype = {
 
     remove_notebook_view: function(user, gistname) {
 
+        var that = this;
+
         function do_remove(id) {
             //var node = $tree_.tree('getNodeById', id);
-            var node = get_node_by_id(id);
+            var node = that.get_node_by_id(id);
             if(node) {
-                this.remove_node(node);
+                that.remove_node(node);
             } else {
                 console.log("tried to remove node that doesn't exist: " + id);
             }
