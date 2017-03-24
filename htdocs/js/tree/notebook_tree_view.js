@@ -207,7 +207,7 @@ notebook_tree_view.prototype = {
     select_node: function(node) {
         this.$tree_.tree('selectNode', node);
         this.scroll_into_view(node);
-        if(node.user === username_)
+        if(node.user === this.model_.username_)
             RCloud.UI.notebook_title.make_editable(node, node.element, true);
         else
             RCloud.UI.notebook_title.make_editable(null);
@@ -332,7 +332,7 @@ notebook_tree_view.prototype = {
         return function() {
             return new Promise(function(resolve) {
                 var p = node.parent;
-                while(p.sort_order === this.model_.order.NOTEBOOK) {
+                while(p.sort_order === that.model_.order.NOTEBOOK) {
                     that.$tree_.tree('openNode', p);
                     p = p.parent;
                 }
@@ -347,13 +347,14 @@ notebook_tree_view.prototype = {
 
     highlight_notebooks: function(notebooks) {
 
-        var nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
-            return that.$tree_.tree('getNodeById', node_id('interests', username_, notebook.id));
+        var that = this,
+            nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
+            return that.$tree_.tree('getNodeById', '/' + ['interests', that.model_.username_, notebook.id].join('/'));
         });
 
         // get promises:
         nodes.map(function(node) {
-            return highlight_node(node);
+            return that.highlight_node(node);
         }).reduce(function(cur, next) {
             return cur.then(next);
         }, Promise.resolve()).then(function() {});
@@ -393,7 +394,7 @@ notebook_tree_view.prototype = {
 
         var right = $.el.span({'class': 'notebook-right'}, date);
         // if it was editable before, we need to restore that - either selected or open folder tree node
-        if(node.user === username_ && (this.$tree_.tree('isNodeSelected', node) ||
+        if(node.user === this.model_.username_ && (this.$tree_.tree('isNodeSelected', node) ||
                                        !node.gistname && node.full_name && node.is_open)) {
             RCloud.UI.notebook_title.make_editable(node, $li, true);
         }   
