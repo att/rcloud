@@ -349,6 +349,7 @@ notebook_tree_view.prototype = {
 
         var that = this,
             nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
+            // HACKY: the view shouldn't need to know how to generate an ID (model's repsonsibility):
             return that.$tree_.tree('getNodeById', '/' + ['interests', that.model_.username_, notebook.id].join('/'));
         });
 
