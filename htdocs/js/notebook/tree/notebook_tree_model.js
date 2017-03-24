@@ -508,7 +508,6 @@ notebook_tree_model.prototype = {
     remove_node: function(node) {
 
         //var parent = node.parent;
-        var node = this.get_node_by_id(node.id);
         var parent = this.get_parent(node.id);
 
         //ui_utils.fake_hover(node);
@@ -706,10 +705,46 @@ notebook_tree_model.prototype = {
     },
 
     get_parent: function(id) {
+        function getObject(theObject, id) {
+            var found_parent = null;
+            if(theObject instanceof Array) {
+                for(var i = 0; i < theObject.length; i++) {
+                    found_parent = getObject(theObject[i], id);
+                    if (found_parent) {
+                        break;
+                    }   
+                }
+            } else {
+                for(var prop in theObject) {
+                    if(prop === 'id' && theObject.hasOwnProperty('children')) {
+                        var child = _.find(theObject.children, function(c) {
+                            return c.id === id;
+                        });
+
+                        if(child) 
+                            return theObject;
+                    }
+                    if(theObject[prop] instanceof Object || theObject[prop] instanceof Array) {
+                        found_parent = getObject(theObject[prop], id);
+                        if (found_parent) {
+                            break;
+                        }
+                    } 
+                }
+            }
+            return found_parent;
+        }
+
+        return getObject(this.tree_data_, id);
+    },
+
+/*
+    get_parent: function(id) {
   
         var found_parent = false;
         
         function has_child(node, id) {
+            console.log('has_child: ', node.id);
             return _.find(node.children, function(c) {
             return c.id === id;
             });
@@ -740,10 +775,14 @@ notebook_tree_model.prototype = {
                         traverse(obj[key]);
                 }
             }
+            
         }
         
         return traverse(this.tree_data_);
     },
+*/
+
+
 
     load_tree_data: function(data, parent) {
         var parent_node = this.get_node_by_id(parent);
@@ -1221,7 +1260,7 @@ notebook_tree_model.prototype = {
             var count = curr_count();
 
             // updates
-            for(i = nins; i<count; ++i){
+            for(var i = nins; i<count; ++i){
                 update_hist_node.call(that, node.children[i], i);
             }
 
@@ -1255,7 +1294,7 @@ notebook_tree_model.prototype = {
                     };
                 }
 
-                for(i=count; i<nshow; ++i) {
+                for(var i=count; i<nshow; ++i) {
                     var history_node = make_hist_node('mediumpurple', i, i==nshow-1);
                     insf.call(that, history_node);
                 }
