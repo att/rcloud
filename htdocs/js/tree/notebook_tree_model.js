@@ -1,4 +1,4 @@
-function notebook_tree_model(username, show_terse_dates) {
+function notebook_tree_model(username, show_terse_dates, path_tips) {
     
     "use strict";
 
@@ -6,6 +6,7 @@ function notebook_tree_model(username, show_terse_dates) {
 
     this.username_ = username;
     this.show_terse_dates_ = show_terse_dates;
+    this.path_tips_ = false, // debugging tool: show path tips on tree
 
     this.tree_data_,
     this.histories_ = {}, // cached notebook histories
@@ -17,7 +18,6 @@ function notebook_tree_model(username, show_terse_dates) {
     this.featured_ = [], // featured users - samples, intros, etc
     this.invalid_notebooks_ = {},
     this.current_ = null, // current notebook and version
-    this.path_tips_ = false, // debugging tool: show path tips on tree
     this.gist_sources_ = null, // valid gist sources on server
     this.lazy_load_ = {}, // which users need loading
 
@@ -51,6 +51,14 @@ notebook_tree_model.prototype = {
         
     username: function() {
         return this.username_;
+    },
+
+    show_terse_dates: function(show_terse_dates) {
+        this.show_terse_dates_ = show_terse_dates;
+    },
+
+    path_tips: function() {
+        return this.path_tips_;
     },
 
     set_current: function(current) {

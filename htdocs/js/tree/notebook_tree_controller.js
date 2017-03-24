@@ -73,9 +73,9 @@ notebook_tree_controller.prototype = {
     },
 
     show_terse_dates: function(show_terse_dates) {
-        this.show_terse_dates_ = show_terse_dates;
-    },    
-
+        this.model_.show_terse_dates(show_terse_dates);
+    },   
+    
     set_visibility: function(gistname, visible) {
         return this.model_.set_visibility(gistname, visible);
     },

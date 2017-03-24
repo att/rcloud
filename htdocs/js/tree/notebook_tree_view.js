@@ -370,10 +370,9 @@ notebook_tree_view.prototype = {
 
         title.css('color', node.color);
 
-        // TODO: reinstate conditional
-        //if(this.model_.path_tips_) {
+        if(this.model_.path_tips()) {
             element.attr('title', node.id);
-        //}
+        }
 
         if(node.gistname) {
             if(node.source) {

@@ -317,6 +317,11 @@ var editor = function () {
         },
         set_terse_dates: function(val) {
             this.show_terse_dates_ = val;
+
+            if(this.notebook_tree_controller) {
+                // 
+                this.notebook_tree_controller.show_terse_dates(val);
+            }
         },
         star_and_show: function(notebook, make_current, is_change) {
             return this.star_notebook(true, {notebook: notebook,
