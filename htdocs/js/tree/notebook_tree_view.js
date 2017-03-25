@@ -273,44 +273,6 @@ notebook_tree_view.prototype = {
         }
     },
 
-    // show_history: function(node, opts) {
-    //     if(_.isBoolean(opts))
-    //         opts = {toggle: opts};
-    //     var whither = opts.update ? 'same' : 'more';
-    //     if(node.children.length) {
-    //         if(!node.is_open) {
-    //             $tree_.tree('openNode', node);
-    //             return Promise.resolve(undefined);
-    //         }
-    //         if(opts.toggle) whither = 'hide';
-    //     }
-    //     return update_history_nodes.call(that, node, whither, null)
-    //         .then(function(node) {
-    //             var history_len = 0;
-    //             if(that.histories_[node.gistname]) {
-    //                 history_len = that.histories_[node.gistname].length;
-    //             }
-    //             if(history_len==1) { // FIXME: should be via UI.notebook_commands
-    //                 $(".history i",$(node.element)).addClass("button-disabled");
-    //             }
-    //             that.$tree_.tree('openNode', node);
-    //         });
-    // },  
-
-    format_date_time_stamp: function(date, diff, isDateSame, for_version) {
-        function pad(n) { return n<10 ? '0'+n : n; }
-        var now = new Date();
-        var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
-        var date_part = (date.getMonth()+1) + '/' + date.getDate();
-        var year_part = date.getFullYear().toString().substr(2,2);
-        if(diff < 24*60*60*1000 && isDateSame && this.show_terse_dates_ && for_version)
-            return time_part;
-        else if(date.getFullYear() === now.getFullYear())
-            return '<span>' + date_part + ' ' + time_part + '</span>';
-        else
-            return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
-    },
-
     display_date: function(ds) {
         // return an element
         return $(this.display_date_html(ds))[0];
@@ -324,7 +286,7 @@ notebook_tree_view.prototype = {
         var date = new Date(ds);
         var now = new Date();
         var diff = now - date;
-        return this.format_date_time_stamp(date, diff, true, false);
+        return RCloud.utils.format_date_time_stamp(date, diff, true, false, this.model_.show_terse_dates())
     }, 
 
     highlight_node: function(node) {

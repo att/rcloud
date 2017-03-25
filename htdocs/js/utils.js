@@ -44,3 +44,20 @@ RCloud.utils.split_number = function(name) {
     
     return [name.slice(0, res.index), res[1]];
 }
+
+RCloud.utils.format_date_time_stamp = function(date, diff, is_date_same, for_version, show_terse_dates) {
+    function pad(n) { return n<10 ? '0'+n : n; }
+
+    var now = new Date();
+    var time_part = '<span class="notebook-time">' + date.getHours() + ':' + pad(date.getMinutes()) + '</span>';
+    var date_part = (date.getMonth()+1) + '/' + date.getDate();
+    var year_part = date.getFullYear().toString().substr(2,2);
+
+    if(diff < 24*60*60*1000 && is_date_same && show_terse_dates && for_version){
+        return time_part;
+    } else if(date.getFullYear() === now.getFullYear()) {
+        return '<span>' + date_part + ' ' + time_part + '</span>';
+    } else {
+        return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
+    }
+}

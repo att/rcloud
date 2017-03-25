@@ -54,7 +54,11 @@ notebook_tree_model.prototype = {
     },
 
     show_terse_dates: function(show_terse_dates) {
-        this.show_terse_dates_ = show_terse_dates;
+        if(arguments.length) {
+            this.show_terse_dates_
+        } else { 
+            return this.show_terse_dates_;
+        }
     },
 
     path_tips: function() {
@@ -1134,11 +1138,7 @@ notebook_tree_model.prototype = {
                 if(diff <= 60*1000 && hour_same && min_same && this.show_terse_dates_)
                     return null;
                 else
-                    return 'TODO';  //TODO
-
-                    //  |   reinstate that (but it's already in the view)
-                    //  v
-                    //return  format_date_time_stamp(d1, diff, isDateSame, true);
+                    return RCloud.utils.format_date_time_stamp(d1, diff, isDateSame, true, this.show_terse_dates_);
             }
 
             function display_date_for_entry(i) {
