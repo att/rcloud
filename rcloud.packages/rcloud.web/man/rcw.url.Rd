@@ -25,7 +25,7 @@ rcw.parameters()
   \item{detailed}{logical, if \code{TRUE} then a full list of various
     components is returned, if \code{FALSE} only the URL string is
     returned}
-  \item{new full URL}
+  \item{url}{new full URL to redirect to}
   \item{raw}{logical, if \code{FALSE} then the cookies are parsed into a
     named list. If \code{TRUE} then the full cookie string is passed
     as-is which is useful for passing credentials to related services.}
