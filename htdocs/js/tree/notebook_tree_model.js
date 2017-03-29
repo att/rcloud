@@ -101,7 +101,7 @@ notebook_tree_model.prototype = {
     },
 
     get_next: function(){
-        var current_index = this.get_current_notebook_history_index(his);
+        var current_index = this.get_current_notebook_history_index();
 
         if(current_index === 0) {
             return undefined;
