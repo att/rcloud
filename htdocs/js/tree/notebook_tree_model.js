@@ -1443,8 +1443,8 @@ notebook_tree_model.prototype = {
             if(!that.featured_.length)
                 return null;
 
-            return get_notebooks_by_user(that.featured_[0]).then(function(notebooks) {
-                var notebook_nodes = that.convert_notebook_set('featured', featured_[0], notebooks).map(function(notebook) {
+            return that.get_notebooks_by_user(that.featured_[0]).then(function(notebooks) {
+                var notebook_nodes = that.convert_notebook_set('featured', that.featured_[0], notebooks).map(function(notebook) {
                     notebook.id = '/featured/' + notebook.gistname;
                     return notebook;
                 });
