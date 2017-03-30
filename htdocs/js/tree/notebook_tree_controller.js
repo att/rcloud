@@ -48,6 +48,10 @@ notebook_tree_controller.prototype = {
         return this.model_.is_notebook_starred_by_current_user(gistname);
     },
 
+    has_notebook_info: function(gistname) {
+        return this.model_.has_notebook_info(gistname);
+    },
+
     get_notebook_info: function(gistname) {
         return this.model_.get_notebook_info(gistname);
     },

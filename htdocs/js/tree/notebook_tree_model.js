@@ -142,6 +142,10 @@ notebook_tree_model.prototype = {
         return this.my_stars_[gistname] || false;
     },
 
+    has_notebook_info: function(gistname) {
+        return this.notebook_info_[gistname];
+    },
+
     get_notebook_info: function(gistname) {
         return this.notebook_info_[gistname] || {};
     },

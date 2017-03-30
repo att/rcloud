@@ -7,6 +7,10 @@ var editor = function () {
         NOTEBOOK_LOAD_FAILS = 5,
         tree_controller_;
     
+    function has_notebook_info(gistname) {
+        return tree_controller_.has_notebook_info(gistname);
+    }
+
     function get_notebook_info(gistname) {
         return tree_controller_.get_notebook_info(gistname);
     }
@@ -109,6 +113,9 @@ var editor = function () {
         },
         current: function() {
             return current_;
+        },
+        has_notebook_info: function(gistname) {
+            return has_notebook_info(gistname);
         },
         get_notebook_info: function(gistname) {
             return get_notebook_info(gistname);
@@ -337,7 +344,7 @@ var editor = function () {
             return shell.fork_notebook(is_mine, gistname, version)
                 .bind(this)
                 .then(function(notebook) {
-                    if(that.get_notebook_info(notebook.id)) {
+                    if(that.has_notebook_info(notebook.id)) {
                         alert(github_nonfork_warning);
                     }
                     return this.star_and_show(notebook, true, !!version);
