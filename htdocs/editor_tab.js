@@ -201,15 +201,9 @@ var editor = function () {
                 .then(function(ret) {
                     if(!ret)
                         return Promise.resolve(undefined);
-                    var history = histories_[id];
-                    for(var i=0; i<history.length; ++i) {
-                        if (history[i].version === version) {
-                            history[i].tag = tag;
-                        }
-                        if(history[i].tag === tag && history[i].version != version) {
-                            history[i].tag = undefined;
-                        }
-                    }
+
+                    tree_controller_.tag_notebook_version(id, version, tag);
+                    
                     var promises = [];
                     if(id === current_.notebook && version === current_.version) {
                         promises.push(update_url({notebook: id, version: version, tag: tag}));

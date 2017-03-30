@@ -105,6 +105,10 @@ notebook_tree_controller.prototype = {
         return this.model_.update_notebook_from_gist(result, history, selroot);
     },
 
+    tag_notebook_version: function(id, version, tag) {
+        this.model_.tag_notebook_version(id, version, tag);
+    },
+
     toggle_folder_friendness: function(user) {
         this.model_.toggle_folder_friendness(user);
     },

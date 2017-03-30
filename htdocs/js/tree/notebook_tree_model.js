@@ -466,6 +466,19 @@ notebook_tree_model.prototype = {
         return p;
     },
 
+    tag_notebook_version: function(id, version, tag) {
+        var history = this.histories_[id];
+        
+        for(var i=0; i<history.length; ++i) {
+            if (history[i].version === version) {
+                history[i].tag = tag;
+            }
+            if(history[i].tag === tag && history[i].version != version) {
+                history[i].tag = undefined;
+            }
+        }
+    },
+
     update_notebook/*_model*/: function(user, gistname, description, time) {
         var that = this;
         return that.load_user_notebooks(user).then(function() {
