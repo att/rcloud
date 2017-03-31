@@ -33,10 +33,6 @@ function notebook_tree_view(model) {
         view_obj.$tree_.tree('openNode', interests);
     });
 
-    // model_.update_notebook.attach(function(sender, args) {
-
-    // });
-
     this.model_.on_load_by_user.attach(function(sender, args) {
         
         var root = view_obj.$tree_.tree('getNodeById', args.pid);  
@@ -46,11 +42,6 @@ function notebook_tree_view(model) {
 
             view_obj.$tree_.tree('loadData', args.duplicate_data, 
                 view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
-
-            // TODO
-            //var ftree = duplicate_tree_data.call(that, root, transpose_notebook('friends'));
-            //var parent = that.$tree_.tree('getNodeById', node_id('friends', username));
-            //that.$tree_.tree('loadData', ftree.children, parent);
         }
     });
 
@@ -88,9 +79,6 @@ function notebook_tree_view(model) {
     });
 
     this.model_.on_add_node_before.attach(function(sender, args) {
-        // view_obj.$tree_.tree('addNodeBefore', args.node_to_insert, 
-        //     view_obj.$tree_.tree('getNodeById', args.parent_id)); 
-
         view_obj.$tree_.tree('addNodeBefore',
             args.node_to_insert,
             view_obj.$tree_.tree('getNodeById', args.existing_node.id)); 

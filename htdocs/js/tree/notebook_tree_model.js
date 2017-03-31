@@ -428,7 +428,6 @@ notebook_tree_model.prototype = {
         return that.get_notebooks_by_user(username).then(function(notebooks) {
             // load "alls" tree for username, and duplicate to friends tree if needed
             var pid = that.node_id("alls", username);
-            //var root = that.$tree_.tree('getNodeById', pid);
             var root = that.get_node_by_id(pid);
 
             var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
@@ -536,14 +535,11 @@ notebook_tree_model.prototype = {
 
     remove_node: function(node) {
 
-        //var parent = node.parent;
         var parent = this.get_parent(node.id);
 
-        //ui_utils.fake_hover(node);
         this.on_fake_hover.notify({
             node: node
         });
-        //$tree_.tree('removeNode', node);
 
         // remove node from model:
         parent.children = _.without(parent.children, _.findWhere(parent.children, {
@@ -557,8 +553,6 @@ notebook_tree_model.prototype = {
         this.remove_empty_parents(parent);
 
         if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0){
-            //$tree_.tree('removeNode', parent);
-
             // remove node from model:
             var interests_node = this.get_node_by_id('/interests');
             interests_node.children = _.without(interests_node.children, _.findWhere(interests_node.children, {
@@ -682,8 +676,6 @@ notebook_tree_model.prototype = {
         var before = this.find_sort_point(node_to_insert, parent);
 
         if(before) {
-            //return this.$tree_.tree('addNodeBefore', node_to_insert, before);
-
             // splice children:
             parent.children.splice(before.position, 0, node_to_insert);
 
@@ -695,8 +687,6 @@ notebook_tree_model.prototype = {
             return node_to_insert;
 
         } else {
-            //return this.$tree_.tree('appendNode', data, parent);
-
             // add node to model:
             if(!parent.children) {
                 parent.children = [];
@@ -766,52 +756,6 @@ notebook_tree_model.prototype = {
 
         return getObject(this.tree_data_, id);
     },
-
-/*
-    get_parent: function(id) {
-  
-        var found_parent = false;
-        
-        function has_child(node, id) {
-            console.log('has_child: ', node.id);
-            return _.find(node.children, function(c) {
-            return c.id === id;
-            });
-        }
-        
-        function traverse(obj) {
-            for(var key in obj) {
-                if (_.isArray(obj[key])) {
-                    obj[key].forEach(function(node){
-                    if(_.isObject(node)) {
-                        traverse(node);
-                    }
-                    });
-                }
-
-                if (_.isObject(obj[key])) {
-                    
-                    if(obj[key].hasOwnProperty('children')) {
-                        if(has_child(obj[key], id)) {
-                            //console.log(obj[key]);
-                            found_parent = obj[key];
-                        }
-                    }
-                    
-                    if(found_parent) 
-                        return found_parent;
-                    else
-                        traverse(obj[key]);
-                }
-            }
-            
-        }
-        
-        return traverse(this.tree_data_);
-    },
-*/
-
-
 
     load_tree_data: function(data, parent) {
         var parent_node = this.get_node_by_id(parent);
@@ -926,13 +870,8 @@ notebook_tree_model.prototype = {
             var dp = this.get_parent(node.id);
 
             if(dp === parent && node./*name*/label === data.label) {
-
                 this.update_tree_node(node, data);
-
-                //$tree_.tree('updateNode', node, data);
             } else {
-                //$tree_.tree('removeNode', node);
-
                 // remove from model:
                 dp.children = _.without(dp.children, _.findWhere(dp.children, {
                     id: node.id
@@ -970,7 +909,6 @@ notebook_tree_model.prototype = {
                     node: dp,
                     fake_hover: false
                 });
-                //this.$tree_.tree('removeNode', dp);
 
                 dp = dp2;
             }
@@ -1016,12 +954,10 @@ notebook_tree_model.prototype = {
 
      toggle_folder_friendness: function(user) {
         if(this.my_friends_[user]) {
-            //var anode = $tree_.tree('getNodeById', node_id('alls', user));
             var anode = this.get_node_by_id(this.node_id('alls', user));
             var ftree;
             if(anode)
                 ftree = this.duplicate_tree_data(anode, this.transpose_notebook('friends'));
-                //ftree = duplicate_tree_data(anode, transpose_notebook('friends'));
             else { // this is a first-time load case
                 var mine = user === this.username_;
                 ftree = {
@@ -1030,10 +966,8 @@ notebook_tree_model.prototype = {
                     sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
                 };
             }
-            //var parent = $tree_.tree('getNodeById', node_id('friends'));
             var parent = this.get_node_by_id(this.node_id('friends'));
             var node = this.insert_alpha(ftree, parent);
-            //$tree_.tree('loadData', ftree.children, node);
 
             this.on_load_data.notify({
                 children: ftree.children,
