@@ -63,7 +63,7 @@ var editor = function () {
                             // then don't keep trying.
                             if(xep.from_load)
                                 rcloud.config.clear_recent_notebook(current.notebook)
-                                .then(open_last_loadable);
+                                .then(that.open_last_loadable);
                             else throw xep;
                         });
                 }
@@ -236,15 +236,17 @@ var editor = function () {
             // if opts has user and gistname use those
             // else if opts has notebook, use notebook id & user
             // else use current notebook & user
+            var current = tree_controller_.get_current();
+
             opts = opts || {};
             var gistname = opts.gistname ||
-                    opts.notebook&&opts.notebook.id ||
-                    current_.notebook;
+                    opts.notebook && opts.notebook.id ||
+                    current.notebook;
             var user = opts.user ||
-                    opts.notebook&&opts.notebook.user&&opts.notebook.user.login ||
+                    opts.notebook && opts.notebook.user && opts.notebook.user.login ||
                     that.get_notebook_info(gistname).username;
             // keep selected if was (but don't try to select a removed notebook)
-            if(gistname === current_.notebook && opts.selroot === undefined)
+            if(gistname === current.notebook && opts.selroot === undefined)
                 opts.selroot = true;
             if(star) {
                 return rcloud.stars.star_notebook(gistname).then(function(count) {
