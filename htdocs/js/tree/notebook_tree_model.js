@@ -933,6 +933,11 @@ notebook_tree_model.prototype = {
             } else {
                 //$tree_.tree('removeNode', node);
 
+                // remove from model:
+                dp.children = _.without(dp.children, _.findWhere(dp.children, {
+                    id: node.id
+                }));
+
                 this.on_remove_node.notify({
                     node: node
                 });
