@@ -1,4 +1,4 @@
-function notebook_tree_model(username, show_terse_dates, path_tips) {
+var notebook_tree_model = function(username, show_terse_dates, path_tips) {
     
     "use strict";
 
@@ -6,37 +6,37 @@ function notebook_tree_model(username, show_terse_dates, path_tips) {
 
     this.username_ = username;
     this.show_terse_dates_ = show_terse_dates;
-    this.path_tips_ = false, // debugging tool: show path tips on tree
+    this.path_tips_ = false; // debugging tool: show path tips on tree
 
-    this.tree_data_,
-    this.histories_ = {}, // cached notebook histories
-    this.notebook_info_ = {}, // all notebooks we are aware of
-    this.num_stars_ = {}, // number of stars for all known notebooks
-    this.fork_count_ = {},
-    this.my_stars_ = {}, // set of notebooks starred by me
-    this.my_friends_ = {}, // people whose notebooks i've starred
-    this.featured_ = [], // featured users - samples, intros, etc
-    this.invalid_notebooks_ = {},
-    this.current_ = null, // current notebook and version
-    this.gist_sources_ = null, // valid gist sources on server
-    this.lazy_load_ = {}, // which users need loading
+    this.tree_data_ = [];
+    this.histories_ = {}; // cached notebook histories
+    this.notebook_info_ = {}; // all notebooks we are aware of
+    this.num_stars_ = {}; // number of stars for all known notebooks
+    this.fork_count_ = {};
+    this.my_stars_ = {}; // set of notebooks starred by me
+    this.my_friends_ = {}; // people whose notebooks i've starred
+    this.featured_ = []; // featured users - samples, intros, etc
+    this.invalid_notebooks_ = {};
+    this.current_ = null; // current notebook and version
+    this.gist_sources_ = null; // valid gist sources on server
+    this.lazy_load_ = {}; // which users need loading
 
-    this.CONFIG_VERSION = 1,
+    this.CONFIG_VERSION = 1;
 
-    this.on_initialise_tree = new event(this),
-    this.on_load_by_user = new event(this),
-    this.on_open_and_select = new event(this),
-    this.on_load_children = new event(this),
-    this.on_add_node_before = new event(this),
-    this.on_append_node = new event(this),
-    this.on_update_node = new event(this),
-    this.on_remove_node = new event(this),
-    this.on_fake_hover = new event(this),
-    this.on_select_node = new event(this),
-    this.on_load_data = new event(this),
-    this.on_show_history = new event(this),
-    this.on_open_node = new event(this),
-    this.remove_history_nodes = new event(this),
+    this.on_initialise_tree = new event(this);
+    this.on_load_by_user = new event(this);
+    this.on_open_and_select = new event(this);
+    this.on_load_children = new event(this);
+    this.on_add_node_before = new event(this);
+    this.on_append_node = new event(this);
+    this.on_update_node = new event(this);
+    this.on_remove_node = new event(this);
+    this.on_fake_hover = new event(this);
+    this.on_select_node = new event(this);
+    this.on_load_data = new event(this);
+    this.on_show_history = new event(this);
+    this.on_open_node = new event(this);
+    this.remove_history_nodes = new event(this);
 
     // major key is adsort_order and minor key is name (label)
     this.order = {
@@ -44,8 +44,8 @@ function notebook_tree_model(username, show_terse_dates, path_tips) {
         NOTEBOOK: 1,
         MYFOLDER: 2,
         SUBFOLDER: 4
-    }
-}
+    };
+};
 
 notebook_tree_model.prototype = {
         
@@ -529,8 +529,8 @@ notebook_tree_model.prototype = {
     },
 
     set_node_open_status: function(node, is_open) {
-        var node = this.get_node_by_id(node.id);
-        node.is_open = is_open;
+        var tree_node = this.get_node_by_id(node.id);
+        tree_node.is_open = is_open;
     },
 
     remove_node: function(node) {
@@ -708,7 +708,7 @@ notebook_tree_model.prototype = {
         var found;
 
         function traverse(o) {
-            for (i in o) {
+            for (var i in o) {
                 if (!!o[i] && typeof(o[i])=="object") {
                     if(o[i].id === id) {
                         found = o[i];
@@ -724,6 +724,13 @@ notebook_tree_model.prototype = {
     },
 
     get_parent: function(id) {
+
+        function find_child_by_id(node) {
+            return _.find(node.children, function(c) {
+                return c.id === id;
+            });
+        }
+
         function getObject(theObject, id) {
             var found_parent = null;
             if(theObject instanceof Array) {
@@ -736,9 +743,7 @@ notebook_tree_model.prototype = {
             } else {
                 for(var prop in theObject) {
                     if(prop === 'id' && theObject.hasOwnProperty('children')) {
-                        var child = _.find(theObject.children, function(c) {
-                            return c.id === id;
-                        });
+                        var child = find_child_by_id(theObject);
 
                         if(child) 
                             return theObject;
@@ -805,7 +810,7 @@ notebook_tree_model.prototype = {
 
         // make sure parents exist
         var parid = skip_user ? this.node_id(root) : this.node_id(root, user),
-            parent = this.get_node_by_id(parid); //that.$tree_.tree('getNodeById', parid),
+            parent = this.get_node_by_id(parid), //that.$tree_.tree('getNodeById', parid),
             pdat = null,
             node = null;
 
@@ -953,6 +958,7 @@ notebook_tree_model.prototype = {
     },
 
      toggle_folder_friendness: function(user) {
+         var parent;
         if(this.my_friends_[user]) {
             var anode = this.get_node_by_id(this.node_id('alls', user));
             var ftree;
@@ -966,7 +972,7 @@ notebook_tree_model.prototype = {
                     sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
                 };
             }
-            var parent = this.get_node_by_id(this.node_id('friends'));
+            parent = this.get_node_by_id(this.node_id('friends'));
             var node = this.insert_alpha(ftree, parent);
 
             this.on_load_data.notify({
@@ -978,7 +984,7 @@ notebook_tree_model.prototype = {
             var n2 = this.get_node_by_id(this.node_id('friends', user));
 
             // remove this node from the model:
-            var parent = this.get_parent(n2.id);
+            parent = this.get_parent(n2.id);
             parent.children = _.without(parent.children, _.findWhere(parent.children, {
                 id: n2.id
             }));
@@ -1066,7 +1072,7 @@ notebook_tree_model.prototype = {
             }
 
             return sha_ind + INCR - 1; // show this many including curr (?)
-        }
+        };
 
         if(!node.children) {
             node.children = [];
@@ -1110,7 +1116,6 @@ notebook_tree_model.prototype = {
 
             function make_hist_node(color, i, force_date) {
                 var hist = history[i];
-                //var hdat = _.clone(node);
                 var hdat = {};
                 _.extend(hdat, node);
                 delete hdat.children;
@@ -1132,8 +1137,6 @@ notebook_tree_model.prototype = {
                     label: hist.tag ? hist.tag : sha
                 };
 
-                //that.$tree_.tree('updateNode', node, attrs);
-
                 this.on_update_node.notify({
                     node: node,
                     data: attrs
@@ -1151,7 +1154,6 @@ notebook_tree_model.prototype = {
 
             if(debug_colors) {
                 for(var ii = 0, ee = curr_count(); ii<ee; ++ii) {
-                    //$tree_.tree('updateNode', node.children[ii], {color: ''});
                     this.on_update_node.notify({
                         node: node.children[i],
                         data: {
@@ -1163,10 +1165,6 @@ notebook_tree_model.prototype = {
 
             // remove forced date on version above ellipsis, if any
             if(ellipsis) {
-                //that.$tree_.tree('updateNode', node.children[node.children.length-2], {
-                 //   last_commit: display_date_for_entry(node.children.length-2)
-                //});
-
                 this.on_update_node.notify({
                     node: node.children[node.children.length - 2],
                     data: {
@@ -1178,12 +1176,12 @@ notebook_tree_model.prototype = {
             // insert at top
             var nins, 
                 insf = null, 
+                history_node,
                 starting = node.children.length === 0;
 
             if(!starting) {
                 var first = node.children[0];
                 nins = that.find_index(history, function(h) { return h.version==first.version; });
-                //insf = function(dat) { return that.$tree_.tree('addNodeBefore', dat, first); };
                 insf = function(dat) {
 
                     parent.children.splice(nins, 0, node_to_insert);
@@ -1192,12 +1190,9 @@ notebook_tree_model.prototype = {
                         node_to_insert: dat,
                         existing_node: first
                     });
-                    // TODO: return the model node?
                 };
             } else {
                 nins = nshow;
-                //insf = function(dat) { return that.$tree_.tree('appendNode', dat, node); };
-
                 insf = function(dat) {
 
                     if(!node.children) {
@@ -1211,20 +1206,17 @@ notebook_tree_model.prototype = {
                         parent_id: node.id
                     });
                 };
-
-                // TODO: return the node?
-                
             }
 
             for(var i=0; i<nins; ++i){
-                var history_node = make_hist_node('green', i, starting && i==nins-1);
+                history_node = make_hist_node('green', i, starting && i==nins-1);
                 insf.call(that, history_node);
             }
 
             var count = curr_count();
 
             // updates
-            for(var i = nins; i<count; ++i){
+            for(i = nins; i<count; ++i){
                 update_hist_node.call(that, node.children[i], i);
             }
 
@@ -1239,9 +1231,6 @@ notebook_tree_model.prototype = {
                             existing_node: ellipsis
                         });
                     };
-
-                    // TODO: return node?
-
                 } else {
                     insf = function(dat) {
 
@@ -1258,8 +1247,8 @@ notebook_tree_model.prototype = {
                     };
                 }
 
-                for(var i=count; i<nshow; ++i) {
-                    var history_node = make_hist_node('mediumpurple', i, i==nshow-1);
+                for(i=count; i<nshow; ++i) {
+                    history_node = make_hist_node('mediumpurple', i, i==nshow-1);
                     insf.call(that, history_node);
                 }
             } else if(count > nshow) { // trim any excess
@@ -1398,7 +1387,7 @@ notebook_tree_model.prototype = {
         });
     },
 
-    update_history: function(node, opts) {
+    update_history: function(tree_node, opts) {
 
         var that = this;
 
@@ -1409,12 +1398,10 @@ notebook_tree_model.prototype = {
         }
 
         var whither = opts.update ? 'same' : 'more',
-            node = that.get_node_by_id(node.id);
+            node = that.get_node_by_id(tree_node.id);
 
         if(node.children && node.children.length) {
             if(!node.is_open) {
-                //this.open
-                //$tree_.tree('openNode', node);
                 that.on_open_node.notify({
                     node: node
                 });

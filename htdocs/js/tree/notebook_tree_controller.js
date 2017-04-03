@@ -1,4 +1,4 @@
-function notebook_tree_controller(model, view) {
+var notebook_tree_controller = function(model, view) {
 
     "use strict";
 
@@ -12,7 +12,7 @@ function notebook_tree_controller(model, view) {
     this.view_.notebook_open.attach(function(sender, args) {
         controller_obj.notebook_open.notify(args);
     });
-}
+};
 
 notebook_tree_controller.prototype = {
     

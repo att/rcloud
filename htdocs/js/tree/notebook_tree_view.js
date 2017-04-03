@@ -1,4 +1,4 @@
-function notebook_tree_view(model) {
+var notebook_tree_view = function(model) {
 
     "use strict";
 
@@ -127,7 +127,7 @@ function notebook_tree_view(model) {
     });
 
     this.model_.remove_history_nodes.attach(function(sender, args) {
-        var node = view_obj.$tree_.tree('getNodeById', args.node.id);
+        var i, node = view_obj.$tree_.tree('getNodeById', args.node.id);
 
         if (node.children) {
             if(args.from_index) {
@@ -137,13 +137,13 @@ function notebook_tree_view(model) {
                 }
             } else {
                 // get rid of everything:
-                for (var i = node.children.length-1; i >= 0; i--) {
+                for (i = node.children.length-1; i >= 0; i--) {
                     view_obj.$tree_.tree('removeNode', node.children[i]);
                 }
             }
         }
     });
-}
+};
 
 notebook_tree_view.prototype = {
 
@@ -274,7 +274,7 @@ notebook_tree_view.prototype = {
         var date = new Date(ds);
         var now = new Date();
         var diff = now - date;
-        return RCloud.utils.format_date_time_stamp(date, diff, true, false, this.model_.show_terse_dates())
+        return RCloud.utils.format_date_time_stamp(date, diff, true, false, this.model_.show_terse_dates());
     }, 
 
     highlight_node: function(node) {
@@ -352,4 +352,4 @@ notebook_tree_view.prototype = {
         RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
     }
-}
+};
