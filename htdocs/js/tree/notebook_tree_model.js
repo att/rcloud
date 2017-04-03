@@ -55,7 +55,7 @@ notebook_tree_model.prototype = {
 
     show_terse_dates: function(show_terse_dates) {
         if(arguments.length) {
-            this.show_terse_dates_
+            this.show_terse_dates_ = show_terse_dates;
         } else { 
             return this.show_terse_dates_;
         }
