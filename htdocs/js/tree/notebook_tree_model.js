@@ -2,8 +2,6 @@ var notebook_tree_model = function(username, show_terse_dates, path_tips) {
     
     "use strict";
 
-    var model_obj = this;
-
     this.username_ = username;
     this.show_terse_dates_ = show_terse_dates;
     this.path_tips_ = false; // debugging tool: show path tips on tree
@@ -78,7 +76,7 @@ notebook_tree_model.prototype = {
     },
 
     get_current_notebook_history_index: function() {
-        return current_.version === null ?
+        return this.current_.version === null ?
             0 :
             this.find_index(this.get_current_notebook_histories(), function(h) {
                 return h.version === this.current_.version;
@@ -91,7 +89,7 @@ notebook_tree_model.prototype = {
 
     get_previous: function() {
         // no version at latest:
-        var current_index = current_.version === null ? 0 : this.get_current_notebook_history_index.call(this);
+        var current_index = this.current_.version === null ? 0 : this.get_current_notebook_history_index.call(this);
 
         if(current_index === this.get_current_notebook_histories(length - 1)) {
             return undefined;   // already at first
@@ -281,7 +279,7 @@ notebook_tree_model.prototype = {
     },
 
     lazy_node: function(root, user) {
-        var mine = user === username_;
+        var mine = user === this.username_;
         var id = this.node_id(root, user);
         return {
             label: mine ? "My Notebooks" : this.someone_elses(user),
@@ -331,7 +329,7 @@ notebook_tree_model.prototype = {
 
             var notebook_nodes = this.convert_notebook_set('interests', username, user_notebooks);
             var id = this.node_id('interests', username);
-            var mine = username === username_;
+            var mine = username === this.username_;
             var node = {
                 label: mine ? "My Notebooks" : this.someone_elses(username),
                 id: id,
@@ -552,7 +550,7 @@ notebook_tree_model.prototype = {
 
         this.remove_empty_parents(parent);
 
-        if(node.root === 'interests' && node.user !== username_ && parent.children.length === 0){
+        if(node.root === 'interests' && node.user !== this.username_ && parent.children.length === 0){
             // remove node from model:
             var interests_node = this.get_node_by_id('/interests');
             interests_node.children = _.without(interests_node.children, _.findWhere(interests_node.children, {
@@ -787,8 +785,8 @@ notebook_tree_model.prototype = {
         if(splice_user)
             srcroot += splice_user + '/';
         return function(datum) {
-            if(datum.delay_children)
-                load_children(datum);
+            //if(datum.delay_children)
+            //   load_children(datum);
             var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order", "version");
             d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
             d2.root = destroot;
@@ -816,7 +814,7 @@ notebook_tree_model.prototype = {
 
         if(!parent) {
 
-            var mine = user === username_; // yes it is possible I'm not my own friend
+            var mine = user === this.username_; // yes it is possible I'm not my own friend
             parent = this.get_node_by_id(this.node_id(root)); // that.$tree_.tree('getNodeById', node_id(root));
 
             if(!parent) {
@@ -949,9 +947,9 @@ notebook_tree_model.prototype = {
         }
 
         // if we're looking at an old version, make sure it's shown
-        if(gistname === current_.notebook && current_.version) {
+        if(gistname === this.current_.notebook && this.current_.version) {
             whither = 'sha';
-            where = current_.version;
+            where = this.current_.version;
         }
 
         return this.update_history_nodes(node, whither, where);
@@ -1090,7 +1088,6 @@ notebook_tree_model.prototype = {
             }
 
             function get_date_diff(d1,d2) {
-                var now = new Date();
                 d1 = new Date(d1);
                 d2 = new Date(d2);
                 var diff = d1 - d2;
@@ -1120,7 +1117,6 @@ notebook_tree_model.prototype = {
                 _.extend(hdat, node);
                 delete hdat.children;
                 var sha = hist.version.substring(0, 10);
-                var d;
                 hdat.committed_at = new Date(hist.committed_at);
                 hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
                 hdat.label = hist.tag ? hist.tag : sha;
@@ -1149,7 +1145,6 @@ notebook_tree_model.prototype = {
                 return;
             }
 
-            var children = [];
             nshow = Math.min(nshow, history.length);
 
             if(debug_colors) {
@@ -1184,7 +1179,7 @@ notebook_tree_model.prototype = {
                 nins = that.find_index(history, function(h) { return h.version==first.version; });
                 insf = function(dat) {
 
-                    parent.children.splice(nins, 0, node_to_insert);
+                    parent.children.splice(nins, 0, dat);
 
                     this.on_add_node_before.notify({
                         node_to_insert: dat,
@@ -1454,7 +1449,7 @@ notebook_tree_model.prototype = {
             }
             _.extend(that.num_stars_, recent_info.num_stars); // (not currently needed)
             all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
-            var root_data = [];
+
             var featured_tree;
 
             return Promise.all([rcloud.config.get_current_notebook(),

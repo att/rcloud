@@ -39,7 +39,7 @@ var editor = function () {
                 new notebook_tree_view(tree_model)
             );
 
-            tree_controller_.notebook_open.attach(function (sender, args) {
+            tree_controller_.on_notebook_open.attach(function (sender, args) {
                 result.open_notebook(
                     args.gistname,
                     args.version,

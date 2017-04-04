@@ -5,12 +5,12 @@ var notebook_tree_controller = function(model, view) {
     this.model_ = model;
     this.view_ = view;
     this.show_terse_dates_ = false;
-    this.notebook_open = new event(this);
+    this.on_notebook_open = new event(this);
 
     var controller_obj = this;
 
-    this.view_.notebook_open.attach(function(sender, args) {
-        controller_obj.notebook_open.notify(args);
+    this.view_.on_notebook_open.attach(function(sender, args) {
+        controller_obj.on_notebook_open.notify(args);
     });
 };
 

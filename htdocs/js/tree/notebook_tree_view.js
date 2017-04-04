@@ -5,7 +5,7 @@ var notebook_tree_view = function(model) {
     this.model_ = model;
     this.$tree_ = null;
     
-    this.notebook_open = new event(this);
+    this.on_notebook_open = new event(this);
 
     var view_obj = this;
 
@@ -75,7 +75,7 @@ var notebook_tree_view = function(model) {
 
     this.model_.on_load_children.attach(function(sender, args) {
         console.warn('redundant code?');
-        view_obj.$tree_.tree('loadData', n.delay_children, n);
+        view_obj.$tree_.tree('loadData', args.node.delay_children, args.node);
     });
 
     this.model_.on_add_node_before.attach(function(sender, args) {
@@ -154,7 +154,7 @@ notebook_tree_view.prototype = {
             this.model_.update_history(event.node.parent, false);
         } else if(event.node.gistname) {
             if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                notebook_open.notify({ 
+                this.on_notebook_open.notify({ 
                     gistname: event.node.gistname, 
                     version: event.node.version,
                     source: event.node.source, 
@@ -165,11 +165,11 @@ notebook_tree_view.prototype = {
                 // it's weird that a notebook exists in two trees but only one is selected (#220)
                 // just select - and this enables editability
                 /*jshint eqnull:true */
-                if(event.node.gistname === current_.notebook &&
-                    event.node.version == current_.version && event.node.version == null) { // deliberately null-vague here
+                if(event.node.gistname === this.model_.get_current().notebook &&
+                    event.node.version == this.model_.get_current().version && event.node.version == null) { // deliberately null-vague here
                     this.select_node(event.node);
                 } else {
-                    this.notebook_open.notify({ 
+                    this.on_notebook_open.notify({ 
                         // gistname, version, source, selroot, new_window
                         gistname: event.node.gistname, 
                         version: event.node.version || null,
@@ -234,7 +234,7 @@ notebook_tree_view.prototype = {
             var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
             if(node_to_select)
-                select_node(node_to_select);
+                this.select_node(node_to_select);
             else console.log('sorry, neglected to highlight ' + selected_node.id);
         });
     },
@@ -243,7 +243,7 @@ notebook_tree_view.prototype = {
         var n = event.node;
 
         // notebook folder name only editable when open
-        if(n.full_name && n.user === username_ && !n.gistname) {
+        if(n.full_name && n.user === this.model_.username() && !n.gistname) {
             RCloud.UI.notebook_title.make_editable(n, n.element, true);
         }
 
