@@ -1,4 +1,4 @@
-var notebook_tree_model = function(username, show_terse_dates, path_tips) {
+var notebook_tree_model = function(username, show_terse_dates) {
     
     "use strict";
 
