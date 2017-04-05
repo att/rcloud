@@ -1104,7 +1104,7 @@ notebook_tree_model.prototype = {
                 var hist = history[i];
                 var d;
                 if(i+1 < history.length) {
-                    d = get_date_diff(hist.committed_at, history[i + 1].committed_at);
+                    d = get_date_diff.call(this, hist.committed_at, history[i + 1].committed_at);
                 }
                 else
                     d = new Date(hist.committed_at);
@@ -1118,7 +1118,7 @@ notebook_tree_model.prototype = {
                 delete hdat.children;
                 var sha = hist.version.substring(0, 10);
                 hdat.committed_at = new Date(hist.committed_at);
-                hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry(i);
+                hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry.call(this, i);
                 hdat.label = hist.tag ? hist.tag : sha;
                 hdat.version = hist.version;
                 hdat.id = node.id + '/' + hdat.version;
@@ -1204,7 +1204,7 @@ notebook_tree_model.prototype = {
             }
 
             for(var i=0; i<nins; ++i){
-                history_node = make_hist_node('green', i, starting && i==nins-1);
+                history_node = make_hist_node.call(this, 'green', i, starting && i==nins-1);
                 insf.call(that, history_node);
             }
 
