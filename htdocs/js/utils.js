@@ -21,18 +21,18 @@ RCloud.utils.promise_sequence = function(collection, operator) {
 
 RCloud.utils.get_url_parameter = function(name) {
     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
-}
+};
 
 RCloud.utils.get_notebook_from_url = function(url) {
     var id = url.match(new RegExp('[?&]notebook=([^&#]*)'));
     return id && id[1];
-}
+};
 
 RCloud.utils.clean_r = function(obj) {
     delete obj.r_attributes;
     delete obj.r_type;
     return obj;
-}
+};
 
 RCloud.utils.split_number = function(name) {
     var trnexp = /(\d+)$/;
@@ -43,7 +43,7 @@ RCloud.utils.split_number = function(name) {
     }
     
     return [name.slice(0, res.index), res[1]];
-}
+};
 
 RCloud.utils.format_date_time_stamp = function(date, diff, is_date_same, for_version, show_terse_dates) {
     function pad(n) { return n<10 ? '0'+n : n; }
@@ -60,4 +60,4 @@ RCloud.utils.format_date_time_stamp = function(date, diff, is_date_same, for_ver
     } else {
         return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
     }
-}
+};
