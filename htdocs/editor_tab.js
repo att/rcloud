@@ -48,8 +48,8 @@ var editor = function () {
         show_terse_dates_ = false, // show terse date option for the user
         new_notebook_prefix_ = "Notebook ";
 
-    var github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so nothing happened.",
-                                  "If you want to fork the latest version, open your fork(s) in GitHub (through the Advanced menu) and delete them first."].join(' ');
+    var github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
+                                  "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' ');
 
     // work around oddities of rserve.js
     function each_r_list(list, f) {
@@ -75,7 +75,9 @@ var editor = function () {
         if(!my_stars_[gistname]) {
             my_stars_[gistname] = true;
             my_friends_[user] = (my_friends_[user] || 0) + 1;
+            return true;
         }
+        return false;
     }
 
     function remove_interest(user, gistname) {
@@ -83,7 +85,9 @@ var editor = function () {
             delete my_stars_[gistname];
             if(--my_friends_[user] === 0)
                 delete my_friends_[user];
+            return true;
         }
+        else return false;
     }
 
     function set_visibility(gistname, visible) {
@@ -226,13 +230,20 @@ var editor = function () {
 
 
     function as_folder_hierarchy(nodes, prefix, name_prefix) {
-        function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
-        var in_folders = nodes;
-        // tired of seeing the "method 'match' of undefined" error
-        if(_.some(in_folders, function(entry) {
+        function is_in_folder(v) {
+            return v.label.match(/([^/]+)\/(.+)/);
+        }
+        function is_bad_entry(entry) {
             return entry.label === undefined || entry.label === null;
-        }))
-           throw new Error("incomplete notebook entry (has it been shown yet?)");
+        }
+        var bad_entries = nodes.filter(is_bad_entry);
+        if(bad_entries.length) {
+            nodes = nodes.filter(function(entry) {
+                return !is_bad_entry(entry);
+            });
+            console.warn('bad entries:', bad_entries);
+        }
+        var in_folders = nodes;
         in_folders = _.filter(in_folders, is_in_folder);
         in_folders = _.map(in_folders, function(v) {
             var m = v.label.match(/([^/]+)\/(.+)/);
@@ -1471,8 +1482,7 @@ var editor = function () {
                         throw new Error("attempt to star notebook we have no record of",
                                         node_id('interests', user, gistname));
                     }
-                    add_interest(user, gistname);
-                    if(my_friends_[user] === 1)
+                    if(add_interest(user, gistname) && my_friends_[user] === 1)
                         change_folder_friendness(user);
                     var p;
                     if(opts.notebook) {
@@ -1492,8 +1502,7 @@ var editor = function () {
             } else {
                 return rcloud.stars.unstar_notebook(gistname).then(function(count) {
                     num_stars_[gistname] = count;
-                    remove_interest(user, gistname);
-                    if(!my_friends_[user])
+                    if(remove_interest(user, gistname) && !my_friends_[user])
                         change_folder_friendness(user);
                     unstar_notebook_view(user, gistname, opts.selroot);
                 });
@@ -1551,9 +1560,8 @@ var editor = function () {
                 .then(function(notebook) {
                     if(notebook_info_[notebook.id]) {
                         alert(github_nonfork_warning);
-                        return notebook;
                     }
-                    else return this.star_and_show(notebook, true, !!version);
+                    return this.star_and_show(notebook, true, !!version);
                 });
         },
         fork_folder: function(node, match, replace) {

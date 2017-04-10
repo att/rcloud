@@ -145,10 +145,10 @@ RCloud.UI.init = function() {
         description: 'Step back through the notebook\'s history',
         keys: {
             mac: [
-                ['command', 'z']
+                ['command', 'alt', 'z']
             ],
             win: [
-                ['ctrl', 'z']
+                ['ctrl', 'alt', 'z']
             ]
         },
         on_page: ['edit'],
@@ -206,13 +206,11 @@ RCloud.UI.init = function() {
         description: 'Remove selected cells',
         keys: {
             mac: [
-                ['del'],
-                ['backspace'],
                 ['command', 'backspace']
             ],
             win: [
-                ['del'],
-                ['backspace']
+                ['ctrl', 'del'],
+                ['ctrl', 'backspace']
             ]
         },
         modes: ['writeable'],
@@ -248,26 +246,6 @@ RCloud.UI.init = function() {
         },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
-    }, {
-        category: 'Cell Management',
-        id: 'arrow_next_cell',
-        description: 'Enter next cell (from end of current)',
-        keys: {
-            win_mac: [
-                ['right']
-            ]
-        },
-        modes: ['writeable']
-    }, {
-        category: 'Cell Management',
-        id: 'arrow_previous_cell',
-        description: 'Enter previous cell (from start of current)',
-        keys: {
-            win_mac: [
-                ['left']
-            ]
-        },
-        modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'arrow_next_cell_down',

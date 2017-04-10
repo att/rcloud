@@ -7,10 +7,11 @@ module.exports = function (grunt) {
 
     var config = {
         src: 'src',
+        version: grunt.file.read('VERSION').split('\n')[0],
         pkg: require('./package.json'),
         bundleFiles: [
-            "htdocs/js/rclient.js",
             "htdocs/js/rcloud.js",
+            "htdocs/js/rclient.js",
             "htdocs/js/ui_utils.js",
             "htdocs/js/utils.js",
             "htdocs/js/extension.js",

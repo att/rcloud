@@ -921,47 +921,21 @@ var RCodeModel = function(doc, tokenizer, statePattern, codeBeginPattern) {
       return true;
    };
 
-   this.$onDocChange = function(evt)
-   {
-      var delta = evt.data;
-
-      if (delta.action === "insertLines")
+   this.$onDocChange = function(delta)
+  {
+      if (delta.action === "insert")
       {
-         this.$insertNewRows(delta.range.start.row,
-                             delta.range.end.row - delta.range.start.row);
+         this.$insertNewRows(delta.start.row,
+                             delta.end.row - delta.start.row);
       }
-      else if (delta.action === "insertText")
+      else if (delta.action === "remove")
       {
-         if (this.$doc.isNewLine(delta.text))
-         {
-            this.$invalidateRow(delta.range.start.row);
-            this.$insertNewRows(delta.range.end.row, 1);
-         }
-         else
-         {
-            this.$invalidateRow(delta.range.start.row);
-         }
-      }
-      else if (delta.action === "removeLines")
-      {
-         this.$removeRows(delta.range.start.row,
-                          delta.range.end.row - delta.range.start.row);
-         this.$invalidateRow(delta.range.start.row);
-      }
-      else if (delta.action === "removeText")
-      {
-         if (this.$doc.isNewLine(delta.text))
-         {
-            this.$removeRows(delta.range.end.row, 1);
-            this.$invalidateRow(delta.range.start.row);
-         }
-         else
-         {
-            this.$invalidateRow(delta.range.start.row);
-         }
+         this.$removeRows(delta.start.row,
+                          delta.end.row - delta.start.row);
+         this.$invalidateRow(delta.start.row);
       }
 
-      this.$scopes.invalidateFrom(delta.range.start);
+      this.$scopes.invalidateFrom(delta.start);
    };
    
    this.$invalidateRow = function(row)

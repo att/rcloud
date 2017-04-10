@@ -84,7 +84,7 @@ rcloud.augment.notebook <- function(res) {
 rcloud.fail.if.unpublished <- function(f)
   function(id, ...)
     if (!rcloud.is.notebook.published(id)) {
-      stop("Notebook does not exist or has not been published")
+      stop("Notebook \"", URLencode(id, TRUE), "\" does not exist or has not been published")
     } else f(id, ...)
 
 rcloud.unauthenticated.load.notebook <-
@@ -204,7 +204,6 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
     if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
-    args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
     p <- res$content$files
@@ -214,12 +213,11 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
     ## extract the integer number
     i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
     result <- NULL
-    if (is.environment(args)) {
-      e <- args
-    } else {
-      e <- new.env(parent=.GlobalEnv)
-      if (is.list(args) && length(args)) for (arg in names(args)) if (nzchar(arg)) e[[arg]] <- args[[arg]]
-    }
+    e <- if (is.environment(args)) args else new.env(parent=.GlobalEnv)
+    if (is.list(args) && length(args))
+        for (arg in names(args))
+            if (nzchar(arg)) e[[arg]] <- args[[arg]]
+
     ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
@@ -353,9 +351,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
     if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
-        # Curl SSL Bug. Don't fork Curl. Refer http://stackoverflow.com/questions/15466809/libcurl-ssl-error-after-fork
-        #mcparallel(update.solr(res, star.count), detached=TRUE)
-        update.solr(res,star.count)
+        update.solr(res, star.count)
     }
     aug.res
 }
@@ -506,8 +502,15 @@ rcloud.set.notebook.visibility <- function(id, value){
   } else {response <- .solr.delete.doc(id)}
 }
 
+## "Import External Notebook" - a slight misnomer since this
+## is hard-coded to only support GitHub imports
 rcloud.port.notebooks <- function(url, books, prefix) {
-  foreign.ctx <- create.github.context(url)
+  ## FIXME: this bypasses the gist API and conencts to GitHub directly.
+  ## The fact that this works is purely incidental, because githubgist
+  ## happens to re-use the github object as a base for its own context.
+  ## That is never guaranteed to the the case, so this needs to be fixed
+  ## to use create.gist.context() properly.
+  foreign.ctx <- github::create.github.context(url)
 
   Map(function(notebook) {
     getg <- get.gist(notebook, ctx = foreign.ctx)

@@ -1,3 +1,43 @@
+## RCloud 1.7.1
+
+### Improvements
+* Solr index update calls are non blocking (Requires R 3.3.x)
+
+* Make keys for multiple cell deletion safer by changing the Windows shortcuts
+  to <kbd>ctrl del</kbd> / <kbd>ctrl backspace</kbd>, and MacOS shortcut to
+  <kbd>cmd backspace</kbd> shortcuts. Make it harder to accidentally hit the
+  Undo shortcut by adding the <kbd>alt</kbd> modifier (now <kbd>ctrl alt
+  z</kbd> on Windows/Linux and <kbd>cmd alt z</kbd> on MacOS, Redo is
+  unaffected). (#2383)
+
+* Arrow keys to move between cells are more conservative. Arrow left/right
+  never go to previous/next cell. Arrow up/down first go to beginning/end of
+  line before going to previous/next cell. (#2381)
+
+### Bugfixes
+* Fix scrolling issues on cell focus, by updating Ace to 1.2.6 (#2379, #2380)
+
+* Markdown cells would switch to GCC Machine Description if they contained
+  certain content, making notebook unusable (#2178)
+
+* The `args` argument in `rcloud.call.notebook` was always treated as
+  a list, making it impossible to use it as a target environment.
+
+* Help now works for packages in private libraries as well (#2394)
+
+### Features
+
+* `rcloud.web` has been significantly expanded to allow manipulation
+  of the elements, styles, CSS (`rcw.attr`, `rcw.style`, `rcw.css`) as
+  well as registration of event handlers (`rcw.on`, `rcw.off`) and
+  evaluation in the context of an element (`rcw.in`). In addition, it
+  provides functions related to the current document to retrieve URL,
+  cookies and facilitate re-direction: `rcw.url()`, `rcw.cookies()`
+  and `rcw.redirect()`.
+
+* `rcloud.execute.asset` has a parameter `env=` that can be used for R
+  assets to specify the environment in which to source the asset.
+
 ## RCloud 1.7
 
 In addition to the below changes to RCloud core, this release also supports
