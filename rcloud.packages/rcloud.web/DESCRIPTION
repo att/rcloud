@@ -1,6 +1,6 @@
 Package: rcloud.web
 Title: Support Package for the RCloud Web interface
-Version: 1.0-1
+Version: 1.0-2
 Author: Simon Urbanek <urbanek@research.att.com>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: RCloud Web interface 

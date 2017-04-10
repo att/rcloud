@@ -1,9 +1,9 @@
 Package: gitgist
 Title: GIT-based gist back-end
-Version: 1.0-0
+Version: 1.0-1
 Author: Simon Urbanek <urbanek@research.att.com>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: GIT-based gist back-end
 License: MIT
-Imports: guitar
+Imports: guitar,PKI
 Depends: Rcpp
