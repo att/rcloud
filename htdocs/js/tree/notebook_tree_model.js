@@ -1179,7 +1179,7 @@ notebook_tree_model.prototype = {
                 nins = that.find_index(history, function(h) { return h.version==first.version; });
                 insf = function(dat) {
 
-                    parent.children.splice(nins, 0, dat);
+                    node.children.splice(nins - 1 /* children */, 0, dat);
 
                     this.on_add_node_before.notify({
                         node_to_insert: dat,
