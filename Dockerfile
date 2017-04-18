@@ -68,7 +68,6 @@ ADD Gruntfile.js     /data/rcloud/Grunfile.js
 ADD docker           /data/rcloud/docker
 
 
-RUN cd /data/rcloud && git apply docker/domainCookie.patch
 RUN cd /data/rcloud \
       && scripts/bootstrapR.sh \
       && scripts/build.sh --all

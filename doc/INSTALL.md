@@ -154,14 +154,12 @@ SessionServer is not used), and start a new version of RCloud.
 
 If you have trouble with authentication, make sure your hostname is
 FQDN (fully qualified domain name) and it matches your external name.
-You can use `hostname -f` to check that. The reason is that the cookie
-domain defaults to the hostname if not otherwise specified. If either
-of the above is not true, then create `conf/rcloud.conf` file with
+You can use `hostname -f` to check that. Create `conf/rcloud.conf` file with
 
     Cookie.Domain: myserver.mydomain
 
 Alternatively, you can set `Host:` instead with the same effect
-(Host is used in other places not just the cookie domain).
+(Host is used in other places).
 
 Also if things are failing, make sure you have the latest R packages installed. You can use `update.packages` including both CRAN and `http://rforge.net` as the repository. Also you can run
 
