@@ -26,7 +26,8 @@ RCloud.UI.init = function() {
             helper: 'clone',
             scroll: true,
             scrollSensitivity: 40,
-            forcePlaceholderSize: true
+            forcePlaceholderSize: true,
+            helper: 'clone'
         });
     }
     make_cells_sortable();
