@@ -9,6 +9,22 @@ rcloud.support:::configure.rcloud("startup")
     Rserve:::ocap(call.script, "call.script")
 }
 
+auto.convert.ext <- c(js = "application/javascript", css ="text/css", html = "text/html",
+                      png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg",
+                      tiff = "image/tiff", tif = "image/tiff", svg = "image/svg+xml",
+                      pdf = "application/pdf"
+                      )
+
+ext2mime <- function(fn) {
+    fn <- basename(fn)
+    type <- "text/plain"
+    if (length(grep(".", fn, fixed=TRUE))) {
+        nt <- auto.convert.ext[tolower(gsub(".*\\.","",fn))]
+        if (!any(is.na(nt))) type <- as.vector(nt)
+    }
+    type
+}
+
 # R's URLdecode is broken - it's neither vectorized nor does it convert + so we have to work around that
 URIdecode <- function(o) sapply(o, function(o) URLdecode(gsub("+", " ", o, fixed=TRUE)))
 
@@ -42,6 +58,10 @@ call.script <- function(packed)
             query <- URIparse(query)
         res <- rcloud.support:::.http.request(url, query, body, headers)
         cat("--- result:\n");
+        if ("file" %in% names(res))
+            res <- tryCatch(list(rawToChar(readBin(res$file, raw(), file.info(res$file)$size)),
+                                 ext2mime(res$file)),
+                            error=function(e) paste("cannot open", res$file))
         str(res)
         res
     }, error=function(e) list(paste0("Evaluation error: ", e), "text/plain", character(), 500L))
