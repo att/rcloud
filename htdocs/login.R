@@ -60,7 +60,7 @@ run <- function(url, query, body, headers)
   if (is.null(url)) {
     ## module signals that it doesn't use authentication
     ## so let's check if we have execAuth to replace it
-    if (!is.null(getConf("exec.auth")) && !isTRUE(cookies$user == usr)) {
+    if (!is.null(getConf("exec.auth")) && !isTRUE(rcloud.support:::check.user.token.pair(user=cookies$user,token=cookies$token,realm="rcloud"))) {
       ## at this point it is guaranteed to be valid since it was checked above
       ## so we can generate a token
       token <- rcloud.support:::generate.token()
