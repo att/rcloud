@@ -458,7 +458,8 @@ start.rcloud.gist <- function(username="", token="", ...) {
 
 ## this is called by session.init() on per-connection basis
 start.rcloud <- function(username="", token="", ...) {
-  if (!check.user.token.pair(username, token))
+  valid.source <- if(isTRUE(getConf("github.auth") == "exec.token")) paste0("auth/",getConf("exec.auth")) else "stored"
+  if (!check.user.token.pair(username, token, valid.source))
     stop("bad username/token pair");
   start.rcloud.gist(username=username, token=token, ...)
 }

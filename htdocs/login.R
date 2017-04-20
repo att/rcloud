@@ -18,6 +18,9 @@ run <- function(url, query, body, headers)
   cookies <- cookies(headers)
   extra.headers <- character(0)
 
+  exec.only <- isTRUE(getConf("github.auth") == "exec.token")
+  exec.realm <- if(exec.only) "rcloud" else "rcloud.exec"
+
   ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
   if (! "redirect" %in% names(query)) redirect <- body["redirect"]
@@ -35,17 +38,25 @@ run <- function(url, query, body, headers)
     if (is.null(getConf("session.server")))
       return(list("<html><head></head><body>ERROR: This RCloud instance is not properly configured: Exec.auth is set, but session.server is not!", "text/html"))
     if (length(body) > 2 && "execLogin" %in% body['action']) {
-      res <- unlist(rcloud.support:::session.server.auth(realm="rcloud.exec",user=body['user'],pwd=body['pwd']))
+      res <- unlist(rcloud.support:::session.server.auth(realm=exec.realm,user=body['user'],pwd=body['pwd']))
       if (length(res) > 2) {
-        extra.headers <- paste0("Set-Cookie: execUser=", res[2], "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: execToken=", res[1], "; domain=", getConf("cookie.domain"), "; path=/;")
-        cookies$execToken <- res[1]
+          if (exec.only) {
+              extra.headers <- paste0("Set-Cookie: user=", res[2], "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: token=", res[1], "; domain=", getConf("cookie.domain"), "; path=/;")
+              cookies$token <- res[1]
+              cookies$execToken <- res[1]
+              cookies$user <- res[2]
+          } else {
+              extra.headers <- paste0("Set-Cookie: execUser=", res[2], "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: execToken=", res[1], "; domain=", getConf("cookie.domain"), "; path=/;")
+              cookies$execToken <- res[1]
+              cookies$execUser <- res[2]
+          }
       } else return(list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html"))
     }
 
     if (is.null(cookies$execToken))
       return(list("<html><head></head><body>Missing execution token, requesting authentication...",
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
-    usr <- rcloud.support:::check.token(cookies$execToken, paste0("auth/",getConf("exec.auth")), "rcloud.exec")
+    usr <- rcloud.support:::check.token(cookies$execToken, paste0("auth/",getConf("exec.auth")), exec.realm)
     if (usr == FALSE)
       return(list("<html><head></head><body>Invalid or expired execution token, requesting authentication...",
                   "text/html", paste0("Refresh: 0.1; url=", ret)))
@@ -60,7 +71,7 @@ run <- function(url, query, body, headers)
   if (is.null(url)) {
     ## module signals that it doesn't use authentication
     ## so let's check if we have execAuth to replace it
-    if (!is.null(getConf("exec.auth")) && !isTRUE(cookies$user == usr)) {
+    if (!exec.only && !is.null(getConf("exec.auth")) && !isTRUE(cookies$user == usr)) {
       ## at this point it is guaranteed to be valid since it was checked above
       ## so we can generate a token
       token <- rcloud.support:::generate.token()
