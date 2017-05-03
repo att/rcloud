@@ -3737,9 +3737,14 @@ Notebook.create_model = function()
                 cell_model.toggle_cell();
                 last_selected_ = this.cells.indexOf(cell_model);
             } else if(modifiers.is_exclusive) {
+                var the_only_selected = cell_model.is_selected() && this.get_selected_cells().length === 1;
                 clear_all();
-                cell_model.toggle_cell();
-                last_selected_ = this.cells.indexOf(cell_model);
+                if(!the_only_selected) {
+                  cell_model.toggle_cell();
+                  last_selected_ = this.cells.indexOf(cell_model);
+                } else {
+                  last_selected_ = undefined;
+                }
             } else /* is_range */ {
 
                 var start = this.cells.indexOf(cell_model),
