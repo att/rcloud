@@ -337,6 +337,12 @@ var shell = (function() {
             }).then(function() {
                 RCloud.UI.command_prompt.focus();
             });
+        }, run_notebook_cells: function(cell_ids) {
+            RCloud.UI.with_progress(function() {
+                return result.notebook.controller.run_cells(cell_ids);
+            }).then(function() {
+                RCloud.UI.command_prompt.focus();
+            });
         }
     };
 
