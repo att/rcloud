@@ -221,8 +221,15 @@ RCloud.UI.navbar = (function() {
                     modes: ['edit', 'view'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
-                        $(control.control).click(function() {
+                        $(control.control).click(function(e) {
+                          if(e.metaKey || e.ctrlKey) {
+                            var selected = shell.get_selected_cells().map (function(x) { return x.id(); });
+                            if(selected.length) {
+                              shell.run_notebook_cells(selected);
+                            }
+                          } else {
                             RCloud.UI.run_button.run();
+                          }
                         });
                         return control;
                     }

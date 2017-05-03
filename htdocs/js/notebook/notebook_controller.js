@@ -542,6 +542,16 @@ Notebook.create_controller = function(model)
                 });
             });
         },
+        run_cells: function(cell_ids) {
+            var that = this;
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    if(cell_ids.indexOf(cell_model.id()) > -1) {
+                        cell_model.controller.enqueue_execution_snapshot();
+                    }
+                });
+            });
+        },
         show_cell_numbers: function(whether) {
             _.each(model.views, function(view) {
                 view.set_show_cell_numbers(whether);
