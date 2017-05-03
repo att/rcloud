@@ -9693,16 +9693,18 @@ RCloud.UI.navbar = (function() {
                     sort: 1000,
                     modes: ['edit'],
                     create: function() {
-                        var share_link_, view_types_;
-                        return {
-                            control: $.el.span(share_link_ = $.el.a({
+                        var view_types_;
+                        var share_link_ = $.el.a({
                                 href: '#',
                                 id: 'share-link',
                                 title: 'Shareable Link',
                                 class: 'btn btn-link navbar-btn',
                                 style: 'text-decoration:none; padding-right: 0px',
                                 target: '_blank'
-                            }, $.el.i({class: 'icon-share'})), $.el.span({
+                            }, $.el.i({class: 'icon-share'}));
+                        $(share_link_).on('click', function(x) { shell.save_notebook();})
+                        return {
+                            control: $.el.span(share_link_, $.el.span({
                                 class: 'dropdown',
                                 style: 'position: relative; margin-left: -2px; padding-right: 12px'
                             }, $.el.a({
