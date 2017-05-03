@@ -31,7 +31,6 @@ RC.authenticate <- function(v, check.only=FALSE)
     exec.realm <- if(exec.only) "rcloud" else "rcloud.exec"
 
     v <- as.list(v)
-    ulog("INFO: RC.authenticate", paste(capture.output(print(v)),collapse="\n"))
     if (length(v) < 1 || is.null(v[[1]])) return(FALSE)
     if (exec.only) v[[2]] <- v[[1]]
     ## is execution authentication enabled?
