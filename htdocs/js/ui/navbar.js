@@ -112,6 +112,12 @@ RCloud.UI.navbar = (function() {
                                     $(share_link_).attr('href', url);
                                 return this;
                             },
+                            open: function() {
+                                if(share_link_) {
+                                    $(share_link_)[0].click();
+                                }
+                                return this;
+                            },
                             set_view_types: function(items) {
                                 $(view_types_).append($(items.map(function(item) {
                                     var a = $.el.a({href: '#'}, item.title);
