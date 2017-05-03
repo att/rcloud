@@ -9721,6 +9721,12 @@ RCloud.UI.navbar = (function() {
                                     $(share_link_).attr('href', url);
                                 return this;
                             },
+                            open: function() {
+                                if(share_link_) {
+                                    $(share_link_)[0].click();
+                                }
+                                return this;
+                            },
                             set_view_types: function(items) {
                                 $(view_types_).append($(items.map(function(item) {
                                     var a = $.el.a({href: '#'}, item.title);
@@ -11956,15 +11962,16 @@ RCloud.UI.share_button = (function() {
         var opts = {notebook: shell.gistname(),
                     do_path: view_type.do_path,
                     version: shell.version()};
+        var shareable_link = RCloud.UI.navbar.control('shareable_link');
         if(!opts.version) {
-            RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
+            shareable_link.set_url(ui_utils.make_url(page, opts));
             return Promise.resolve(undefined);
         }
         else return rcloud.get_tag_by_version(shell.gistname(), opts.version)
             .then(function(t) {
                 if(t)
                     opts.tag = t;
-                RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
+                shareable_link.set_url(ui_utils.make_url(page, opts));
             });
     }
 
@@ -11979,6 +11986,8 @@ RCloud.UI.share_button = (function() {
                             handler: function() {
                                 rcloud.set_notebook_property(shell.gistname(), "view-type", that.key);
                                 set_page(that.key);
+                                var shareable_link = RCloud.UI.navbar.control('shareable_link');
+                                shareable_link.open();
                             }
                         };
                     }
