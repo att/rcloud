@@ -401,9 +401,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         if (!isTRUE(new.nb$ok)) stop("failed to create new notebook")
         rcloud.set.notebook.property(new.nb$content$id, "fork_of",
                                      new.nb$fork_of <-
-                                     list(owner=owner,
-                                          description=src.nb$content$description,
-                                          id=src.nb$content$id))
+                                     list(id=src.nb$content$id))
     } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
     }

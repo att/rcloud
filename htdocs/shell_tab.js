@@ -19,7 +19,7 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
-        RCloud.UI.notebook_title.update_fork_info(notebook.fork_of);
+        RCloud.UI.notebook_title.update_fork_info(notebook.fork_of && notebook.fork_of.id);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         RCloud.UI.command_prompt.focus();
@@ -155,11 +155,10 @@ var shell = (function() {
             // hack: copy without history as a first pass, because github forbids forking oneself
             return Promise.all([rcloud.get_notebook(gistname, version, null, true), rcloud.protection.get_notebook_cryptgroup(gistname)])
                 .spread(function(notebook, cryptgroup) {
-                    // this smells
-                    var fork_of = {owner: {login: notebook.user.login},
-                                   description: notebook.description,
-                                   id: notebook.id
-                                  };
+                    // this smells less
+                    var fork_of = {
+                        id: notebook.id
+                    };
                     notebook = Notebook.sanitize(notebook);
                     return transform_description(notebook.description).then(function(desc) {
                         notebook.description = desc;
