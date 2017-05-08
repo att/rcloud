@@ -179,35 +179,35 @@ var shell = (function() {
                 });
         }, fork_notebook: function(is_mine, gistname, version) {
             var that = this;
-            // Forcefully saving whole notebook before fork
-            shell.save_notebook();
-            return do_load(function() {
-                var promise_fork;
-                if(is_mine) {
-                    promise_fork = that.fork_my_notebook(gistname, version, true, editor.find_next_copy_name);
-                }
-                else promise_fork = notebook_controller_
-                    .fork_notebook(gistname, version)
-                    .then(function(notebook) {
-                        /*
-                         // it would be nice to choose a new name if we've forked someone
-                         // else's notebook and we already have a notebook of that name
-                         // but this slams into the github concurrency problem
-                        editor.find_next_copy_name(notebook.description).then(function(new_desc) {
-                            if(new_desc != notebook.description)
-                                return notebook_controller_.rename_notebook(new_desc);
-                            else ...
-                         */
-                        return notebook;
-                    });
-                return promise_fork
-                    .then(function(notebook) {
-                        return shell.duplicate_notebook_attributes(gistname, notebook.id)
-                            .return(notebook);
-                    })
-                    .then(function(notebook) {
-                        return [notebook, notebook.id, null];
-                    });
+            return shell.save_notebook().then(function() {
+                return do_load(function() {
+                    var promise_fork;
+                    if(is_mine) {
+                        promise_fork = that.fork_my_notebook(gistname, version, true, editor.find_next_copy_name);
+                    }
+                    else promise_fork = notebook_controller_
+                        .fork_notebook(gistname, version)
+                        .then(function(notebook) {
+                            /*
+                             // it would be nice to choose a new name if we've forked someone
+                             // else's notebook and we already have a notebook of that name
+                             // but this slams into the github concurrency problem
+                             editor.find_next_copy_name(notebook.description).then(function(new_desc) {
+                             if(new_desc != notebook.description)
+                             return notebook_controller_.rename_notebook(new_desc);
+                             else ...
+                             */
+                            return notebook;
+                        });
+                    return promise_fork
+                        .then(function(notebook) {
+                            return shell.duplicate_notebook_attributes(gistname, notebook.id)
+                                .return(notebook);
+                        })
+                        .then(function(notebook) {
+                            return [notebook, notebook.id, null];
+                        });
+                });
             });
         }, revert_notebook: function(gistname, version) {
             return do_load(function() {
