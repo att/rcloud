@@ -139,7 +139,7 @@ var shell = (function() {
                         gistname, version];
             }, gistname, version);
         }, save_notebook: function() {
-            notebook_controller_.save();
+            return notebook_controller_.save();
         }, new_notebook: function(desc) {
             notebook_controller_.save();
             return RCloud.UI.with_progress(function() {
