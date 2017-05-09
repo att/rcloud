@@ -27,11 +27,12 @@ ui_utils.make_url = function(page, opts) {
     return url;
 };
 
-ui_utils.relogin_uri = function() {
+ui_utils.relogin_uri = function(redirect_url) {
+  redirect_url = redirect_url || window.location.pathname + window.location.search;
     return window.location.protocol +
         '//' + window.location.host +
         '/login.R?redirect=' +
-        encodeURIComponent(window.location.pathname + window.location.search);
+        encodeURIComponent(redirect_url);
 };
 
 ui_utils.disconnection_error = function(msg, label) {
