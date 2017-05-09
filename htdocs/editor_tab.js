@@ -1385,7 +1385,7 @@ var editor = function () {
                         RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         throw xep;
                     });
-                });
+                }).finally(that.update_recent_notebooks());
         },
         open_notebook: function(gistname, version, source, selroot, new_window) {
             // really just load_notebook except possibly in a new window
@@ -1651,7 +1651,13 @@ var editor = function () {
                 });
             }
         },
-        update_recent_notebooks: function(data) {
+        update_recent_notebooks: function() {
+            var that = this;
+            return function() { rcloud.config.get_recent_notebooks().then(function(data) {
+                    that.populate_recent_notebooks_list(data);
+                }); };
+        },
+        populate_recent_notebooks_list: function(data) {
             var sorted = _.chain(data)
                 .pairs()
                 .filter(function(kv) {
@@ -1768,13 +1774,7 @@ var editor = function () {
                 if(find_version)
                     tag = find_version.tag;
                 rcloud.config.set_current_notebook(current_);
-                rcloud.config.set_recent_notebook(result.id, (new Date()).toString())
-                .then(function(){
-                    return rcloud.config.get_recent_notebooks();
-                })
-                .then(function(data){
-                    that.update_recent_notebooks(data);
-                });
+                rcloud.config.set_recent_notebook(result.id, (new Date()).toString());
 
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)
