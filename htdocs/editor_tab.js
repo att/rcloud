@@ -1385,7 +1385,7 @@ var editor = function () {
                         RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         throw xep;
                     });
-                }).finally(that.update_recent_notebooks());
+                }).finally(that.update_recent_notebooks.bind(this));
         },
         open_notebook: function(gistname, version, source, selroot, new_window) {
             // really just load_notebook except possibly in a new window
@@ -1653,9 +1653,9 @@ var editor = function () {
         },
         update_recent_notebooks: function() {
             var that = this;
-            return function() { rcloud.config.get_recent_notebooks().then(function(data) {
-                    that.populate_recent_notebooks_list(data);
-                }); };
+            return rcloud.config.get_recent_notebooks().then(function(data) {
+                that.populate_recent_notebooks_list(data);
+            });
         },
         populate_recent_notebooks_list: function(data) {
             var sorted = _.chain(data)
