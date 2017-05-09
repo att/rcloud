@@ -9,7 +9,8 @@ var shell = (function() {
         notebook_view_ = Notebook.create_html_view(notebook_model_, $("#output")),
         notebook_controller_ = Notebook.create_controller(notebook_model_),
         view_mode_ = false,
-        autosave_timeout_ = 30000;
+        autosave_timeout_ = 30000,
+        need_self_fork_workaround_and_must_avoid_race_condition_ = null;
 
     function on_new(notebook) {
         gistname_ = notebook.id;
@@ -178,21 +179,27 @@ var shell = (function() {
                     });
                 });
         }, fork_and_name_notebook: function(is_mine, gistname, version, open_it, transform_description) {
-            if(is_mine)
-                return this.self_fork_workaround(gistname, version, open_it, transform_description);
-            else return notebook_controller_
-                .fork_notebook(gistname, version)
-                .then(function(notebook) {
-                    /*
-                     // it would be nice to choose a new name if we've forked someone
-                     // else's notebook and we already have a notebook of that name
-                     // but this slams into the github concurrency problem
-                     editor.find_next_copy_name(notebook.description).then(function(new_desc) {
-                     if(new_desc != notebook.description)
-                     return notebook_controller_.rename_notebook(new_desc);
-                     else ...
-                     */
-                    return notebook;
+            var that = this;
+            if(!need_self_fork_workaround_and_must_avoid_race_condition_)
+                need_self_fork_workaround_and_must_avoid_race_condition_
+                = rcloud.get_conf_values('need.self.fork.workaround.and.must.avoid.race.condition');
+            return need_self_fork_workaround_and_must_avoid_race_condition_.then(function(need_github_hacks) {
+                if(is_mine && need_github_hacks['need.self.fork.workaround.and.must.avoid.race.condition'])
+                    return that.self_fork_workaround(gistname, version, open_it, transform_description);
+                else return notebook_controller_
+                    .fork_notebook(gistname, version)
+                    .then(function(notebook) {
+                        if(need_github_hacks) {
+                            /*
+                             // it would be nice to choose a new name if we've forked someone
+                             // else's notebook and we already have a notebook of that name
+                             // but this slams into the github concurrency problem
+                             */
+                            return notebook;
+                        } else return transform_description(notebook.description).then(function(desc) {
+                            return notebook_controller_.rename_notebook(desc);
+                        });
+                    });
                 });
         },
         fork_notebook: function(is_mine, gistname, version) {
