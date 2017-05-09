@@ -1569,14 +1569,9 @@ var editor = function () {
             var is_mine = node.user === that.username();
             var promises = [];
             editor.for_each_notebook(node, null, function(node) {
-                var promise_fork;
-                if(is_mine)
-                    promise_fork = shell.fork_my_notebook(node.gistname, null, false, function(desc) {
-                        return Promise.resolve(desc.replace(match, replace));
-                    });
-                else
-                    promise_fork = rcloud.fork_notebook(node.gistname);
-                promises.push(promise_fork.then(function(notebook) {
+                promises.push(shell.fork_and_name_notebook(is_mine, node.gistname, null, false, function(desc) {
+                    return Promise.resolve(desc.replace(match, replace));
+                }).then(function(notebook) {
                     if(notebook_info_[notebook.id])
                         return notebook.description;
                     else
