@@ -39,10 +39,10 @@ var shell = (function() {
         }
     }
 
-    function do_load(f) {
+    function do_load(opts) {
         return RCloud.UI.with_progress(function() {
-            return RCloud.session.reset()
-                .then(f)
+            return RCloud.session.reset(opts.redirect_url)
+                .then(opts.load)
                 .spread(function(notebook, gistname, version) {
                     if (!_.isUndefined(notebook.error)) {
                         throw notebook.error;
@@ -62,6 +62,10 @@ var shell = (function() {
                 "Sorry, " + language + " notebook cells not supported in this deployment.");
             return;
         }
+    }
+    
+    function notebook_edit_url(notebook_id, version) {
+       return ui_utils.make_url('edit.html', { notebook : notebook_id, version: version } );
     }
 
     var result = {
@@ -135,10 +139,10 @@ var shell = (function() {
         },
         load_notebook: function(gistname, version) {
             notebook_controller_.save();
-            return do_load(function() {
+            return do_load({ load : function() {
                 return [notebook_controller_.load_notebook(gistname, version),
                         gistname, version];
-            }, gistname, version);
+            }, redirect_url : notebook_edit_url( gistname, version) });
         }, save_notebook: function() {
             return notebook_controller_.save();
         }, new_notebook: function(desc) {
@@ -206,7 +210,7 @@ var shell = (function() {
         fork_notebook: function(is_mine, gistname, version) {
             var that = this;
             return shell.save_notebook().then(function() {
-                return do_load(function() {
+                return do_load({ load : function() {
                     return that.fork_and_name_notebook(is_mine, gistname, version, true, editor.find_next_copy_name)
                         .then(function(notebook) {
                             return shell.duplicate_notebook_attributes(gistname, notebook.id)
@@ -215,15 +219,14 @@ var shell = (function() {
                         .then(function(notebook) {
                             return [notebook, notebook.id, null];
                         });
-                });
+                }} );
             });
         }, revert_notebook: function(gistname, version) {
-            return do_load(function() {
+            return do_load({ load : function() {
                 return notebook_controller_.revert_notebook(gistname, version)
                     .then(function(notebook) {
                         return [notebook, notebook.id, null];
-                    });
-            });
+                    })}});
         }, duplicate_notebook_attributes(srcid, destid) {
             var dupe_attrs = ['view-type'];
             return Promise.all(dupe_attrs.map(function(attr) {
