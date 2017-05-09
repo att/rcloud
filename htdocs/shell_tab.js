@@ -184,7 +184,8 @@ var shell = (function() {
                 need_self_fork_workaround_and_must_avoid_race_condition_
                 = rcloud.get_conf_values('need.self.fork.workaround.and.must.avoid.race.condition');
             return need_self_fork_workaround_and_must_avoid_race_condition_.then(function(need_github_hacks) {
-                if(is_mine && need_github_hacks['need.self.fork.workaround.and.must.avoid.race.condition'])
+                need_github_hacks = need_github_hacks['need.self.fork.workaround.and.must.avoid.race.condition'];
+                if(is_mine && need_github_hacks)
                     return that.self_fork_workaround(gistname, version, open_it, transform_description);
                 else return notebook_controller_
                     .fork_notebook(gistname, version)
@@ -197,7 +198,7 @@ var shell = (function() {
                              */
                             return notebook;
                         } else return transform_description(notebook.description).then(function(desc) {
-                            return notebook_controller_.rename_notebook(desc);
+                            return rcloud.rename_notebook(notebook.id, desc);
                         });
                     });
                 });
