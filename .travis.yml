@@ -1,5 +1,5 @@
 addons:
-  firefox: '44.0'
+  firefox: '50.0'
 language: c
 node_js:
   - '0.12'
@@ -28,6 +28,7 @@ before_install:
 - sudo ln -sf `pwd`/bin/casperjs /usr/local/bin/casperjs
 - casperjs --version
 - sudo apt-get install python-dev
+- sudo apt-get update
 - cd /home/travis/build/att/rcloud
 - chmod 755 ./tests/Run.sh
 - chmod 755 ./tests/Reports
@@ -52,7 +53,6 @@ notifications:
   email:
     recipients:
     - gordon@woodhull.com
-    - prateek.naik@mu-sigma.com
     on_success: always
     on_failure: always
 branches:
