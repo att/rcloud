@@ -357,6 +357,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 }
 
 rcloud.create.notebook <- function(content, is.current = TRUE) {
+  tryCatch({
     content <- .gist.binary.process.outgoing(NULL, content)
 
     res <- create.gist(content, ctx = .rcloud.get.gist.context())
@@ -370,6 +371,7 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
         }
     }
     rcloud.augment.notebook(res)
+    }, error = function(e) { list(ok = FALSE) })
 }
 
 rcloud.rename.notebook <- function(id, new.name) {
