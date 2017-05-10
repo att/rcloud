@@ -323,6 +323,12 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
+        hide_cells_results: function() {
+            model.hide_selected_cells_results();
+        },
+        show_cells_results: function() {
+            model.show_selected_cells_results();
+        },
         join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
