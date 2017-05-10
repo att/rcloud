@@ -319,7 +319,9 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
         highlightGutterLine: !readonly
     });
     widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
-    widget.textInput.getElement().disabled = readonly;
+    if(readonly) {
+      widget.textInput.getElement().readonly = "readonly";
+    }
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
