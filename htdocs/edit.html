@@ -191,6 +191,9 @@
 
 <script type="text/html" id="selection-bar-snippet">
   <div id="selection-bar">
+    <button id="selection-bar-toggle-results" title="Hide/Show results of cells" type="button" class="btn btn-link navbar-btn">
+      <i class="icon-picture"></i>
+    </button>
     <div class="btn-group">
       <div type="button" class="btn btn-default cell-selection" title="Select All/None">
           <input type="checkbox" /><span>&ndash;</span>
@@ -207,12 +210,6 @@
     </div>
     <button id="selection-bar-crop" title="Crop cells (delete unselected cells)" type="button" class="btn btn-link navbar-btn">
       <i class="icon-crop"></i></button>    
-    <button id="selection-bar-hide-results" title="Hide results of selected cells" type="button" class="btn btn-link navbar-btn">
-      <i class="icon-hide icon-picture"></i>
-    </button>
-    <button id="selection-bar-show-results" title="Show results of selected cells" type="button" class="btn btn-link navbar-btn">
-      <i class="icon-show icon-picture"></i>
-    </button>
     <button id="selection-bar-delete" title="Delete selected cells" type="button" class="btn btn-link navbar-btn">
       <i class="icon-trash"></i><span id="selected-count"></span><span> of </span><span id="cell-count"></span>
     </button>
