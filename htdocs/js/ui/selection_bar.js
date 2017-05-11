@@ -5,8 +5,7 @@ RCloud.UI.selection_bar = (function() {
         $dropdown_toggle,
         $delete_button,
         $crop_button,
-        $hide_results_button,
-        $show_results_button,
+        $toggle_results_button,
         $cell_selection,
         $selected_details,
         $selected_count,
@@ -26,8 +25,7 @@ RCloud.UI.selection_bar = (function() {
             $dropdown_toggle = $selection_bar.find('.dropdown-toggle');
             $delete_button = $selection_bar.find('#selection-bar-delete');
             $crop_button = $selection_bar.find('#selection-bar-crop');
-            $hide_results_button = $selection_bar.find('#selection-bar-hide-results');
-            $show_results_button = $selection_bar.find('#selection-bar-show-results');
+            $toggle_results_button = $selection_bar.find('#selection-bar-toggle-results');
             $cell_selection = $selection_bar.find('.cell-selection');
             $selected_details = $delete_button.find('span');
             $selected_count = $selection_bar.find('#selected-count');
@@ -61,12 +59,12 @@ RCloud.UI.selection_bar = (function() {
                     shell.notebook.controller.crop_cells();
                 })
                 .end()
-                .find('#selection-bar-hide-results').click(function() {
-                    shell.notebook.controller.hide_cells_results();
-                })
-                .end()
-                .find('#selection-bar-show-results').click(function() {
+                .find('#selection-bar-toggle-results').click(function(e) {
+                  if(e.metaKey || e.ctrlKey) {
                     shell.notebook.controller.show_cells_results();
+                  } else {
+                    shell.notebook.controller.hide_cells_results();
+                  }
                 })
                 .end();
 
@@ -96,8 +94,6 @@ RCloud.UI.selection_bar = (function() {
             // delete/crop buttons' enabled status based on selection count:
             $delete_button[selected_count ? 'removeClass' : 'addClass']('disabled');
             $crop_button[shell.notebook.controller.can_crop_cells() ? 'removeClass' : 'addClass']('disabled');
-            $hide_results_button[selected_count ? 'removeClass' : 'addClass']('disabled');
-            $show_results_button[selected_count ? 'removeClass' : 'addClass']('disabled');
 
             // delete details:
             $selected_count.text(selected_count);
