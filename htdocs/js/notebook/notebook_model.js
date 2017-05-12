@@ -211,7 +211,7 @@ Notebook.create_model = function()
             RCloud.UI.selection_bar.update(this.cells);
         },
         hide_selected_cells_results: function() {
-            if(this.get_selected_cells()) {
+            if(!this.get_selected_cells().length) {
               _.each(this.cells, function(cell) {
                   cell.hide_cell_result();
               });
@@ -222,7 +222,7 @@ Notebook.create_model = function()
             }
         },
         show_selected_cells_results: function() {
-            if(this.get_selected_cells()) {
+            if(!this.get_selected_cells().length) {
               _.each(this.cells, function(cell) {
                   cell.show_cell_result();
               });
