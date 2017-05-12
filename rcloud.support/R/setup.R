@@ -118,8 +118,6 @@ configure.rcloud <- function (mode=c("startup", "script")) {
       tryCatch(dir.create(rcloud.home(), FALSE, TRUE, "0700"),
                error=function(e) ulog("WARNING: unable to create rcloud.home ", rcloud.home()))
 
-  ## use public github by default (FIXME: this should go away when set in the githubgist package)
-  if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
   if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
 
   ## set locale - default is UTF-8

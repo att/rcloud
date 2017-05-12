@@ -1806,6 +1806,9 @@ var editor = function () {
 
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
                      RCloud.UI.advanced_menu.enable('pull_and_replace_notebook', !shell.notebook.model.read_only());
+                     promises.push(shell.github_url().then(function(url) {
+                         RCloud.UI.advanced_menu.enable('open_in_github', !!url);
+                     }));
                      promises.push(RCloud.UI.comments_frame.display_comments());
                      promises.push(rcloud.is_notebook_published(result.id).then(function(p) {
                          RCloud.UI.advanced_menu.check('publish_notebook', p);
