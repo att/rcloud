@@ -72,7 +72,7 @@ var shell = (function() {
             return;
         }
     }
-    
+
     function notebook_edit_url(notebook_id, version) {
        return ui_utils.make_url('edit.html', { notebook : notebook_id, version: version } );
     }
@@ -231,7 +231,8 @@ var shell = (function() {
                 return notebook_controller_.revert_notebook(gistname, version)
                     .then(function(notebook) {
                         return [notebook, notebook.id, null];
-                    })}});
+                    });
+            }});
         }, duplicate_notebook_attributes(srcid, destid) {
             var dupe_attrs = ['view-type'];
             return Promise.all(dupe_attrs.map(function(attr) {
