@@ -118,8 +118,6 @@ configure.rcloud <- function (mode=c("startup", "script")) {
       tryCatch(dir.create(rcloud.home(), FALSE, TRUE, "0700"),
                error=function(e) ulog("WARNING: unable to create rcloud.home ", rcloud.home()))
 
-  if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
-
   ## set locale - default is UTF-8
   locale <- getConf("locale")
   if (!isTRUE(nzchar(locale))) locale <- "en_US.UTF-8"

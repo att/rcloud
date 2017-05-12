@@ -1,4 +1,4 @@
-config.options <- function() list(github.api.url="https://api.github.com/", github.base.url="https://github.com/", github.client.id=NULL, github.client.secret=NULL, github.auth.forward=NULL)
+config.options <- function() list(github.api.url=TRUE, github.base.url=FALSE, github.client.id=FALSE, github.client.secret=FALSE, github.auth.forward=FALSE)
 
 create.gist.context <- function(username, token, github.api.url, github.client.id, github.client.secret, github.base.url, ...) {
   if ((is.character(token) && !isTRUE(nzchar(token))) || is.null(github.client.secret) || is.null(github.client.id)) token <- NULL ## github requires token to be NULL if not used
