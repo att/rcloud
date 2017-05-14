@@ -6,10 +6,12 @@ BREAK=1
 
 while [ "$1" != "" ]; do
     case $1 in
+        --minimal) PACKAGE_DIRS="" ;;
         --base) PACKAGE_DIRS="internal" ;;
         --core) PACKAGE_DIRS="internal rcloud.packages" ;; # the default
         --all) PACKAGE_DIRS="internal rcloud.packages packages" ;;
         --cont) BREAK=0 ;;
+        --no-js) SKIP_JS=1 ;;
         --help) cat <<EOF
 
  Usage: $0 [{--base | --core | --all}] [--cont]
@@ -42,12 +44,14 @@ if [ ! -e rcloud.support/DESCRIPTION ]; then
     exit 1
 fi
 
-# build JS (if available)
-if [ \( -d ./node_modules \) -a \( -f node_modules/grunt-cli/bin/grunt \) ]; then
-    node_modules/grunt-cli/bin/grunt
-else
-    echo "WARNING: JavaScript and CSS targets won't be built."
-    echo " run `npm install` from the RCloud root directory to enable these targets."
+if [ -z "$SKIP_JS" ]; then
+    # build JS (if available)
+    if [ \( -d ./node_modules \) -a \( -f node_modules/grunt-cli/bin/grunt \) ]; then
+        node_modules/grunt-cli/bin/grunt
+    else
+        echo "WARNING: JavaScript and CSS targets won't be built."
+        echo " run `npm install` from the RCloud root directory to enable these targets."
+    fi
 fi
 
 # check if we need to worry about mathjax
