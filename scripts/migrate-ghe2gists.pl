@@ -108,11 +108,11 @@ foreach (@paths) {
     if ($json{$id} eq '') {
         print STDERR "WARN: unknown gist $id\n";
     } else {
-        mkpath "$path/repo";
-#        my $res = system "rsync -a --delete-during \"$src/\" \"$path/repo/\"";
-#        if ($res != 0) {
-#            die "ERROR: rsync failed: $id\n$src\n";
-#        }
+        mkpath "$path";
+        my $res = system "cp -pr \"$src\" \"$path/repo\"";
+        if ($res != 0) {
+            die "ERROR: copy failed: $id\n$src\n";
+        }
         my $j = $json{$id};
         my $parent = $parent_gid{$id};
         ## need to append fork_of and forks as we need all gists loaded for that
