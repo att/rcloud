@@ -42,27 +42,25 @@ URIparse <- function(o) {
 ## NUL-separated strings containing url, query, headers followed
 ## by binary body. The parsing here is very hacky, it woudl be better
 ## done in C, in particular since we already have the code in http.c
-call.script <- function(packed)
+call.script <- function(packed, ...)
     tryCatch({
         w <- which(packed == as.raw(0L))[1:3]
         url <- rawToChar(packed[1L : (w[1L] - 1L)])
         query <- if (w[2L] > w[1L] + 1L) rawToChar(packed[(w[1L] + 1L):(w[2L] - 1L)]) else character()
         headers <- if (w[3L] > w[2L] + 1L) packed[(w[2L] + 1L):(w[3L] - 1L)] else raw()
         body <- if (w[3L] < length(packed)) packed[(w[3L] + 1L):length(packed)] else NULL
-        cat("### request:\n")
-        str(list(url, query, body, headers))
+        ulog(paste0("INFO: call.script: ", url, " (body.len=", length(body), ")"))
         hs <- rawToChar(headers)
         if (length(grep("Content-Type: application/x-www-form-urlencoded", hs, TRUE)))
             body <- URIparse(body)
         if (length(query))
             query <- URIparse(query)
         res <- rcloud.support:::.http.request(url, query, body, headers)
-        cat("--- result:\n");
+        ## if the result is a list containing "file" entry we need to serve it
         if ("file" %in% names(res))
             res <- tryCatch(list(rawToChar(readBin(res$file, raw(), file.info(res$file)$size)),
                                  ext2mime(res$file)),
                             error=function(e) paste("cannot open", res$file))
-        str(res)
         res
     }, error=function(e) list(paste0("Evaluation error: ", e), "text/plain", character(), 500L))
 
