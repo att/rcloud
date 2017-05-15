@@ -359,7 +359,7 @@ Notebook.create_controller = function(model)
             // concatenate a bunch of change content objects with a move or change
             // to one of the same objects, and an erase of one
             var new_content, changes = refresh_buffers();
-
+            var MARKDOWN = "Markdown";
             // this may have to be multiple dispatch when there are more than two languages
             if(prior.language() == cell_model.language()) {
                 new_content = crunch_quotes(opt_cr(prior.content()),
@@ -368,21 +368,22 @@ Notebook.create_controller = function(model)
                 changes = changes.concat(model.update_cell(prior));
             }
             else {
-                if(prior.language() != "Markdown" && cell_model.language() != "Markdown") {
+                if(prior.language() != MARKDOWN && cell_model.language() != MARKDOWN) {
                     // Different languages are combined, none of them is markdown
                     new_content = create_code_block(prior.language(), prior.content()) + 
                                                 create_code_block(cell_model.language(), cell_model.content());
                     prior.content(new_content);
-                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
+                    changes = changes.concat(model.change_cell_language(prior, MARKDOWN));
                     changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
                 }
                 else {
-                    if(prior.language() === "Markdown") {
+                    if(prior.language() === MARKDOWN) {
                       new_content = opt_cr(prior.content()) +
                                     create_code_block(cell_model.language(), cell_model.content());
                     } else {
                       new_content = create_code_block(prior.language(), prior.content()) +
                                     opt_cr(cell_model.content());
+                      changes = changes.concat(model.change_cell_language(prior, MARKDOWN));
                     }
                     prior.content(new_content);
                     changes = changes.concat(model.update_cell(prior));
