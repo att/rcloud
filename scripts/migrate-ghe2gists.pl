@@ -6,9 +6,13 @@ use File::Path qw(mkpath);
 
 $backup=shift;
 $dest=shift;
+$opt=shift;
+
+$cmd = "cp -pr";
+if ($opt eq '-mv') { $cmd = "mv"; }
 
 if ($backup eq '' || $dest eq '') {
-    print "\n Usage: migrate-ghe2gists.pl <GHE-backup-directory> <gist-service-data>\n\n";
+    print "\n Usage: migrate-ghe2gists.pl <GHE-backup-directory> <gist-service-data> [-mv]\n\n";
     exit 1;
 }
 
@@ -109,7 +113,7 @@ foreach (@paths) {
         print STDERR "WARN: unknown gist $id\n";
     } else {
         mkpath "$path";
-        my $res = system "cp -pr \"$src\" \"$path/repo\"";
+        my $res = system "$cmd \"$src\" \"$path/repo\"";
         if ($res != 0) {
             die "ERROR: copy failed: $id\n$src\n";
         }
