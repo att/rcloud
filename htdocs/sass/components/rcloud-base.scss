@@ -556,6 +556,7 @@ ul.recent-notebooks-list {
 
 ul.recent-notebooks-list li {
     max-width: 330px;
+    height: 2em;
 }
 
 ul.recent-notebooks-list li a.username:hover {
@@ -577,14 +578,15 @@ ul.recent-notebooks-list li a .description {
 }
 
 ul.recent-notebooks-list li a {
-    padding-top: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
     padding-left: 5px;
     padding-right: 5px;
-    height: 20px;
+    height: 100%;
+    width: 100%;
     display: inline-block;
     overflow: hidden;
     white-space: nowrap;
-    width: 100%;
 }
 
 .jqtree-element .jqtree-title.jqtree_common {

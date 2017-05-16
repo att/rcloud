@@ -1287,6 +1287,9 @@ var editor = function () {
                 e.preventDefault();
                 e.stopPropagation();
             });
+            $('.recent-notebooks-list').click(function(e) {
+              e.stopPropagation();
+            });
 
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
