@@ -1385,7 +1385,7 @@ var editor = function () {
                         RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         throw xep;
                     });
-                }).finally(that.update_recent_notebooks.bind(this));
+                });
         },
         open_notebook: function(gistname, version, source, selroot, new_window) {
             // really just load_notebook except possibly in a new window
@@ -1815,7 +1815,7 @@ var editor = function () {
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
 
-                     return Promise.all(promises).return(result);
+                     return Promise.all(promises).return(result).finally(that.update_recent_notebooks.bind(that));
                  });
             };
         }
