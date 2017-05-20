@@ -1,3 +1,59 @@
+## RCloud 1.8
+
+See the news for
+(rcloud.htmlwidgets)[https://github.com/att/rcloud.htmlwidgets/blob/master/NEWS.md],
+(rcloud.shiny)[https://github.com/att/rcloud.shiny/blob/master/NEWS.md],
+(rcloud.rmd)[https://github.com/att/rcloud.rmd/blob/master/NEWS.md], and
+(rcloud.flexdashboard)[https://github.com/att/rcloud.flexdashboard/blob/master/NEWS.md]
+for compatibility improvements.
+
+### Feature
+* New [rcloud-gist-services](https://github.com/att/rcloud-gist-services)
+  backend, as a replacement for the GitHub Gist API.
+  * `github.*.url` in [rcloud.conf](https://github.com/att/rcloud/wiki/rcloud.conf) no longer
+  default to github.com
+  * Note: rcloud-gist-services does not yet support a web
+  interface, so Open in GitHub is currently not available for this backend. (#2402)
+  * See Bugfixes for a list of GitHub issues this fixes
+
+### Improvements
+* Asset sizes are limited to 2.5MB to avoid performance problems. Notebook
+  assets are only appropriate for small amounts of data, scripts, graphics,
+  etc. Larger data files should be read from disk.
+
+* Ability to hide all cell results or selected cell results (#2334)
+
+* Ability to run only selected cells, with
+
+* `rcloud.html.out`, `rcloud.out`, `rcloud.home` are documented (#2372, #2400)
+
+### Bugfixes
+* rcloud-gist-services fixes some issues we were seeing with GitHub:
+
+  * Notebooks names do not conflict; when forking, they are always numbered if
+    the user already has a notebook with that name (#236, #703)
+
+  * When you fork your own notebook, history is preserved (#702)
+
+  * You are allowed to fork another user's notebook more than once (#1712)
+
+  * Race conditions, where deleting or adding cells very quickly resulted in
+    inconsistent notebook state, should also be fixed (#32)
+
+* When trying to load a notebook and the session has dropped, the selected
+  notebook should still be loaded (#2139)
+
+* Recent notebooks should be shown when loading initial notebook fails (#2369)
+
+* Clicking in wrong part of recent notebooks menu could cause Notebooks pane to
+  minimize (#2414)
+
+* Only the specific notebooks should fail if some of the notebooks specified to
+  Import External Notebooks are invalid (#2209)
+
+* Was not able to copy text from the assets of read-only notebooks (#2401)
+
+
 ## RCloud 1.7.1
 
 ### Improvements
