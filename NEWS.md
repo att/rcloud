@@ -15,7 +15,7 @@ for compatibility improvements.
   [rcloud.conf](https://github.com/att/rcloud/wiki/rcloud.conf) no longer
   default to github.com
   * rcloud-gist-services does not yet support a web interface, so Open in
-  GitHub is currently not available for this backend (#2402)
+  GitHub is not yet available for this backend (#2402)
   * See Bugfixes for a list of issues where the GitHub API was not appropriate
     for RCloud
 
@@ -26,8 +26,8 @@ for compatibility improvements.
 
 * Ability to hide all cell results or selected cell results (#2334)
 
-* When selecting a view type from the shareable link, the view tab is opened
-  (#1755)
+* When selecting a view type from the shareable link menu, the link is opened in
+  a new tab just like clicking the button (#1755)
 
 * When there is only one cell selected, clicking it deselects it; i.e. single
   selection works as a toggle (#2404)
@@ -38,30 +38,33 @@ for compatibility improvements.
 * `rcloud.html.out`, `rcloud.out`, `rcloud.home` are documented (#2372, #2400)
 
 ### Bugfixes
-* rcloud-gist-services fixes some issues we were seeing with GitHub:
+* [rcloud-gist-services](https://github.com/att/rcloud-gist-services) fixes some
+  issues we were seeing with GitHub Gist:
 
-  * You are allowed to fork another user's notebook more than once (#1712)
+  * You are now allowed to fork another user's notebook more than once (#1712)
 
-  * When you fork your own notebook, history is preserved (#702)
+  * When you fork your own notebook, history is now preserved (#702)
 
-  * Notebooks names do not conflict; when forking, they are always numbered if
-    the user already has a notebook with that name (#236, #703)
+  * We were experiencing race conditions when deleting or adding cells very
+    quickly, resulting in commits being lost. (#32)
 
-  * We were experiencing race conditions where deleting or adding cells very
-    quickly resulted in inconsistent notebook state. These should also be
-    fixed. (#32)
+  * Names of forked notebooks now do not conflict; when forking, they are always
+    given a unique number if the user already has a notebook with that name
+    (#236, #703). Due to the above race condition, we can not fork and then
+    immediately rename with GitHub Gist.
 
 * When trying to load a notebook and the session has dropped, the selected
   notebook should still be loaded (#2139)
 
-* Recent notebooks should be shown when loading initial notebook fails (#2369)
+* Recent notebooks should be shown when initial notebook fails to load (#2369)
 
 * Notebook should be saved when clicking Sharable Link (#2371)
 
-* Name of notebook in "forked from" link was not getting updated when the notebook name changed (#1716)
+* Name of notebook in "forked from" link was not getting updated when the
+  notebook name changed (#1716)
 
-* Clicking in wrong part of recent notebooks menu could cause Notebooks pane to
-  minimize (#2414)
+* Clicking in wrong part of recent notebooks menu could cause the notebooks
+  panel to minimize (#2414)
 
 * Only the specific notebooks should fail if some of the notebooks specified to
   Import External Notebooks are invalid (#2209)
