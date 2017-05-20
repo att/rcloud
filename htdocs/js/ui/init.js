@@ -345,6 +345,19 @@ RCloud.UI.init = function() {
         modes: ['writeable']
     }, {
         category: 'Cell Management',
+        id: 'show_results_of_cells',
+        description: 'Show results of selected/all cells',
+        click_keys: {
+            target: 'Hide results button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
+    }, {
+        category: 'Cell Management',
         id: 'blur_cell',
             description: 'Blur Cell/Command Prompt',
         keys: {
