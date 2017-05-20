@@ -9,12 +9,15 @@ for compatibility improvements.
 
 ### Feature
 * New [rcloud-gist-services](https://github.com/att/rcloud-gist-services)
-  backend, as a replacement for the GitHub Gist API.
-  * `github.*.url` in [rcloud.conf](https://github.com/att/rcloud/wiki/rcloud.conf) no longer
+  backend, as a replacement for the GitHub Gist API.<br>
+  Notes:
+  * The options `github.*.url` in
+  [rcloud.conf](https://github.com/att/rcloud/wiki/rcloud.conf) no longer
   default to github.com
-  * Note: rcloud-gist-services does not yet support a web
-  interface, so Open in GitHub is currently not available for this backend. (#2402)
-  * See Bugfixes for a list of GitHub issues this fixes
+  * rcloud-gist-services does not yet support a web interface, so Open in
+  GitHub is currently not available for this backend (#2402)
+  * See Bugfixes for a list of issues where the GitHub API was not appropriate
+    for RCloud
 
 ### Improvements
 * Asset sizes are limited to 2.5MB to avoid performance problems. Notebook
@@ -30,15 +33,16 @@ for compatibility improvements.
 ### Bugfixes
 * rcloud-gist-services fixes some issues we were seeing with GitHub:
 
-  * Notebooks names do not conflict; when forking, they are always numbered if
-    the user already has a notebook with that name (#236, #703)
+  * You are allowed to fork another user's notebook more than once (#1712)
 
   * When you fork your own notebook, history is preserved (#702)
 
-  * You are allowed to fork another user's notebook more than once (#1712)
+  * Notebooks names do not conflict; when forking, they are always numbered if
+    the user already has a notebook with that name (#236, #703)
 
-  * Race conditions, where deleting or adding cells very quickly resulted in
-    inconsistent notebook state, should also be fixed (#32)
+  * We were experiencing race conditions where deleting or adding cells very
+    quickly resulted in inconsistent notebook state. These should also be
+    fixed. (#32)
 
 * When trying to load a notebook and the session has dropped, the selected
   notebook should still be loaded (#2139)
