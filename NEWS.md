@@ -1,10 +1,10 @@
 ## RCloud 1.8
 
 See the news for
-(rcloud.htmlwidgets)[https://github.com/att/rcloud.htmlwidgets/blob/master/NEWS.md],
-(rcloud.shiny)[https://github.com/att/rcloud.shiny/blob/master/NEWS.md],
-(rcloud.rmd)[https://github.com/att/rcloud.rmd/blob/master/NEWS.md], and
-(rcloud.flexdashboard)[https://github.com/att/rcloud.flexdashboard/blob/master/NEWS.md]
+[rcloud.htmlwidgets](https://github.com/att/rcloud.htmlwidgets/blob/master/NEWS.md),
+[rcloud.shiny](https://github.com/att/rcloud.shiny/blob/master/NEWS.md),
+[rcloud.rmd](https://github.com/att/rcloud.rmd/blob/master/NEWS.md), and
+[rcloud.flexdashboard](https://github.com/att/rcloud.flexdashboard/blob/master/NEWS.md)
 for compatibility improvements.
 
 ### Feature
@@ -58,8 +58,7 @@ for compatibility improvements.
 
 * Notebook should be saved when clicking Sharable Link (#2371)
 
-* Name of notebook in "forked from" link was not getting updated when the
-  notebook name changed (#1716)
+* Name of notebook in "forked from" link was not getting updated when the notebook name changed (#1716)
 
 * Clicking in wrong part of recent notebooks menu could cause Notebooks pane to
   minimize (#2414)
