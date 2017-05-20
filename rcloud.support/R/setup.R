@@ -420,7 +420,7 @@ create.gist.backend <- function(username="", token="", source=NULL, ...) {
     cat("create.gist.ctx call:\n")
     str(l)
   }
-  ulog("INFO: create gist context for source `", source, "' with ", paste0(names(l), "=", as.character(l), collapse=', '))
+  ulog("INFO: create gist context for source `", source, "', backend `", gb, "`")
   gist::set.gist.context(do.call(gbns$create.gist.context, l))
 }
 

@@ -67,6 +67,18 @@ Notebook.Cell.create_model = function(content, language)
 
             return is_selected_;
         },
+        hide_cell_result: function() {
+            this.notify_views(function(view) {
+              view.toggle_results(false);
+            });
+            return false;
+        },
+        show_cell_result: function() {
+            this.notify_views(function(view) {
+              view.toggle_results(true);
+            });
+            return true;
+        },
         is_selected: function() {
             return is_selected_;
         },

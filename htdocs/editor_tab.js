@@ -1287,6 +1287,9 @@ var editor = function () {
                 e.preventDefault();
                 e.stopPropagation();
             });
+            $('.recent-notebooks-list').click(function(e) {
+              e.stopPropagation();
+            });
 
             $('#new-notebook').click(function(e) {
                 e.preventDefault();
@@ -1378,14 +1381,16 @@ var editor = function () {
             })
                 .catch(function(xep) {
                     // session has been reset, must reload notebook
+                    // also make sure current notebooks menu is populated in case of Ignore
                     return Promise.all([
+                        shell.improve_load_error(xep, gistname, version),
                         rcloud.load_notebook(last_notebook, last_version),
-                        shell.improve_load_error(xep, gistname, version)
-                    ]).spread(function(_, message) {
+                        that.update_recent_notebooks()
+                    ]).spread(function(message) {
                         RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         throw xep;
                     });
-                }).finally(that.update_recent_notebooks.bind(this));
+                });
         },
         open_notebook: function(gistname, version, source, selroot, new_window) {
             // really just load_notebook except possibly in a new window
@@ -1652,10 +1657,8 @@ var editor = function () {
             }
         },
         update_recent_notebooks: function() {
-            var that = this;
-            return rcloud.config.get_recent_notebooks().then(function(data) {
-                that.populate_recent_notebooks_list(data);
-            });
+            return rcloud.config.get_recent_notebooks()
+                .then(this.populate_recent_notebooks_list.bind(this));
         },
         populate_recent_notebooks_list: function(data) {
             var sorted = _.chain(data)
@@ -1803,6 +1806,8 @@ var editor = function () {
                                     })).then(function() {
                                         return update_notebook_from_gist(result, history, options.selroot);
                                     }));
+
+                     promises.push(that.update_recent_notebooks());
 
                      RCloud.UI.comments_frame.set_foreign(!!options.source);
                      RCloud.UI.advanced_menu.enable('pull_and_replace_notebook', !shell.notebook.model.read_only());

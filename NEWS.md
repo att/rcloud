@@ -1,3 +1,79 @@
+## RCloud 1.8
+
+See the news for
+[rcloud.htmlwidgets](https://github.com/att/rcloud.htmlwidgets/blob/master/NEWS.md),
+[rcloud.shiny](https://github.com/att/rcloud.shiny/blob/master/NEWS.md),
+[rcloud.rmd](https://github.com/att/rcloud.rmd/blob/master/NEWS.md), and
+[rcloud.flexdashboard](https://github.com/att/rcloud.flexdashboard/blob/master/NEWS.md)
+for compatibility improvements.
+
+### Feature
+* New [rcloud-gist-services](https://github.com/att/rcloud-gist-services)
+  backend, as a replacement for the GitHub Gist API.<br>
+  Notes:
+  * The options `github.*.url` in
+  [rcloud.conf](https://github.com/att/rcloud/wiki/rcloud.conf) no longer
+  default to github.com
+  * rcloud-gist-services does not yet support a web interface, so Open in
+  GitHub is not yet available for this backend (#2402)
+  * See Bugfixes for a list of issues where the GitHub API was not appropriate
+    for RCloud
+
+### Improvements
+* Asset sizes are limited to 2.5MB to avoid performance problems. Notebook
+  assets are only appropriate for small amounts of data, scripts, graphics,
+  etc. Larger data files should be read from disk.
+
+* Ability to hide all cell results or selected cell results (#2334)
+
+* When selecting a view type from the shareable link menu, the link is opened in
+  a new tab just like clicking the button (#1755)
+
+* When there is only one cell selected, clicking it deselects it; i.e. single
+  selection works as a toggle (#2404)
+
+* Ability to run only selected cells, by <kbd>ctrl</kbd> / <kbd>cmd</kbd> -
+  clicking the Play button (#2403)
+
+* `rcloud.html.out`, `rcloud.out`, `rcloud.home` are documented (#2372, #2400)
+
+### Bugfixes
+* [rcloud-gist-services](https://github.com/att/rcloud-gist-services) fixes some
+  issues we were seeing with GitHub Gist:
+
+  * You are now allowed to fork another user's notebook more than once (#1712)
+
+  * When you fork your own notebook, history is now preserved (#702)
+
+  * We were experiencing race conditions when deleting or adding cells very
+    quickly, resulting in commits being lost. (#32)
+
+  * Names of forked notebooks now do not conflict; when forking, they are always
+    given a unique number if the user already has a notebook with that name
+    (#236, #703). Due to the above race condition, we can not fork and then
+    immediately rename with GitHub Gist.
+
+* When trying to load a notebook and the session has dropped, the selected
+  notebook should still be loaded (#2139)
+
+* Recent notebooks should be shown when initial notebook fails to load (#2369)
+
+* Notebook should be saved when clicking Sharable Link (#2371)
+
+* Name of notebook in "forked from" link was not getting updated when the
+  notebook name changed (#1716)
+
+* Clicking in wrong part of recent notebooks menu could cause the notebooks
+  panel to minimize (#2414)
+
+* Only the specific notebooks should fail if some of the notebooks specified to
+  Import External Notebooks are invalid (#2209)
+
+* Was not able to copy text from the assets of read-only notebooks (#2401)
+
+* Upload button should be disabled when no files are selected (#2390)
+
+
 ## RCloud 1.7.1
 
 ### Improvements

@@ -316,6 +316,19 @@ RCloud.UI.init = function() {
         action: function() { }
     }, {
         category: 'Cell Management',
+        id: 'run_selected_cells',
+        description: 'Run the selected cells',
+        click_keys: {
+            target: 'Play button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
+    }, {
+        category: 'Cell Management',
         id: 'cell_run_from_here',
         description: 'Run from this cell on',
         keys: {
@@ -330,6 +343,19 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'show_results_of_cells',
+        description: 'Show results of selected/all cells',
+        click_keys: {
+            target: 'Hide results button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
     }, {
         category: 'Cell Management',
         id: 'blur_cell',

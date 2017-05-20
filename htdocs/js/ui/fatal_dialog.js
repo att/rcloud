@@ -42,14 +42,6 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
             default_button_.focus();
         });
     }
-    else {
-        if(action_) {
-            ignore_button_.show();
-        } else {
-            ignore_button_.hide();
-        }
-        message_.text(message);
-    }
     fatal_dialog_.modal({keyboard: false});
 };
 
