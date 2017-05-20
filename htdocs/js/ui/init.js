@@ -316,6 +316,19 @@ RCloud.UI.init = function() {
         action: function() { }
     }, {
         category: 'Cell Management',
+        id: 'run_selected_cells',
+        description: 'Run the selected cells',
+        click_keys: {
+            target: 'Play button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
+    }, {
+        category: 'Cell Management',
         id: 'cell_run_from_here',
         description: 'Run from this cell on',
         keys: {
