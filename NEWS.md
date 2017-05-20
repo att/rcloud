@@ -26,7 +26,14 @@ for compatibility improvements.
 
 * Ability to hide all cell results or selected cell results (#2334)
 
-* Ability to run only selected cells, with
+* When selecting a view type from the shareable link, the view tab is opened
+  (#1755)
+
+* When there is only one cell selected, clicking it deselects it; i.e. single
+  selection works as a toggle (#2404)
+
+* Ability to run only selected cells, by <kbd>ctrl</kbd> / <kbd>cmd</kbd> -
+  clicking the Play button (#2403)
 
 * `rcloud.html.out`, `rcloud.out`, `rcloud.home` are documented (#2372, #2400)
 
@@ -49,6 +56,11 @@ for compatibility improvements.
 
 * Recent notebooks should be shown when loading initial notebook fails (#2369)
 
+* Notebook should be saved when clicking Sharable Link (#2371)
+
+* Name of notebook in "forked from" link was not getting updated when the
+  notebook name changed (#1716)
+
 * Clicking in wrong part of recent notebooks menu could cause Notebooks pane to
   minimize (#2414)
 
@@ -56,6 +68,8 @@ for compatibility improvements.
   Import External Notebooks are invalid (#2209)
 
 * Was not able to copy text from the assets of read-only notebooks (#2401)
+
+* Upload button should be disabled when no files are selected (#2390)
 
 
 ## RCloud 1.7.1
