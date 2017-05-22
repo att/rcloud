@@ -37,6 +37,15 @@ for compatibility improvements.
 
 * `rcloud.html.out`, `rcloud.out`, `rcloud.home` are documented (#2372, #2400)
 
+* New, optional configuration option `solr.post.method` allows to
+  change the way SOLR POST update requests are issued. It can have one
+  of the values `async` (default in RCloud 1.8: asynchronous, internal
+  httr), `sync` (synchronous, internal - used in RCloud 1.7) or `curl`
+  (asynchronous external `curl` command). In the last case another
+  option `solr.curl.cmd` can be used to change the default invocation
+  of `curl`.
+
+
 ### Bugfixes
 * [rcloud-gist-services](https://github.com/att/rcloud-gist-services) fixes some
   issues we were seeing with GitHub Gist:
