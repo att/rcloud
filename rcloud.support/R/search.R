@@ -1,7 +1,9 @@
 # Some intelligent parsing account for basics like /solr/notebook and /solr/notebook/ is essentially the same thing
 # Using httr::parse_url
 
-.solr.post <- function(data,solr.url=getConf("solr.url"),solr.auth.user=getConf("solr.auth.user"),solr.auth.pwd=getConf("solr.auth.pwd"),isXML=FALSE) {
+.solr.post <- function(data, solr.url=getConf("solr.url"), solr.auth.user=getConf("solr.auth.user"),
+                       solr.auth.pwd=getConf("solr.auth.pwd"), isXML=FALSE, type=getConf("solr.post.method")) {
+    type <- match.arg(type, c("async", "sync", "curl"))
   content_type <- "application/json"
   body = paste("[",data,"]",sep='')
   httpConfig <- httr::config()
@@ -15,7 +17,21 @@
   if(!is.null(solr.url)){
     solr.post.url <- httr::parse_url(solr.url)
     solr.post.url$path <- paste(solr.post.url$path,"update?commit=true",sep="/")
-    mcparallel(httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), config=httpConfig) ,detach=TRUE)   
+    switch(type,
+           async = mcparallel(httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), config=httpConfig) ,detach=TRUE),
+           sync = tryCatch(httr::POST(build_url(solr.post.url) , body=body,add_headers('Content-Type'=content_type), config=httpConfig),
+                           error = function(e) ulog("WARN: SOLR POST failed with", gsub("\n", "\\", as.character(e), fixed=TRUE))),
+           curl = mcparallel(tryCatch({
+               curl <- getConf("solr.curl.cmd")
+               if (!isTRUE(nzchar(curl))) curl <- "curl"
+               auth <- if(!is.null(solr.auth.user)) paste0("--basic -u ", shQuote(paste(solr.auth.user, solr.auth.pwd, sep=":"))) else ""
+               f = pipe(.cmd <- paste(curl, "-s", "-S", "-X", "POST", "--data-binary", "@-", "-H", shQuote(paste("Content-Type:", content_type)),
+                                      auth, shQuote(build_url(solr.post.url)), ">/dev/null"), "wb")
+               writeBin(charToRaw(body), f)
+               close(f)
+               parallel:::mcexit()
+               }, error = function(e) ulog("WARN: SOLR POST failed with", gsub("\n", "\\", as.character(e), fixed=TRUE))), detach=TRUE)
+           )
   }
 }
 
