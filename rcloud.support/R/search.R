@@ -24,8 +24,9 @@
            curl = mcparallel(tryCatch({
                curl <- getConf("solr.curl.cmd")
                if (!isTRUE(nzchar(curl))) curl <- "curl"
+               auth <- if(!is.null(solr.auth.user)) paste0("--basic -u ", shQuote(paste(solr.auth.user, solr.auth.pwd, sep=":"))) else ""
                f = pipe(.cmd <- paste(curl, "-s", "-S", "-X", "POST", "--data-binary", "@-", "-H", shQuote(paste("Content-Type:", content_type)),
-                                      shQuote(build_url(solr.post.url)), ">/dev/null"), "wb")
+                                      auth, shQuote(build_url(solr.post.url)), ">/dev/null"), "wb")
                writeBin(charToRaw(body), f)
                close(f)
                parallel:::mcexit()
