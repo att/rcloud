@@ -57,7 +57,15 @@ run <- function(url, query, body, headers) {
   mapping.result <- resolve.additional.url(url.path.parts = pex)
   
   if(!mapping.result$success) {
-    mapping.result <- resolve.url(url.path.parts = pex)
+    exported.folders <- list("www", "lib")
+    exported.folders.mappings <- lapply(exported.folders, function(x) { resolve.url(url.path.parts = pex, url.root = x) })
+    exported.folders.resolved <- Filter(function(x) {x$success}, exported.folders.mappings)
+    if(length(exported.folders.resolved) > 0) {
+      mapping.result <- exported.folders.resolved[[1]]
+    } else {
+      # So a path is displayed in the error message
+      mapping.result <- exported.folders.mappings[[1]]
+    }
   }
   
   if (!mapping.result$success || !file.exists(mapping.result$path))
