@@ -13,9 +13,9 @@ resolve.additional.url <- function(url.path.parts = list(), url.roots = c("_html
     } else if(length(url.path.parts) > 3) {
       user <- url.path.parts[2]
       pkg <- url.path.parts[3]
-      path <- c(subdir.name, url.path.parts[-c(1,2,3)])
+      path <- c(pkg, subdir.name, unlist(url.path.parts[-c(1,2,3)]))
       lib <- rcloud.home("library", user=user)
-      fn <- file.path(lib, pkg, path)
+      fn <- file.path(lib, paste(path, collapse = "/"))
       if (file.exists(fn)) {
         res$success = TRUE
         res$path = fn
