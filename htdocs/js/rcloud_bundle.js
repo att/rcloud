@@ -1,118 +1,6 @@
-// FIXME all RCloud.*.post_error calls should be handled elsewhere
-
-RClient = {
-    create: function(opts) {
-        opts = _.defaults(opts, {
-            debug: false
-        });
-        function on_connect() {
-            if (!rserve.ocap_mode) {
-                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
-                shutdown();
-                return;
-            }
-
-            // the rcloud ocap-0 performs the login authentication dance
-            // success is indicated by the rest of the capabilities being sent
-            var session_mode = (opts.mode) ? opts.mode : "client";
-            rserve.ocap([token, execToken], session_mode, function(err, ocaps) {
-                if(err)
-                    on_error(err[0], err[1]);
-                else {
-                    ocaps = Promise.promisifyAll(ocaps);
-                    if(ocaps === null) {
-                        on_error("Login failed. Shutting down!");
-                    }
-                    else if(RCloud.is_exception(ocaps)) {
-                        on_error(ocaps);
-                    }
-                    else {
-                        result.running = true;
-                        /*jshint -W030 */
-                        opts.on_connect && opts.on_connect.call(result, ocaps);
-                    }
-                }
-            });
-        }
-
-        // this might be called multiple times; some conditions result
-        // in on_error and on_close both being called.
-        function shutdown() {
-            if (!clean) {
-                $("#input-div").hide();
-            }
-            if (!rserve.closed)
-                rserve.close();
-        }
-
-        function on_error(msg, status_code) {
-            if (opts.debug) {
-                /*jshint -W087 */
-                debugger;
-            }
-            if (opts.on_error && opts.on_error(msg, status_code))
-                return;
-            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error(msg));
-            shutdown();
-        }
-
-        function on_close(msg) {
-            if (opts.debug) {
-                /*jshint -W087 */
-                debugger;
-            }
-            if (!clean) {
-                if(!window.rcloud) // e.g. websocket handshake cancelled
-                    RCloud.UI.fatal_dialog("Could not connect to server.", "Retry", window.location.href);
-                else if(!rcloud.username()) // anonymous
-                    RCloud.UI.fatal_dialog("Your session closed unexpectedly.", "Reload", window.location.href);
-                else // logged in
-                    RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
-                shutdown();
-            }
-        }
-
-        var token = $.cookies.get().token;  // document access token
-        var execToken = $.cookies.get().execToken; // execution token (if enabled)
-        var rserve = Rserve.create({
-            host: opts.host,
-            on_connect: on_connect,
-            on_error: on_error,
-            on_close: on_close,
-            on_data: opts.on_data,
-            on_oob_message: opts.on_oob_message
-        });
-
-        var result;
-        var clean = false;
-
-        result = {
-            _rserve: rserve,
-            host: opts.host,
-            running: false,
-
-            post_response: function (msg) {
-                var d = $("<pre class='response'></pre>").html(msg);
-                //$(d).insertBefore("#selection-bar");//.insertBefore(d);
-
-                $('#output').append(d);
-            },
-
-            post_rejection: function(e) {
-                RCloud.UI.session_pane.post_error(e.message);
-                throw e;
-            },
-
-            close: function() {
-                clean = true;
-                shutdown();
-            }
-        };
-        return result;
-    }
+RCloud = {
+    version: '1.8'
 };
-
-RCloud = {};
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
 // We can tell them apart now ...
@@ -753,6 +641,119 @@ RCloud.create = function(rcloud_ocaps) {
     return rcloud;
 };
 
+// FIXME all RCloud.*.post_error calls should be handled elsewhere
+
+RClient = {
+    create: function(opts) {
+        opts = _.defaults(opts, {
+            debug: false
+        });
+        function on_connect() {
+            if (!rserve.ocap_mode) {
+                RCloud.UI.session_pane.post_error(ui_utils.disconnection_error("Expected an object-capability Rserve. Shutting Down!"));
+                shutdown();
+                return;
+            }
+
+            // the rcloud ocap-0 performs the login authentication dance
+            // success is indicated by the rest of the capabilities being sent
+            var session_mode = (opts.mode) ? opts.mode : "client";
+            rserve.ocap([token, execToken], session_mode, RCloud.version, function(err, ocaps) {
+                if(err)
+                    on_error(err[0], err[1]);
+                else {
+                    ocaps = Promise.promisifyAll(ocaps);
+                    if(ocaps === null) {
+                        on_error("Login failed. Shutting down!");
+                    }
+                    else if(RCloud.is_exception(ocaps)) {
+                        on_error(ocaps);
+                    }
+                    else {
+                        result.running = true;
+                        /*jshint -W030 */
+                        opts.on_connect && opts.on_connect.call(result, ocaps);
+                    }
+                }
+            });
+        }
+
+        // this might be called multiple times; some conditions result
+        // in on_error and on_close both being called.
+        function shutdown() {
+            if (!clean) {
+                $("#input-div").hide();
+            }
+            if (!rserve.closed)
+                rserve.close();
+        }
+
+        function on_error(msg, status_code) {
+            if (opts.debug) {
+                /*jshint -W087 */
+                debugger;
+            }
+            if (opts.on_error && opts.on_error(msg, status_code))
+                return;
+            shutdown();
+        }
+
+        function on_close(msg) {
+            if (opts.debug) {
+                /*jshint -W087 */
+                debugger;
+            }
+            if (!clean) {
+                if(!window.rcloud) // e.g. websocket handshake cancelled
+                    RCloud.UI.fatal_dialog("Could not connect to server.", "Retry", window.location.href);
+                else if(!rcloud.username()) // anonymous
+                    RCloud.UI.fatal_dialog("Your session closed unexpectedly.", "Reload", window.location.href);
+                else // logged in
+                    RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
+                shutdown();
+            }
+        }
+
+        var token = $.cookies.get().token;  // document access token
+        var execToken = $.cookies.get().execToken; // execution token (if enabled)
+        var rserve = Rserve.create({
+            host: opts.host,
+            on_connect: on_connect,
+            on_error: on_error,
+            on_close: on_close,
+            on_data: opts.on_data,
+            on_oob_message: opts.on_oob_message
+        });
+
+        var result;
+        var clean = false;
+
+        result = {
+            _rserve: rserve,
+            host: opts.host,
+            running: false,
+
+            post_response: function (msg) {
+                var d = $("<pre class='response'></pre>").html(msg);
+                //$(d).insertBefore("#selection-bar");//.insertBefore(d);
+
+                $('#output').append(d);
+            },
+
+            post_rejection: function(e) {
+                RCloud.UI.session_pane.post_error(e.message);
+                throw e;
+            },
+
+            close: function() {
+                clean = true;
+                shutdown();
+            }
+        };
+        return result;
+    }
+};
+
 var ui_utils = {};
 
 ui_utils.make_url = function(page, opts) {
@@ -782,11 +783,12 @@ ui_utils.make_url = function(page, opts) {
     return url;
 };
 
-ui_utils.relogin_uri = function() {
+ui_utils.relogin_uri = function(redirect_url) {
+  redirect_url = redirect_url || window.location.pathname + window.location.search;
     return window.location.protocol +
         '//' + window.location.host +
         '/login.R?redirect=' +
-        encodeURIComponent(window.location.pathname + window.location.search);
+        encodeURIComponent(redirect_url);
 };
 
 ui_utils.disconnection_error = function(msg, label) {
@@ -1073,7 +1075,7 @@ ui_utils.set_ace_readonly = function(widget, readonly) {
         highlightGutterLine: !readonly
     });
     widget.renderer.$cursorLayer.element.style.opacity = readonly?0:1;
-    widget.textInput.getElement().disabled = readonly;
+    widget.textInput.setReadOnly(readonly);
 };
 
 ui_utils.twostate_icon = function(item, on_activate, on_deactivate,
@@ -2295,6 +2297,8 @@ function create_cell_html_view(language, cell_model) {
         });
 
         widget.setTheme("ace/theme/chrome");
+        session.setNewLineMode('unix');
+        session.setOption('indentedSoftWrap', false);
         session.setUseWrapMode(true);
         return {
             widget: widget,
@@ -3102,6 +3106,18 @@ Notebook.Cell.create_model = function(content, language)
 
             return is_selected_;
         },
+        hide_cell_result: function() {
+            this.notify_views(function(view) {
+              view.toggle_results(false);
+            });
+            return false;
+        },
+        show_cell_result: function() {
+            this.notify_views(function(view) {
+              view.toggle_results(true);
+            });
+            return true;
+        },
         is_selected: function() {
             return is_selected_;
         },
@@ -3641,6 +3657,28 @@ Notebook.create_model = function()
             });
             RCloud.UI.selection_bar.update(this.cells);
         },
+        hide_selected_cells_results: function() {
+            if(!this.get_selected_cells().length) {
+              _.each(this.cells, function(cell) {
+                  cell.hide_cell_result();
+              });
+            } else {
+              _.each(this.get_selected_cells(), function(cell) {
+                  cell.hide_cell_result();
+              });
+            }
+        },
+        show_selected_cells_results: function() {
+            if(!this.get_selected_cells().length) {
+              _.each(this.cells, function(cell) {
+                  cell.show_cell_result();
+              });
+            } else {
+              _.each(this.get_selected_cells(), function(cell) {
+                  cell.show_cell_result();
+              });
+            }
+        },
         clear_all_selected_cells: function() {
             _.each(this.cells, function(cell) {
                 cell.deselect_cell();
@@ -3733,9 +3771,14 @@ Notebook.create_model = function()
                 cell_model.toggle_cell();
                 last_selected_ = this.cells.indexOf(cell_model);
             } else if(modifiers.is_exclusive) {
+                var the_only_selected = cell_model.is_selected() && this.get_selected_cells().length === 1;
                 clear_all();
-                cell_model.toggle_cell();
-                last_selected_ = this.cells.indexOf(cell_model);
+                if(!the_only_selected) {
+                  cell_model.toggle_cell();
+                  last_selected_ = this.cells.indexOf(cell_model);
+                } else {
+                  last_selected_ = undefined;
+                }
             } else /* is_range */ {
 
                 var start = this.cells.indexOf(cell_model),
@@ -4137,6 +4180,12 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
+        hide_cells_results: function() {
+            model.hide_selected_cells_results();
+        },
+        show_cells_results: function() {
+            model.show_selected_cells_results();
+        },
         join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
@@ -4351,6 +4400,16 @@ Notebook.create_controller = function(model)
                 _.each(model.cells, function(cell_model) {
                     if(process || cell_model.id() === cell_id) {
                         process = true;
+                        cell_model.controller.enqueue_execution_snapshot();
+                    }
+                });
+            });
+        },
+        run_cells: function(cell_ids) {
+            var that = this;
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    if(cell_ids.indexOf(cell_model.id()) > -1) {
                         cell_model.controller.enqueue_execution_snapshot();
                     }
                 });
@@ -4705,7 +4764,24 @@ function on_connect_anonymous_disallowed(ocaps) {
     return Promise.all([res_c, res_s]);
 }
 
-function rclient_promise(allow_anonymous) {
+function build_on_connect_error_handler(redirect_url) {
+      return function(error) {// e.g. couldn't connect with github
+        if(window.rclient)
+            rclient.close();
+        if (error.message === "Authentication required") {
+            if(RCloud.session.first_session_)
+                window.location = ui_utils.relogin_uri(redirect_url);
+            else
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri(redirect_url));
+        } else {
+            var msg = error.message || error.error || error;
+            RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
+        }
+        throw error;
+    };
+}
+
+function rclient_promise(allow_anonymous, on_connect_error_handler) {
     return new Promise(function(resolve, reject) {
         rclient = RClient.create({
             debug: false,
@@ -4730,20 +4806,7 @@ function rclient_promise(allow_anonymous) {
     }).then(function(hello) {
         if (!$("#output > .response").length)
             rclient.post_response(hello);
-    }).catch(function(error) { // e.g. couldn't connect with github
-        if(window.rclient)
-            rclient.close();
-        if (error.message === "Authentication required") {
-            if(RCloud.session.first_session_)
-                window.location = ui_utils.relogin_uri();
-            else
-                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
-        } else {
-            var msg = error.message || error.error || error;
-            RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
-        }
-        throw error;
-    }).then(function() {
+    }).catch(on_connect_error_handler).then(function() {
         return Promise.all([
             rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
                 if(timeout) {
@@ -4772,7 +4835,7 @@ RCloud.session = {
     first_session_: true,
     listeners: [],
     // FIXME rcloud.with_progress is part of the UI.
-    reset: function() {
+    reset: function(redirect_url) {
         if (this.first_session_) {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
@@ -4780,13 +4843,16 @@ RCloud.session = {
         this.listeners.forEach(function(listener) {
             listener.on_reset();
         });
+        
+        on_connect_error_handler = build_on_connect_error_handler(redirect_url);
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();
-            return rclient_promise(anonymous);
+            return rclient_promise(anonymous, on_connect_error_handler);
         });
-    }, init: function(allow_anonymous) {
+    }, init: function(allow_anonymous, on_connect_error_handler) {
         this.first_session_ = true;
+        on_connect_error_handler = build_on_connect_error_handler();
         return rclient_promise(allow_anonymous);
     },
     on_data: on_data,
@@ -4919,6 +4985,8 @@ RCloud.language = (function() {
         return RCloud.utils.promise_sequence(
             options.files,
             function(file) {
+                if(file.size > 2.5e6)
+                    return Promise.reject(new Error('File ' + file.name + ' rejected: maximum asset size is 2.5MB'));
                 return text_or_binary_reader()(file)
                     .then(function(content) {
                         if(_.isString(content) && Notebook.empty_for_github(content))
@@ -5032,6 +5100,7 @@ RCloud.UI.advanced_menu = (function() {
                     sort: 1000,
                     text: "Open in GitHub",
                     modes: ['view', 'edit'],
+                    disabled_reason: "The notebook source does not support a web interface",
                     action: function() {
                         shell.github_url().then(function(url) {
                             if(!url)
@@ -5786,6 +5855,8 @@ RCloud.UI.command_prompt = (function() {
         session.on('change', set_ace_height);
 
         widget.setTheme("ace/theme/chrome");
+        session.setNewLineMode('unix');
+        session.setOption('indentedSoftWrap', false);
         session.setUseWrapMode(true);
         widget.resize();
         var change_prompt = ui_utils.ignore_programmatic_changes(widget, history_.change.bind(history_));
@@ -6265,31 +6336,34 @@ RCloud.UI.configure_readonly = function() {
 
 var fatal_dialog_;
 var message_;
+var default_button_;
+var ignore_button_;
+var action_;
 
 RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href -> just close
     $('#loading-animation').hide();
+    action_ = href_or_function;
     if (_.isUndefined(fatal_dialog_)) {
-        var default_button = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>"),
-            ignore_button = $("<span class='btn' style='float:right'>Ignore</span>"),
-            body = $('<div />')
+        default_button_ = $("<button type='submit' class='btn btn-primary' style='float:right'>" + label + "</span>");
+        ignore_button_ = $("<span class='btn' style='float:right'>Ignore</span>");
+        var body = $('<div />')
                 .append('<h1>Aw, shucks</h1>');
         message_ = $('<p style="white-space: pre-wrap">' + message + '</p>');
-        body.append(message_, default_button);
-        if(href_or_function)
-            body.append(ignore_button);
+        body.append(message_, default_button_);
+        body.append(ignore_button_);
         body.append('<div style="clear: both;"></div>');
-        default_button.click(function(e) {
+        default_button_.click(function(e) {
             e.preventDefault();
-            if(_.isString(href_or_function))
-                window.location = href_or_function;
-            else if(_.isFunction(href_or_function)) {
+            if(_.isString(action_))
+                window.location = action_;
+            else if(_.isFunction(action_)) {
                 fatal_dialog_.modal("hide");
-                href_or_function();
+                action_();
             }
             else
                 fatal_dialog_.modal("hide");
         });
-        ignore_button.click(function() {
+        ignore_button_.click(function() {
             fatal_dialog_.modal("hide");
         });
         fatal_dialog_ = $('<div id="fatal-dialog" class="modal fade" />')
@@ -6299,10 +6373,9 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
                                     .append(body))));
         $("body").append(fatal_dialog_);
         fatal_dialog_.on("shown.bs.modal", function() {
-            default_button.focus();
+            default_button_.focus();
         });
     }
-    else message_.text(message);
     fatal_dialog_.modal({keyboard: false});
 };
 
@@ -9178,6 +9251,19 @@ RCloud.UI.init = function() {
         action: function() { }
     }, {
         category: 'Cell Management',
+        id: 'run_selected_cells',
+        description: 'Run the selected cells',
+        click_keys: {
+            target: 'Play button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
+    }, {
+        category: 'Cell Management',
         id: 'cell_run_from_here',
         description: 'Run from this cell on',
         keys: {
@@ -9192,6 +9278,19 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'show_results_of_cells',
+        description: 'Show results of selected/all cells',
+        click_keys: {
+            target: 'Hide results button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
     }, {
         category: 'Cell Management',
         id: 'blur_cell',
@@ -9677,16 +9776,18 @@ RCloud.UI.navbar = (function() {
                     sort: 1000,
                     modes: ['edit'],
                     create: function() {
-                        var share_link_, view_types_;
-                        return {
-                            control: $.el.span(share_link_ = $.el.a({
+                        var view_types_;
+                        var share_link_ = $.el.a({
                                 href: '#',
                                 id: 'share-link',
                                 title: 'Shareable Link',
                                 class: 'btn btn-link navbar-btn',
                                 style: 'text-decoration:none; padding-right: 0px',
                                 target: '_blank'
-                            }, $.el.i({class: 'icon-share'})), $.el.span({
+                            }, $.el.i({class: 'icon-share'}));
+                        $(share_link_).on('click', function(x) { shell.save_notebook();})
+                        return {
+                            control: $.el.span(share_link_, $.el.span({
                                 class: 'dropdown',
                                 style: 'position: relative; margin-left: -2px; padding-right: 12px'
                             }, $.el.a({
@@ -9701,6 +9802,12 @@ RCloud.UI.navbar = (function() {
                             set_url: function(url) {
                                 if(share_link_)
                                     $(share_link_).attr('href', url);
+                                return this;
+                            },
+                            open: function() {
+                                if(share_link_) {
+                                    $(share_link_)[0].click();
+                                }
                                 return this;
                             },
                             set_view_types: function(items) {
@@ -9814,8 +9921,15 @@ RCloud.UI.navbar = (function() {
                     modes: ['edit', 'view'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
-                        $(control.control).click(function() {
+                        $(control.control).click(function(e) {
+                          if(e.metaKey || e.ctrlKey) {
+                            var selected = shell.get_selected_cells().map (function(x) { return x.id(); });
+                            if(selected.length) {
+                              shell.run_notebook_cells(selected);
+                            }
+                          } else {
                             RCloud.UI.run_button.run();
+                          }
                         });
                         return control;
                     }
@@ -10130,6 +10244,7 @@ RCloud.UI.selection_bar = (function() {
         $dropdown_toggle,
         $delete_button,
         $crop_button,
+        $toggle_results_button,
         $cell_selection,
         $selected_details,
         $selected_count,
@@ -10149,6 +10264,7 @@ RCloud.UI.selection_bar = (function() {
             $dropdown_toggle = $selection_bar.find('.dropdown-toggle');
             $delete_button = $selection_bar.find('#selection-bar-delete');
             $crop_button = $selection_bar.find('#selection-bar-crop');
+            $toggle_results_button = $selection_bar.find('#selection-bar-toggle-results');
             $cell_selection = $selection_bar.find('.cell-selection');
             $selected_details = $delete_button.find('span');
             $selected_count = $selection_bar.find('#selected-count');
@@ -10180,6 +10296,14 @@ RCloud.UI.selection_bar = (function() {
                 .end()
                 .find('#selection-bar-crop').click(function() {
                     shell.notebook.controller.crop_cells();
+                })
+                .end()
+                .find('#selection-bar-toggle-results').click(function(e) {
+                  if(e.metaKey || e.ctrlKey) {
+                    shell.notebook.controller.show_cells_results();
+                  } else {
+                    shell.notebook.controller.hide_cells_results();
+                  }
                 })
                 .end();
 
@@ -10329,14 +10453,14 @@ RCloud.UI.notebook_title = (function() {
                                                active_text: active_text},
                                               editable_opts));
         },
-        update_fork_info: function(fork_of) {
-            // fork_of can be an empty array so make sure description is there
-            if(fork_of && fork_of.description) {
-                var owner = fork_of.owner ? fork_of.owner : fork_of.user;
-                var fork_desc = owner.login+ " / " + fork_of.description;
-                var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
-                                            {notebook: fork_of.id});
-                $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+        update_fork_info: function(fork_id) {
+            if(fork_id) {
+                rcloud.get_notebook_info(fork_id).then(function(info) {
+                    var fork_desc = (info.username || 'unknown') + " / " + (info.description || 'unknown');
+                    var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
+                                                {notebook: fork_id});
+                    $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+                });
             }
             else
                 $("#forked-from-desc").text("");
@@ -10930,6 +11054,8 @@ RCloud.UI.scratchpad = (function() {
                 }]);
 
                 session.setMode(new LangMode(false, doc, session));
+                session.setNewLineMode('unix');
+                session.setOption('indentedSoftWrap', false);
                 session.setUseWrapMode(true);
                 widget.resize();
                 ui_utils.on_next_tick(function() {
@@ -11929,15 +12055,16 @@ RCloud.UI.share_button = (function() {
         var opts = {notebook: shell.gistname(),
                     do_path: view_type.do_path,
                     version: shell.version()};
+        var shareable_link = RCloud.UI.navbar.control('shareable_link');
         if(!opts.version) {
-            RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
+            shareable_link.set_url(ui_utils.make_url(page, opts));
             return Promise.resolve(undefined);
         }
         else return rcloud.get_tag_by_version(shell.gistname(), opts.version)
             .then(function(t) {
                 if(t)
                     opts.tag = t;
-                RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
+                shareable_link.set_url(ui_utils.make_url(page, opts));
             });
     }
 
@@ -11952,6 +12079,8 @@ RCloud.UI.share_button = (function() {
                             handler: function() {
                                 rcloud.set_notebook_property(shell.gistname(), "view-type", that.key);
                                 set_page(that.key);
+                                var shareable_link = RCloud.UI.navbar.control('shareable_link');
+                                shareable_link.open();
                             }
                         };
                     }
@@ -12146,7 +12275,13 @@ RCloud.UI.upload_frame = {
     init: function() {
         $("#file").change(function() {
             $("#progress-bar").css("width", "0%");
+            if($("#file")[0].files.length===0) {
+              $("#upload-submit").prop('disabled', true);
+            } else {
+              $("#upload-submit").prop('disabled', false);
+            }
         });
+        $("#upload-submit").prop('disabled', true);
         $("#upload-submit").click(function() {
             if($("#file")[0].files.length===0)
                 return;
@@ -12158,6 +12293,7 @@ RCloud.UI.upload_frame = {
             on_reset: function() {
                 $(".progress").hide();
                 $("#file-upload-results").empty();
+                $("#upload-submit").prop('disabled', true);
             }
         });
     },
