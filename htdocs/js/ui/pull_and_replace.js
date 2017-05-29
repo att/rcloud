@@ -164,13 +164,17 @@ RCloud.UI.pull_and_replace = (function() {
     return {
         init: function() {
             RCloud.UI.advanced_menu.add({
-                 pull_and_replace_notebook: {
+                pull_and_replace_notebook: {
                     sort: 3000,
                     text: "Pull and Replace Notebook",
                     modes: ['edit'],
                     disabled_reason: "You can't pull and replace into a read only notebook",
                     action: function() {
-                        show_dialog();
+                        if(shell.notebook.model.read_only()) {
+                            alert('Sorry, you cannot Pull and Replace into a read only notebook.');
+                        } else {
+                            show_dialog();
+                        }
                     }
                 }
             });
