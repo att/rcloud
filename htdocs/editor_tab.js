@@ -1820,7 +1820,7 @@ var editor = function () {
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
 
-                     return Promise.all(promises).return(result);
+                     return Promise.all(promises).return(result).finally(that.update_recent_notebooks.bind(that));
                  });
             };
         }
