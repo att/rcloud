@@ -1,0 +1,9 @@
+Package: rcloud.shinyExp
+Title: Experimental Shiny Alternative Approach
+Version: 0.1
+Author: Ganapati Bhat <ganz@research.att.com>
+Maintainer: Ganapati Bhat <ganz@research.att.com>
+Description: Experimental notebook.R approach
+Depends: rcloud.support
+NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
+License: MIT
