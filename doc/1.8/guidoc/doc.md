@@ -11,10 +11,11 @@ layout: default
 
 </div>
 
-# User Guide; Latest Version: v1.6
+# User Guide; Latest Version: v1.8
 
-Created 2016-07-18. The **User Manual** contains an in-depth description of all the features in the RCloud Graphic User Interface (GUI). RCloud documentation is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis. 
+Created 2017-06-12. The **User Manual** contains an in-depth description of all the features in the RCloud Graphic User Interface (GUI). RCloud documentation is currently maintained by [Spencer Seidel](http://www.spencerseidel.com) on a voluntary basis. 
 
+Note that v1.8 of this user guide incorporates changes made in the v1.7 release.
 
 <a name="gettingstarted"></a>
 
@@ -580,7 +581,7 @@ Click OK and the notebook will disappear from the left sidebar and the last-view
 
 ### Sharing Your Notebooks
 
-There are several ways you can share your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![Header Bar: Share Icon](img/header_share.png), a popup menu will appear:
+There are several ways you can share/view your notebooks with colleagues. When you click on the downward arrow next to the share icon in the header bar ![Header Bar: Share Icon](img/header_share.png), a popup menu will appear:
 
 ![Header Bar: Notebook Share Type / View Mode](img/header_sharetype.png)
 
@@ -603,6 +604,22 @@ This is the simplest method. This will create a link that will allow someone to 
 ##### Hiding UI Elements
 
 To hide _all_ UI elements, add `&quiet=1` to the URL. Note that this works only with view.html.
+
+[Top](#TOP)
+
+<a name="viewiip.html"></a>
+
+#### viewiip.html
+
+View the notebook as a Slidy Powerpoint-like slideshow.
+
+[Top](#TOP)
+
+<a name="flexdashboard.html"></a>
+
+#### flexdashboard.html
+
+View a notebook that uses the flexdashboard package.
 
 [Top](#TOP)
 
@@ -1093,11 +1110,13 @@ View(a[1:10,])
 
 ## 16. Session
 
-The session panel displays critical system information when available, such as session timeouts. The panel will automatically open when messages are available.
+The session pane displays critical system information when available, such as session timeouts. The panel will automatically open when messages are available.
 
 ![RCloud Session Information in the Right Windowshade Panel](img/session.png)
 
 Click the ![Session Close Icon](img/session_close.png) icon to dismiss a session notification. 
+
+Note that Session panel output is limited to 10K in order to improve responsiveness when there is a large amount of output.
 
 [Top](#TOP)
 
@@ -1105,7 +1124,7 @@ Click the ![Session Close Icon](img/session_close.png) icon to dismiss a session
 
 ## 17. RStudio Shiny Support
 
-RCloud contains preliminary support for the [RStudio Shiny web application framework](http://shiny.rstudio.com) via the rcloud.shiny package. rcloud.shiny emulates a network connection to run Shiny on an RCloud server and client instead of a Shiny server. Basic functionality is supported. Shiny extensions are not yet supported.
+RCloud is 100% compatible with the [RStudio Shiny web application framework](http://shiny.rstudio.com) via the rcloud.shiny package. rcloud.shiny emulates a network connection to run Shiny on an RCloud server and client instead of a Shiny server.
 
 Although comprehensive documentation of rcloud.shiny is beyond the scope of this document, the implementation is simple enough to get many users already familiar with Shiny started.
 

@@ -19,7 +19,7 @@ Created 2017-06-01. **What's New!** contains a list of new features, GUI enhance
 
 ## 1. GUI Enhancements
 
-<a name="sample"></a>
+<a name="hidingoutputcells"></a>
 
 ### Hiding output cells
 
