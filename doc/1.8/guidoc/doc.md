@@ -106,14 +106,17 @@ Also, if the notebook was created as a result of [Forking another notebook](#for
 
 Click the Advanced drop-down menu to access more features:
 
-* **Open in GitHub**: Notebooks are stored as GitHub "gists," although you'll rarely need to interface directly with GitHub. This means you get all the power of a source-control versioning system for free. Behind the scenes, GitHub stores every revision of your notebooks, so you can retrieve them later, if necessary. In the GitHub web interface, you can delete your notebooks, edit the text, or change the privacy settings, among other things. For more about using the GitHub interface see [the GitHub help pages](https://help.github.com/).
+* **Open in GitHub**: Notebooks are stored as "gists" using the [RCloud Gist Service](https://github.com/att/rcloud-gist-services).  This means you get all the power of a source-control versioning system for free. Behind the scenes, RCloud stores every revision of your notebooks, so you can retrieve them later, if necessary.
 * **Load Notebook by ID**: Replace the current notebook with another via URL or GitHub Gist ID.
+* **Pull and Replace Notebook**: Opens a dialog box where you can tell RCloud to copy the contents of an existing notebook in the same RCloud instance via URL, file, or ID and replace the contents of the current notebook.
 * **Import External Notebooks**: Using this dialog, you can import multiple notebooks stored in another GitHub repository. You'll need the source GitHub repository API URL and a list of notebook IDs, newline separated. In addition, you can supply a prefix that will cause all the imported notebooks to go into a folder. E.g. "myfolder/". Note the trailing '/' character.
 * **Export Notebook to File**: Your browser will automatically save a copy of the current notebook in JSON format in whatever directory you've designated for downloads. The file name will be the same as your notebook with a .gist extension.
 * **Import Notebook from File**: In order to import a notebook, it must be in the same format as an exported notebook. Once you specify the notebook's location, you can validate the notebook by clicking the word "Validate." To import, click the Import button.
 * **Export Notebook as R Source File**: When selected, your browser will download an R source text file named after your notebook with .R appended.
 * **Manage Groups**: Opens the Notebook Permissions / Group Management dialog, where you can [manage your groups](#protectingyournotebooks).
 * **Publish Notebook**: By default, users who wish to view your notebooks must be logged into RCloud. If the Publish Notebook box is checked, *any* user who has network access to the notebook's URL will be able to view the notebook. Obviously, editing features will be turned off for these users.
+* **Import Rmarkdown File**: Imports Rmarkdown containined in a .Rmd file.
+* **Export Rmarkdown File**: When selected, your browser will download an Rmarkdown text file named after your notebook with .Rmd appended.
 
 ![Header Bar: Discover Link](img/header_discover.png): Click the Discover link in the header bar to view the most recent and most popular notebooks.
 
@@ -264,6 +267,10 @@ For additional Markdown information, please refer to the [full documentation of 
 
 If you find a typo or would like to otherwise edit your code, click the ![Edit Markdown](img/editmarkdown.png) icon. You can also click on any code portions of the output to enter edit mode.
 
+#### Navigation
+
+At the beginning or end of a cell's code, use the up and down arrow keys to jump to the next or previous cell.
+
 [Top](#TOP)
 
 <a name="addinganddeletingcells"></a>
@@ -400,6 +407,8 @@ To change the default name of new notebooks, see the [New Notebook Prefixes](#ne
 To run all the cells in your notebook, click the ![Header Bar: Play Icon](img/header_play.png) icon in the header bar.
 
 RCloud notebooks are executed asynchronously. RCloud will show individual cell results as the results are ready to display.
+
+To run only selected cells, hold down the `Ctrl/Cmd` key when you lick the ![Header Bar: Play Icon](img/header_play.png) icon in the header bar. See the [Multi-Cell Selection](#multi-cell-selection) section for more information about multiple-cell selection. 
 
 <a name="runninganotebook"></a>
 
@@ -577,6 +586,8 @@ There are several ways you can share your notebooks with colleagues. When you cl
 
 This allows you to select the kind of URL you'd like to share. Make your selection using the popup menu and then right click on the ![Header Bar: Share Icon](img/header_share.png) icon to copy the hyperlink.
 
+Clicking on a selection in the sharing menu will open a new browser tab and load the selected link.
+
 Note that if you have a tagged version of your notebook currently loaded, where appropriate, RCloud will populate the shared URL with the tag instead of the version. This is beneficial because then you can tag future versions with the same tag and not break existing URLs.
 
 [Top](#TOP)
@@ -640,14 +651,14 @@ To find out which users starred your notebook, click the notebook information ic
 
 ### Multi-Cell Selection
 
-You can use RCloud's multi-cell selection features to easily remove cells you no longer need:
+You can use RCloud's multi-cell selection features to perform various actions on many cells at once.
 
 ![Multi-cell Feature](img/multicell.png)
 
 1. At the top of your loaded notebook, you'll find a header bar. Click the checkbox to select/deselect every cell in your notebook.
 2. Click a cell's header to select that cell. Note that clicking the header of a selected cell **does not** deselect the cell.
 3. Click a cell's checkbox to select/deselect that cell.
-4. Click the crop icon to remove every cell that **isn't selected**. Click the trash icon to delete all **selected cells**.
+4. Click the ![output](img/cellheader_output.png) icon to hide the output of selected cells. Note that this feature is only available with your own notebooks. Click the ![crop](img/cellheader_crop.png) icon to remove every cell that **isn't selected**. Click the ![trash](img/cellheader_delete.png) icon to delete all **selected cells**. Note that RCloud will indicate how many cells are selected out of the total number of cells.
 
 Use the checkbox dropdown menu to fine-tune your selection:
 
@@ -786,7 +797,7 @@ Assets can be binary (e.g. an image). RCloud auto-detects the content format and
 
 ### Asset Size
 
-Assets are limited to 750KB each.
+Assets are limited to 2.5MB each.
 
 [Top](#TOP)
 
@@ -961,6 +972,18 @@ Toggles "Cell 1," "Cell 2," etc. in the cells panel.
 ### Arrange panels by size
 
 In some situations, larger panels on the left-hand side of the GUI "crowd-out" the currently loaded notebook and force the user to resize. In order to minimize this, select the "Arrange Panel by Size" checkbox in the Settings panel. RCloud will then rearrange panels in order to reduce the need for resizing the notebook.
+
+[Top](#TOP)
+
+### Clear R Session when entire notebook is run
+
+Runs notebooks as though you'd just logged in.
+
+[Top](#TOP)
+
+### Export only selected cells
+
+In the various export commands available in the Advanced header menu item, only export selected cells.
 
 [Top](#TOP)
 
