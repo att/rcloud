@@ -146,13 +146,50 @@ var RCompletions = function() {
       
    this.insertMatch = function(editor, data) {
       var completions = editor.completer.completions;
-      if ( completions && completions.filterText) {
-         var ranges = [editor.selection.getRange()];
-         for (var i = 0, range; range = ranges[i]; i++) {
-             range.start.column -= completions.filterText.length;
-             editor.session.remove(range);
-         }
+      var session = editor.getSession();
+      var pos = editor.getCursorPosition();
+      var line = session.getLine(pos.row);
+      var left = line.substr(0,pos.column);
+      var right = line.substr(pos.column, line.length);
+      
+      var removeToLeft = function(editor, howMany) {
+          var range = editor.selection.getRange();
+          range.start.column -= howMany;
+          editor.session.remove(range);
+      };
+      
+      if ( completions ) {
+        // Note: filterText may contain initial text and any extra characters that user typed in to filter
+        // the set of available completions produced when autocomplete dialog was created.
+        if(completions.filterText) {
+          if( left.endsWith(completions.filterText) && data.value.startsWith(completions.filterText) ) {
+            // Avoid unnecessary autocompletion
+            var replacementTail = data.value.substr(completions.filterText.length, data.value.length);
+            if(right.startsWith(replacementTail)) {
+              var gotoRange = editor.selection.getRange();
+              gotoRange.end.column += replacementTail.length;
+              gotoRange.start.column += replacementTail.length;
+              editor.selection.setSelectionRange(gotoRange);
+              return;
+            }
+          }
+          removeToLeft(editor, completions.filterText.length);
+          left = left.substr(0, left.length - completions.filterText.length);
+        }
+        if( left.length > 0 ) {
+          // Handle a case when the selected completion starts ahead current range/position in the editor
+          var lookbackIndex = 0;
+          var prefix = left.substr(lookbackIndex, left.length);
+          while(lookbackIndex < left.length && !data.value.startsWith(prefix)) {
+            lookbackIndex += 1;
+            prefix = left.substr(left.length-lookbackIndex, left.length);
+          }
+          if(left.length > lookbackIndex) {
+            removeToLeft(editor, left.length - lookbackIndex);
+          }
+        }
       }
+      
       if (data.snippet)
          editor.completer.snippetManager.insertSnippet(editor, data.snippet);
       else
