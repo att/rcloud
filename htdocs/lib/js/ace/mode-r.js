@@ -32,23 +32,17 @@ define("ace/mode/r", function(require, exports, module)
    var FoldMode = require("./folding/cstyle").FoldMode;
    var RMatchingBraceOutdent = require("ace/mode/r_matching_brace_outdent").RMatchingBraceOutdent;
    var AutoBraceInsert = require("ace/mode/auto_brace_insert").AutoBraceInsert;
+   var RCompletions = require("ace/mode/r_completions").RCompletions;
    var unicode = require("ace/unicode");
 
    var Mode = function(suppressHighlighting, doc, session)
    {
-      this.getCompletions = function(state, session, pos, prefix, callback) {
-          rcloud.get_completions('R', session.getValue(),
-                                 session.getDocument().positionToIndex(pos))
-              .then(function(ret) {
-                  callback(null, ret);
-              });
-      };
       this.HighlightRules = RHighlightRules;
       if (suppressHighlighting)
          this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
       else
          this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
-
+      this.$completer = new RCompletions();
       this.$highlightRules = new this.HighlightRules();
       this.codeModel = new RCodeModel(doc, this.$tokenizer, null);
       this.foldingRules = new FoldMode();
@@ -116,7 +110,55 @@ define("ace/mode/r", function(require, exports, module)
          }
          return false;
       };
+      
+      this.getCompletions = function(state, session, pos, prefix, callback) {
+         this.$completer.getCompletions(state, session, pos, prefix, callback);
+      };
+  
       this.lineCommentStart = ["#"];
    }).call(Mode.prototype);
    exports.Mode = Mode;
+});
+
+
+define("ace/mode/r_completions", ["require","exports","module"], function(require, exports, module) {
+"use strict";
+
+
+var RCompletions = function() {
+  
+};
+
+(function() {
+    this.getCompletions = function(state, session, pos, prefix, callback) {
+          var that = this;
+          rcloud.get_completions('R', session.getValue(), session.getDocument().positionToIndex(pos))
+                                 .then(function(ret) { 
+                                   ret.forEach(function(x) { x.completer = that; }); 
+                                  return ret;
+                                 })
+                                .then(function(ret) {
+                                    callback(null, ret);
+                                  });
+      };
+      
+   this.identifierRegexps = [/[a-zA-Z_0-9:\/\$\-\.\u00A2-\uFFFF]/];
+      
+   this.insertMatch = function(editor, data) {
+      var completions = editor.completer.completions;
+      if ( completions && completions.filterText) {
+         var ranges = [editor.selection.getRange()];
+         for (var i = 0, range; range = ranges[i]; i++) {
+             range.start.column -= completions.filterText.length;
+             editor.session.remove(range);
+         }
+      }
+      if (data.snippet)
+         editor.completer.snippetManager.insertSnippet(editor, data.snippet);
+      else
+         editor.execCommand("insertstring", data.value || data);
+   };
+}).call(RCompletions.prototype);
+
+exports.RCompletions = RCompletions;
 });
