@@ -195,6 +195,46 @@ var RCompletions = function() {
       else
          editor.execCommand("insertstring", data.value || data);
    };
+   
+   this.rowTokenizer = function(popup) {
+     return function(row) {
+        var data = popup.data[row];
+        var tokens = [];
+        if (!data)
+            return tokens;
+        if (typeof data == "string")
+            data = {value: data};
+        if (!data.caption)
+            data.caption = data.value || data.name;
+
+        var last = -1;
+        var flag, c;
+        var isFirstMatch = 1;
+        for (var i = 0; i < data.caption.length; i++) {
+            c = data.caption[i];
+            flag = isFirstMatch & (data.matchMask & (1 << i) ? 1 : 0);
+            if (last !== flag) {
+              if(isFirstMatch && last !== -1) {
+                isFirstMatch = 0;
+              }
+              tokens.push({type: data.className || "" + ( flag ? "completion-highlight" : ""), value: c});
+              last = flag;
+            } else {
+                tokens[tokens.length - 1].value += c;
+            }
+        }
+
+        if (data.meta) {
+            var maxW = popup.renderer.$size.scrollerWidth / popup.renderer.layerConfig.characterWidth;
+            var metaData = data.meta;
+            if (metaData.length + data.caption.length > maxW - 2) {
+                metaData = metaData.substr(0, maxW - data.caption.length - 3) + "\u2026";
+            }
+            tokens.push({type: "rightAlignedText", value: metaData});
+        }
+        return tokens;
+    };
+    };
 }).call(RCompletions.prototype);
 
 exports.RCompletions = RCompletions;

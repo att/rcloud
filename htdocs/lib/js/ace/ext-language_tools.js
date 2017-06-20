@@ -1081,6 +1081,7 @@ var AcePopup = function(parentNode) {
         }
         return tokens;
     };
+    
     bgTokenizer.$updateOnChange = noop;
     bgTokenizer.start = noop;
 
@@ -1338,8 +1339,12 @@ var Autocomplete = function() {
     };
 
     this.openPopup = function(editor, prefix, keepPopupPosition) {
-        if (!this.popup)
+        if (!this.popup) {
             this.$init();
+            if (editor.session.$mode && editor.session.$mode.$completer && editor.session.$mode.$completer.rowTokenizer) {
+                this.popup.session.bgTokenizer.$tokenizeRow = editor.session.$mode.$completer.rowTokenizer(this.popup);
+            }
+        }
 
         this.popup.setData(this.completions.filtered);
 
