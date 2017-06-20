@@ -1081,6 +1081,7 @@ var AcePopup = function(parentNode) {
         }
         return tokens;
     };
+    
     bgTokenizer.$updateOnChange = noop;
     bgTokenizer.start = noop;
 
@@ -1269,10 +1270,17 @@ exports.getCompletionPrefix = function (editor) {
     var prefix;
     editor.completers.forEach(function(completer) {
         if (completer.identifierRegexps) {
-            completer.identifierRegexps.forEach(function(identifierRegex) {
+            var prefixExtractor = function(identifierRegex) {
                 if (!prefix && identifierRegex)
                     prefix = this.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
-            }.bind(this));
+            }.bind(this);
+            
+            if(typeof completer.identifierRegexps === "function") {
+                completer.identifierRegexps(editor).forEach(prefixExtractor);
+            } else {
+                completer.identifierRegexps.forEach(prefixExtractor);
+            }
+
         }
     }.bind(this));
     return prefix || this.retrievePrecedingIdentifier(line, pos.column);
@@ -1331,8 +1339,12 @@ var Autocomplete = function() {
     };
 
     this.openPopup = function(editor, prefix, keepPopupPosition) {
-        if (!this.popup)
+        if (!this.popup) {
             this.$init();
+            if (editor.session.$mode && editor.session.$mode.$completer && editor.session.$mode.$completer.rowTokenizer) {
+                this.popup.session.bgTokenizer.$tokenizeRow = editor.session.$mode.$completer.rowTokenizer(this.popup);
+            }
+        }
 
         this.popup.setData(this.completions.filtered);
 
@@ -1795,6 +1807,14 @@ var keyWordCompleter = {
         // gw: pass in callback instead of calling it directly, to support asynchronous results
         var completions = session.$mode.getCompletions(state, session, pos, prefix, callback);
         //callback(null, completions);
+    },
+    identifierRegexps: function(editor) {
+      if(editor.session.$mode.$completer) {
+        if(editor.session.$mode.$completer.identifierRegexps) {
+          return editor.session.$mode.$completer.identifierRegexps;
+        }
+      }
+      return [];
     }
 };
 
