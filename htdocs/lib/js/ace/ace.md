@@ -26,3 +26,4 @@ following changes:
   `selection.getRange()` instead of `selection.getAllRanges()` - unclear why the latter doesn't work
 - ace-cpp-autoindent needs extra parameters for `mode.getNextLineIndent()` to work
 - add call to rcloud.get_completions for python mode
+- resize completion popup to fit contents in `ext-language_tools.js`
