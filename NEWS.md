@@ -1,3 +1,9 @@
+## RCloud 1.8.1
+
+### Improvements
+* `rcloud.shiny` is now self-contained in its own package - `/shiny.html`
+  forwards to `shared.R/rcloud.shiny/shiny.html`
+
 ## RCloud 1.8
 
 See the news for

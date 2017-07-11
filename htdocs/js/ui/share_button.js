@@ -57,10 +57,6 @@ RCloud.UI.share_button = (function() {
                 'mini.html': {
                     sort: 3000,
                     page: 'mini.html'
-                },
-                'shiny.html': {
-                    sort: 4000,
-                    page: 'shiny.html'
                 }
             });
             return this;
