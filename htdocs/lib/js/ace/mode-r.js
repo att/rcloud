@@ -142,19 +142,26 @@ var RCompletions = function() {
                                   });
       };
       
-   this.identifierRegexps = [/[a-zA-Z_0-9:\/\$\-\.\u00A2-\uFFFF]/];
-      
-   this.insertMatch = function(editor, data) {
+   this.extractCompletionPrefix = function(editor, line, column, callback) {
+        var that = this;
+        rcloud.get_completion_prefix('R', line, column)
+                                .then(function(ret) {
+                                    callback(null, ret.value);
+                                  });
+   };
+   
+   this.insertMatch = function(editor, completion) {
       var completions = editor.completer.completions;
       var session = editor.getSession();
       var pos = editor.getCursorPosition();
+      var startPosition = completion.position;
       var line = session.getLine(pos.row);
-      var left = line.substr(0,pos.column);
+      var left = line.substr(startPosition, pos.column);
       var right = line.substr(pos.column, line.length);
       
-      var removeToLeft = function(editor, howMany) {
+      var removeToLeft = function(editor) {
           var range = editor.selection.getRange();
-          range.start.column -= howMany;
+          range.start.column = startPosition;
           editor.session.remove(range);
       };
       
@@ -162,9 +169,9 @@ var RCompletions = function() {
         // Note: filterText may contain initial text and any extra characters that user typed in to filter
         // the set of available completions produced when autocomplete dialog was created.
         if(completions.filterText) {
-          if( left.endsWith(completions.filterText) && data.value.startsWith(completions.filterText) ) {
+          if( left.endsWith(completions.filterText) && completion.value.startsWith(completions.filterText) ) {
             // Avoid unnecessary autocompletion
-            var replacementTail = data.value.substr(completions.filterText.length, data.value.length);
+            var replacementTail = completion.value.substr(completions.filterText.length, completion.value.length);
             if(right.startsWith(replacementTail)) {
               var gotoRange = editor.selection.getRange();
               gotoRange.end.column += replacementTail.length;
@@ -173,27 +180,14 @@ var RCompletions = function() {
               return;
             }
           }
-          removeToLeft(editor, completions.filterText.length);
-          left = left.substr(0, left.length - completions.filterText.length);
-        }
-        if( left.length > 0 ) {
-          // Handle a case when the selected completion starts ahead current range/position in the editor
-          var lookbackIndex = 0;
-          var prefix = left.substr(lookbackIndex, left.length);
-          while(lookbackIndex < left.length && !data.value.startsWith(prefix)) {
-            lookbackIndex += 1;
-            prefix = left.substr(left.length-lookbackIndex, left.length);
-          }
-          if(left.length > lookbackIndex) {
-            removeToLeft(editor, left.length - lookbackIndex);
-          }
+          removeToLeft(editor);
         }
       }
       
-      if (data.snippet)
-         editor.completer.snippetManager.insertSnippet(editor, data.snippet);
+      if (completion.snippet)
+         editor.completer.snippetManager.insertSnippet(editor, completion.snippet);
       else
-         editor.execCommand("insertstring", data.value || data);
+         editor.execCommand("insertstring", completion.value || completion);
    };
 }).call(RCompletions.prototype);
 
