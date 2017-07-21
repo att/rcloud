@@ -293,6 +293,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     ## governed by the encrypted content
     group <- rcloud.get.notebook.cryptgroup(id)
 
+    ulog("INFO: rcloud.update.notebook (", id, ")")
     ## there is one special case: if the notebook is encrypted and this is a request for a
     ## partial update of the files, we have to compute the new encrypted content by merging
     ## the request. This is only the case if the request doesn't involve direct
@@ -370,7 +371,9 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
           rcloud.reset.session()
         }
     }
-    rcloud.augment.notebook(res)
+    res <- rcloud.augment.notebook(res)
+    ulog("INFO: rcloud.create.notebook (", res$content$id, ")")
+    res
   }, error = function(e) { list(ok = FALSE) })
 }
 
@@ -417,6 +420,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
 
     rcloud.update.fork.count(id)
+    ulog("INFO: rcloud.fork.notebook (", id, " -> ", new.nb$content$id, ")")
     new.nb
 }
 
@@ -661,6 +665,7 @@ rcloud.config.add.notebook <- function(id)
 rcloud.config.remove.notebook <- function(id) {
   # also set visibility for easy filtering
   rcloud.set.notebook.visibility(id, FALSE)
+  ulog("INFO: rcloud.config.remove.notebook (", id, ")")
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
 }
 
