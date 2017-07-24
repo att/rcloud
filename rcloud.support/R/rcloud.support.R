@@ -536,12 +536,6 @@ rcloud.get.completions <- function(language, text, pos) {
   else stop("don't know how to auto-complete language ", language);
 }
 
-rcloud.get.completion.prefix <- function(language, text, pos) {
-  if (!is.null(.session$languages[[language]]) && !is.null(.session$languages[[language]]$get.completion.prefix))
-    .session$languages[[language]]$get.completion.prefix(text, pos, .session)
-  else NULL;
-}
-
 rcloud.help <- function(topic) {
   result <- help(topic)
   if(length(result)) {

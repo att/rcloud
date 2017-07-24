@@ -87,7 +87,6 @@ compute.ocaps <- function(mode, authenticated) {
         authenticated_session_cell_eval = make.oc(rcloud.authenticated.cell.eval),
         call_notebook = make.oc(rcloud.call.notebook),
         get_completions = make.oc(rcloud.get.completions),
-        get_completion_prefix = make.oc(rcloud.get.completion.prefix),
         call_fastrweb_notebook = make.oc(rcloud.call.FastRWeb.notebook),
         load_module_package = make.oc(rcloud.load.module.package)
         )) else caps
@@ -242,7 +241,6 @@ authenticated.ocaps <- function(mode)
       get_multiple_fork_counts = make.oc(rcloud.multiple.notebook.fork.counts),
       call_notebook = compute$call_notebook,
       get_completions = compute$get_completions,
-      get_completion_prefix = compute$get_completion_prefix,
       R_httpd = compute$R_httpd,
 
       # This will cause bugs, because some notebooks want a
