@@ -394,7 +394,6 @@ RCloud.create = function(rcloud_ocaps) {
             ["port_notebooks"],
             ["purl_source"],
             ["get_completions"],
-            ["get_completion_prefix"],
             ["rename_notebook"],
             ["authenticated_cell_eval"],
             ["session_markdown_eval"],
@@ -503,6 +502,7 @@ RCloud.create = function(rcloud_ocaps) {
                                                name: "library",
                                                score: 3,
                                                position: completions.position,
+                                               prefix: completions.prefix,
                                                value: comp
                                               };
                                    });
@@ -519,17 +519,6 @@ RCloud.create = function(rcloud_ocaps) {
                                               };
                                    });
                     }
-                });
-        };
-        
-        rcloud.get_completion_prefix = function(language, text, pos) {
-            return rcloud_ocaps.get_completion_prefixAsync(language, text, pos)
-                .then(function(prefix) {
-                  if(prefix === '') {
-                    return {}
-                  } else {
-                    return {value: prefix};
-                  }
                 });
         };
 

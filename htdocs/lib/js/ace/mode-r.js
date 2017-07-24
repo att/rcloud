@@ -110,10 +110,6 @@ define("ace/mode/r", function(require, exports, module)
          }
          return false;
       };
-      
-      this.getCompletions = function(state, session, pos, prefix, callback) {
-         this.$completer.getCompletions(state, session, pos, prefix, callback);
-      };
   
       this.lineCommentStart = ["#"];
    }).call(Mode.prototype);
@@ -130,9 +126,10 @@ var RCompletions = function() {
 };
 
 (function() {
-    this.getCompletions = function(state, session, pos, prefix, callback) {
+    this.getCompletions = function(editor, session, pos, callback) {
           var that = this;
-          rcloud.get_completions('R', session.getValue(), session.getDocument().positionToIndex(pos))
+          var line = session.getLine(pos.row);
+          rcloud.get_completions('R', line, pos.column)
                                  .then(function(ret) { 
                                    ret.forEach(function(x) { x.completer = that; }); 
                                   return ret;
@@ -142,14 +139,6 @@ var RCompletions = function() {
                                   });
       };
       
-   this.extractCompletionPrefix = function(editor, line, column, callback) {
-        var that = this;
-        rcloud.get_completion_prefix('R', line, column)
-                                .then(function(ret) {
-                                    callback(null, ret.value);
-                                  });
-   };
-   
    this.insertMatch = function(editor, completion) {
       var completions = editor.completer.completions;
       var session = editor.getSession();

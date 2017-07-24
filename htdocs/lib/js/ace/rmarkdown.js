@@ -26,11 +26,13 @@ var SweaveBackgroundHighlighter = require("ace/mode/sweave_background_highlighte
 var RCodeModel = require("ace/mode/r_code_model").RCodeModel;
 
 var Mode = function(suppressHighlighting, doc, session) {
+   this.HighlightRules = RMarkdownHighlightRules;
    this.$tokenizer = new Tokenizer(new RMarkdownHighlightRules().getRules());
 
    this.codeModel = new RCodeModel(doc, this.$tokenizer, /^r-/,
                                    /^`{3,}\s*\{r(.*)\}\s*$/);
    this.foldingRules = this.codeModel;
+   this.$highlightRules = new this.HighlightRules();
    this.$sweaveBackgroundHighlighter = new SweaveBackgroundHighlighter(
          session,
          /^`{3,}\s*\{r(?:.*)\}\s*$/,
