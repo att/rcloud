@@ -1,7 +1,7 @@
 version: '2'
 services:
   rcloud:
-    image: mangothecat/rcloud-dev
+    image: rcdev
     ports:
       - "8080:8080"
     depends_on: 
@@ -13,6 +13,6 @@ services:
       - .\rcloud.support:/data/rcloud/rcloud.support # so we don't have to full rebuild every time
       - ..\rcloud.solr:/data/rcloud/rcloud.packages/rcloud.solr
   solr:
-    image: mangothecat/rcloud-solr
+    image: mangothecat/rcloud-solr:v1
     #    ports:
     #  - "8983:8983"
