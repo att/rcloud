@@ -4,6 +4,10 @@
 * `rcloud.shiny` is now self-contained in its own package - `/shiny.html`
   forwards to `shared.R/rcloud.shiny/shiny.html`
 
+### Bugfixes
+* dataframe viewer would crash the UI if the dataframe had only one column (#2445)
+
+
 ## RCloud 1.8
 
 See the news for
