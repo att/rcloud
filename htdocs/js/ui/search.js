@@ -196,7 +196,7 @@ RCloud.UI.search = (function() {
                     } else if(parseInt(numpaged) < page_size_){
                         summary(numfound +" Results Found", 'darkgreen');
                     } else {
-                        // var search_summary = numfound +" Results Found, showing ";
+                        var search_summary = numfound +" Results Found, showing ";
                         // if (numSources > 1) { // for multi-sources it gets complicated, just show the page
                         //     search_summary += "page "+ Math.round(start/page_size_ + 1);
                         // } else {
