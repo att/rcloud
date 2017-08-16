@@ -133,6 +133,58 @@
   </div>
 </script>
 
+<script type="text/template" id="search_results_template">
+  <% _.each(notebooks, function(result) { %>
+    
+    <table class="search-result-item" width="100%">
+      <tbody>
+        <tr>
+          <td width="10%">
+            <!-- swap out local host -->
+            <a id="open_0" href="http://localhost:8080/edit.html?notebook=<%=result.id%>" class="search-result-heading"><%=result.id%> / <%=result.description%></a>
+            <i class="icon-star search-star"><sub>,<%=result.starcount%></sub></i> <br/>
+            <span class="search-result-modified-date">modified at <i><%=result.modified_date%></i></span>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" width="100%" style="font-size: 12">
+            <div>
+              <div>
+                <div id="docs<%=result.id%>">
+                  <table style="width: 100%">
+                    <tbody>
+                      <% _.each(result.doclist.docs, function(doc) { %>
+                        <tr>
+                          <th class="search-result-part-name"><%=doc.filename%></th>
+                        </tr>
+                        <tr>
+                          <td>
+                            <table style="width: 100%">
+                              <tbody>
+                                <tr>
+                                  <td class="search-result-code">
+                                    <code>
+                                      <%=doc.highlighting.content%>
+                                    </code>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  <% }); %>
+</script>
+
 <script type="text/html" id="help-snippet">
   <div id="help-wrapper" class="panel-body widget-vsize">
     <a href="#" id="show-shortcuts" title="Show Shortcuts">
