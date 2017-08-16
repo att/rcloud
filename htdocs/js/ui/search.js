@@ -196,10 +196,10 @@ RCloud.UI.search = (function() {
                     } else if(parseInt(numpaged) < page_size_){
                         summary(numfound +" Results Found", 'darkgreen');
                     } else {
-                        var search_summary = numfound +" Results Found, showing ";
-                        if (numSources > 1) { // for multi-sources it gets complicated, just show the page
-                            search_summary += "page "+ Math.round(start/page_size_ + 1);
-                        } else {
+                        // var search_summary = numfound +" Results Found, showing ";
+                        // if (numSources > 1) { // for multi-sources it gets complicated, just show the page
+                        //     search_summary += "page "+ Math.round(start/page_size_ + 1);
+                        // } else {
                             if(numfound-start === 1) {
                                 search_summary += (start+1);
                             } else if((numfound - noofrows) > 0) {
@@ -207,7 +207,7 @@ RCloud.UI.search = (function() {
                             } else {
                                 search_summary += (start+1)+" - "+numfound;
                             }
-                        }
+                        //}
                         summary(search_summary, 'darkgreen');
                     }
                     $("#search-results-row").css('display', 'table-row');
