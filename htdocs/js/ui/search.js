@@ -139,9 +139,9 @@ RCloud.UI.search = (function() {
                 $("#search-results").show().html($("<h4/>").append(html));
             }
             function create_list_of_search_results(d) {
-
+                
                 console.log(d);
-
+                
                 var i;
                 var custom_msg = '';
                 if(d === null || d === "null" || d.n_notebooks === "0") {
@@ -155,19 +155,16 @@ RCloud.UI.search = (function() {
                     err_msg(custom_msg+"ERROR:\n" + d[1], 'darkred');
                 } else {
                     
-                    if(d.n_notebooks != undefined) {
-                        numpaged = numfound = parseInt(d.n_notebooks);
-                    }
-                    var qtime = d.QTime;
-                    var noofpages =  Math.ceil(numpaged/page_size_);
                     //iterating for all the notebooks got in the result/response
                     try {
+                        numpaged = numfound = parseInt(d.n_notebooks);
+                        var qtime = d.QTime;
+                        var noofpages =  Math.ceil(numpaged/page_size_);
+                        
                         var template = _.template(
                             $("#search_results_template").html()
                         );
-
-                        $("#search-results").html(template({notebooks: d.notebooks}))
-
+                                                
                     } catch(e) {
                         summary("Error : \n" + e, 'darkred');
                     }
@@ -215,7 +212,7 @@ RCloud.UI.search = (function() {
                     }
                     $("#search-results-row").css('display', 'table-row');
                     $("#search-results-scroller").scrollTop(0);
-                    $('#search-results').html(search_results);
+                    $("#search-results").html(template({notebooks: d.notebooks}))
                     $("#search-results .search-result-heading").click(function(e) {
                         e.preventDefault();
                         var gistname = $(this).attr("data-gistname"), gistsource = $(this).attr("data-gistsource");
