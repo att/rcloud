@@ -50,13 +50,17 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
+    function is_collaborator(notebook, user) {
+        return notebook.collaborators.find(function(c) { return c.login === user; });
+    }
+
     function on_load(version, notebook) {
         // the git backend should determine readonly but that's another huge refactor
         // and it would require multiple usernames, which would be a rather huge change
         var ninf = editor.get_notebook_info(notebook.id);
         var is_read_only = ninf && ninf.source ||
                 version !== null ||
-                notebook.user.login !== rcloud.username() ||
+                (notebook.user.login !== rcloud.username() && !is_collaborator(notebook, rcloud.username())) ||
                 shell.is_view_mode();
         current_gist_ = notebook;
         current_version_ = notebook.history[0].version;
@@ -568,7 +572,7 @@ Notebook.create_controller = function(model)
         //////////////////////////////////////////////////////////////////////
 
         is_mine: function() {
-            return rcloud.username() === model.user();
+            return rcloud.username() === model.user() || is_collaborator(this.current_gist(), rcloud.username());
         },
 
         //////////////////////////////////////////////////////////////////////
