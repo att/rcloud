@@ -1,5 +1,10 @@
 ## RCloud 1.8.1
 
+### Feature
+* When using [rcloud-gist-services](https://github.com/att/rcloud-gist-services) as the
+  notebook backend, it is possible for multiple users to collaborate on a set of
+  notebooks, by putting those notebooks under a shared virtual user id.
+
 ### Improvements
 * `rcloud.shiny` is now self-contained in its own package - `/shiny.html`
   forwards to `shared.R/rcloud.shiny/shiny.html`
