@@ -38,11 +38,11 @@ rcloud.get.asset <- function(name, notebook=rcloud.session.notebook(), version=N
 # FIXME semantics are entirely different depending on the file extension
 # this is a terrible idea.
 rcloud.execute.asset <- function(name, ..., notebook=rcloud.session.notebook(), version=NULL,
-                                 cached=TRUE, wait=TRUE) {
+                                 cached=TRUE, wait=TRUE, env=FALSE) {
   asset <- rcloud.get.asset(name, notebook, version, cached, as.file=TRUE)
   ext <- if(length(grep(".", name, fixed=TRUE))) gsub(".*\\.","",name) else ""
   driver <- switch(ext,
-         R = return(source(asset)),
+         R = return(source(asset, local=env)),
          py = "python ",
          pl = "perl ",
          sh = "sh ",

@@ -20,6 +20,7 @@ RCloud.UI.advanced_menu = (function() {
                     sort: 1000,
                     text: "Open in GitHub",
                     modes: ['view', 'edit'],
+                    disabled_reason: "The notebook source does not support a web interface",
                     action: function() {
                         shell.github_url().then(function(url) {
                             if(!url)

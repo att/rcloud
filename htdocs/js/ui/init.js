@@ -145,10 +145,10 @@ RCloud.UI.init = function() {
         description: 'Step back through the notebook\'s history',
         keys: {
             mac: [
-                ['command', 'z']
+                ['command', 'alt', 'z']
             ],
             win: [
-                ['ctrl', 'z']
+                ['ctrl', 'alt', 'z']
             ]
         },
         on_page: ['edit'],
@@ -206,13 +206,11 @@ RCloud.UI.init = function() {
         description: 'Remove selected cells',
         keys: {
             mac: [
-                ['del'],
-                ['backspace'],
                 ['command', 'backspace']
             ],
             win: [
-                ['del'],
-                ['backspace']
+                ['ctrl', 'del'],
+                ['ctrl', 'backspace']
             ]
         },
         modes: ['writeable'],
@@ -248,26 +246,6 @@ RCloud.UI.init = function() {
         },
         modes: ['writeable'],
         action: function() { shell.notebook.controller.crop_cells(); }
-    }, {
-        category: 'Cell Management',
-        id: 'arrow_next_cell',
-        description: 'Enter next cell (from end of current)',
-        keys: {
-            win_mac: [
-                ['right']
-            ]
-        },
-        modes: ['writeable']
-    }, {
-        category: 'Cell Management',
-        id: 'arrow_previous_cell',
-        description: 'Enter previous cell (from start of current)',
-        keys: {
-            win_mac: [
-                ['left']
-            ]
-        },
-        modes: ['writeable']
     }, {
         category: 'Cell Management',
         id: 'arrow_next_cell_down',
@@ -338,6 +316,19 @@ RCloud.UI.init = function() {
         action: function() { }
     }, {
         category: 'Cell Management',
+        id: 'run_selected_cells',
+        description: 'Run the selected cells',
+        click_keys: {
+            target: 'Play button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
+    }, {
+        category: 'Cell Management',
         id: 'cell_run_from_here',
         description: 'Run from this cell on',
         keys: {
@@ -352,6 +343,19 @@ RCloud.UI.init = function() {
             ]
         },
         modes: ['writeable']
+    }, {
+        category: 'Cell Management',
+        id: 'show_results_of_cells',
+        description: 'Show results of selected/all cells',
+        click_keys: {
+            target: 'Hide results button',
+            win: [
+                ['ctrl']
+            ],
+            mac: [
+                ['command']
+            ]
+        }
     }, {
         category: 'Cell Management',
         id: 'blur_cell',

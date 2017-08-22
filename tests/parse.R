@@ -2,7 +2,7 @@
 
 library("XML")
 
-setwd("/home/travis/build/att/rcloud/tests/Reports") 
+setwd("/home/travis/build/prateeknaik/rcloud/tests/Reports") 
 doc<-xmlTreeParse('report.xml')
 top<-xmlRoot(doc)
 z=names(top)

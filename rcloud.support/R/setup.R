@@ -118,10 +118,6 @@ configure.rcloud <- function (mode=c("startup", "script")) {
       tryCatch(dir.create(rcloud.home(), FALSE, TRUE, "0700"),
                error=function(e) ulog("WARNING: unable to create rcloud.home ", rcloud.home()))
 
-  ## use public github by default (FIXME: this should go away when set in the githubgist package)
-  if (!nzConf("github.base.url")) setConf("github.base.url", "https://github.com/")
-  if (!nzConf("github.api.url")) setConf("github.api.url", "https://api.github.com/")
-
   ## set locale - default is UTF-8
   locale <- getConf("locale")
   if (!isTRUE(nzchar(locale))) locale <- "en_US.UTF-8"
@@ -300,9 +296,12 @@ start.rcloud.common <- function(...) {
   })
   options(help_type="html")
   options(browser = function(url, ...) {
-    if(grepl("^http://127.0.0.1:", url))
-      .rc.oobSend("browsePath", gsub("^http://[^/]+", "", url))
-    else
+      if (grepl("^http://127.0.0.1:", url)) {
+          path <-  gsub("^http://[^/]+", "", url)
+          ## mangle paths for internal help to use the help.R proxy
+          path <- gsub("^(/library/|/doc/)", "/help.R\\1", path)
+          .rc.oobSend("browsePath", path)
+    } else
       .rc.oobSend("browseURL", url)
   })
 
@@ -347,7 +346,7 @@ start.rcloud.common <- function(...) {
 
   ## set up the languages which will be supported by this session
   lang.list <- NULL
-  file.ext.list <- NULL
+  file.ext.list <- list(md = "Markdown")
   if (!identical(.session$mode, "call")) {
     lang.str <- getConf("rcloud.languages")
     if (!is.character(lang.str))
@@ -421,7 +420,7 @@ create.gist.backend <- function(username="", token="", source=NULL, ...) {
     cat("create.gist.ctx call:\n")
     str(l)
   }
-  ulog("INFO: create gist context for source `", source, "' with ", paste0(names(l), "=", as.character(l), collapse=', '))
+  ulog("INFO: create gist context for source `", source, "', backend `", gb, "`")
   gist::set.gist.context(do.call(gbns$create.gist.context, l))
 }
 
@@ -455,7 +454,8 @@ start.rcloud.gist <- function(username="", token="", ...) {
 
 ## this is called by session.init() on per-connection basis
 start.rcloud <- function(username="", token="", ...) {
-  if (!check.user.token.pair(username, token))
+  valid.source <- if(isTRUE(getConf("github.auth") == "exec.token")) paste0("auth/",getConf("exec.auth")) else "stored"
+  if (!check.user.token.pair(username, token, valid.source))
     stop("bad username/token pair");
   start.rcloud.gist(username=username, token=token, ...)
 }

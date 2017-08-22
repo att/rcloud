@@ -1,12 +1,14 @@
-casper.test.begin("Smoke Test case which covers basic features", 29, function suite(test) {
+casper.test.begin("Smoke Test case which covers basic features", 39, function suite(test) {
 
-    var x = require('casper').selectXPath;//required if we detect an element using xpath
-    var github_username = casper.cli.options.username;//user input github username
-    var github_password = casper.cli.options.password;//user input github password
-    var rcloud_url = casper.cli.options.url;//user input RCloud login url
-    var functions = require(fs.absolute('basicfunctions.js'));//invoke the common functions present in basicfunctions.js
-    var notebook_id = '60cf414db458dae177addac8d48d4dea';//Notebook which consists all the cells like "R, Python, Markdown, Shell"
-    var Notebook_name = "TEST_NOTEBOOK";// Notebook name of the importing/Load Notebook
+    var x = require('casper').selectXPath; //required if we detect an element using xpath
+    var github_username = casper.cli.options.username; //user input github username
+    var github_password = casper.cli.options.password; //user input github password
+    var rcloud_url = casper.cli.options.url; //user input RCloud login url
+    var functions = require(fs.absolute('basicfunctions.js')); //invoke the common functions present in basicfunctions.js
+    var notebook_id = '60cf414db458dae177addac8d48d4dea'; //Notebook which consists all the cells like "R, Python, Markdown, Shell"
+    var Notebook_name = "TEST_NOTEBOOK"; // Notebook name of the importing/Load Notebook
+    // var errors = [];
+    colorizer = require('colorizer').create('Colorizer');
 
     var fileName = "SampleFiles/PHONE.csv";
     var system = require('system');
@@ -21,7 +23,17 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
     var Shiny = "http://127.0.0.1:8080/shiny.html?notebook=15a6054f8afd195302ef";
     var View = "http://127.0.0.1:8080/view.html?notebook=638ccc3aaeb391cc9888";
     var content = '"Welcome to RCloud"';
-    var URL, url, NB_ID, URL1;
+    var URL, url, NB_ID, URL1, url2, flex_dash;
+
+    var fileName1 = 'SampleFiles/waste-lands.Rmd'; // File path directory
+    var URL, counter, i, v, Notebook, flag;
+    var system = require('system')
+    var currentFile = require('system').args[4];
+    var curFilePath = fs.absolute(currentFile);
+    var curFilePath = curFilePath.replace(currentFile, '');
+    fileName1 = curFilePath + fileName1;
+    var title = "Waste Lands";
+    var temp, temp1, res, str;
 
     casper.start(rcloud_url, function () {
         functions.inject_jquery(casper);
@@ -32,25 +44,37 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
         functions.login(casper, github_username, github_password, rcloud_url);
     });
 
-    casper.then(function () {
+    casper.wait(4000).then(function () {
         casper.echo('⌚️  Validating page for the RCloud page with Shareable link icon and cell trash icon...');
         functions.validation(casper);
+        this.wait(15000);
+        this.thenOpen('http://127.0.0.1:8080/edit.html?notebook=564af357b532422620a6');
+        this.wait(5000);
     });
 
-    //creating new notebok
+    casper.then(function () {
+        this.reload();
+        this.wait(10000);
+    });
+
+    // creating new notebok
     casper.then(function () {
         test.comment('⌚️  Creating New Notebook...');
         functions.create_notebook(casper);
         console.log("Verified that new notebook can be created");
+        this.wait(15000);
     });
 
+    // Creating new cell
     casper.then(function () {
         test.comment('⌚️  Creating new cell and adding contents to the cell...');
         this.wait(3000);
         functions.addnewcell(casper);
+        this.wait(3000);
     });
 
-    casper.wait(2000).then(function () {
+    // Adding contents to the cell
+    casper.wait(4000).then(function () {
         functions.addcontentstocell(casper, content);
     });
 
@@ -66,8 +90,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
         test.comment('Checking for Search feature');
         if (this.visible("#search-form > a:nth-child(3)")) {
             console.log("Search div is open");
-        }
-        else {
+        } else {
             console.log("Search div is closed hence opening");
             var z = this.evaluate(function () {
                 $('#accordion-left > div:nth-child(2) > div:nth-child(1) > a:nth-child(1) > span:nth-child(2)').click();
@@ -86,7 +109,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
         this.wait(10000).test.assertExists(x(".//*[@id='search-results-scroller']"), "Search feature working");
         var z = this.evaluate(function () {
             $('#accordion-left > div:nth-child(2) > div:nth-child(1) > a:nth-child(1) > span:nth-child(2)').click();
-        });//Closing search div
+        }); //Closing search div
     });
 
     //Verifying for the posting and deleting Comments
@@ -102,7 +125,10 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
             this.wait(4000);
             if (this.visible(".comment-body-text")) {
                 this.mouse.move(".comment-body-text");
-                this.click({type: 'css', path: 'i.icon-remove:nth-child(2)'});
+                this.click({
+                    type: 'css',
+                    path: 'i.icon-remove:nth-child(2)'
+                });
                 console.log("Posted comment(" + content + ") found and now Deleting it");
             } else {
                 console.log("There is no comment to delete");
@@ -117,7 +143,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
     // Notebook reload
     casper.then(function () {
         this.then(function () {
-            var url2 = this.getCurrentUrl();
+            url2 = this.getCurrentUrl();
             this.thenOpen(url2);
             this.wait(8000);
         });
@@ -219,8 +245,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
             if (this.visible(x(".//*[@id='file']"))) {
                 this.echo('File Upload pane div is open');
                 this.wait(5000);
-            }
-            else {
+            } else {
                 this.echo('File upload div is not open,hence opening it');
                 this.wait(2000);
                 this.click(x(".//*[@id='accordion-right']/div[2]/div[1]"));
@@ -240,6 +265,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
                 this.click("#upload-submit");
                 console.log("Clicking on Submit icon");
             });
+            this.wait(5000);
         });
 
         casper.then(function () {
@@ -270,6 +296,89 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
         functions.fork(casper);
     });
 
+    casper.then(function () {
+        this.reload();
+        this.wait(6000);
+    });
+
+    //Importing Rmarkdown file
+// Import Rmarkdown modal window is not opening in TravisCI, hence comenting it    
+    // casper.then(function () {
+    //     // casper.wait(2000).then(function () {
+    //     //Opening advanced dropdown option
+    //     casper.then(function () {
+    //         functions.open_advanceddiv(casper);
+    //         this.wait(5000);
+    //         this.capture("./Images/Import_rmd.png");
+    //         // this.click("#rmdImport");
+    //         if (this.test.assertExists("#rmdImport")) {
+    //             console.log("Import Rmarkdown option present");
+    //             // casper.click(x('//*[text()="Import Rmarkdown file"]')); //Import button
+    //             this.click(x(".//*[@id='rmdImport']"));
+    //             console.log("Clicking on import Rmarkdown file option form the dropdown");
+    //             this.wait(3000);
+    //
+    //             //Selecting desired file from the directory
+    //             casper.then(function () {
+    //                 this.evaluate(function (fileName1) {
+    //                     __utils__.findOne('input[id="notebook-file-upload"]').setAttribute('value', fileName1)
+    //                 }, {
+    //                     fileName: fileName1
+    //                 });
+    //                 this.page.uploadFile('input[id="notebook-file-upload"]', fileName1);
+    //
+    //                 console.log('Selecting a file');
+    //             });
+    //             casper.wait(5000);
+    //
+    //             casper.wait(2000).then(function () {
+    //                 this.capture("./Images/Import_rmd_descr.png");
+    //                 this.test.assertExists("div.container:nth-child(2) > p:nth-child(2) > div:nth-child(1) > pre:nth-child(1)", "Notebook description is present");
+    //                 casper.click(x('//*[text()="Import"]'));
+    //                 console.log("Clicking on import button")
+    //                 this.wait(3000);
+    //             });
+    //
+    //             casper.then(function () {
+    //                 // this.thenOpen(URL);
+    //                 this.reload();
+    //                 this.wait(8000);
+    //             });
+    //
+    //             casper.then(function () {
+    //                 flag = 0; //to check if notebook has been found
+    //                 var counter = 0; //counts the number of notebooks
+    //                 do {
+    //                     counter = counter + 1;
+    //
+    //                 } while (this.visible("ul.jqtree_common:nth-child(1) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(" + counter + ") > div:nth-child(1) > span:nth-child(1)"));
+    //                 counter = counter + 1;
+    //                 for (v = 1; v <= counter; v++) {
+    //                     this.wait(2000);
+    //                     temp1 = this.fetchText("ul.jqtree_common:nth-child(1) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(1) > ul:nth-child(2) > li:nth-child(" + v + ") > div:nth-child(1) > span:nth-child(1)");
+    //                     if (temp1 == title) {
+    //                         flag = 1;
+    //                         break;
+    //                     }
+    //                 } //for closes
+    //                 this.test.assertEquals(flag, 1, "Located the imported Rmarkdown notebook");
+    //             });
+    //
+    //             casper.then(function () {
+    //                 if (flag == 1) {
+    //                     this.test.assertEquals(flag, 1, "Import Notebook from File, Notebook with title " + title + " is PRESENT under Notebooks tree");
+    //                 } else {
+    //                     this.test.assertEquals(flag, 0, "Import Notebook from File, Notebook with title " + title + " is ABSENT under Notebooks tree");
+    //                 }
+    //             });
+    //             // });
+    //         }
+    //         else {
+    //
+    //         }
+    //     });
+    // });
+
     casper.wait(5000).then(function () {
         test.comment('⌚️  Testing Shareable links ...');
         //Notebook.R
@@ -297,6 +406,53 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
                 console.log("View.html page could not be loaded");
             }, 60000);
         });
+
+        // Flexdashboard.html
+// Flexdashboard page is not opening in TravisCI, hence comenting it
+        // casper.viewport(1366, 768).then(function () {
+        //     this.thenOpen("http://127.0.0.1:8080/edit.html?notebook=acd1573cdf5e6b842364bd86e47b3d6c");
+        //     this.wait(8000);
+        //     this.reload();
+        //     this.wait(6000);
+        //     test.comment('⌚️  Opening Notebook Flexdashboard.html ...');
+        //
+        //     this.waitForSelector("span.dropdown", function () {
+        //         console.log("choosing flexdashboard from the dropdown");
+        //         this.click("span.dropdown");
+        //         this.wait(5000);
+        //         this.capture("./Images/Check for Flexdashboard.png");
+        //         console.log("opening dropdown menu");
+        //         if (this.test.assertSelectorHasText("#view-type", "flexdashboard.html")) {
+        //             this.click("#view-type > li:nth-child(2) > a:nth-child(1)");
+        //             this.wait(2000);
+        //             if (this.click("#share-link > i:nth-child(1)")) {
+        //                 this.wait(8000);
+        //                 this.viewport(1366, 768).withPopup(/flexdashboard.html/, function () {
+        //                     this.wait(20000);
+        //                     flex_dash = this.getCurrentUrl();
+        //                     console.log(flex_dash);
+        //                     this.capture("./Images/Flexdashboard_html.png");
+        //                     casper.wait(20000).then(function () {
+        //                         this.page.switchToChildFrame(0);
+        //                         casper.withFrame(0, function () {
+        //                             this.test.assertExists(".navbar-brand", "Navigation bar exists in Flexdashboard");
+        //                             this.test.assertSelectorHasText("#lung-deaths-all > div:nth-child(1)", "Lung Deaths (All)", "Plot has been generated")
+        //                             this.test.assertVisible("#lung-deaths-all > div:nth-child(2)", "desired element is visble")
+        //                         });
+        //                         this.page.switchToParentFrame();
+        //                     });
+        //                 });
+        //             } // 2nd if close
+        //             else {
+        //                 console.log("Maa chudao");
+        //             } // 2nd else close
+        //         } // 1st if close
+        //         else {
+        //             console.log(colorizer.colorize("Flexdashboard isn't available. Please install the dependencies related to it ", "WARN_BAR"));
+        //             // console.log("");
+        //         } //1st else close
+        //     });
+        // });
     });
 
     casper.then(function () {
@@ -311,8 +467,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
                     console.log('Validation to ensure page load');
                     functions.validation(casper);
                 })
-            }
-            else {
+            } else {
                 console.log('Validation to ensure page load');
                 functions.validation(casper);
             }
@@ -322,9 +477,15 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
     //Open Notebook in GitHub
     test.comment('⌚️  Opening Notebook in GitHub ...');
     casper.viewport(1366, 768).then(function () {
-        this.waitForSelector({type: 'css', path: '#open_in_github'}, function () {
+        this.waitForSelector({
+            type: 'css',
+            path: '#open_in_github'
+        }, function () {
             console.log("Link for opening notebook in GitHub found. Clicking on it");
-            if (this.click({type: 'css', path: '#open_in_github'})) {
+            if (this.click({
+                    type: 'css',
+                    path: '#open_in_github'
+                })) {
                 this.wait(11000);
                 this.viewport(1366, 768).withPopup(/gist.github.com/, function () {
                     this.wait(4000);
@@ -334,12 +495,14 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
                     //verifying that the gist opened belongs to local user
                     console.log('Verifying that the gist opened belongs to local user');
                     this.wait(8000);
-                    var gist_user = this.fetchText({type: 'css', path: '.url > span:nth-child(1)'});
+                    var gist_user = this.fetchText({
+                        type: 'css',
+                        path: '.url > span:nth-child(1)'
+                    });
                     console.log("Gist owner is " + gist_user);
                     this.test.assertEquals(gist_user, github_username, 'Verified that the gist belongs to the local user');
                 });
-            }
-            else {
+            } else {
                 console.log('Notebook could not be opened in GitHub');
             }
         });
@@ -416,7 +579,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
             console.log("Clicking on notebook info");
         });
 
-        this.wait(5000).then(function () {
+        this.wait(8000).then(function () {
             status = this.fetchText('.group-link > a:nth-child(1)');
             console.log("notebook is " + status);
             this.test.assertEquals(status, 'private', "The notebook has been converted to private successfully");
@@ -439,8 +602,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
                             this.test.assertExists(".active > a:nth-child(1)", "Discover page opened successfully");
                         });
                     });
-                }
-                else {
+                } else {
                     console.log('Unable to open Discover page');
                 }
             });
@@ -451,6 +613,7 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
             this.wait(5000);
         });
     });
+
 
     // loging out of RCloud
     casper.viewport(1366, 768).then(function () {
@@ -507,6 +670,27 @@ casper.test.begin("Smoke Test case which covers basic features", 29, function su
             });
         });
     });
+
+    // Flexdashboard.html as anonymous user
+// Flexdashboard page is not opening in TravisCI, hence comenting it
+    // casper.viewport(1024, 768).then(function () {
+    //     test.comment("Opening Flexdashboard.html noteook as anonymous user");
+    //     casper.page = casper.newPage();
+    //     casper.viewport(1024, 768).open(flex_dash).then(function () {
+    //         this.wait(28000);
+    //         casper.wait(20000).then(function () {
+    //             console.log(this.getCurrentUrl());
+    //             this.wait(28000);
+    //             this.page.switchToChildFrame(0);
+    //             casper.withFrame(0, function () {
+    //                 this.test.assertExists(".navbar-brand", "Navigation bar exists");
+    //                 this.test.assertSelectorHasText("#lung-deaths-all > div:nth-child(1)", "Lung Deaths (All)")
+    //                 this.test.assertVisible("#lung-deaths-all > div:nth-child(2)", "desired element is visble")
+    //             });
+    //             this.page.switchToParentFrame();
+    //         });
+    //     });
+    // });
 
     casper.run(function () {
         test.done();

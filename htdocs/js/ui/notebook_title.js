@@ -99,14 +99,14 @@ RCloud.UI.notebook_title = (function() {
                                                active_text: active_text},
                                               editable_opts));
         },
-        update_fork_info: function(fork_of) {
-            // fork_of can be an empty array so make sure description is there
-            if(fork_of && fork_of.description) {
-                var owner = fork_of.owner ? fork_of.owner : fork_of.user;
-                var fork_desc = owner.login+ " / " + fork_of.description;
-                var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
-                                            {notebook: fork_of.id});
-                $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+        update_fork_info: function(fork_id) {
+            if(fork_id) {
+                rcloud.get_notebook_info(fork_id).then(function(info) {
+                    var fork_desc = (info.username || 'unknown') + " / " + (info.description || 'unknown');
+                    var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
+                                                {notebook: fork_id});
+                    $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+                });
             }
             else
                 $("#forked-from-desc").text("");

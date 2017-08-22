@@ -84,7 +84,7 @@ rcloud.augment.notebook <- function(res) {
 rcloud.fail.if.unpublished <- function(f)
   function(id, ...)
     if (!rcloud.is.notebook.published(id)) {
-      stop("Notebook does not exist or has not been published")
+      stop("Notebook \"", URLencode(id, TRUE), "\" does not exist or has not been published")
     } else f(id, ...)
 
 rcloud.unauthenticated.load.notebook <-
@@ -204,7 +204,6 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
     if (is.null(rcloud.session.notebook())) ## no top level? set us as the session notebook so that get.asset et al work
       .session$current.notebook <- res
 
-    args <- as.list(args)
     ## this is a hack for now - we should have a more general infrastructure for this ...
     ## get all files
     p <- res$content$files
@@ -214,12 +213,11 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
     ## extract the integer number
     i <- suppressWarnings(as.integer(gsub("^\\D+(\\d+)\\..*", "\\1", n)))
     result <- NULL
-    if (is.environment(args)) {
-      e <- args
-    } else {
-      e <- new.env(parent=.GlobalEnv)
-      if (is.list(args) && length(args)) for (arg in names(args)) if (nzchar(arg)) e[[arg]] <- args[[arg]]
-    }
+    e <- if (is.environment(args)) args else new.env(parent=.GlobalEnv)
+    if (is.list(args) && length(args))
+        for (arg in names(args))
+            if (nzchar(arg)) e[[arg]] <- args[[arg]]
+
     ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
@@ -295,6 +293,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     ## governed by the encrypted content
     group <- rcloud.get.notebook.cryptgroup(id)
 
+    ulog("INFO: rcloud.update.notebook (", id, ")")
     ## there is one special case: if the notebook is encrypted and this is a request for a
     ## partial update of the files, we have to compute the new encrypted content by merging
     ## the request. This is only the case if the request doesn't involve direct
@@ -359,6 +358,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 }
 
 rcloud.create.notebook <- function(content, is.current = TRUE) {
+  tryCatch({
     content <- .gist.binary.process.outgoing(NULL, content)
 
     res <- create.gist(content, ctx = .rcloud.get.gist.context())
@@ -371,7 +371,10 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
           rcloud.reset.session()
         }
     }
-    rcloud.augment.notebook(res)
+    res <- rcloud.augment.notebook(res)
+    ulog("INFO: rcloud.create.notebook (", res$content$id, ")")
+    res
+  }, error = function(e) { list(ok = FALSE) })
 }
 
 rcloud.rename.notebook <- function(id, new.name) {
@@ -403,9 +406,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         if (!isTRUE(new.nb$ok)) stop("failed to create new notebook")
         rcloud.set.notebook.property(new.nb$content$id, "fork_of",
                                      new.nb$fork_of <-
-                                     list(owner=owner,
-                                          description=src.nb$content$description,
-                                          id=src.nb$content$id))
+                                     list(id=src.nb$content$id))
     } else {## src=dst, regular fork
         new.nb <- fork.gist(id, ctx = src.ctx)
     }
@@ -419,6 +420,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
 
     rcloud.update.fork.count(id)
+    ulog("INFO: rcloud.fork.notebook (", id, " -> ", new.nb$content$id, ")")
     new.nb
 }
 
@@ -504,8 +506,15 @@ rcloud.set.notebook.visibility <- function(id, value){
   } else {response <- rcloud.solr::solr.delete.doc(id)}
 }
 
+## "Import External Notebook" - a slight misnomer since this
+## is hard-coded to only support GitHub imports
 rcloud.port.notebooks <- function(url, books, prefix) {
-  foreign.ctx <- create.github.context(url)
+  ## FIXME: this bypasses the gist API and conencts to GitHub directly.
+  ## The fact that this works is purely incidental, because githubgist
+  ## happens to re-use the github object as a base for its own context.
+  ## That is never guaranteed to the the case, so this needs to be fixed
+  ## to use create.gist.context() properly.
+  foreign.ctx <- github::create.github.context(url)
 
   Map(function(notebook) {
     getg <- get.gist(notebook, ctx = foreign.ctx)
@@ -656,6 +665,7 @@ rcloud.config.add.notebook <- function(id)
 rcloud.config.remove.notebook <- function(id) {
   # also set visibility for easy filtering
   rcloud.set.notebook.visibility(id, FALSE)
+  ulog("INFO: rcloud.config.remove.notebook (", id, ")")
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
 }
 

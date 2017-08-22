@@ -1,41 +1,51 @@
 \name{rcloud.html.out}
 \alias{rcloud.html.out}
+\alias{rcloud.out}
 \title{
-  Direct output of HTML content to a cell.
+  Direct output functions in RCloud
 }
 \description{
-  \code{rcloud.html.out} passes output directly to a cell such that it
-  will be interpreted as HTML content.
+  \code{rcloud.html.out} outputs content as-is directly into the current
+  cell, typically to create HTML content.
 
-  Note: for regular output that is supposed to be quoted use
-  \code{\link{print}} or \code{\link{cat}} just like in the console.
+  \code{rcloud.out} evaluates and expression and sends the output into
+  the R console.
 }
 \usage{
 rcloud.html.out(..., sep = "")
+rcloud.out(expr, terminate = "\n")
 }
 \arguments{
-  \item{\dots}{content to print. Subsequent arguments will be
-    concatanated just like in \code{\link{paste}}.
-  }
-  \item{sep}{separator to use between arguments}
+  \item{\dots}{any strings to output}
+  \item{sep}{string separator}
+  \item{expr}{expression to evaluate}
+  \item{terminate}{string to use to terminate the output}
 }
-%\details{
-%}
+\details{
+  \code{rcloud.html.out} pastes \dots together using separator
+  \code{sep} and collapsing the result using \code{"\n"} and appends the
+  resulting string as-is in the cell output. It means that nothing is
+  escaped such that HTML-tags can be used and will interpreted by the
+  browser. This allows creating out DOM objects and any other arbitrary
+  HTML.
+
+  \code{rcloud.out} evaluates the expression (in parent frame) and
+  prints the output (if visible) into the RCloud console. In interactive
+  use it is mostly equivalent to regular \code{print()}, but in
+  non-interactive use or special cases (e.g. inside \code{sink()} or
+  \code{capture.output()}) it makes sure that the output explicitly sent
+  to the client side as console output.
+}
 \value{
-  Output content (invisibly)
+  Both functions return the resulting string invisibly
 }
 %\references{
 %}
 \author{
   Simon Urbanek
 }
-\note{
-  \code{rcloud.html.out} is guaranteed to work only in IDE and view
-  modes. Modules have to implement \code{"html.out"} OOB handler to
-  recieve this output and handle it accordingly.
+\examples{
+  rcloud.html.out("<b><font color=red>Bold RED text!</font></b><br>")
+  rcloud.out(str(iris))
 }
-%\seealso{
-%}
-%\examples{
-%}
-\keyword{manip}
+\keyword{print}

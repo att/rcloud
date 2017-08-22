@@ -5,6 +5,7 @@ RCloud.UI.selection_bar = (function() {
         $dropdown_toggle,
         $delete_button,
         $crop_button,
+        $toggle_results_button,
         $cell_selection,
         $selected_details,
         $selected_count,
@@ -24,6 +25,7 @@ RCloud.UI.selection_bar = (function() {
             $dropdown_toggle = $selection_bar.find('.dropdown-toggle');
             $delete_button = $selection_bar.find('#selection-bar-delete');
             $crop_button = $selection_bar.find('#selection-bar-crop');
+            $toggle_results_button = $selection_bar.find('#selection-bar-toggle-results');
             $cell_selection = $selection_bar.find('.cell-selection');
             $selected_details = $delete_button.find('span');
             $selected_count = $selection_bar.find('#selected-count');
@@ -55,6 +57,14 @@ RCloud.UI.selection_bar = (function() {
                 .end()
                 .find('#selection-bar-crop').click(function() {
                     shell.notebook.controller.crop_cells();
+                })
+                .end()
+                .find('#selection-bar-toggle-results').click(function(e) {
+                  if(e.metaKey || e.ctrlKey) {
+                    shell.notebook.controller.show_cells_results();
+                  } else {
+                    shell.notebook.controller.hide_cells_results();
+                  }
                 })
                 .end();
 
