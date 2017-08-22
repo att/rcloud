@@ -572,7 +572,11 @@ Notebook.create_controller = function(model)
         //////////////////////////////////////////////////////////////////////
 
         is_mine: function() {
-            return rcloud.username() === model.user() || is_collaborator(this.current_gist(), rcloud.username());
+            return rcloud.username() === model.user();
+        },
+        
+        can_write: function() {
+            return this.is_mine() || is_collaborator(this.current_gist(), rcloud.username());
         },
 
         //////////////////////////////////////////////////////////////////////

@@ -1571,9 +1571,9 @@ var editor = function () {
         },
         fork_folder: function(node, match, replace) {
             var that = this;
-            var is_mine = node.user === that.username();
             var promises = [];
             editor.for_each_notebook(node, null, function(node) {
+                var is_mine = node.user === that.username();
                 promises.push(shell.fork_and_name_notebook(is_mine, node.gistname, null, false, function(desc) {
                     return Promise.resolve(desc.replace(match, replace));
                 }).then(function(notebook) {
@@ -1601,8 +1601,8 @@ var editor = function () {
                 }
             });
         },
-        revert_notebook: function(is_mine, gistname, version) {
-            if(!is_mine)
+        revert_notebook: function(can_edit, gistname, version) {
+            if(!can_edit)
                 return Promise.reject(new Error("attempted to revert notebook not mine"));
             if(!version)
                 return Promise.reject(new Error("attempted to revert current version"));

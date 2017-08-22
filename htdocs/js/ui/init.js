@@ -181,11 +181,11 @@ RCloud.UI.init = function() {
         },
         on_page: ['edit'],
         is_active: function() {
-            return shell.notebook.controller.is_mine() && shell.notebook.model.read_only();
+            return shell.notebook.controller.can_write() && shell.notebook.model.read_only();
         },
         action: function() {
             if(this.is_active()) {
-                editor.revert_notebook(shell.notebook.controller.is_mine(), shell.gistname(), shell.version());
+                editor.revert_notebook(shell.notebook.controller.can_write(), shell.gistname(), shell.version());
             }
         }
     }, {

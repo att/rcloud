@@ -203,10 +203,10 @@ RCloud.UI.navbar = (function() {
                     create: function() {
                         var control = RCloud.UI.navbar.create_button('revert-notebook', 'Revert', 'icon-undo');
                         $(control.control).click(function() {
-                            var is_mine = shell.notebook.controller.is_mine();
+                            var can_write = shell.notebook.controller.can_write();
                             var gistname = shell.gistname();
                             var version = shell.version();
-                            editor.revert_notebook(is_mine, gistname, version);
+                            editor.revert_notebook(can_write, gistname, version);
                         });
                         return control;
                     }

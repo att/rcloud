@@ -5,7 +5,7 @@ RCloud.UI.configure_readonly = function() {
     var readonly_notebook = $("#readonly-notebook");
     var revertb = RCloud.UI.navbar.control('revert_notebook'),
         saveb = RCloud.UI.navbar.control('save_notebook');
-    if(shell.notebook.controller.is_mine()) {
+    if(shell.notebook.controller.can_write()) {
         if(shell.notebook.model.read_only()) {
             revertb && revertb.show();
             saveb && saveb.hide();
