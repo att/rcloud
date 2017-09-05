@@ -14,7 +14,7 @@ rcloud.call.notebook(id, version = NULL, args = NULL, attach = FALSE)
   \item{id}{string, ID of the notebook to call}
   \item{version}{version of the notebook to call or \code{NULL} to call
     the latest version}
-  \item{args}{list of arguments to make avaialbe to the notebook ro an
+  \item{args}{list of arguments to make avaialbe to the notebook or an
     enviroment to evalue the notebook in}
   \item{attach}{logical, if \code{TRUE} then the environment in which
     the notebook was evaluate will be attached to the search path -

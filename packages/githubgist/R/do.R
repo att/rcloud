@@ -1,14 +1,18 @@
-config.options <- function() list(github.api.url="https://api.github.com/", github.base.url="https://github.com/", github.client.id=NULL, github.client.secret=NULL)
+config.options <- function() list(github.api.url=TRUE, github.base.url=FALSE, github.client.id=FALSE, github.client.secret=FALSE, github.auth.forward=FALSE)
 
 create.gist.context <- function(username, token, github.api.url, github.client.id, github.client.secret, github.base.url, ...) {
   if ((is.character(token) && !isTRUE(nzchar(token))) || is.null(github.client.secret) || is.null(github.client.id)) token <- NULL ## github requires token to be NULL if not used
   ctx <- github::create.github.context(api_url=github.api.url, client_id=github.client.id, client_secret=github.client.secret, access_token=token)
   ctx$github.base.url=github.base.url
   ctx$read.only <- is.null(token)
+  ctx$gist.params <- list(...)
   ctx
 }
 
 auth.url.githubcontext <- function(redirect, ctx) {
+    if (is.character(fwd.url <- ctx$gist.params$github.auth.forward))
+        return(paste0(fwd.url, if (length(grep("?", fwd.url, fixed=TRUE))) "&" else "?", "redirect=", URLencode(as.character(redirect)[1], TRUE)))
+
   state <- list(nonce=rnorm(1), redirect=as.vector(redirect))
   paste0(ctx$github.base.url,
          "login/oauth/authorize?client_id=", ctx$client_id,

@@ -27,21 +27,26 @@
 ## does not perform any authentication-related actions
 RC.authenticate <- function(v, check.only=FALSE)
 {
-  v <- as.list(v)
-  if (length(v) < 1 || is.null(v[[1]])) return(FALSE)
-  ## is execution authentication enabled?
-  if (nzConf("exec.auth") && !isTRUE(getConf("exec.auth") == "as-local")) {
-    ## FIXME: should we allow anonymous execution and logged-in github? We don't support that now...
-    if (length(v) < 2 || is.null(v[[2]])) return(FALSE)
-    exec.usr <- check.token(v[[2]], paste0("auth/",getConf("exec.auth")), "rcloud.exec")
-    if (exec.usr == FALSE) return(FALSE)
-    if (identical(getConf("exec.match.user"), "login") && !check.only) .setup.su(exec.usr)
-    .session$exec.usr <- exec.usr
-  }
+    exec.only <- isTRUE(getConf("github.auth") == "exec.token")
+    exec.realm <- if(exec.only) "rcloud" else "rcloud.exec"
 
-  ## if not, just check the first token.
-  user <- check.token(v[[1]])
-  if (user == FALSE) return(FALSE)
+    v <- as.list(v)
+    if (length(v) < 1 || is.null(v[[1]])) return(FALSE)
+    if (exec.only) v[[2]] <- v[[1]]
+    ## is execution authentication enabled?
+    if (nzConf("exec.auth") && !isTRUE(getConf("exec.auth") == "as-local")) {
+        ## FIXME: should we allow anonymous execution and logged-in github? We don't support that now...
+        if (length(v) < 2 || is.null(v[[2]])) return(FALSE)
+        exec.usr <- check.token(v[[2]], paste0("auth/",getConf("exec.auth")), exec.realm)
+        if (exec.usr == FALSE) return(FALSE)
+        if (identical(getConf("exec.match.user"), "login") && !check.only) .setup.su(exec.usr)
+        .session$exec.usr <- exec.usr
+        ulog("setup exec for ", exec.usr, " successful")
+    }
+
+    ## if not, just check the first token.
+    user <- if (exec.only) exec.usr else check.token(v[[1]])
+    if (user == FALSE) return(FALSE)
 
   .session$user <- user
 
@@ -67,6 +72,7 @@ RC.authenticate <- function(v, check.only=FALSE)
       .libPaths(c(rc.user.lib, .libPaths()))  
   }
 
+    ulog("RC.authenticate successful")
   TRUE
 }
 

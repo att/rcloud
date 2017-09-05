@@ -307,6 +307,8 @@ function create_cell_html_view(language, cell_model) {
         });
 
         widget.setTheme("ace/theme/chrome");
+        session.setNewLineMode('unix');
+        session.setOption('indentedSoftWrap', false);
         session.setUseWrapMode(true);
         return {
             widget: widget,
@@ -353,10 +355,10 @@ function create_cell_html_view(language, cell_model) {
             return language;
         });
 
-        var left_handler = ace_widget_.commands.commandKeyBinding[0].left,
-            right_handler = ace_widget_.commands.commandKeyBinding[0].right,
-            up_handler = ace_widget_.commands.commandKeyBinding[0].up,
-            down_handler = ace_widget_.commands.commandKeyBinding[0].down;
+        var left_handler = ace_widget_.commands.commandKeyBinding.left,
+            right_handler = ace_widget_.commands.commandKeyBinding.right,
+            up_handler = ace_widget_.commands.commandKeyBinding.up,
+            down_handler = ace_widget_.commands.commandKeyBinding.down;
 
         ace_widget_.commands.addCommands([{
             name: 'executeCell',
@@ -379,10 +381,10 @@ function create_cell_html_view(language, cell_model) {
                 shell.run_notebook_from(cell_model.id());
             }
         }, {
-            name: 'left',
+            name: 'up',
             bindKey: {
-                win: 'left',
-                mac: 'left'
+                win: 'up',
+                mac: 'up'
             },
             exec: function(widget, args, request) {
 
@@ -397,65 +399,7 @@ function create_cell_html_view(language, cell_model) {
 
                         var prior_widget = prior_cell.views[0].ace_widget();
                         var last = ui_utils.ace_get_last(prior_widget);
-                        prior_widget.gotoLine(last.row + 1, last.column);
-
-                        use_default = false;
-                    }
-                }
-
-                if(use_default) {
-                    left_handler.exec(widget, args, request);    
-                }
-            }
-        }, {
-            name: 'right',
-            bindKey: {
-                win: 'right',
-                mac: 'right'
-            },
-            exec: function(widget, args, request) {
-
-                var cursor_position = ace_widget_.getCursorPosition();
-                var use_default = true;
-                var last = ui_utils.ace_get_last(ace_widget_);
-
-                if(cursor_position.column === last.column && cursor_position.row == last.row) {
-                    use_default = false;
-
-                    var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
-
-                    if(subsequent_cell) {
-                        subsequent_cell.set_focus();
-
-                        subsequent_cell.views[0].ace_widget()
-                            .gotoLine(0, 0);
-                    }
-                } 
-
-                if(use_default) {
-                    right_handler.exec(widget, args, request);
-                }
-            }
-        }, {
-            name: 'up',
-            bindKey: {
-                win: 'up',
-                mac: 'up'
-            },
-            exec: function(widget, args, request) {
-                
-                var cursor_position = ace_widget_.getCursorPosition();
-                var use_default = true;
-
-                if(cursor_position.row === 0) {
-                    var prior_cell = cell_model.parent_model.prior_cell(cell_model);
-
-                    if(prior_cell) {
-                        prior_cell.set_focus();
-
-                        var prior_widget = prior_cell.views[0].ace_widget();
-                        var last = ui_utils.ace_get_last(prior_widget);
-                        prior_widget.gotoLine(last.row + 1, cursor_position.column);
+                        prior_widget.gotoLine(last.row + 1, 0);
 
                         use_default = false;
                     }
@@ -474,10 +418,9 @@ function create_cell_html_view(language, cell_model) {
                 var use_default = true;
 
                 var cursor_position = ace_widget_.getCursorPosition();
-                var use_default = true;
                 var last = ui_utils.ace_get_last(ace_widget_);
 
-                if(cursor_position.row == last.row) {
+                if(cursor_position.row == last.row && cursor_position.column === last.column) {
                     use_default = false;
 
                     var subsequent_cell = cell_model.parent_model.subsequent_cell(cell_model);
@@ -486,9 +429,9 @@ function create_cell_html_view(language, cell_model) {
                         subsequent_cell.set_focus();
 
                         subsequent_cell.views[0].ace_widget()
-                            .gotoLine(1, cursor_position.column);
+                            .gotoLine(1, 0);
                     }
-                } 
+                }
 
                 if(use_default)
                     down_handler.exec(widget, args, request);

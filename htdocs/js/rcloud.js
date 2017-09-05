@@ -1,4 +1,6 @@
-RCloud = {};
+RCloud = {
+    version: '<%= conf.version %>'
+};
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
 // We can tell them apart now ...

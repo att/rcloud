@@ -323,6 +323,12 @@ Notebook.create_controller = function(model)
             return update_notebook(changes)
                 .then(default_callback());
         },
+        hide_cells_results: function() {
+            model.hide_selected_cells_results();
+        },
+        show_cells_results: function() {
+            model.show_selected_cells_results();
+        },
         join_prior_cell: function(cell_model) {
             var prior = model.prior_cell(cell_model);
             if(!prior)
@@ -537,6 +543,16 @@ Notebook.create_controller = function(model)
                 _.each(model.cells, function(cell_model) {
                     if(process || cell_model.id() === cell_id) {
                         process = true;
+                        cell_model.controller.enqueue_execution_snapshot();
+                    }
+                });
+            });
+        },
+        run_cells: function(cell_ids) {
+            var that = this;
+            return this.save().then(function() {
+                _.each(model.cells, function(cell_model) {
+                    if(cell_ids.indexOf(cell_model.id()) > -1) {
                         cell_model.controller.enqueue_execution_snapshot();
                     }
                 });

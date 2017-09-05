@@ -13,15 +13,16 @@ RCloud.UI.share_button = (function() {
         var opts = {notebook: shell.gistname(),
                     do_path: view_type.do_path,
                     version: shell.version()};
+        var shareable_link = RCloud.UI.navbar.control('shareable_link');
         if(!opts.version) {
-            RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
+            shareable_link.set_url(ui_utils.make_url(page, opts));
             return Promise.resolve(undefined);
         }
         else return rcloud.get_tag_by_version(shell.gistname(), opts.version)
             .then(function(t) {
                 if(t)
                     opts.tag = t;
-                RCloud.UI.navbar.control('shareable_link').set_url(ui_utils.make_url(page, opts));
+                shareable_link.set_url(ui_utils.make_url(page, opts));
             });
     }
 
@@ -36,6 +37,8 @@ RCloud.UI.share_button = (function() {
                             handler: function() {
                                 rcloud.set_notebook_property(shell.gistname(), "view-type", that.key);
                                 set_page(that.key);
+                                var shareable_link = RCloud.UI.navbar.control('shareable_link');
+                                shareable_link.open();
                             }
                         };
                     }
@@ -54,10 +57,6 @@ RCloud.UI.share_button = (function() {
                 'mini.html': {
                     sort: 3000,
                     page: 'mini.html'
-                },
-                'shiny.html': {
-                    sort: 4000,
-                    page: 'shiny.html'
                 }
             });
             return this;

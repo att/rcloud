@@ -5,7 +5,13 @@ RCloud.UI.upload_frame = {
     init: function() {
         $("#file").change(function() {
             $("#progress-bar").css("width", "0%");
+            if($("#file")[0].files.length===0) {
+              $("#upload-submit").prop('disabled', true);
+            } else {
+              $("#upload-submit").prop('disabled', false);
+            }
         });
+        $("#upload-submit").prop('disabled', true);
         $("#upload-submit").click(function() {
             if($("#file")[0].files.length===0)
                 return;
@@ -17,6 +23,7 @@ RCloud.UI.upload_frame = {
             on_reset: function() {
                 $(".progress").hide();
                 $("#file-upload-results").empty();
+                $("#upload-submit").prop('disabled', true);
             }
         });
     },

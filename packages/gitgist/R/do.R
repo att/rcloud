@@ -176,7 +176,7 @@ get.gist.gitgistcontext <- function (id, version = NULL, ctx) {
 }
 
 fork.gist.gitgistcontext  <- function (src.id, ctx) {
-  id <- paste(c(0:9,letters[1:6])[as.integer(runif(20,0,15.999)) + 1L], collapse='')
+  id <- PKI::raw2hex(PKI::PKI.random(10),'')
   old.mask <- Sys.umask()
   r <- try({
     Sys.umask("0") ## for the directories we have to allow 777
@@ -229,7 +229,7 @@ modify.gist.gitgistcontext  <- function (id, content, ctx) {
 }
 
 create.gist.gitgistcontext  <- function (content, ctx) {
-  id <- paste(c(0:9,letters[1:6])[as.integer(runif(20,0,15.999)) + 1L], collapse='')
+  id <- PKI::raw2hex(PKI::PKI.random(10),'')
   old.mask <- Sys.umask()
   r <- try({
     Sys.umask("0") ## for the directories we have to allow 777
@@ -311,3 +311,9 @@ auth.url.gitgistcontext <- function(redirect, ctx) NULL ## no auth provided
 
 get.user.gitgistcontext  <- function (id, ctx)
   list(ok=TRUE, content=.get.global.json(id, ".user.json", ctx))
+
+get.gist.forks.gitgistcontext <- function (id, ctx) {
+    if (.iserr(r <- .repo(ctx, id))) return(.err(r))
+    meta <- .get.meta(r)
+    list(ok=TRUE, content=.v(meta$forks, list()))
+}

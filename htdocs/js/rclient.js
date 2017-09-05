@@ -15,7 +15,7 @@ RClient = {
             // the rcloud ocap-0 performs the login authentication dance
             // success is indicated by the rest of the capabilities being sent
             var session_mode = (opts.mode) ? opts.mode : "client";
-            rserve.ocap([token, execToken], session_mode, function(err, ocaps) {
+            rserve.ocap([token, execToken], session_mode, RCloud.version, function(err, ocaps) {
                 if(err)
                     on_error(err[0], err[1]);
                 else {
@@ -52,7 +52,6 @@ RClient = {
             }
             if (opts.on_error && opts.on_error(msg, status_code))
                 return;
-            RCloud.UI.session_pane.post_error(ui_utils.disconnection_error(msg));
             shutdown();
         }
 
