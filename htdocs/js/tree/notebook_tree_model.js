@@ -91,7 +91,7 @@ notebook_tree_model.prototype = {
         // no version at latest:
         var current_index = this.current_.version === null ? 0 : this.get_current_notebook_history_index.call(this);
 
-        if(current_index === this.get_current_notebook_histories(length - 1)) {
+        if(current_index === this.get_current_notebook_histories().length - 1) {
             return undefined;   // already at first
         } else {
             return this.get_history_by_index(current_index + 1).version;
