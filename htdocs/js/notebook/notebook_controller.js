@@ -51,7 +51,7 @@ Notebook.create_controller = function(model)
     }
 
     function is_collaborator(notebook, user) {
-        return notebook.collaborators && notebook.controllers.find(function(c) { return c.login === user; });
+        return notebook.collaborators && notebook.collaborators.find(function(c) { return c.login === user; });
     }
 
     function on_load(version, notebook) {
