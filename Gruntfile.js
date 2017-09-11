@@ -61,6 +61,7 @@ module.exports = function (grunt) {
             "htdocs/js/ui/init.js",
             "htdocs/js/ui/left_panel.js",
             "htdocs/js/ui/load_options.js",
+            "htdocs/js/ui/incremental_search.js",            
             "htdocs/js/ui/menus.js",
             "htdocs/js/ui/message_dialog.js",
             "htdocs/js/ui/middle_column.js",
