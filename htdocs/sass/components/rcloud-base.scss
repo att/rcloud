@@ -739,24 +739,11 @@ body .modal-dialog.full {
     }
 }
 
-#incremental_search {
-    position: absolute;
-    top: 5px;
-    margin-left: -300px;
-    left: 50%;
-    width: 600px;
-    border: 1px solid black;
-    background: white;
-    z-index: 5000;
-    padding: 10px;
-    color: #444;
+#tree-finder-dialog {
 
-    &.expanded {
-        height: calc(100vh - 10px);
-    }
-
-    h3 {
-        margin-top: 5px;
+    .modal-header {
+        padding-left: 15px!important;   // important since rcloud base specifies important
+        padding-right: 15px!important;
     }
 
     label {
@@ -764,6 +751,10 @@ body .modal-dialog.full {
             display: inline-block;
             width: 150px;
         }
+    }
+
+    input {
+        width: 385px;
     }
 
     hr {

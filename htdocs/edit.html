@@ -535,15 +535,29 @@
   <% }); %>
 </script>
 
-<script type="text/template" id="incremental_search_template">
-  <div id="incremental_search">
-    <h3>Search for notebook or folder</h3>
-    <div class="row"><label><span>Username</span><input id="inc_s_username"></label></div>    
-    <div class="row"><label><span>Parent folder name</span><input id="inc_s_parent_folder"></label></div>
-    <div class="row"><label><span>Name</span><input id="inc_s_name"></label></div>
-    <hr />
-    <div class="results">
-      <p>Results will appear here as you filter</p>
+<script type="text/template" id="tree-finder-template">
+  <div id="tree-finder-dialog" class="modal fade" aria-hidden="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h3>Notebook search</h3>
+        </div>
+        <div class="modal-body">
+          <div class="row"><label><span>Username</span><input /></label></div>    
+          <div class="row"><label><span>Parent folder name</span><input /></label></div>
+          <div class="row"><label><span>Name</span><input /></label></div>
+          <hr />
+          <div class="results">
+            <p>Results will appear here as you filter</p>
+            <div class="results-list"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>  
+          <!-- <span class="btn btn-cancel">Close</span> -->
+        </div>
+      </div>
     </div>
   </div>
 </script>
