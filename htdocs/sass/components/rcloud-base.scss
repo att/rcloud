@@ -340,7 +340,7 @@ td {
         vertical-align: middle;
     }
 
-    input {
+    input[ type = "text"] {
         width: 160px;
         padding-right: 4px;
         background-color: white!important;
@@ -352,6 +352,12 @@ td {
                 -webkit-box-shadow: 0 0 0px 1000px #fff inset;
             }
         }
+    }
+    
+    .checkbox {
+      margin-bottom: 1px;
+      margin-top: 1px;
+      margin-left: 5px;
     }
 
     #find-input {

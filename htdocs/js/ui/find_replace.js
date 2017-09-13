@@ -3,12 +3,14 @@ RCloud.UI.find_replace = (function() {
     var find_dialog_ = null, regex_,
         find_form_, find_details_,
         find_input_, find_match_, match_index_, match_total_, replace_input_, replace_stuff_,
+        match_case_opt_, match_word_opt_,
         find_next_, find_last_, replace_next_, replace_all_, close_,
         highlights_shown_ = false, replace_mode_ = false,
         find_cycle_ = null, replace_cycle_ = null,
         has_focus_ = false,
         matches_ = [], active_match_,
         change_interval_,
+        regex_group = 0,
         replace_shown_ = false;
 
     function toggle_find_replace(replace, opts) {
@@ -43,6 +45,9 @@ RCloud.UI.find_replace = (function() {
             find_form_ = markup.find('#find-form');
             find_details_ = markup.find('#find-details');
             find_input_ = markup.find('#find-input');
+            match_case_opt_ = markup.find('#match-case-opt');
+            match_word_opt_ = markup.find('#match-word-opt');
+            var find_options_menu_ = markup.find('#find-options-menu');
             find_match_ = markup.find('#match-status');
             match_index_ = markup.find('#match-index');
             match_total_ = markup.find('#match-total');
@@ -57,6 +62,28 @@ RCloud.UI.find_replace = (function() {
             find_input_.on('change', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                generate_matches();
+            });
+            find_options_menu_.on('hide.bs.dropdown', function (e) {
+                var target = $(e.target);
+                var keepOpenElements = target.find("[data-keepOpen='true']");
+                if(keepOpenElements.length){
+                    keepOpenElements.each(function(i, x) { $(x).attr("data-keepOpen", false); });
+                    return false;
+                }else{
+                    return true;
+                }
+            });
+            
+            find_options_menu_.find(".checkbox").on('click', function(e) {
+                $(this).attr("data-keepOpen", true);
+            });
+            
+            match_case_opt_.on('change', function(e) {
+                generate_matches();
+            });
+            
+            match_word_opt_.on('change', function(e) {
                 generate_matches();
             });
 
@@ -253,7 +280,12 @@ RCloud.UI.find_replace = (function() {
 
     function generate_matches(match_index) {
         active_match_ = undefined;
-        build_regex(find_input_.val());
+        findOpts = {
+          filter : find_input_.val(),
+          matchCase : match_case_opt_.get(0).checked,
+          matchWord : match_word_opt_.get(0).checked
+        };
+        build_regex(findOpts);
         highlight_all();
 
         if(find_input_.val().length) {
@@ -328,8 +360,23 @@ RCloud.UI.find_replace = (function() {
         // regex option will skip this
         return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
-    function build_regex(find) {
-        regex_ = find && find.length ? new RegExp(escapeRegExp(find), 'g') : null;
+    function build_regex(findOpts) {
+        if(!(findOpts && findOpts.filter && findOpts.filter.length > 0)) {
+          regex_ = null;
+          return;
+        }
+        var modifiers = "g";
+        if(!findOpts.matchCase) {
+          modifiers = modifiers + "i";
+        }
+        var filter = escapeRegExp(findOpts.filter);
+        regex_group = 0;
+        if(findOpts.matchWord) {
+          var nonWord = "[^\\.\\w]";
+          filter = nonWord + "(" + filter + ")" + nonWord;
+          regex_group = 1;
+        }
+        regex_ = new RegExp(filter, modifiers);
     }
     function update_match_cell(match) {
         var matches = matches_.filter(function(m) { return m.filename === match.filename; });
@@ -403,9 +450,10 @@ RCloud.UI.find_replace = (function() {
         if(regex_) {
             var content = cell.content(), match;
             while((match = regex_.exec(content))) {
+              var shift = match[0].indexOf(match[regex_group]);
                 matches.push({
-                    begin: match.index,
-                    end: match.index+match[0].length,
+                    begin: match.index + shift,
+                    end: match.index+match[regex_group].length + shift,
                     kind: matches.length === active_match_ ? 'active' : 'normal'
                 });
                 if(match.index === regex_.lastIndex) ++regex_.lastIndex;
