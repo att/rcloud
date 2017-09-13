@@ -69,14 +69,21 @@
       <i class="icon-search"></i>
       <div class="find">
         <span id="find-details">
-          <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
-          <span id="match-status"><span id="match-index"></span> of <span id="match-total"></span></span>
+          <input type="text" id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+          <span id="match-status"><span id="match-index"/> of <span id="match-total"/></span>
+        </span>
+        <span class="btn-group" id="find-options-menu">
+            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="icon-ellipsis-horizontal"></i></button>
+            <ul class="dropdown-menu">
+              <li><span class="checkbox"><label><input type="checkbox" id="match-case-opt"/>Match case</label></span></li>
+              <li><span class="checkbox"><label><input type="checkbox" id="match-word-opt"/>Match word</label></span></li>
+            </ul>
         </span>
         <button id="find-last" class="btn" title="Find Previous"><i class="icon-arrow-left"></i></button>
         <button id="find-next" class="btn btn-primary" title="Find Next"><i class="icon-arrow-right"></i></button>
       </div>
       <div class="replace" style="display:none">
-        <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
+        <input type="text" id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
         <button id="replace" class="btn">Replace</button>
         <button id="replace-all" class="btn">Replace All</button>
       </div>
