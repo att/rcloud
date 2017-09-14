@@ -41,10 +41,15 @@ RCloud.UI.incremental_search = (function() {
 
             _dialog = $(_elementSelector);
 
-            $(_dialog).on('hidden.bs.modal', function (e) {
+            $(_dialog).on('shown.bs.modal', function() {
+                $($(_inputsSelector)[0]).focus();
+            });
+
+            $(_dialog).on('hidden.bs.modal', function () {
                 $(_elementSelector).modal('hide');
-                $(_elementSelector).find('> p').show();
-                $(_elementSelector).find('.results_list').html('');
+                $('.results p', _elementSelector).show();
+                $(_inputsSelector).val('');
+                $('.results_list', _elementSelector).html('');
                 _dialogVisible = false;
             });
 
@@ -58,8 +63,9 @@ RCloud.UI.incremental_search = (function() {
                 // eventually, do a search with these params:
                 console.log({
                     username: entries[0],
-                    parentFolderName: entries[1],
-                    name: entries[2]
+                    // parentFolderName: entries[1],
+                    // name: entries[2]
+                    name: entries[1]
                 });
             });
         }
