@@ -68,6 +68,11 @@ RCloud.UI.incremental_search = (function() {
                     name: entries[1]
                 });
             });
+
+            console.log('notebook_tree_controller: ', notebook_tree_controller);
+            //console.log('tree data: ', notebook_tree_controller.get_tree_data());
+            console.log('tree data: ', editor);
+            console.log('event: ', event);
         }
     };
 

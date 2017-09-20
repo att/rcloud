@@ -548,8 +548,9 @@
           <!-- <div class="row"><label><span>Parent folder name</span><input /></label></div> -->
           <div class="row"><label><span>Notebook name</span><input /></label></div>
           <hr />
+          <img src="img/ajax-loader.gif" alt="Getting search results" with="16" height="16" style="display:none" />          
           <div class="results">
-            <p>Results will appear here as you filter</p>
+            <p>Results will appear here as you search</p>
             <div class="results-list"></div>
           </div>
         </div>
@@ -560,6 +561,12 @@
       </div>
     </div>
   </div>
+</script>
+
+<script type="text/template" id="tree-finder-result-template">
+  <% _.each(notebooks, function(notebook) { %>   
+    <p><%=notebook_name%> created by <%=notebook_user%></p>
+  <% }); %>  
 </script>
 
 <div class="container nopad" id="main-div">
