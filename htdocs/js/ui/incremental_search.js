@@ -6,6 +6,7 @@ RCloud.UI.incremental_search = (function() {
         _elementSelector = '#tree-finder-dialog',
         _inputsSelector = _elementSelector + ' input',
         _resultsSelector = _elementSelector + ' .results',
+        _resultItemSelector = _resultsSelector + '> p';
         _dialogVisible = false,
         _dialog = undefined,
         _search_service = new notebook_tree_search_service();
@@ -55,8 +56,7 @@ RCloud.UI.incremental_search = (function() {
                 _dialogVisible = false;
             });
 
-            // events:
-            $(_inputsSelector).on('keyup', function(e) {
+            $(_inputsSelector).on('keyup', function() {
                 var entries = [];
                 
                 $(_inputsSelector).map(function(index) {
@@ -76,6 +76,13 @@ RCloud.UI.incremental_search = (function() {
                     $(_resultsSelector).html('');
                 }
             });
+
+            $(_resultsSelector).on('click', 'p', function() {
+                
+                // notebook id:
+                //console.log($(this).data('id'));
+                $(_elementSelector).modal('hide');
+            })
         }
     };
 

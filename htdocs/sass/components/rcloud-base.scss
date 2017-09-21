@@ -766,9 +766,23 @@ body .modal-dialog.full {
         max-height: 50vh;
         overflow-y: auto;
         > p {
-            font-style: italic;
             font-size: 12px;
-            color: #777;
+            cursor: pointer; 
+            padding: 5px 2px;
+            margin: 0;
+            &:hover {
+                background: #dedede;
+            }
+            .creator {
+                font-style: italic;
+                color: #555;
+            }
+            .star_count {
+                float: right;
+                i {
+                    margin-left: 3px;
+                }
+            }
         }
     }
 }

@@ -565,7 +565,7 @@
 <script type="text/template" id="tree-finder-result-template">
   <% if(notebooks.length) { %>
   <% _.each(notebooks, function(notebook) { %>   
-    <p><%=notebook.name%> created by <%=notebook.author%></p>
+    <p data-id="<%=notebook.id%>"><%=notebook.name%> <span class="creator"><%=notebook.author%></span><span class="star_count"><%=notebook.star_count%><i class="icon-star"></i></span></p>
   <% }); %>  
   <% } else { %>
     <p>No matching results</p>    
