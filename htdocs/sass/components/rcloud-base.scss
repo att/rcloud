@@ -763,6 +763,8 @@ body .modal-dialog.full {
     }
 
     .results {
+        max-height: 50vh;
+        overflow-y: auto;
         > p {
             font-style: italic;
             font-size: 12px;
