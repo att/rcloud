@@ -2,10 +2,13 @@
 RCloud.UI.incremental_search = (function() { 
     
     var _template = _.template($('#tree-finder-template').html()),
-        _elementSelector = '#tree-finder-dialog';
+        _resultsTemplate = _.template($('#tree-finder-result-template').html()),
+        _elementSelector = '#tree-finder-dialog',
         _inputsSelector = _elementSelector + ' input',
+        _resultsSelector = _elementSelector + ' .results',
         _dialogVisible = false,
-        _dialog = undefined;
+        _dialog = undefined,
+        _search_service = new notebook_tree_search_service();
 
     function toggle_incremental_search() {
         if(!_dialogVisible) {
@@ -47,32 +50,32 @@ RCloud.UI.incremental_search = (function() {
 
             $(_dialog).on('hidden.bs.modal', function () {
                 $(_elementSelector).modal('hide');
-                $('.results p', _elementSelector).show();
                 $(_inputsSelector).val('');
-                $('.results_list', _elementSelector).html('');
+                $(_resultsSelector).html('');
                 _dialogVisible = false;
             });
 
             // events:
-            var entries = [];
             $(_inputsSelector).on('keyup', function(e) {
+                var entries = [];
+                
                 $(_inputsSelector).map(function(index) {
                     entries.push($(this).val());
                 });
 
-                // eventually, do a search with these params:
-                console.log({
-                    username: entries[0],
-                    // parentFolderName: entries[1],
-                    // name: entries[2]
-                    name: entries[1]
-                });
+                if(_.any(entries, function(entry) { return entry.length; })) {
+                    _search_service.get_results({
+                        username: entries[0],
+                        notebook: entries[1]
+                    }).then(function(results) {
+                        $(_resultsSelector).html(_resultsTemplate({
+                            notebooks: results
+                        }));
+                    });
+                } else {
+                    $(_resultsSelector).html('');
+                }
             });
-
-            console.log('notebook_tree_controller: ', notebook_tree_controller);
-            //console.log('tree data: ', notebook_tree_controller.get_tree_data());
-            console.log('tree data: ', editor);
-            console.log('event: ', event);
         }
     };
 
