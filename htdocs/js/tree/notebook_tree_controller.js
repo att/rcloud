@@ -132,5 +132,13 @@ notebook_tree_controller.prototype = {
 
     remove_notebook_view: function(user, gistname) {
         this.model_.remove_notebook_view(user, gistname);
+    },
+
+    traverse: function() {
+        this.model_.traverse();
+    },
+
+    update_sort_type: function(sort_type) {
+        this.model_.update_sort_type(sort_type);
     }
 };

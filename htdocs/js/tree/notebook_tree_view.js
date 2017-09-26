@@ -4,6 +4,7 @@ var notebook_tree_view = function(model) {
 
     this.model_ = model;
     this.$tree_ = null;
+    this.$sortOrderSelect_ = $('#tree_sort_order');
     
     this.on_notebook_open = new event(this);
 
@@ -14,6 +15,11 @@ var notebook_tree_view = function(model) {
 
         var start_widget_time = window.performance ? window.performance.now() : 0;
         view_obj.$tree_ = $("#editor-book-tree");
+
+        console.info('loading tree data: ', args.data);
+
+        view_obj.$sortOrderSelect_.on('change', view_obj.change_sort_order.bind(view_obj));
+        
         view_obj.$tree_.tree({
             data: args.data,
             onCreateLi: view_obj.on_create_tree_li.bind(view_obj),
@@ -33,15 +39,18 @@ var notebook_tree_view = function(model) {
         view_obj.$tree_.tree('openNode', interests);
     });
 
+    this.model_.on_update_sort_order.attach(function(sender, args) {
+        console.log('view has picked up reorder event with args: ', args);
+    });
+
     this.model_.on_load_by_user.attach(function(sender, args) {
         
         var root = view_obj.$tree_.tree('getNodeById', args.pid);  
         view_obj.$tree_.tree('loadData', args.data, root);
 
         if(args.duplicate_data) {
-
             view_obj.$tree_.tree('loadData', args.duplicate_data, 
-                view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
+            view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
         }
     });
 
@@ -85,6 +94,7 @@ var notebook_tree_view = function(model) {
     });
 
     this.model_.on_append_node.attach(function(sender, args) {
+        console.info('appending node: ', args.node_to_insert);
         view_obj.$tree_.tree('appendNode', args.node_to_insert, 
             view_obj.$tree_.tree('getNodeById', args.parent_id));
     });
@@ -146,6 +156,10 @@ var notebook_tree_view = function(model) {
 };
 
 notebook_tree_view.prototype = {
+
+    change_sort_order: function(event) {
+        this.model_.update_sort_type(this.$sortOrderSelect_.val());
+    },
 
     tree_click: function(event) {
 

@@ -112,7 +112,6 @@ ui_utils.disable_bs_button = function(el) {
     el.addClass("disabled");
 };
 
-
 ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
 {
     min_rows = _.isUndefined(min_rows) ? 0  : min_rows;

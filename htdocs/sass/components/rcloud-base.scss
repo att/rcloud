@@ -589,6 +589,20 @@ ul.recent-notebooks-list li a {
     white-space: nowrap;
 }
 
+/* tree filtering and ordering */
+.notebook-tree {
+    padding: 5px;
+}
+
+#editor-book-tree {
+    padding: 5px;
+}
+
+#tree-controls {
+    padding: 5px 5px 2px 5px;
+    background: #efefef;
+}
+
 .jqtree-element .jqtree-title.jqtree_common {
     word-break: break-all;
     display: inline-block;

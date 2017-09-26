@@ -2,6 +2,19 @@ var notebook_tree_model = function(username, show_terse_dates) {
     
     "use strict";
 
+    // major key is adsort_order and minor key is name (label)
+    this.order = {
+        HEADER: 0, // at top (unused)
+        NOTEBOOK: 1,
+        MYFOLDER: 2,
+        SUBFOLDER: 4
+    };
+
+    this.orderType = {
+        DEFAULT: 0,
+        DATE_DESC: 1
+    };
+
     this.username_ = username;
     this.show_terse_dates_ = show_terse_dates;
     this.path_tips_ = false; // debugging tool: show path tips on tree
@@ -19,6 +32,8 @@ var notebook_tree_model = function(username, show_terse_dates) {
     this.gist_sources_ = null; // valid gist sources on server
     this.lazy_load_ = {}; // which users need loading
 
+    this.sorted_by = this.orderType.DEFAULT;
+
     this.CONFIG_VERSION = 1;
 
     this.on_initialise_tree = new event(this);
@@ -35,14 +50,7 @@ var notebook_tree_model = function(username, show_terse_dates) {
     this.on_show_history = new event(this);
     this.on_open_node = new event(this);
     this.remove_history_nodes = new event(this);
-
-    // major key is adsort_order and minor key is name (label)
-    this.order = {
-        HEADER: 0, // at top (unused)
-        NOTEBOOK: 1,
-        MYFOLDER: 2,
-        SUBFOLDER: 4
-    };
+    this.on_update_sort_order = new event(this);
 };
 
 notebook_tree_model.prototype = {
@@ -233,7 +241,7 @@ notebook_tree_model.prototype = {
             id: '/alls',
             children: _.map(all_the_users, function(u) {
                 return that.lazy_node('alls', u);
-            }).sort(this.compare_nodes)
+            }).sort(this.compare_nodes.bind(this))
         };
     },
 
@@ -246,35 +254,46 @@ notebook_tree_model.prototype = {
                 return that.my_friends_[u]>0;
             }).map(function(u) {
                 return that.lazy_node('friends', u);
-            }).sort(this.compare_nodes)
+            }).sort(this.compare_nodes.bind(this))
         };
     },
 
     compare_nodes: function(a, b) {
-        var so = a.sort_order-b.sort_order;
-        if(so) return so;
+        var so = a.sort_order - b.sort_order;
+        if(so) {
+            return so;
+        }
         else {
-            var alab = a.name || a.label, blab = b.name || b.label;
-            // cut trailing numbers and sort separately
-            var amatch = RCloud.utils.split_number(alab), bmatch = RCloud.utils.split_number(blab);
-            if(amatch && bmatch && amatch[0] == bmatch[0]) {
-                var an = +amatch[1], bn = +bmatch[1];
-                return an - bn;
-            }
-            var lc = alab.localeCompare(blab);
-            if(lc === 0) {
-                // put a folder with the same name as a notebook first
-                if(a.children) {
-                    if(b.children)
-                        throw new Error("uh oh, parallel folders");
-                    return -1;
+            var alab = a.name || a.label, 
+                blab = b.name || b.label;
+
+            if(this.sorted_by === this.orderType.DEFAULT) {
+                // cut trailing numbers and sort separately
+                var amatch = RCloud.utils.split_number(alab), 
+                bmatch = RCloud.utils.split_number(blab);
+
+                if(amatch && bmatch && amatch[0] == bmatch[0]) {
+                    var an = +amatch[1], bn = +bmatch[1];
+                    return an - bn;
                 }
-                else if(b.children)
-                    return 1;
-                // make sort stable on gist id (creation time would be better)
-                lc = a.gistname.localeCompare(b.gistname);
-            }
-            return lc;
+
+                var lc = alab.localeCompare(blab);
+                if(lc === 0) {
+                    // put a folder with the same name as a notebook first
+                    if(a.children) {
+                        if(b.children)
+                            throw new Error("uh oh, parallel folders");
+                        return -1;
+                    }
+                    else if(b.children)
+                        return 1;
+                    // make sort stable on gist id (creation time would be better)
+                    lc = a.gistname.localeCompare(b.gistname);
+                }
+                return lc;
+            } else {
+                return a.last_commit < b.last_commit;
+            }            
         }
     },
 
@@ -334,14 +353,14 @@ notebook_tree_model.prototype = {
                 label: mine ? "My Notebooks" : this.someone_elses(username),
                 id: id,
                 sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER,
-                children: this.as_folder_hierarchy(notebook_nodes, id).sort(this.compare_nodes)
+                children: this.as_folder_hierarchy(notebook_nodes, id).sort(this.compare_nodes.bind(this))
             };
             user_nodes.push(node);
         }
         return {
             label: 'Notebooks I Starred',
             id: '/interests',
-            children: user_nodes.sort(this.compare_nodes)
+            children: user_nodes.sort(this.compare_nodes.bind(this))
         };
     },
 
@@ -386,7 +405,7 @@ notebook_tree_model.prototype = {
         outside_folders.forEach(function(v) {
             v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
         });
-        return outside_folders.concat(in_folders).sort(this.compare_nodes);
+        return outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
     },
 
     convert_notebook_set: function(root, username, set) {
@@ -429,7 +448,7 @@ notebook_tree_model.prototype = {
             var root = that.get_node_by_id(pid);
 
             var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
-            var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes);
+            var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes.bind(that));
                         
             delete that.lazy_load_[username];
 
@@ -652,7 +671,7 @@ notebook_tree_model.prototype = {
             for(var i = 0; i < parent.children.length; ++i) {
                 var child = parent.children[i];
 
-                var so = this.compare_nodes(data, child);
+                var so = this.compare_nodes.bind(this, data, child);
                 if(so < 0) {
                     return {
                         child: child,
@@ -698,6 +717,40 @@ notebook_tree_model.prototype = {
             });
             
             return node_to_insert;
+        }
+    },
+
+    traverse: function() {
+        function traverse(o) {
+            for (var i in o) {
+                if (!!o[i] && typeof(o[i])=="object") {
+                    console.log('traverse output: ', o[i]); 
+                    traverse(o[i] );
+                }
+            }
+        }
+        traverse(this.tree_data_);
+    },
+
+    update_sort_type: function(sort_type) {
+        var to_sort_by;
+        if(sort_type.toLocaleLowerCase() == 'date_desc') {
+            to_sort_by = this.orderType.DATE_DESC;
+        } else {
+            to_sort_by = this.orderType.DEFAULT;
+        }
+
+        if(this.sorted_by != to_sort_by) {
+            // update sort
+            this.sorted_by = to_sort_by;
+
+            // TODO: array of objects, parent IDs, child IDs (or actual nodes?)
+            var parents_and_children = [];
+
+            // do update of nodes:
+            this.on_update_sort_order.notify({
+                parents_and_children: parents_and_children
+            });
         }
     },
 
@@ -1375,7 +1428,7 @@ notebook_tree_model.prototype = {
                 return {
                     label: 'RCloud Sample Notebooks',
                     id: '/featured',
-                    children: that.as_folder_hierarchy(notebook_nodes, that.node_id('featured')).sort(that.compare_nodes)
+                    children: that.as_folder_hierarchy(notebook_nodes, that.node_id('featured')).sort(that.compare_nodes.bind(that))
                 };
             });
 
