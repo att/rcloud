@@ -4,6 +4,7 @@ var notebook_tree_view = function(model) {
 
     this.model_ = model;
     this.$tree_ = null;
+    this.tree_controls_root_selector = '#tree-controls';
     this.$sortOrderSelect_ = $('#tree_sort_order');
     
     this.on_notebook_open = new event(this);
@@ -11,6 +12,19 @@ var notebook_tree_view = function(model) {
     var view_obj = this;
 
     // attach model listeners
+    this.model_.on_settings_complete.attach(function(sender, args) {
+        $(view_obj.tree_controls_root_selector).find('[data-settingkey]').each(function() {
+            var settingKey = $(this).data('settingkey');
+            var settingValue = args[settingKey];
+
+            if(settingValue != null) {
+                $(this).val(settingValue);                 
+            } else {
+                $(this).val($(this).data('settingdefault'));
+            }
+        });
+    });
+
     this.model_.on_initialise_tree.attach(function(sender, args) {
 
         var start_widget_time = window.performance ? window.performance.now() : 0;
@@ -169,7 +183,9 @@ var notebook_tree_view = function(model) {
 notebook_tree_view.prototype = {
 
     change_sort_order: function(event) {
-        this.model_.update_sort_type(this.$sortOrderSelect_.val());
+        var val = $(event.target).val();
+        rcloud.config.set_user_option($(event.target).data("settingkey"), val);
+        this.model_.update_sort_type(val);
     },
 
     tree_click: function(event) {

@@ -51,6 +51,7 @@ var notebook_tree_model = function(username, show_terse_dates) {
     this.on_open_node = new event(this);
     this.remove_history_nodes = new event(this);
     this.on_update_sort_order = new event(this);
+    this.on_settings_complete = new event(this);
 };
 
 notebook_tree_model.prototype = {
@@ -732,7 +733,7 @@ notebook_tree_model.prototype = {
         traverse(this.tree_data_);
     },
 
-    update_sort_type: function(sort_type) {
+    update_sort_type: function(sort_type, reorder_nodes) {
         var to_sort_by, that = this;
         if(sort_type.toLocaleLowerCase() == 'date_desc') {
             to_sort_by = this.orderType.DATE_DESC;
@@ -744,34 +745,36 @@ notebook_tree_model.prototype = {
             // update sort
             this.sorted_by = to_sort_by;
 
-            // TODO: loop through each of the parents, updating the sort order:
-            var nodes_and_children = [];
+            if(reorder_nodes) {
+                // TODO: loop through each of the parents, updating the sort order:
+                var nodes_and_children = [];
+                
+                var update_children = function(o) {
+                    for(var i in o) {
+                        //if(o[i].hasOwnProperty('children')) {
+                        if (!!o[i] && typeof(o[i])=="object") {
 
-            var update_children = function(o) {
-                for(var i in o) {
-                    //if(o[i].hasOwnProperty('children')) {
-                    if (!!o[i] && typeof(o[i])=="object") {
+                            if(o[i].hasOwnProperty('children')) {
+                                o[i].children.sort(that.compare_nodes.bind(that));
+                                
+                                nodes_and_children.push({
+                                    node_id: o[i].id,
+                                    children: o[i].children
+                                });
 
-                        if(o[i].hasOwnProperty('children')) {
-                            o[i].children.sort(that.compare_nodes.bind(that));
+                                //console.log('reordering for parent: ', o[i].id);
+                            }
                             
-                            nodes_and_children.push({
-                                node_id: o[i].id,
-                                children: o[i].children
-                            });
-
-                            //console.log('reordering for parent: ', o[i].id);
+                            update_children(o[i]);
                         }
-                        
-                        update_children(o[i]);
                     }
-                }
-            };
+                };
 
-            update_children(this.tree_data_);
-            
-            // do update of nodes:
-            this.on_update_sort_order.notify(nodes_and_children);
+                update_children(this.tree_data_);
+                
+                // do update of nodes:
+                this.on_update_sort_order.notify(nodes_and_children);
+            }
         }
     },
 
@@ -1508,9 +1511,12 @@ notebook_tree_model.prototype = {
             that.get_starred_info(),
             that.get_recent_info(),
             rcloud.get_gist_sources(),
-            rcloud.config.get_user_option('notebook-path-tips')
-        ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, path_tips) {
-            that.path_tips_ = path_tips;
+            rcloud.config.get_user_option(['notebook-path-tips', 'tree_sort_order'])
+        ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, user_options) {
+            that.path_tips_ = user_options['notebook_path_tips'];
+            that.update_sort_type(user_options['tree_sort_order']);
+            that.on_settings_complete.notify(user_options);
+            
             that.gist_sources_ = gist_sources;
             _.extend(that.notebook_info_, starred_info.notebooks);
             for(var r in recent_info.notebooks) {
