@@ -629,10 +629,10 @@ var editor = function () {
         },
         set_notebook_tree_sort_type: function(sort_type) {
             tree_controller_.update_sort_type(sort_type);
+        },
+        traverse_tree: function() {
+            tree_controller_.traverse();
         }
-        // filter_notebook_tree: function() {
-        //     tree_controller_.traverse();
-        // }
     };
     return result;
 }();

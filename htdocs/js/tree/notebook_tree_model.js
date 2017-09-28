@@ -725,7 +725,7 @@ notebook_tree_model.prototype = {
             for (var i in o) {
                 if (!!o[i] && typeof(o[i])=="object") {
                     console.log('traverse output: ', o[i]); 
-                    traverse(o[i] );
+                    traverse(o[i]);
                 }
             }
         }
@@ -733,7 +733,7 @@ notebook_tree_model.prototype = {
     },
 
     update_sort_type: function(sort_type) {
-        var to_sort_by;
+        var to_sort_by, that = this;
         if(sort_type.toLocaleLowerCase() == 'date_desc') {
             to_sort_by = this.orderType.DATE_DESC;
         } else {
@@ -744,13 +744,34 @@ notebook_tree_model.prototype = {
             // update sort
             this.sorted_by = to_sort_by;
 
-            // TODO: array of objects, parent IDs, child IDs (or actual nodes?)
-            var parents_and_children = [];
+            // TODO: loop through each of the parents, updating the sort order:
+            var nodes_and_children = [];
 
+            var update_children = function(o) {
+                for(var i in o) {
+                    //if(o[i].hasOwnProperty('children')) {
+                    if (!!o[i] && typeof(o[i])=="object") {
+
+                        if(o[i].hasOwnProperty('children')) {
+                            o[i].children.sort(that.compare_nodes.bind(that));
+                            
+                            nodes_and_children.push({
+                                node_id: o[i].id,
+                                children: o[i].children
+                            });
+
+                            //console.log('reordering for parent: ', o[i].id);
+                        }
+                        
+                        update_children(o[i]);
+                    }
+                }
+            };
+
+            update_children(this.tree_data_);
+            
             // do update of nodes:
-            this.on_update_sort_order.notify({
-                parents_and_children: parents_and_children
-            });
+            this.on_update_sort_order.notify(nodes_and_children);
         }
     },
 

@@ -40,7 +40,17 @@ var notebook_tree_view = function(model) {
     });
 
     this.model_.on_update_sort_order.attach(function(sender, args) {
-        console.log('view has picked up reorder event with args: ', args);
+        // get the selected node because the loadData loses it;
+        // the id must be used because using the node directly doesn't work:
+        var selected_node_id = view_obj.$tree_.tree('getSelectedNode').id;
+        _.each(args, function(node) {
+            var parent = view_obj.$tree_.tree('getNodeById', node.node_id);
+            view_obj.$tree_.tree('loadData', node.children, parent);
+        });
+        // reselect the lost selected node:
+        var node = view_obj.$tree_.tree('getNodeById', selected_node_id);
+        view_obj.$tree_.tree('selectNode', node);
+        
     });
 
     this.model_.on_load_by_user.attach(function(sender, args) {
