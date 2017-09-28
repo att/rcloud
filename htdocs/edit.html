@@ -140,8 +140,20 @@
       <tbody>
         <tr>
           <td width="10%">
-            <!-- swap out local host -->
-            <a id="open_0" href="http://localhost:8080/edit.html?notebook=<%=result.id%>" class="search-result-heading"><%=result.id%> / <%=result.description%></a>
+            <% if (result.source == "main_source") { %>
+              <% var url = ui_utils.make_url('edit.html', {notebook: result.id}) %>
+            <a id="open_0" href=<%= url %>
+               class="search-result-heading"
+               title="source: local">
+            <% }else{ %> 
+              <% var url = ui_utils.make_url('edit.html', {notebook: result.id, source: result.source}) %>
+              <a id="open_0" href=<%= url %>
+                class="search-result-heading foreign-notebook"
+                title="source: <%=result.source%>">
+            <% } %>
+
+              <%=result.id%> / <%=result.description%>
+            </a>
             <i class="icon-star search-star"><sub>,<%=result.starcount%></sub></i> <br/>
             <span class="search-result-modified-date">modified at <i><%=result.updated_at%></i></span>
           </td>
