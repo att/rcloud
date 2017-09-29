@@ -603,6 +603,15 @@ ul.recent-notebooks-list li a {
     background: #efefef;
 }
 
+#tree-sort-by, #tree-filter-by {
+    width: 50%;
+    float: left;
+}
+
+#tree-filter-by {
+    text-align: right;
+}
+
 .jqtree-element .jqtree-title.jqtree_common {
     word-break: break-all;
     display: inline-block;
