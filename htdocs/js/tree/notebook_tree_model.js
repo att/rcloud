@@ -293,7 +293,8 @@ notebook_tree_model.prototype = {
                 }
                 return lc;
             } else {
-                return a.last_commit < b.last_commit;
+                return (a.last_commit || _.max(_.pluck(a.children, 'last_commit'))) < 
+                    (b.last_commit || _.max(_.pluck(b.children, 'last_commit')));
             }            
         }
     },
