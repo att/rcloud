@@ -6,10 +6,16 @@ var notebook_tree_view = function(model) {
     this.$tree_ = null;
     this.tree_controls_root_selector = '#tree-controls';
     this.$sortOrderSelect_ = $('#tree_sort_order');
+    this.date_filter_ = new date_filter('#tree-filter-by');
     
     this.on_notebook_open = new event(this);
 
     var view_obj = this;
+
+    // attach view component listeners:
+    this.date_filter_.on_change.attach(function(sender, args) { 
+        console.log('date filter change: ', args);
+    });
 
     // attach model listeners
     this.model_.on_settings_complete.attach(function(sender, args) {
@@ -33,7 +39,7 @@ var notebook_tree_view = function(model) {
         console.info('loading tree data: ', args.data);
 
         view_obj.$sortOrderSelect_.on('change', view_obj.change_sort_order.bind(view_obj));
-        
+
         view_obj.$tree_.tree({
             data: args.data,
             onCreateLi: view_obj.on_create_tree_li.bind(view_obj),
@@ -41,6 +47,8 @@ var notebook_tree_view = function(model) {
             useContextMenu: false,
             keyboardSupport: false
         });
+
+        view_obj.date_filter_.generate_options();
 
         view_obj.$tree_.bind('tree.click', view_obj.tree_click.bind(view_obj));
         view_obj.$tree_.bind('tree.open', view_obj.tree_open.bind(view_obj));
