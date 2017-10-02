@@ -34,6 +34,11 @@ var notebook_tree_model = function(username, show_terse_dates) {
 
     this.sorted_by = this.orderType.DEFAULT;
 
+    // functions that filter the tree:
+    this.tree_filters_ = {
+        bydate: function() {}
+    };
+
     this.CONFIG_VERSION = 1;
 
     this.on_initialise_tree = new event(this);
@@ -732,6 +737,23 @@ notebook_tree_model.prototype = {
             }
         }
         traverse(this.tree_data_);
+    },
+
+    update_date_filter: function(filter) {
+        switch(filter) { 
+            case 'all':
+                this.tree_filters_.bydate = function() {};
+                break;
+            case 'last7':
+            case 'last30':
+                var period = filter.replace('last', '');
+                this.tree_filters_.bydate = function(item) {
+                    return RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
+                };
+                break;
+            default:
+                console.warn('Unknown filter type passed to update_date_filter(...)');
+        }
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {

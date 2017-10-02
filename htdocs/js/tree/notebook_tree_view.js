@@ -14,7 +14,7 @@ var notebook_tree_view = function(model) {
 
     // attach view component listeners:
     this.date_filter_.on_change.attach(function(sender, args) { 
-        console.log('date filter change: ', args);
+        view_obj.model_.update_date_filter(args);
     });
 
     // attach model listeners
