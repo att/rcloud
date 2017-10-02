@@ -27,7 +27,7 @@ requirejs_config_obj = {
         "rserve": ["underscore"],
         "mousetrap-global-bind.min": ["mousetrap.min"],
         "jquery.fix.clone" : ["jquery-ui"],
-        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap", "mousetrap.min", "moment.min"
+        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here
                          ]
     }
@@ -45,8 +45,7 @@ var common_deps = [
     "rserve", "tree.jquery", "FileSaver",
     "css_browser_selector",
     "mousetrap.min",
-    "mousetrap-global-bind.min",
-    "moment.min"
+    "mousetrap-global-bind.min"
 ];
 
 function start_require(deps) {
