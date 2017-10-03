@@ -4,7 +4,10 @@ var date_filter = function(selector) {
 
     var that = this;
     this.$el_.on('change', function() {
-        that.on_change.notify($(this).val());
+        that.on_change.notify({
+            prop: 'bydate', 
+            value: $(this).val()
+        });
     });
 
     this.generate_options = function() {

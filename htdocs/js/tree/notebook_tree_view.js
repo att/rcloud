@@ -14,8 +14,14 @@ var notebook_tree_view = function(model) {
 
     // attach view component listeners:
     this.date_filter_.on_change.attach(function(sender, args) { 
-        view_obj.model_.update_date_filter(args);
+        view_obj.model_.update_filter(args);
     });
+
+    // future listeners conform to args = { prop, value }
+    //
+    // this.another_filter_.on_change.attach(function(sender, args) {
+    //     view_obj.model_.update_filter(args);
+    // });
 
     // attach model listeners
     this.model_.on_settings_complete.attach(function(sender, args) {

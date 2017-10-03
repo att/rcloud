@@ -739,21 +739,25 @@ notebook_tree_model.prototype = {
         traverse(this.tree_data_);
     },
 
-    update_date_filter: function(filter) {
-        switch(filter) { 
-            case 'all':
-                this.tree_filters_.bydate = function() {};
-                break;
-            case 'last7':
-            case 'last30':
-                var period = filter.replace('last', '');
-                this.tree_filters_.bydate = function(item) {
-                    return RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
-                };
-                break;
-            default:
-                console.warn('Unknown filter type passed to update_date_filter(...)');
+    update_filter: function(filter_props) {
+        if(filter_props.prop == 'bydate') {
+            switch(filter_props.value) { 
+                case 'all':
+                    this.tree_filters_[filter_props.prop] = function() {};
+                    break;
+                case 'last7':
+                case 'last30':
+                    var period = filter_props.value.replace('last', '');
+                    this.tree_filters_[filter_props.prop] = function(item) {
+                        return RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
+                    };
+                    break;
+                default:
+                    console.warn('Unknown filter type passed to notebook_tree_model.update_date_filter(...)');
+            }
         }
+
+        // do the filtering:
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {
@@ -769,12 +773,10 @@ notebook_tree_model.prototype = {
             this.sorted_by = to_sort_by;
 
             if(reorder_nodes) {
-                // TODO: loop through each of the parents, updating the sort order:
                 var nodes_and_children = [];
                 
                 var update_children = function(o) {
                     for(var i in o) {
-                        //if(o[i].hasOwnProperty('children')) {
                         if (!!o[i] && typeof(o[i])=="object") {
 
                             if(o[i].hasOwnProperty('children')) {
@@ -784,8 +786,6 @@ notebook_tree_model.prototype = {
                                     node_id: o[i].id,
                                     children: o[i].children
                                 });
-
-                                //console.log('reordering for parent: ', o[i].id);
                             }
                             
                             update_children(o[i]);
