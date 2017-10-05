@@ -744,7 +744,7 @@ notebook_tree_model.prototype = {
         if(filter_props.prop == 'bydate') {
             switch(filter_props.value) { 
                 case 'all':
-                    this.tree_filters_[filter_props.prop] = function() {};
+                    this.tree_filters_[filter_props.prop] = function() { return true; };
                     break;
                 case 'last7':
                 case 'last30':
