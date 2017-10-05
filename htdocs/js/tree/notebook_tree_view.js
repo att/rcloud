@@ -83,10 +83,17 @@ var notebook_tree_view = function(model) {
     });
 
     this.model_.on_update_show_nodes.attach(function(sender, args) {
-        // show only the nodes that are specified:
-        console.log('nodes to show: ', args.nodes);
+        view_obj.$tree_.tree('getTree').iterate(function(node) {
+            if(node.gistname) {
+                if(args.nodes.indexOf(node.id) != -1) {
+                    $(node.element).show();
+                } else {
+                    $(node.element).hide();
+                }
+            } 
 
-        // todo: loop through, hiding/showing:
+            return true;
+        });
     });
 
     this.model_.on_load_by_user.attach(function(sender, args) {
