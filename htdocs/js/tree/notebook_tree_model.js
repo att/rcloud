@@ -753,11 +753,41 @@ notebook_tree_model.prototype = {
                     };
                     break;
                 default:
-                    console.warn('Unknown filter type passed to notebook_tree_model.update_date_filter(...)');
+                    console.warn('Unknown value for date filter type passed to notebook_tree_model.update_filter(...)');
             }
         }
 
         // do the filtering:
+        // var result = RCloud.utils.filter(nodes, this.tree_filters_.values);
+        var matching_notebooks = [],
+            that = this,
+            current_matches = [],
+            
+            get_matching_notebooks = function(o) {
+            for(var i in o) {
+                if (!!o[i] && typeof(o[i])=="object") {
+
+                    if(o[i].hasOwnProperty('children')) {                        
+                        current_matches = _.filter(o[i].children, function(child) {
+                            return child.gistname;
+                        });
+
+                        current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
+                        
+                        if(current_matches && current_matches.length) {
+                            matching_notebooks.push.apply(matching_notebooks, current_matches);
+                        }
+                    }
+
+                    get_matching_notebooks(o[i]);
+                }
+            }
+        }; 
+
+        get_matching_notebooks(this.tree_data_);
+
+        // todo: fire event with matching notebooks:
+        // matching_notebooks
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {

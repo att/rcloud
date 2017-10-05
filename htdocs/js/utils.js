@@ -75,6 +75,7 @@ RCloud.utils.date_diff_days = function(a, b) {
 }
 
 RCloud.utils.filter = function(items, conditions) {
+    
     _.mixin({
         invokeWith: function() {
             var args = arguments;
@@ -84,5 +85,6 @@ RCloud.utils.filter = function(items, conditions) {
         }
     });
 
-    _.filter(items, _.compose(_.partial(_.all, conditions), _.invokeWith));
+    return _.filter(items, _.compose(_.partial(_.all, conditions), _.invokeWith));
+    
 }
