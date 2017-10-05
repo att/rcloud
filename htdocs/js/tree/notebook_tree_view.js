@@ -213,7 +213,7 @@ notebook_tree_view.prototype = {
     change_sort_order: function(event) {
         var val = $(event.target).val();
         rcloud.config.set_user_option($(event.target).data("settingkey"), val);
-        this.model_.update_sort_type(val);
+        this.model_.update_sort_type(val, true);
     },
 
     tree_click: function(event) {
