@@ -56,6 +56,7 @@ var notebook_tree_model = function(username, show_terse_dates) {
     this.on_open_node = new event(this);
     this.remove_history_nodes = new event(this);
     this.on_update_sort_order = new event(this);
+    this.on_update_show_nodes = new event(this);
     this.on_settings_complete = new event(this);
 };
 
@@ -758,7 +759,6 @@ notebook_tree_model.prototype = {
         }
 
         // do the filtering:
-        // var result = RCloud.utils.filter(nodes, this.tree_filters_.values);
         var matching_notebooks = [],
             that = this,
             current_matches = [],
@@ -786,8 +786,9 @@ notebook_tree_model.prototype = {
 
         get_matching_notebooks(this.tree_data_);
 
-        // todo: fire event with matching notebooks:
-        // matching_notebooks
+        this.on_update_show_nodes.notify({
+            nodes: _.pluck(matching_notebooks, 'id')
+        });
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {

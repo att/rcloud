@@ -82,6 +82,13 @@ var notebook_tree_view = function(model) {
         view_obj.$tree_.tree('setState', state);
     });
 
+    this.model_.on_update_show_nodes.attach(function(sender, args) {
+        // show only the nodes that are specified:
+        console.log('nodes to show: ', args.nodes);
+
+        // todo: loop through, hiding/showing:
+    });
+
     this.model_.on_load_by_user.attach(function(sender, args) {
         
         var root = view_obj.$tree_.tree('getNodeById', args.pid);  
