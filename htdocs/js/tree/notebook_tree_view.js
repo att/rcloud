@@ -5,7 +5,7 @@ var notebook_tree_view = function(model) {
     this.model_ = model;
     this.$tree_ = null;
     this.tree_controls_root_selector = '#tree-controls';
-    this.$sortOrderSelect_ = $('#tree_sort_order');
+    this.$sort_order_select_ = $('#tree_sort_order');
     this.date_filter_ = new date_filter('#tree-filter-by');
     
     this.on_notebook_open = new event(this);
@@ -31,8 +31,6 @@ var notebook_tree_view = function(model) {
 
             if(settingValue != null) {
                 $(this).val(settingValue);                 
-            } else {
-                $(this).val($(this).data('settingdefault'));
             }
         });
     });
@@ -44,7 +42,7 @@ var notebook_tree_view = function(model) {
 
         console.info('loading tree data: ', args.data);
 
-        view_obj.$sortOrderSelect_.on('change', view_obj.change_sort_order.bind(view_obj));
+        view_obj.$sort_order_select_.on('change', view_obj.change_sort_order.bind(view_obj));
 
         view_obj.$tree_.tree({
             data: args.data,
@@ -53,8 +51,6 @@ var notebook_tree_view = function(model) {
             useContextMenu: false,
             keyboardSupport: false
         });
-
-        view_obj.date_filter_.generate_options();
 
         view_obj.$tree_.bind('tree.click', view_obj.tree_click.bind(view_obj));
         view_obj.$tree_.bind('tree.open', view_obj.tree_open.bind(view_obj));
@@ -212,7 +208,6 @@ notebook_tree_view.prototype = {
 
     change_sort_order: function(event) {
         var val = $(event.target).val();
-        rcloud.config.set_user_option($(event.target).data("settingkey"), val);
         this.model_.update_sort_type(val, true);
     },
 

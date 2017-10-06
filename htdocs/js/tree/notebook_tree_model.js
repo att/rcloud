@@ -36,7 +36,7 @@ var notebook_tree_model = function(username, show_terse_dates) {
 
     // functions that filter the tree:
     this.tree_filters_ = {
-        bydate: function() {}
+        tree_filter_date: function() { return true; }
     };
 
     this.CONFIG_VERSION = 1;
@@ -741,8 +741,9 @@ notebook_tree_model.prototype = {
     },
 
     update_filter: function(filter_props) {
-        if(filter_props.prop == 'bydate') {
-            switch(filter_props.value) { 
+        if(filter_props.prop == 'tree_filter_date') {
+            switch(filter_props.value) {
+                case null: 
                 case 'all':
                     this.tree_filters_[filter_props.prop] = function() { return true; };
                     break;
@@ -758,37 +759,42 @@ notebook_tree_model.prototype = {
             }
         }
 
-        // do the filtering:
-        var matching_notebooks = [],
-            that = this,
-            current_matches = [],
-            
-            get_matching_notebooks = function(o) {
-            for(var i in o) {
-                if (!!o[i] && typeof(o[i])=="object") {
+        // if the tree has been initialised, update
+        if(this.tree_data_.length) {
+            // do the filtering:
+            var matching_notebooks = [],
+                that = this,
+                current_matches = [],
+                
+                get_matching_notebooks = function(o) {
+                for(var i in o) {
+                    if (!!o[i] && typeof(o[i])=="object") {
 
-                    if(o[i].hasOwnProperty('children')) {                        
-                        current_matches = _.filter(o[i].children, function(child) {
-                            return child.gistname;
-                        });
+                        if(o[i].hasOwnProperty('children')) {                        
+                            current_matches = _.filter(o[i].children, function(child) {
+                                return child.gistname;
+                            });
 
-                        current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
-                        
-                        if(current_matches && current_matches.length) {
-                            matching_notebooks.push.apply(matching_notebooks, current_matches);
+                            current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
+                            
+                            if(current_matches && current_matches.length) {
+                                matching_notebooks.push.apply(matching_notebooks, current_matches);
+                            }
                         }
+
+                        get_matching_notebooks(o[i]);
                     }
-
-                    get_matching_notebooks(o[i]);
                 }
-            }
-        }; 
+            }; 
 
-        get_matching_notebooks(this.tree_data_);
+            get_matching_notebooks(this.tree_data_);
 
-        this.on_update_show_nodes.notify({
-            nodes: _.pluck(matching_notebooks, 'id')
-        });
+            this.on_update_show_nodes.notify({
+                nodes: _.pluck(matching_notebooks, 'id')
+            });
+
+            rcloud.config.set_user_option(filter_props.prop, filter_props.value);                        
+        }
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {
@@ -829,6 +835,8 @@ notebook_tree_model.prototype = {
                 // do update of nodes:
                 this.on_update_sort_order.notify(nodes_and_children);
             }
+
+            rcloud.config.set_user_option("tree_sort_order", sort_type);            
         }
     },
 
@@ -1565,10 +1573,15 @@ notebook_tree_model.prototype = {
             that.get_starred_info(),
             that.get_recent_info(),
             rcloud.get_gist_sources(),
-            rcloud.config.get_user_option(['notebook-path-tips', 'tree_sort_order'])
+            rcloud.config.get_user_option(['notebook-path-tips', 'tree_sort_order', 'tree_filter_date'])
         ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, user_options) {
             that.path_tips_ = user_options['notebook_path_tips'];
             that.update_sort_type(user_options['tree_sort_order']);
+            that.update_filter({
+                prop: 'tree_filter_date',
+                value: user_options['tree_filter_date']
+            });
+
             that.on_settings_complete.notify(user_options);
             
             that.gist_sources_ = gist_sources;

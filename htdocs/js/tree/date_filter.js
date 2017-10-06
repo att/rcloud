@@ -5,11 +5,12 @@ var date_filter = function(selector) {
     var that = this;
     this.$el_.on('change', function() {
         that.on_change.notify({
-            prop: 'bydate', 
+            prop: 'tree_filter_date', 
             value: $(this).val()
         });
     });
 
+    /*
     this.generate_options = function() {
         [
             { value: 'last7', text: 'Last 7 Days' },
@@ -20,6 +21,7 @@ var date_filter = function(selector) {
             }).html(item.text));
         });
     };
+    */
 };
 
 date_filter.protoype = {
