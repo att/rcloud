@@ -377,6 +377,8 @@ notebook_tree_view.prototype = {
     
     on_create_tree_li: function(node, $li) {
 
+        console.log(this);
+
         $li.css("min-height","15px");
 
         var element = $li.find('.jqtree-element'),
@@ -415,5 +417,7 @@ notebook_tree_view.prototype = {
 
         RCloud.UI.notebook_commands.decorate($li, node, right);
         element.append(right);
+
+        // todo: filter
     }
 };
