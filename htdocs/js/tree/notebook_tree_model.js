@@ -32,7 +32,8 @@ var notebook_tree_model = function(username, show_terse_dates) {
     this.gist_sources_ = null; // valid gist sources on server
     this.lazy_load_ = {}; // which users need loading
 
-    this.sorted_by = this.orderType.DEFAULT;
+    this.sorted_by_ = this.orderType.DEFAULT;
+    this.matches_filter_ = [];
 
     // functions that filter the tree:
     this.tree_filters_ = {
@@ -274,7 +275,7 @@ notebook_tree_model.prototype = {
             var alab = a.name || a.label, 
                 blab = b.name || b.label;
 
-            if(this.sorted_by === this.orderType.DEFAULT) {
+            if(this.sorted_by_ === this.orderType.DEFAULT) {
                 // cut trailing numbers and sort separately
                 var amatch = RCloud.utils.split_number(alab), 
                 bmatch = RCloud.utils.split_number(blab);
@@ -763,7 +764,11 @@ notebook_tree_model.prototype = {
         var matching_notebooks = [],
             that = this,
             current_matches = [],
-            
+            set_status = function(notebooks, matches_filter) {
+                _.each(notebooks, function(n) {
+                    n.matches_filter = matches_filter;
+                });
+            },
             get_matching_notebooks = function(o) {
             for(var i in o) {
                 if (!!o[i] && typeof(o[i])=="object") {
@@ -773,10 +778,15 @@ notebook_tree_model.prototype = {
                             return child.gistname;
                         });
 
+                        // reset:
+                        set_status(current_matches, false);
+
                         current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
-                        
+
                         if(current_matches && current_matches.length) {
                             matching_notebooks.push.apply(matching_notebooks, current_matches);
+                            // these match:
+                            set_status(current_matches, true);
                         }
                     }
 
@@ -787,11 +797,17 @@ notebook_tree_model.prototype = {
 
         get_matching_notebooks(this.tree_data_);
 
+        this.matches_filter_ = _.pluck(matching_notebooks, 'id');
+
         this.on_update_show_nodes.notify({
-            nodes: _.pluck(matching_notebooks, 'id')
+            nodes: that.matches_filter_
         });
 
         rcloud.config.set_user_option(filter_props.prop, filter_props.value);                        
+    },
+
+    does_notebook_match_filter: function(notebook_id) {
+        return this.matches_filter_.indexOf(notebook_id) != -1;
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {
@@ -802,9 +818,9 @@ notebook_tree_model.prototype = {
             to_sort_by = this.orderType.DEFAULT;
         }
 
-        if(this.sorted_by != to_sort_by) {
+        if(this.sorted_by_ != to_sort_by) {
             // update sort
-            this.sorted_by = to_sort_by;
+            this.sorted_by_ = to_sort_by;
 
             if(reorder_nodes) {
                 var nodes_and_children = [];
@@ -828,9 +844,6 @@ notebook_tree_model.prototype = {
                 };
 
                 update_children(this.tree_data_);
-                
-                // do update of nodes:
-console.info('post sort message info: ', nodes_and_children);
 
                 this.on_update_sort_order.notify(nodes_and_children);
             }
@@ -1619,18 +1632,19 @@ console.info('post sort message info: ', nodes_and_children);
 
             // initial assignment: 
             this.tree_data_ = data;
-            this.on_initialise_tree.notify({ 
-                data: data
-            });
 
-            that.update_filter({
+            this.update_filter({
                 prop: 'tree_filter_date',
                 value: opts['tree_filter_date']
             });
 
-            that.update_sort_type(opts['tree_sort_order'], true);
+            this.update_sort_type(opts['tree_sort_order'], true);   
+
+            this.on_initialise_tree.notify({ 
+                data: data
+            });         
             
-            that.on_settings_complete.notify(opts);
+            this.on_settings_complete.notify(opts);
 
         }.bind(that))
         .then(function() {

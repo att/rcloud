@@ -9,19 +9,6 @@ var date_filter = function(selector) {
             value: $(this).val()
         });
     });
-
-    /*
-    this.generate_options = function() {
-        [
-            { value: 'last7', text: 'Last 7 Days' },
-            { value: 'last30', text: 'Last 30 Days' }
-        ].forEach(function(item) {
-            that.$el_.append($('<option/>').attr({
-                'value': item.value
-            }).html(item.text));
-        });
-    };
-    */
 };
 
 date_filter.protoype = {

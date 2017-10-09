@@ -64,32 +64,35 @@ var notebook_tree_view = function(model) {
     });
 
     this.model_.on_update_sort_order.attach(function(sender, args) {
-        
-        // get the state, because 'loadData' doesn't persist selected
-        // or node states:
-        var state = view_obj.$tree_.tree('getState');
+        if(view_obj.$tree_) {
+            // get the state, because 'loadData' doesn't persist selected
+            // or node states:
+            var state = view_obj.$tree_.tree('getState');
 
-        _.each(args, function(node) {
-            var parent = view_obj.$tree_.tree('getNodeById', node.node_id);
-            view_obj.$tree_.tree('loadData', node.children, parent);
-        });
+            _.each(args, function(node) {
+                var parent = view_obj.$tree_.tree('getNodeById', node.node_id);
+                view_obj.$tree_.tree('loadData', node.children, parent);
+            });
 
-        // restore the state:
-        view_obj.$tree_.tree('setState', state);
+            // restore the state:
+            view_obj.$tree_.tree('setState', state);
+        }
     });
 
     this.model_.on_update_show_nodes.attach(function(sender, args) {
-        view_obj.$tree_.tree('getTree').iterate(function(node) {
-            if(node.gistname) {
-                if(args.nodes.indexOf(node.id) != -1) {
-                    $(node.element).show();
-                } else {
-                    $(node.element).hide();
-                }
-            } 
+        if(view_obj.$tree_) {
+            view_obj.$tree_.tree('getTree').iterate(function(node) {
+                if(node.gistname) {
+                    if(args.nodes.indexOf(node.id) != -1) {
+                        $(node.element).show();
+                    } else {
+                        $(node.element).hide();
+                    }
+                } 
 
-            return true;
-        });
+                return true;
+            });
+        }
     });
 
     this.model_.on_load_by_user.attach(function(sender, args) {
@@ -143,7 +146,6 @@ var notebook_tree_view = function(model) {
     });
 
     this.model_.on_append_node.attach(function(sender, args) {
-        console.info('appending node: ', args.node_to_insert);
         view_obj.$tree_.tree('appendNode', args.node_to_insert, 
             view_obj.$tree_.tree('getNodeById', args.parent_id));
     });
@@ -377,10 +379,6 @@ notebook_tree_view.prototype = {
     
     on_create_tree_li: function(node, $li) {
 
-        console.log(this);
-
-        $li.css("min-height","15px");
-
         var element = $li.find('.jqtree-element'),
             title = element.find('.jqtree-title');
 
@@ -416,8 +414,11 @@ notebook_tree_view.prototype = {
         }   
 
         RCloud.UI.notebook_commands.decorate($li, node, right);
+
         element.append(right);
 
-        // todo: filter
+        if(node.gistname) {
+            element.parent()[this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();
+        }
     }
 };
