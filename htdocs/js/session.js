@@ -168,7 +168,24 @@ function on_connect_anonymous_disallowed(ocaps) {
     return Promise.all([res_c, res_s]);
 }
 
-function rclient_promise(allow_anonymous) {
+function build_on_connect_error_handler(redirect_url) {
+      return function(error) {// e.g. couldn't connect with github
+        if(window.rclient)
+            rclient.close();
+        if (error.message === "Authentication required") {
+            if(RCloud.session.first_session_)
+                window.location = ui_utils.relogin_uri(redirect_url);
+            else
+                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri(redirect_url));
+        } else {
+            var msg = error.message || error.error || error;
+            RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
+        }
+        throw error;
+    };
+}
+
+function rclient_promise(allow_anonymous, on_connect_error_handler) {
     return new Promise(function(resolve, reject) {
         rclient = RClient.create({
             debug: false,
@@ -193,20 +210,7 @@ function rclient_promise(allow_anonymous) {
     }).then(function(hello) {
         if (!$("#output > .response").length)
             rclient.post_response(hello);
-    }).catch(function(error) { // e.g. couldn't connect with github
-        if(window.rclient)
-            rclient.close();
-        if (error.message === "Authentication required") {
-            if(RCloud.session.first_session_)
-                window.location = ui_utils.relogin_uri();
-            else
-                RCloud.UI.fatal_dialog("Your session has been logged out.", "Reconnect", ui_utils.relogin_uri());
-        } else {
-            var msg = error.message || error.error || error;
-            RCloud.UI.fatal_dialog(could_not_initialize_error(msg), "Logout", "/logout.R");
-        }
-        throw error;
-    }).then(function() {
+    }).catch(on_connect_error_handler).then(function() {
         return Promise.all([
             rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
                 if(timeout) {
@@ -235,7 +239,7 @@ RCloud.session = {
     first_session_: true,
     listeners: [],
     // FIXME rcloud.with_progress is part of the UI.
-    reset: function() {
+    reset: function(redirect_url) {
         if (this.first_session_) {
             this.first_session_ = false;
             return RCloud.UI.with_progress(function() {});
@@ -243,13 +247,16 @@ RCloud.session = {
         this.listeners.forEach(function(listener) {
             listener.on_reset();
         });
+        
+        on_connect_error_handler = build_on_connect_error_handler(redirect_url);
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();
-            return rclient_promise(anonymous);
+            return rclient_promise(anonymous, on_connect_error_handler);
         });
-    }, init: function(allow_anonymous) {
+    }, init: function(allow_anonymous, on_connect_error_handler) {
         this.first_session_ = true;
+        on_connect_error_handler = build_on_connect_error_handler();
         return rclient_promise(allow_anonymous);
     },
     on_data: on_data,

@@ -11,6 +11,16 @@ var shell = (function() {
         view_mode_ = false,
         autosave_timeout_ = 30000;
 
+    var rational_githubgist = function() {
+        var promise_ = null, confkey_ = 'rational.githubgist';
+        return function() {
+            if(!promise_)
+                promise_ = rcloud.get_conf_values(confkey_);
+            return promise_.then(function(value) {
+                return value[confkey_] === 'true';
+            });
+        };
+    }();
     function on_new(notebook) {
         gistname_ = notebook.id;
         version_ = null;
@@ -19,7 +29,7 @@ var shell = (function() {
 
     function on_load(notebook) {
         RCloud.UI.notebook_title.set(notebook.description);
-        RCloud.UI.notebook_title.update_fork_info(notebook.fork_of);
+        RCloud.UI.notebook_title.update_fork_info(notebook.fork_of && notebook.fork_of.id);
         notebook_user_ = notebook.user.login;
         RCloud.UI.configure_readonly();
         RCloud.UI.command_prompt.focus();
@@ -38,10 +48,10 @@ var shell = (function() {
         }
     }
 
-    function do_load(f) {
+    function do_load(opts) {
         return RCloud.UI.with_progress(function() {
-            return RCloud.session.reset()
-                .then(f)
+            return RCloud.session.reset(opts.redirect_url)
+                .then(opts.load)
                 .spread(function(notebook, gistname, version) {
                     if (!_.isUndefined(notebook.error)) {
                         throw notebook.error;
@@ -61,6 +71,10 @@ var shell = (function() {
                 "Sorry, " + language + " notebook cells not supported in this deployment.");
             return;
         }
+    }
+
+    function notebook_edit_url(notebook_id, version) {
+       return ui_utils.make_url('edit.html', { notebook : notebook_id, version: version } );
     }
 
     var result = {
@@ -134,12 +148,12 @@ var shell = (function() {
         },
         load_notebook: function(gistname, version) {
             notebook_controller_.save();
-            return do_load(function() {
+            return do_load({ load : function() {
                 return [notebook_controller_.load_notebook(gistname, version),
                         gistname, version];
-            }, gistname, version);
+            }, redirect_url : notebook_edit_url( gistname, version) });
         }, save_notebook: function() {
-            notebook_controller_.save();
+            return notebook_controller_.save();
         }, new_notebook: function(desc) {
             notebook_controller_.save();
             return RCloud.UI.with_progress(function() {
@@ -151,15 +165,14 @@ var shell = (function() {
             });
         }, rename_notebook: function(desc) {
             return notebook_controller_.rename_notebook(desc);
-        }, fork_my_notebook: function(gistname, version, open_it, transform_description) {
+        }, self_fork_workaround: function(gistname, version, open_it, transform_description) {
             // hack: copy without history as a first pass, because github forbids forking oneself
             return Promise.all([rcloud.get_notebook(gistname, version, null, true), rcloud.protection.get_notebook_cryptgroup(gistname)])
                 .spread(function(notebook, cryptgroup) {
-                    // this smells
-                    var fork_of = {owner: {login: notebook.user.login},
-                                   description: notebook.description,
-                                   id: notebook.id
-                                  };
+                    // this smells less
+                    var fork_of = {
+                        id: notebook.id
+                    };
                     notebook = Notebook.sanitize(notebook);
                     return transform_description(notebook.description).then(function(desc) {
                         notebook.description = desc;
@@ -178,45 +191,48 @@ var shell = (function() {
                             });
                     });
                 });
-        }, fork_notebook: function(is_mine, gistname, version) {
+        }, fork_and_name_notebook: function(is_mine, gistname, version, open_it, transform_description) {
             var that = this;
-            // Forcefully saving whole notebook before fork
-            shell.save_notebook();
-            return do_load(function() {
-                var promise_fork;
-                if(is_mine) {
-                    promise_fork = that.fork_my_notebook(gistname, version, true, editor.find_next_copy_name);
-                }
-                else promise_fork = notebook_controller_
+            return rational_githubgist().then(function(rational) {
+                if(is_mine && !rational)
+                    return that.self_fork_workaround(gistname, version, open_it, transform_description);
+                else return notebook_controller_
                     .fork_notebook(gistname, version)
                     .then(function(notebook) {
-                        /*
-                         // it would be nice to choose a new name if we've forked someone
-                         // else's notebook and we already have a notebook of that name
-                         // but this slams into the github concurrency problem
-                        editor.find_next_copy_name(notebook.description).then(function(new_desc) {
-                            if(new_desc != notebook.description)
-                                return notebook_controller_.rename_notebook(new_desc);
-                            else ...
-                         */
-                        return notebook;
+                        if(!rational) {
+                            /*
+                             // it would be nice to choose a new name if we've forked someone
+                             // else's notebook and we already have a notebook of that name
+                             // but this slams into the github concurrency problem
+                             */
+                            return notebook;
+                        } else return transform_description(notebook.description).then(function(desc) {
+                            return rcloud.rename_notebook(notebook.id, desc);
+                        });
                     });
-                return promise_fork
-                    .then(function(notebook) {
-                        return shell.duplicate_notebook_attributes(gistname, notebook.id)
-                            .return(notebook);
-                    })
-                    .then(function(notebook) {
-                        return [notebook, notebook.id, null];
-                    });
+                });
+        },
+        fork_notebook: function(is_mine, gistname, version) {
+            var that = this;
+            return shell.save_notebook().then(function() {
+                return do_load({ load : function() {
+                    return that.fork_and_name_notebook(is_mine, gistname, version, true, editor.find_next_copy_name)
+                        .then(function(notebook) {
+                            return shell.duplicate_notebook_attributes(gistname, notebook.id)
+                                .return(notebook);
+                        })
+                        .then(function(notebook) {
+                            return [notebook, notebook.id, null];
+                        });
+                }} );
             });
         }, revert_notebook: function(gistname, version) {
-            return do_load(function() {
+            return do_load({ load : function() {
                 return notebook_controller_.revert_notebook(gistname, version)
                     .then(function(notebook) {
                         return [notebook, notebook.id, null];
                     });
-            });
+            }});
         }, duplicate_notebook_attributes(srcid, destid) {
             var dupe_attrs = ['view-type'];
             return Promise.all(dupe_attrs.map(function(attr) {
@@ -334,6 +350,12 @@ var shell = (function() {
         }, run_notebook_from: function(cell_id) {
             RCloud.UI.with_progress(function() {
                 return result.notebook.controller.run_from(cell_id);
+            }).then(function() {
+                RCloud.UI.command_prompt.focus();
+            });
+        }, run_notebook_cells: function(cell_ids) {
+            RCloud.UI.with_progress(function() {
+                return result.notebook.controller.run_cells(cell_ids);
             }).then(function() {
                 RCloud.UI.command_prompt.focus();
             });

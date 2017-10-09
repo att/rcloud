@@ -96,6 +96,8 @@ rcloud.compute.init <- function(...) {
 
     ver <- paste0('RCloud ', rcloud.info("version.string"), ' ')
     if (nzchar(rcloud.info("revision"))) ver <- paste0(ver, "(", rcloud.info("branch"), "/", rcloud.info("revision"), "), ")
+    ulog("INFO: version: ", ver)
+
     ## FIXME: we cannot actually store the welcome message because it would appear twice
     .session$compute.init.result <- ""
     host.info <- ""

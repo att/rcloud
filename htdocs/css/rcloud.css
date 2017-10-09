@@ -9578,7 +9578,8 @@ ul.recent-notebooks-list {
   max-width: 330px; }
 
 ul.recent-notebooks-list li {
-  max-width: 330px; }
+  max-width: 330px;
+  height: 2em; }
 
 ul.recent-notebooks-list li a.username:hover {
   color: white !important; }
@@ -9596,14 +9597,15 @@ ul.recent-notebooks-list li a .description {
   overflow: hidden; }
 
 ul.recent-notebooks-list li a {
-  padding-top: 0;
+  padding-top: 2px;
+  padding-bottom: 2px;
   padding-left: 5px;
   padding-right: 5px;
-  height: 20px;
+  height: 100%;
+  width: 100%;
   display: inline-block;
   overflow: hidden;
-  white-space: nowrap;
-  width: 100%; }
+  white-space: nowrap; }
 
 .jqtree-element .jqtree-title.jqtree_common {
   word-break: break-all;

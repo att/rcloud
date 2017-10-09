@@ -46,6 +46,8 @@ RCloud.UI.scratchpad = (function() {
                 }]);
 
                 session.setMode(new LangMode(false, doc, session));
+                session.setNewLineMode('unix');
+                session.setOption('indentedSoftWrap', false);
                 session.setUseWrapMode(true);
                 widget.resize();
                 ui_utils.on_next_tick(function() {

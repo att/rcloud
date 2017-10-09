@@ -84,16 +84,18 @@ RCloud.UI.navbar = (function() {
                     sort: 1000,
                     modes: ['edit'],
                     create: function() {
-                        var share_link_, view_types_;
-                        return {
-                            control: $.el.span(share_link_ = $.el.a({
+                        var view_types_;
+                        var share_link_ = $.el.a({
                                 href: '#',
                                 id: 'share-link',
                                 title: 'Shareable Link',
                                 class: 'btn btn-link navbar-btn',
                                 style: 'text-decoration:none; padding-right: 0px',
                                 target: '_blank'
-                            }, $.el.i({class: 'icon-share'})), $.el.span({
+                            }, $.el.i({class: 'icon-share'}));
+                        $(share_link_).on('click', function(x) { shell.save_notebook();})
+                        return {
+                            control: $.el.span(share_link_, $.el.span({
                                 class: 'dropdown',
                                 style: 'position: relative; margin-left: -2px; padding-right: 12px'
                             }, $.el.a({
@@ -108,6 +110,12 @@ RCloud.UI.navbar = (function() {
                             set_url: function(url) {
                                 if(share_link_)
                                     $(share_link_).attr('href', url);
+                                return this;
+                            },
+                            open: function() {
+                                if(share_link_) {
+                                    $(share_link_)[0].click();
+                                }
                                 return this;
                             },
                             set_view_types: function(items) {
@@ -221,8 +229,15 @@ RCloud.UI.navbar = (function() {
                     modes: ['edit', 'view'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_highlight_button('run-notebook', 'Run All', 'icon-play');
-                        $(control.control).click(function() {
+                        $(control.control).click(function(e) {
+                          if(e.metaKey || e.ctrlKey) {
+                            var selected = shell.get_selected_cells().map (function(x) { return x.id(); });
+                            if(selected.length) {
+                              shell.run_notebook_cells(selected);
+                            }
+                          } else {
                             RCloud.UI.run_button.run();
+                          }
                         });
                         return control;
                     }

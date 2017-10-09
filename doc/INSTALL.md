@@ -1,9 +1,5 @@
 # Setting up RCloud
 
-## Installing from Docker Hub
-
-(https://hub.docker.com/r/rcl0ud/rcloud/)
-
 ## Installing using VM images
 
 (https://github.com/att/rcloud/wiki/Cloud-Images)
@@ -243,3 +239,7 @@ to the user than has authenticated. For this to work, RCloud must be
 started as root, e.g., `sudo conf/start`. Again, use only if you know
 what you're doing since misconfiguring RCloud run as root can have
 grave security implications.
+
+## Installing from Docker Hub
+
+(https://hub.docker.com/r/rcl0ud/rcloud/)
