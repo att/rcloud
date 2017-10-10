@@ -1589,7 +1589,7 @@ notebook_tree_model.prototype = {
             rcloud.config.get_user_option(['notebook-path-tips', 'tree_sort_order', 'tree_filter_date'])
         ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, user_options) {
             opts = user_options;
-            that.path_tips_ = user_options['notebook_path_tips'];
+            that.path_tips_ = user_options['notebook-path-tips'];
             
             that.gist_sources_ = gist_sources;
             _.extend(that.notebook_info_, starred_info.notebooks);
