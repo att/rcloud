@@ -100,12 +100,17 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         },
         update_fork_info: function(fork_id) {
+            var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
+                                        {notebook: fork_id});
             if(fork_id) {
                 rcloud.get_notebook_info(fork_id).then(function(info) {
                     var fork_desc = (info.username || 'unknown') + " / " + (info.description || 'unknown');
-                    var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
-                                                {notebook: fork_id});
                     $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+                }).catch(function(error) {
+                    if(/does not exist or has not been published/.test(error))
+                        $("#forked-from-desc").html("forked from <a href='" + url + "'>(unknown notebook)</a>");
+                    else
+                        $("#forked-from-desc").text("");
                 });
             }
             else

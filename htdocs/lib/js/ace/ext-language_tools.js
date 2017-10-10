@@ -1148,10 +1148,22 @@ var AcePopup = function(parentNode) {
             el.style.bottom = "";
             popup.isTopdown = true;
         }
-
+        
         el.style.display = "";
         this.renderer.$textLayer.checkForSizeChanges();
-
+        
+        var requiredWidth = 0;
+        popup.data.forEach(function(x) { 
+          var fullSize = x.value.length + (x.meta && x.meta.length);
+          if ( fullSize > requiredWidth ) { 
+            requiredWidth = fullSize; 
+          } 
+        });
+        el.style.width = ((requiredWidth + 4) * popup.renderer.$textLayer.getCharacterWidth()) + "px";
+        if (el.style.width === "0px") {
+          el.style.width = null;
+        }
+        
         var left = pos.left;
         if (left + el.offsetWidth > screenWidth)
             left = screenWidth - el.offsetWidth;

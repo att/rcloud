@@ -1,15 +1,94 @@
 #!/usr/bin/perl
+use strict;
+#use warnings;
+
 #
 # perl migrate.pl /shared/ghe/backup/current /data/rcloud/data/gist-service
 
 use File::Path qw(mkpath);
+use Getopt::Long 'HelpMessage';
 
-$backup=shift;
-$dest=shift;
-$opt=shift;
+my %users;
 
-$cmd = "cp -pr";
-if ($opt eq '-mv') { $cmd = "mv"; }
+# declare the perl command line flags/options we want to allow
+GetOptions(
+  'users=s' => \my $filename,
+  'cmd=s'   => \my $cmd,
+  'h'       => \my $help
+) or HelpMessage(1);
+
+if ($help == 1)
+{
+  HelpMessage(1);
+}
+
+
+=head1 NAME
+
+license - get license texts at the command line!
+
+=head1 SYNOPSIS
+
+  --users         Users list file name (optional)
+  --help,-h       Print this help
+  --cmd		  Command defaults to 'cp -pr'
+
+  Example:
+    perl migrate.pl /shared/ghe/backup/current /data/rcloud/data/gist-service
+
+=head1 VERSION
+
+0.01
+
+=cut
+
+if ($filename ne "")
+{
+  print "filename=$filename\n";
+}
+
+####################################`
+sub read_users_file()
+{
+  my ($filename) =@_;
+  print "Filename = $filename\n";
+  
+  open(USERS, $filename) or die("Could not open  file $filename\n\n");
+
+  foreach my $line (<USERS>)  
+  {   
+    chomp($line); 
+    if(length($line) > 1)
+    {
+      $users{$line}=$line;
+    }
+  }
+
+  print "USERS LIST:\n";
+  foreach my $u (sort keys %users)
+  {
+    print "'$users{$u}'\n";
+  }
+  close(USERS);
+}
+
+###################################
+
+my $backup=shift;
+my $dest=shift;
+
+
+if ($filename ne "")
+{
+  &read_users_file($filename);
+}
+
+if ($cmd eq '') 
+{ 
+  $cmd = "cp -pr"; 
+}
+# print "cmd= $cmd\n\n";
+
 
 if ($backup eq '' || $dest eq '') {
     print "\n Usage: migrate-ghe2gists.pl <GHE-backup-directory> <gist-service-data> [-mv]\n\n";
@@ -20,16 +99,24 @@ print STDERR "INFO: loading users ...\n";
 ## 1st pass - parse users -- they are at the end and we need them first
 ## so we need two passes
 open IN, "gzip -dc \"$backup/mysql.sql.gz\"|";
+my @login;
+my @email;
+my %json;
+my %gist_id;
+my %id2repo;
+my %parent_gid;
+my %forks;
+
 while (<IN>) {
     if (/^INSERT INTO `users` VALUES /) {
         s/^INSERT INTO `users` VALUES \(//;
         s/\)$//;
-        @a = split /\),\(/;
+        my @a = split /\),\(/;
         foreach (@a) {
             #print "SRC> $_\n";
             s/'//g;
-            @x = split /,/;
-            $login[$x[0]] = $x[1];
+            my @x = split /,/;
+            $login[$x[0]] = lc($x[1]);
             $email[$x[0]] = $x[32];
         }
     }
@@ -43,14 +130,24 @@ while (<IN>) {
     if (/^INSERT INTO `gists` VALUES /) {
         s/^INSERT INTO `gists` VALUES \(//;
         s/\)$//;
-        @a = split /\),\(/;
+        my @a = split /\),\(/;
         foreach (@a) {
             #print "SRC> $_\n";
             s/'//g;
-            ($id, $user, $repo, $desc, $public, $created_at, $updated_at, $parent) = split /,/;
+            my ($id, $user, $repo, $desc, $public, $created_at, $updated_at, $parent) = split /,/;
             $desc =~ s/^0x//;
             $desc = pack 'H*', $desc;
-            $user_name = $login[$user];
+            my $user_name = $login[$user];
+
+            if ($filename ne "")
+            {
+              if (! exists $users{$user_name}) 
+              {
+                ###print __LINE__, ": User $user_name is NOT of interest\n";
+                next;
+              }
+            } 
+
             $public = ($public == 0) ? 'false' : 'true';
             $desc =~ s/\\/\\\\/g;
             $desc =~ s/"/\\"/g;
@@ -70,6 +167,10 @@ close IN;
 
 print STDERR "INFO: loading comments ...\n";
 ## 3rd - parse comments
+
+my %commid;
+my %comm;
+
 open IN, "gzip -dc \"$backup/mysql.sql.gz\"|";
 while (<IN>) {
     ## id, body, gist_id, user_id, created, updated
@@ -78,13 +179,13 @@ while (<IN>) {
         s/\)$//;
         ## to avoid quoting hell, convert all escapes \' into &#39
         s/\\'/&#39/g;
-        @a = split /\),\([0-9]+,'/;
+        my @a = split /\),\([0-9]+,'/;
         foreach (@a) {
             if (/^(.*?)',/) {
-                $txt = $1;
+                my $txt = $1;
                 s/^(.*?)',//;
                 s/\'//g;
-                @b = split /,/;
+                my @b = split /,/;
                 $commid{$b[0]}++;
                 my $cid = $commid{$b[0]};
                 my $t1 = $b[2]; $t1 =~ s/ /T/; $t1 .= 'Z';
@@ -98,14 +199,18 @@ close IN;
 
 
 print STDERR "INFO: finding all repos ...\n";
-@paths = glob "$backup/repositories/?/??/??/??/gist/*.git";
+my @paths = glob "$backup/repositories/?/??/??/??/gist/*.git";
 
 print STDERR "INFO: migrating repos ...\n";
-foreach (@paths) {
-    $id = $src = $_;
+foreach (@paths) 
+{
+    my $src = $_;
+    my $id = $_;
+#    print __LINE__, ": migrating repos id = $id\n";
+
     $id =~ s:.*/::;
     $id =~ s/\.git$//;
-    $path = $id;
+    my $path = $id;
     $path =~ s:^(.)(.)(.)(.*)$:\1/\2/\3/\4:;
     $path = "$dest/$path";
     print "$id --> $src\n   ";
