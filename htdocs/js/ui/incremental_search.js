@@ -1,4 +1,3 @@
-
 RCloud.UI.incremental_search = (function() { 
     
     var _template = _.template($('#tree-finder-template').html()),
@@ -65,8 +64,8 @@ RCloud.UI.incremental_search = (function() {
 
                 if(_.any(entries, function(entry) { return entry.length; })) {
                     _search_service.get_results({
-                        username: entries[0],
-                        notebook: entries[1]
+                        notebook: entries[0],
+                        username: entries[1]                        
                     }).then(function(results) {
                         $(_resultsSelector).html(_resultsTemplate({
                             notebooks: results
@@ -78,10 +77,20 @@ RCloud.UI.incremental_search = (function() {
             });
 
             $(_resultsSelector).on('click', 'p', function() {
+
+                var selected_id = $(this).data('id');
+
+                rcloud.config.get_current_notebook().then(function(res) {
+                    if(res.notebook !== selected_id) {
+                        // todo: open notebook,
+                        // (if it's a different ID from the current open notebook)
+                        editor.load_notebook(selected_id);
+                    }
+
+                    $(_elementSelector).modal('hide');
+                });
+
                 
-                // notebook id:
-                //console.log($(this).data('id'));
-                $(_elementSelector).modal('hide');
             })
         }
     };

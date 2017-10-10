@@ -282,8 +282,8 @@ rcloud.search.description <- function(description, user = NULL, start = 0,
   if (is.null(url))
     stop("solr is not enabled")
 
-  user <- if (!is.null(user)) paste(" AND user:", user) else " "
-  query <- paste0("description:", description, "*~", user)
+  user <- if (!is.null(user)) paste(" AND user:*", user, "*") else ""
+  query <- paste0("description:*", description, "*", user)
 
   solr.query <- list(
     q = query,
