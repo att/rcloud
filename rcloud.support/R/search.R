@@ -272,3 +272,32 @@ stitch.search.result <- function(splitted, type,k) {
     metadata <- paste0('<delete><id>',id,'</id></delete>')
     .solr.post(data=metadata, isXML=TRUE)
 }
+
+rcloud.search.description <- function(description, user = NULL, start = 0,
+                                      pagesize = 100, sortby = "description",
+                                      orderby = "desc") {
+
+
+  url <- rcloud.support:::getConf("solr.url")
+  if (is.null(url))
+    stop("solr is not enabled")
+
+  user <- if (!is.null(user)) paste(" AND user:", user) else " "
+  query <- paste0("description:", description, "*~", user)
+
+  solr.query <- list(
+    q = query,
+    start = start,
+    rows = pagesize,
+    indent = "true",
+    fl = "description,id,user,updated_at,starcount",
+    sort = paste(sortby, orderby)
+  )
+  # pass it straight back no post-processing
+  .solr.get(
+    solr.url = url,
+    query = solr.query,
+    solr.auth.user = rcloud.support:::getConf("solr.auth.user"),
+    solr.auth.pwd = rcloud.support:::getConf("solr.auth.pwd")
+  )
+}
