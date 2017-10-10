@@ -85,6 +85,10 @@ RCloud.utils.filter = function(items, conditions) {
         }
     });
 
+    if(!_.isArray(items)) {
+        items = [items];
+    }
+
     return _.filter(items, _.compose(_.partial(_.all, conditions), _.invokeWith));
     
 }

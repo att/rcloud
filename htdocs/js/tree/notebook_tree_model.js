@@ -695,6 +695,11 @@ notebook_tree_model.prototype = {
 
     insert_alpha: function(node_to_insert, parent) {
 
+        // verify whether this node matches the current filter:
+        if(RCloud.utils.filter(node_to_insert, _.values(this.tree_filters_)).length == 1) {
+            this.matches_filter_.push(node_to_insert.id);
+        }
+
         if(typeof parent === 'string') {
             parent = this.get_node_by_id(parent);
         }
