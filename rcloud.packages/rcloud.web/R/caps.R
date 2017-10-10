@@ -26,6 +26,9 @@ registerRCWResult: function(content, k) {
 attr: function(div, attr, val, k) {
   if (_.isFunction(val)) val($(div).attr(attr)); else k($(div).attr(attr,val).attr(attr));
 },
+value: function(div, val, k) {
+  if (_.isFunction(val)) val($(div).val()); else k($(div).val(val).val());
+},
 css: function(div, prop, val, k) {
   if (_.isFunction(val)) val($(div).css(prop)); else k($(div).css(prop, val).css(prop));
 },
@@ -51,6 +54,7 @@ rcw.append <- function(element, what) caps$appendDiv(element, .html.in(what))
 rcw.prepend <- function(element, what) caps$prependDiv(element, .html.in(what))
 rcw.set <- function(element, what) caps$setDiv(element, .html.in(what))
 rcw.attr <- function(element, attribute, value) if (missing(value)) (caps$attr(element, attribute)) else caps$attr(element, attribute, .html.in(value))
+rcw.value <- function(element, value) if (missing(value)) (caps$value(element)) else caps$value(element, .html.in(value))
 rcw.style <- function(element, value) rcw.attr(element, 'style', value)
 rcw.css <- function(element, property, value) if (missing(value)) (caps$css(element, property)) else caps$css(element, property, .html.in(value))
 rcw.on <- function(element, events, callback, data=element, ...)
