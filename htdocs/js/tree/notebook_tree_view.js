@@ -417,12 +417,8 @@ notebook_tree_view.prototype = {
 
         element.append(right);
 
-        console.log('name: ', node.full_name, ', last mod: ', node.last_commit);
-
         if(node.gistname) {
-            element.parent()[
-                //node.id === this.model_.get_current().notebook ||
-                this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();
+            element.parent()[this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();
         }
     }
 };

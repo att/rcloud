@@ -687,7 +687,7 @@ notebook_tree_model.prototype = {
             for(var i = 0; i < parent.children.length; ++i) {
                 var child = parent.children[i];
 
-                var so = this.compare_nodes.bind(this, data, child);
+                var so = this.compare_nodes.call(this, data, child);
                 if(so < 0) {
                     return {
                         child: child,
