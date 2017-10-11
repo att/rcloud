@@ -221,7 +221,6 @@ notebook_tree_model.prototype = {
         var that = this;
 
         function do_remove(id) {
-            //var node = $tree_.tree('getNodeById', id);
             var node = that.get_node_by_id(id);
             if(node) {
                 that.remove_node(node);
@@ -572,7 +571,7 @@ notebook_tree_model.prototype = {
             id: node.id
         }));
 
-        this.on_remove_node.notify({
+        this.remove_node_notify({
             node: node
         });
 
@@ -586,11 +585,19 @@ notebook_tree_model.prototype = {
             }));
             
             // remove from tree:
-            this.on_remove_node.notify({
+            this.remove_node_notify({
                 node: parent
             });
 
         }
+    },
+
+    remove_node_notify: function(args) {
+
+        // might be a noop, but no side-effects if not found:
+        this.matches_filter_ = _.without(this.matches_filter_, args.node.id);
+
+        this.on_remove_node.notify(args);
     },
 
     unstar_notebook_view: function(user, gistname, selroot) {
@@ -1036,7 +1043,7 @@ notebook_tree_model.prototype = {
                     id: node.id
                 }));
 
-                this.on_remove_node.notify({
+                this.remove_node_notify({
                     node: node
                 });
 
@@ -1064,7 +1071,7 @@ notebook_tree_model.prototype = {
                     id: dp.id
                 }));
 
-                this.on_remove_node.notify({
+                this.remove_node_notify({
                     node: dp,
                     fake_hover: false
                 });
@@ -1143,7 +1150,7 @@ notebook_tree_model.prototype = {
                 id: n2.id
             }));
 
-            this.on_remove_node.notify({
+            this.remove_node_notify({
                 node: n2
             });
         }
@@ -1422,7 +1429,7 @@ notebook_tree_model.prototype = {
                         id: ellipsis.id
                     }));
 
-                    this.on_remove_node.notify({
+                    this.remove_node_notify({
                         node: ellipsis
                     });
 
