@@ -700,7 +700,7 @@ notebook_tree_model.prototype = {
         return undefined;
     },
 
-    insert_alpha: function(node_to_insert, parent) {
+    insert_in_order: function(node_to_insert, parent) {
 
         // verify whether this node matches the current filter:
         if(RCloud.utils.filter(node_to_insert, _.values(this.tree_filters_)).length == 1) {
@@ -990,7 +990,7 @@ notebook_tree_model.prototype = {
                     id: this.node_id(root, user),
                     sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
                 };
-                parent = this.insert_alpha(pdat, parent);
+                parent = this.insert_in_order(pdat, parent);
             }
         }
 
@@ -1005,7 +1005,7 @@ notebook_tree_model.prototype = {
             node = this.get_node_by_id(path.id); // that.$tree_.tree('getNodeById', path.id);
             if(!node) {
                 pdat = _.omit(path, 'children');
-                node = this.insert_alpha(pdat, parent);
+                node = this.insert_in_order(pdat, parent);
             }
             parent = node;
             path = path.children[0];
@@ -1047,13 +1047,13 @@ notebook_tree_model.prototype = {
                     node: node
                 });
 
-                node = this.insert_alpha(data, parent);
+                node = this.insert_in_order(data, parent);
 
                 this.remove_empty_parents(dp);
             }
 
         } else {
-            node = that.insert_alpha(data, parent);
+            node = that.insert_in_order(data, parent);
         }
 
         return node;
@@ -1134,7 +1134,7 @@ notebook_tree_model.prototype = {
                 };
             }
             parent = this.get_node_by_id(this.node_id('friends'));
-            var node = this.insert_alpha(ftree, parent);
+            var node = this.insert_in_order(ftree, parent);
 
             this.on_load_data.notify({
                 children: ftree.children,
