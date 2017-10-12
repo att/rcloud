@@ -274,7 +274,8 @@ notebook_tree_model.prototype = {
             var alab = a.name || a.label, 
                 blab = b.name || b.label;
 
-            if(this.sorted_by_ === this.orderType.DEFAULT) {
+            if(this.sorted_by_ === this.orderType.DEFAULT ||
+               !(a.sort_order === this.order.NOTEBOOK && b.sort_order === this.order.NOTEBOOK)) {
                 // cut trailing numbers and sort separately
                 var amatch = RCloud.utils.split_number(alab), 
                 bmatch = RCloud.utils.split_number(blab);
@@ -680,6 +681,13 @@ notebook_tree_model.prototype = {
         return Promise.all(promises);
     },
 
+// TODO: only do this for notebooks
+//
+//
+//
+//
+//
+//
     find_sort_point: function(data, parent) {
         // this could be a binary search but linear is probably fast enough
         // for a single insert, and it also could be out of order
@@ -703,8 +711,10 @@ notebook_tree_model.prototype = {
     insert_in_order: function(node_to_insert, parent) {
 
         // verify whether this node matches the current filter:
-        if(RCloud.utils.filter(node_to_insert, _.values(this.tree_filters_)).length == 1) {
-            this.matches_filter_.push(node_to_insert.id);
+        if(node_to_insert.gistname) {
+            if(RCloud.utils.filter(node_to_insert, _.values(this.tree_filters_)).length == 1) {
+                this.matches_filter_.push(node_to_insert.id);
+            }
         }
 
         if(typeof parent === 'string') {
