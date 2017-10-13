@@ -377,6 +377,18 @@ function read(m)
         };
     }
 
+    function UTF8toUTF16(s) {
+        // UTF-8 to UTF-16
+        // http://monsur.hossa.in/2012/07/20/utf-8-in-javascript.html
+        // also, we don't want to lose the value when reporting an error in decoding
+        try {
+            return decodeURIComponent(escape(s));
+        }
+        catch(xep) {
+            throw new Error('Invalid UTF8: ' + s);
+        }
+    }
+
     var that = {
         offset: 0,
         data_view: m.make(Rserve.EndianAwareDataView),
@@ -396,7 +408,7 @@ function read(m)
                 var c = this.data_view.getInt8(this.offset++);
                 if (c) result = result + String.fromCharCode(c);
             }
-            return decodeURIComponent(escape(result)); // UTF-8 to UTF-16
+            return UTF8toUTF16(result);
         },
         read_stream: function(length) {
             var old_offset = this.offset;
@@ -430,7 +442,7 @@ function read(m)
             var current_str = "";
             for (var i=0; i<a.length; ++i)
                 if (a[i] === 0) {
-                    current_str = decodeURIComponent(escape(current_str));
+                    current_str = UTF8toUTF16(current_str);
                     result.push(current_str);
                     current_str = "";
                 } else {
