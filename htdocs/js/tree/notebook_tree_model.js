@@ -458,7 +458,11 @@ notebook_tree_model.prototype = {
 
             var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
             var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes.bind(that));
-                        
+        
+            that.matches_filter_ = _.union(that.matches_filter_, that.get_filter_matches([{
+                children: alls_data
+            }]));
+            
             delete that.lazy_load_[username];
 
             // add nodes to the model:
@@ -468,6 +472,10 @@ notebook_tree_model.prototype = {
             if(that.my_friends_[username]) {
                 // update model for friend's notebooks:
                 var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
+
+                that.matches_filter_ = _.union(that.matches_filter_, that.get_filter_matches([
+                    ftree
+                ]));
 
                 // add nodes to the model:
                 that.load_tree_data(ftree.children, that.node_id('friends', username));
@@ -681,13 +689,6 @@ notebook_tree_model.prototype = {
         return Promise.all(promises);
     },
 
-// TODO: only do this for notebooks
-//
-//
-//
-//
-//
-//
     find_sort_point: function(data, parent) {
         // this could be a binary search but linear is probably fast enough
         // for a single insert, and it also could be out of order
@@ -763,6 +764,45 @@ notebook_tree_model.prototype = {
         traverse(this.tree_data_);
     },
 
+    get_filter_matches: function(notebooks) {
+        // do the filtering:
+        var matching_notebooks = [],
+        that = this,
+        current_matches = [],
+        set_status = function(notebooks, matches_filter) {
+            _.each(notebooks, function(n) {
+                n.matches_filter = matches_filter;
+            });
+        },
+        get_matching_notebooks = function(o) {
+            for(var i in o) {
+                if (!!o[i] && typeof(o[i])=="object") {
+                    if(o[i].hasOwnProperty('children')) {                        
+                        current_matches = _.filter(o[i].children, function(child) {
+                            return child.gistname;
+                        });
+
+                        set_status(current_matches, false);
+
+                        current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
+
+                        if(current_matches && current_matches.length) {
+                            matching_notebooks.push.apply(matching_notebooks, current_matches);
+                            // these match:
+                            set_status(current_matches, true);
+                        }
+                    }
+
+                    get_matching_notebooks(o[i]);
+                }
+            }
+        };
+
+        get_matching_notebooks(notebooks);
+        
+        return _.pluck(matching_notebooks, 'id');
+    },
+
     update_filter: function(filter_props) {
         if(filter_props.prop == 'tree_filter_date') {
             switch(filter_props.value) {
@@ -782,47 +822,10 @@ notebook_tree_model.prototype = {
             }
         }
 
-        // do the filtering:
-        var matching_notebooks = [],
-            that = this,
-            current_matches = [],
-            set_status = function(notebooks, matches_filter) {
-                _.each(notebooks, function(n) {
-                    n.matches_filter = matches_filter;
-                });
-            },
-            get_matching_notebooks = function(o) {
-            for(var i in o) {
-                if (!!o[i] && typeof(o[i])=="object") {
-
-                    if(o[i].hasOwnProperty('children')) {                        
-                        current_matches = _.filter(o[i].children, function(child) {
-                            return child.gistname;
-                        });
-
-                        // reset:
-                        set_status(current_matches, false);
-
-                        current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
-
-                        if(current_matches && current_matches.length) {
-                            matching_notebooks.push.apply(matching_notebooks, current_matches);
-                            // these match:
-                            set_status(current_matches, true);
-                        }
-                    }
-
-                    get_matching_notebooks(o[i]);
-                }
-            }
-        }; 
-
-        get_matching_notebooks(this.tree_data_);
-
-        this.matches_filter_ = _.pluck(matching_notebooks, 'id');
-
+        this.matches_filter_ = this.get_filter_matches(this.tree_data_);
+         
         this.on_update_show_nodes.notify({
-            nodes: that.matches_filter_
+            nodes: this.matches_filter_
         });
 
         rcloud.config.set_user_option(filter_props.prop, filter_props.value);                        
