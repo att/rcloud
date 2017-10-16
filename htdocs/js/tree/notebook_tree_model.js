@@ -266,6 +266,7 @@ notebook_tree_model.prototype = {
     },
 
     compare_nodes: function(a, b) {
+
         var so = a.sort_order - b.sort_order;
         if(so) {
             return so;
@@ -298,10 +299,13 @@ notebook_tree_model.prototype = {
                     // make sort stable on gist id (creation time would be better)
                     lc = a.gistname.localeCompare(b.gistname);
                 }
+
                 return lc;
+
             } else {
-                return (a.last_commit || _.max(_.pluck(a.children, 'last_commit'))) < 
-                    (b.last_commit || _.max(_.pluck(b.children, 'last_commit')));
+                var dateA = a.last_commit ? new Date(a.last_commit) : _.max(_.map(a.children, function(child) { return new Date(child.last_commit); }));
+                var dateB = b.last_commit ? new Date(b.last_commit) : _.max(_.map(b.children, function(child) { return new Date(child.last_commit); }));
+                return dateB - dateA;
             }            
         }
     },
@@ -855,8 +859,13 @@ notebook_tree_model.prototype = {
                         if (!!o[i] && typeof(o[i])=="object") {
 
                             if(o[i].hasOwnProperty('children')) {
+
+                                // if(o[i].children.length == 14 || o[i].children.length == 17) {
+                                //     console.log(JSON.stringify(o[i].children));
+                                // }
+
                                 o[i].children.sort(that.compare_nodes.bind(that));
-                                
+
                                 nodes_and_children.push({
                                     node_id: o[i].id,
                                     children: o[i].children
