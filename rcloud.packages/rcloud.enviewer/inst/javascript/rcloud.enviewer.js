@@ -94,20 +94,44 @@
     }
 return {
     init: function(ocaps, k) {
-        ocaps = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
+        ocaps = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"], ["view_dataframe_page"]], true);
+        
+                var dataFrameCallback = function(variable, data, callback, settings) {
+                  var page = window.parent.RCloud.UI.enviewer.view_dataframe_page(variable, data)
+                    .then(function (response) {
+                      var dataObject = {};
+                      var tableData = JSON.parse(response.data);
+                      dataObject.data = tableData;
+                      dataObject.recordsTotal = response.recordsTotal;
+                      dataObject.recordsFiltered = response.recordsTotal;
+                      dataObject.draw = response.draw;
+                      callback(dataObject);
+                    }); 
+                };
         if(window.shell) { // are we running in RCloud UI?
             var state = enviewer_state();
             if(state) {// update with new connection
                 state.ocaps = ocaps;
+                RCloud.UI.enviewer = {
+                              view_dataframe_page : state.ocaps.view_dataframe_page,
+                              dataFrameCallback : dataFrameCallback
+                            };
+                
                 clear_display(); // also would be part of detach
             } else // this listener will outlast the js that loaded it
                 shell.notebook.model.execution_watchers.push({
                     run_cell: function() {
                         var state = enviewer_state();
-                        if(state && state.do_refresh)
+                        if(state && state.do_refresh) {
+                            RCloud.UI.enviewer = {
+                              view_dataframe_page : state.ocaps.view_dataframe_page,
+                              dataFrameCallback : dataFrameCallback
+                            };
                             state.ocaps.refresh();
+                        }
                     }
                 });
+            
             RCloud.UI.panel_loader.add({
                 Workspace: {
                     side: 'right',
