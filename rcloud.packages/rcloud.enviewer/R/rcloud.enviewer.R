@@ -2,12 +2,42 @@ rcloud.enviewer.refresh <- function()
   rcloud.enviewer.on.change(.GlobalEnv)
 
 ## OCAP
-rcloud.enviewer.view.dataframe <- function(expr)
-  View(get(expr, .GlobalEnv))
+rcloud.enviewer.view.dataframe <- function(expr) {
+  # pass un-evaluated expression, so it can be used by View
+  View(get(expr, .GlobalEnv), expr = expr)
+}
+
+#'
+#' @param name data.frame variable name
+#' @param options dataTables request parameters
+#' @return datatables JS result object (see datatables documentation)
+rcloud.enviewer.view.dataframe.page <- function(name, options) {
+  val <- get(name, .GlobalEnv)
+  
+  result <- list(draw = options$draw)
+  
+  if(is.data.frame(val)) {
+    records <- nrow(val)
+    result$recordsTotal <- records
+    result$recordsFiltered <- records 
+    page <- seq(options$start,min(options$start+options$length, records))
+    data <- tryCatch(jsonlite::toJSON(cbind(as.integer(rownames(val)[page]),val[page,]), dataframe = "values"))
+    if(typeof(data) == "try-error") {
+      result$error <- paste0("Could not marshal data.frame data. Error: ", as.character(data))
+    } else {
+      result$data <- data
+    }
+    return(result)
+  } else {
+    result$error <- paste0("Unsupported variable type: ", typeof(val))
+  }
+  return(result)
+}
 
 ## -- how to handle each group --
-rcloud.enviewer.display.dataframe <- function(x, val)
+rcloud.enviewer.display.dataframe <- function(x, val) {
   structure(list(command="view", object=x, text=paste0("data.frame [",paste(dim(val), collapse=', '),"]")), class="data")
+}
 
 rcloud.enviewer.display.value <- function(val) {
     type <- class(val)
