@@ -860,10 +860,6 @@ notebook_tree_model.prototype = {
 
                             if(o[i].hasOwnProperty('children')) {
 
-                                // if(o[i].children.length == 14 || o[i].children.length == 17) {
-                                //     console.log(JSON.stringify(o[i].children));
-                                // }
-
                                 o[i].children.sort(that.compare_nodes.bind(that));
 
                                 nodes_and_children.push({
