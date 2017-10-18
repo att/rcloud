@@ -1661,7 +1661,9 @@ var editor = function () {
                 .then(this.populate_recent_notebooks_list.bind(this));
         },
         populate_recent_notebooks_list: function(data) {
-            var sorted = _.chain(data)
+            var recentNotebooksBatchSize = 20;
+            var transformData = function(data) {
+              return _.chain(data)
                 .pairs()
                 .filter(function(kv) {
                     return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(get_notebook_info(kv[0])) ;
@@ -1669,9 +1671,12 @@ var editor = function () {
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
+            }
+            var sorted = transformData(data);
 
             sorted.shift();//remove the first item
-            sorted = sorted.slice(0, 20); //limit to 20 entries
+            var totalRecentNotebooks = sorted.length;
+            sorted = sorted.slice(0, recentNotebooksBatchSize);
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
@@ -1687,11 +1692,11 @@ var editor = function () {
                 $('.dropdown-toggle.recent-btn').dropdown("toggle");
                 result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
             };
-            for(var i = 0; i < sorted.length; i ++) {
+            var create_recent_link = function(notebook) {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
-                var currentNotebook = get_notebook_info(sorted[i][0]);
-                var anchor = $('<a data-gist="'+sorted[i][0]+'"></a>');
+                var currentNotebook = get_notebook_info(notebook[0]);
+                var anchor = $('<a data-gist="'+notebook[0]+'"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
                 var $desc;
 
@@ -1706,6 +1711,43 @@ var editor = function () {
                     $desc.addClass('hidden-notebook');
 
                 anchor.click(click_recent);
+            }
+            for(var i = 0; i < sorted.length; i ++) {
+                create_recent_link(sorted[i])
+            }
+            if (totalRecentNotebooks > recentNotebooksBatchSize) {
+              var that = this;
+              var loadMore = function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                var link = $(e.currentTarget);
+                rcloud.config.get_recent_notebooks()
+                .then(transformData.bind(that)).then(function(allRecent) {
+                  var loaded = $('.recent-notebooks-list a').length - 1;
+                  allRecent.shift(); //remove the first item
+                  var isLastBatch = (allRecent.length < loaded + recentNotebooksBatchSize);
+                  var toAdd = allRecent.slice(loaded, loaded + recentNotebooksBatchSize);
+                  
+                  for(var i = 0; i < toAdd.length; i ++) {
+                      create_recent_link(toAdd[i])
+                  }
+                  
+                  var moreMenuItem = link.parent().detach();
+                  if(!isLastBatch) {
+                    moreMenuItem.appendTo('.recent-notebooks-list');
+                  }
+                });
+              };
+              
+              var li = $('<li></li>');
+              li.appendTo($('.recent-notebooks-list'));
+              var anchor = $('<a></a>');
+
+              anchor.addClass('ui-all')
+                .append($('<span class="more"><i class="caret"></i></span>'))
+                .appendTo(li);
+
+              anchor.click(loadMore);
             }
 
             function truncateNotebookPath(txt, chars) {

@@ -564,6 +564,9 @@ ul.recent-notebooks-list {
     top: 25px;
     font-size: 12px;
     max-width: 330px;
+    min-width: 220px;
+    max-height: 300px;
+    overflow: auto;
 }
 
 ul.recent-notebooks-list li {
@@ -586,6 +589,15 @@ ul.recent-notebooks-list li a .description {
     margin-left: 6px;
     display: inline-block;
     max-width: 235px;
+    overflow: hidden;
+}
+
+ul.recent-notebooks-list li a .more {
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+    padding-top: 10px;
+    max-width: 330px;
     overflow: hidden;
 }
 
