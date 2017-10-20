@@ -354,6 +354,12 @@ td {
         }
     }
     
+    #find-options-menu {
+      .btn.active {
+        background-color: orange;
+      }
+    }
+    
     .checkbox {
       margin-bottom: 1px;
       margin-top: 1px;
