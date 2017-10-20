@@ -59,6 +59,23 @@ RCloud.UI.find_replace = (function() {
             replace_stuff_ = markup.find('.replace');
             close_ = markup.find('#find-close');
 
+            var close_bootstrap_dropdowns = function(e) {
+                var dropdowns = $('.dropdown-menu');
+                dropdowns.each(function(i, x) {
+                  if($(x).is(":visible")) {
+                    $(x.parentElement).find(".dropdown-toggle").dropdown('toggle');
+                  }
+                });
+            };
+            
+            var toggle_highlight_details_menu_button = function(option) {
+                if(option.get(0).checked) {
+                  $('#find-options-menu > .btn').addClass('active');
+                } else {
+                  $('#find-options-menu > .btn').removeClass('active');
+                }
+            };
+            
             find_input_.on('change', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -67,10 +84,10 @@ RCloud.UI.find_replace = (function() {
             find_options_menu_.on('hide.bs.dropdown', function (e) {
                 var target = $(e.target);
                 var keepOpenElements = target.find("[data-keepOpen='true']");
-                if(keepOpenElements.length){
+                if (keepOpenElements.length) {
                     keepOpenElements.each(function(i, x) { $(x).attr("data-keepOpen", false); });
                     return false;
-                }else{
+                } else {
                     return true;
                 }
             });
@@ -80,15 +97,20 @@ RCloud.UI.find_replace = (function() {
             });
             
             match_case_opt_.on('change', function(e) {
+                toggle_highlight_details_menu_button(match_case_opt_);
                 generate_matches();
             });
             
             match_word_opt_.on('change', function(e) {
+                toggle_highlight_details_menu_button(match_word_opt_);
                 generate_matches();
             });
 
             find_details_.click(function() { find_input_.focus(); });
-            find_input_.click(function(e) { e.stopPropagation(); }); // click cursor
+            find_input_.click(function(e) { 
+              e.stopPropagation(); 
+              close_bootstrap_dropdowns();
+            }); // click cursor
 
             // disabling clear results on blur for firefox, since its implementation
             // is either the only unbroken one or the only broken one (unclear)
@@ -119,6 +141,7 @@ RCloud.UI.find_replace = (function() {
             find_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                close_bootstrap_dropdowns();
                 find_next();
                 return false;
             });
@@ -126,6 +149,7 @@ RCloud.UI.find_replace = (function() {
             find_last_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                close_bootstrap_dropdowns();
                 find_previous();
                 return false;
             });
@@ -133,12 +157,14 @@ RCloud.UI.find_replace = (function() {
             replace_next_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                close_bootstrap_dropdowns();
                 replace_next();
             });
 
             replace_all_.click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                close_bootstrap_dropdowns();
                 replace_all();
                 return false;
             });
@@ -372,8 +398,7 @@ RCloud.UI.find_replace = (function() {
         var filter = escapeRegExp(findOpts.filter);
         regex_group = 0;
         if(findOpts.matchWord) {
-          var nonWord = "[^\\.\\w]";
-          filter = nonWord + "(" + filter + ")" + nonWord;
+          filter = "\\b(" + filter + ")\\b";
           regex_group = 1;
         }
         regex_ = new RegExp(filter, modifiers);
