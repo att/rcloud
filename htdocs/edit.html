@@ -142,14 +142,14 @@
           <td width="10%">
             <% if (result.source == "main_source") { %>
               <% var url = ui_utils.make_url('edit.html', {notebook: result.id}) %>
-            <a id="open_<%= i %>" href=<%= url %>
+            <a id="open_<%= i %>" href="<%= url %>"
                class="search-result-heading"
                title="source: local"
                data-gistname=<%= result.id %>
                data-gistsource="">
             <% }else{ %> 
               <% var url = ui_utils.make_url('edit.html', {notebook: result.id, source: result.source}) %>
-              <a id="open_<%= i %>" href=<%= url %>
+              <a id="open_<%= i %>" href="<%= url %>"
                 class="search-result-heading foreign-notebook"
                 title="source: <%=result.source%>"
                 data-gistname=<%= result.id %>
