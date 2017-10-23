@@ -490,19 +490,35 @@ RCloud.create = function(rcloud_ocaps) {
 
         rcloud.get_completions = function(language, text, pos) {
             return rcloud_ocaps.get_completionsAsync(language, text, pos)
-                .then(function(comps) {
-                    if (_.isString(comps))
-                        comps = [comps]; // quirk of rserve.js scalar handling
+                .then(function(completions) {
                     // convert to the record format ace.js autocompletion expects
                     // meta is what gets displayed at right; name & score might be improved
-                    return _.map(comps,
-                                 function(comp) {
-                                     return {meta: "local",
-                                             name: "library",
-                                             score: 3,
-                                             value: comp
-                                            };
-                                 });
+                    if(completions.values) {
+                    if (_.isString(completions.values))
+                        completions.values = [completions.values]; // quirk of rserve.js scalar handling
+                      return _.map(completions.values,
+                                   function(comp) {
+                                       return {meta: "local",
+                                               name: "library",
+                                               score: 3,
+                                               position: completions.position,
+                                               prefix: completions.prefix,
+                                               value: comp
+                                              };
+                                   });
+                    } else {
+                      // Handle language extensions that do not provide position of the completion start.
+                     if (_.isString(completions))
+                        completions = [completions]; // quirk of rserve.js scalar handling
+                      return _.map(completions,
+                                   function(comp) {
+                                       return {meta: "local",
+                                               name: "library",
+                                               score: 3,
+                                               value: comp
+                                              };
+                                   });
+                    }
                 });
         };
 

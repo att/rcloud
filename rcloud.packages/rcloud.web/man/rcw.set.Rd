@@ -8,6 +8,7 @@
 \alias{rcw.on}
 \alias{rcw.off}
 \alias{rcw.in}
+\alias{rcw.value}
 \title{
   DOM element manipulation functions
 }
@@ -20,6 +21,8 @@
   DOM element
 
   \code{rcw.attr} manipulates attributes of an element
+
+  \code{rcw.value} manipulates value of an element
 
   \code{rcw.style} is a shorthand for \code{rcw.attr(x, 'style', ...)}
 
@@ -37,6 +40,7 @@ rcw.append(element, what)
 rcw.prepend(element, what)
 rcw.set(element, what)
 rcw.attr(element, attribute, value)
+rcw.value(element, value)
 rcw.style(element, value)
 rcw.css(element, property, value)
 rcw.on(element, events, callback, data=element, ...)
@@ -96,6 +100,8 @@ rcw.in(element, expr)
   \code{rcw.attr} manipulates the specified attribute of the DOM
   objects by either retrieving the value (if \code{value} is missing) or
   replacing the content with a new value.
+
+  \code{rcw.value} manipulates the value of the DOM object.
 
   \code{rcw.style} is a shorthand for \code{rcw.attr(x, 'style', ...)}
   and pertains to the entire style attribute of the element. In contrast,

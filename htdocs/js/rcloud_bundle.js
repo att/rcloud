@@ -1,5 +1,5 @@
 RCloud = {
-    version: '1.8'
+    version: '1.8.1'
 };
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
@@ -3907,13 +3907,17 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.insert_cell(cell_model, id)};
     }
 
+    function is_collaborator(notebook, user) {
+        return notebook.collaborators && notebook.collaborators.find(function(c) { return c.login === user; });
+    }
+
     function on_load(version, notebook) {
         // the git backend should determine readonly but that's another huge refactor
         // and it would require multiple usernames, which would be a rather huge change
         var ninf = editor.get_notebook_info(notebook.id);
         var is_read_only = ninf && ninf.source ||
                 version !== null ||
-                notebook.user.login !== rcloud.username() ||
+                (notebook.user.login !== rcloud.username() && !is_collaborator(notebook, rcloud.username())) ||
                 shell.is_view_mode();
         current_gist_ = notebook;
         current_version_ = notebook.history[0].version;
@@ -4425,7 +4429,7 @@ Notebook.create_controller = function(model)
         //////////////////////////////////////////////////////////////////////
 
         is_mine: function() {
-            return rcloud.username() === model.user();
+            return rcloud.username() === model.user() || is_collaborator(this.current_gist(), rcloud.username());
         },
 
         //////////////////////////////////////////////////////////////////////
@@ -10454,12 +10458,17 @@ RCloud.UI.notebook_title = (function() {
                                               editable_opts));
         },
         update_fork_info: function(fork_id) {
+            var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
+                                        {notebook: fork_id});
             if(fork_id) {
                 rcloud.get_notebook_info(fork_id).then(function(info) {
                     var fork_desc = (info.username || 'unknown') + " / " + (info.description || 'unknown');
-                    var url = ui_utils.make_url(shell.is_view_mode() ? 'view.html' : 'edit.html',
-                                                {notebook: fork_id});
                     $("#forked-from-desc").html("forked from <a href='" + url + "'>" + fork_desc + "</a>");
+                }).catch(function(error) {
+                    if(/does not exist or has not been published/.test(error))
+                        $("#forked-from-desc").html("forked from <a href='" + url + "'>(unknown notebook)</a>");
+                    else
+                        $("#forked-from-desc").text("");
                 });
             }
             else
@@ -12099,10 +12108,6 @@ RCloud.UI.share_button = (function() {
                 'mini.html': {
                     sort: 3000,
                     page: 'mini.html'
-                },
-                'shiny.html': {
-                    sort: 4000,
-                    page: 'shiny.html'
                 }
             });
             return this;
