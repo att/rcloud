@@ -32,6 +32,7 @@ RCloud.UI.search = (function() {
         switch(sortby()) {
             case 'starcount':
             case 'updated_at':
+            case 'score':
             orderby = "desc";
             break;
             case 'user':
@@ -98,7 +99,7 @@ RCloud.UI.search = (function() {
             .then(function(opts) {
                 $('#all-sources').prop('checked', opts['search-all-sources']);
                 if(opts['search-results-per-page']) page_size_ = opts['search-results-per-page'];
-                if(!opts['search-sort-by']) opts['search-sort-by'] = 'starcount'; // always init once
+                if(!opts['search-sort-by']) opts['search-sort-by'] = 'score'; // always init once
                 $('#sort-by').val(opts['search-sort-by']);
                 if(opts['search-order-by'])
                     $('#order-by').val(opts['search-order-by']);
