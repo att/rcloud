@@ -346,7 +346,7 @@ Notebook.create_controller = function(model)
             function crunch_quotes(left, right) {
                 var end = /```\n$/, begin = /^```{r}/;
                 if(end.test(left) && begin.test(right))
-                    return left.replace(end, '') + right.replace(begin, '');
+                    return left.replace(end, '') + right.replace(begin, '').replace(/^(\r\n|\n|\r)/, "");
                 else return left + right;
             }
 
