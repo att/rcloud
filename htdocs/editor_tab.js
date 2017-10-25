@@ -1661,7 +1661,8 @@ var editor = function () {
                 .then(this.populate_recent_notebooks_list.bind(this));
         },
         populate_recent_notebooks_list: function(data) {
-            var recentNotebooksBatchSize = 20;
+            var firstRecentNotebooksBatchSize = 10;
+            var recentNotebooksBatchSize = 2*firstRecentNotebooksBatchSize;
             var transformData = function(data) {
               return _.chain(data)
                 .pairs()
@@ -1676,7 +1677,7 @@ var editor = function () {
 
             sorted.shift();//remove the first item
             var totalRecentNotebooks = sorted.length;
-            sorted = sorted.slice(0, recentNotebooksBatchSize);
+            sorted = sorted.slice(0, firstRecentNotebooksBatchSize);
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
@@ -1715,7 +1716,7 @@ var editor = function () {
             for(var i = 0; i < sorted.length; i ++) {
                 create_recent_link(sorted[i])
             }
-            if (totalRecentNotebooks > recentNotebooksBatchSize) {
+            if (totalRecentNotebooks > firstRecentNotebooksBatchSize) {
               var that = this;
               var loadMore = function(e) {
                 e.stopPropagation();
@@ -1732,16 +1733,16 @@ var editor = function () {
                       create_recent_link(toAdd[i])
                   }
                   
-                  var moreMenuItem = link.parent().detach();
+                  var moreLink = link.parent().detach();
                   if(!isLastBatch) {
-                    moreMenuItem.appendTo('.recent-notebooks-list');
+                    moreLink.appendTo($('.recent-notebooks-list'));
                   }
                 });
               };
               
               var li = $('<li></li>');
               li.appendTo($('.recent-notebooks-list'));
-              var anchor = $('<a></a>');
+              var anchor = $('<a title="Show more recent notebooks"></a>');
 
               anchor.addClass('ui-all')
                 .append($('<span class="more"><i class="caret"></i></span>'))
