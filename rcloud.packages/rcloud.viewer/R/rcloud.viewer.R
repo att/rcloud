@@ -27,8 +27,11 @@ View <- function (x, title, expr)
     title <- paste("Data:", varName)
   
   if(!requireNamespace("DT", quietly = TRUE)) {
-    x <- paste0('<div class="error-message"><span>DT package is not available, dataframe viewer functionality is not available</span></div>')
+    x <- paste0('<div class="error-message"><span>DT package is not installed, dataframe viewer functionality is not available</span></div>')
+  } else if(!requireNamespace("rcloud.htmlwidgets", quietly = TRUE)) {
+    x <- paste0('<div class="error-message"><span>rcloud.htmlwidgets package is not installed, dataframe viewer functionality is not available</span></div>')
   } else {
+    require(rcloud.htmlwidgets)
     require(DT)
     x <- renderDataFrame(varName, x, title)
   }
