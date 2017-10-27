@@ -26,11 +26,8 @@ RCloud.UI.incremental_search = (function() {
                 id: 'incremental_search',
                 description: 'Show incremental search',
                 keys: {
-                    mac: [
-                        ['command', 'p']
-                    ],
-                    win: [
-                        ['ctrl', 'p']
+                    win_mac: [
+                        ['alt', 's']
                     ]
                 },
                 action: function() {
