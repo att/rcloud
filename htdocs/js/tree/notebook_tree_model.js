@@ -878,7 +878,7 @@ notebook_tree_model.prototype = {
                 this.on_update_sort_order.notify(nodes_and_children);
             }
 
-            rcloud.config.set_user_option("tree_sort_order", sort_type);            
+            rcloud.config.set_user_option("tree-sort-order", sort_type);            
         }
     },
 
@@ -1616,7 +1616,7 @@ notebook_tree_model.prototype = {
             that.get_starred_info(),
             that.get_recent_info(),
             rcloud.get_gist_sources(),
-            rcloud.config.get_user_option(['notebook-path-tips', 'tree_sort_order', 'tree_filter_date'])
+            rcloud.config.get_user_option(['notebook-path-tips', 'tree-sort-order', 'tree-filter-date'])
         ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, user_options) {
             opts = user_options;
             that.path_tips_ = user_options['notebook-path-tips'];
@@ -1663,12 +1663,21 @@ notebook_tree_model.prototype = {
             // initial assignment: 
             this.tree_data_ = data;
 
-            this.update_filter({
-                prop: 'tree_filter_date',
-                value: opts['tree_filter_date']
+            // default option values:
+            _.omit(opts, function(prop) { 
+                return _.isEmpty(prop);
+            });
+            _.extend(opts, {
+                'tree-sort-order': 'alpha',
+                'tree-filter-date': 'all'
             });
 
-            this.update_sort_type(opts['tree_sort_order'], true);   
+            this.update_filter({
+                prop: 'tree-filter-date',
+                value: opts['tree-filter-date']
+            });
+
+            this.update_sort_type(opts['tree-sort-order'], true);   
 
             this.on_initialise_tree.notify({ 
                 data: data
