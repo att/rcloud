@@ -807,6 +807,28 @@ notebook_tree_model.prototype = {
         return _.pluck(matching_notebooks, 'id');
     },
 
+    sanitize_tree_setting: function(setting_key, value) {
+        var settings = [
+            { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30' ]},
+            { key: 'tree-sort-order', default_value: 'alpha', valid_values: ['alpha', 'date_desc' ]}            
+        ];
+
+        var setting = _.findWhere(settings, { key: setting_key });
+
+        if(!setting) {
+            console.warn('Unknown setting_key "', setting_key, '"');
+            return value;
+        } else {
+
+            if(value == null) {
+                value = '';
+            }
+
+            return setting.valid_values.indexOf(value.toLocaleLowerCase()) >= 0 ?
+                value.toLocaleLowerCase() : setting.default_value;
+        }
+    },
+
     update_filter: function(filter_props) {
         if(filter_props.prop == 'tree_filter_date') {
             switch(filter_props.value) {
@@ -1619,6 +1641,7 @@ notebook_tree_model.prototype = {
             rcloud.config.get_user_option(['notebook-path-tips', 'tree-sort-order', 'tree-filter-date'])
         ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, user_options) {
             opts = user_options;
+
             that.path_tips_ = user_options['notebook-path-tips'];
             
             that.gist_sources_ = gist_sources;
@@ -1663,13 +1686,9 @@ notebook_tree_model.prototype = {
             // initial assignment: 
             this.tree_data_ = data;
 
-            // default option values:
-            _.omit(opts, function(prop) { 
-                return _.isEmpty(prop);
-            });
-            _.extend(opts, {
-                'tree-sort-order': 'alpha',
-                'tree-filter-date': 'all'
+            // sanitize tree options:
+            _.each(['tree-sort-order', 'tree-filter-date'], function(setting_key) { 
+                opts[setting_key] = that.sanitize_tree_setting(setting_key, opts[setting_key]);
             });
 
             this.update_filter({
