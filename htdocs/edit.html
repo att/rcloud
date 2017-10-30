@@ -45,12 +45,12 @@
 <!-- snippets for panels, see load_snippet -->
 <script type="text/html" id="notebooks-snippet">
   <div class="panel-body notebook-tree">
-    <div id="tree-controls">
+    <div id="tree-controls" class="panel-fixed-header">
       <div id="tree-sort-by">
-        <label>Sort by <select id="tree_sort_order" data-settingkey="tree_sort_order"><option selected>alpha</option><option value="date_desc">date</option></select>
+        <label>Sort <select id="tree_sort_order" data-settingkey="tree_sort_order"><option selected>alpha</option><option value="date_desc">date</option></select>
       </div>
       <div id="tree-filter-by">
-        <label>Filter by date <select id="tree_filter_date" data-settingkey="tree_filter_date">
+        <label>Show <select id="tree_filter_date" data-settingkey="tree_filter_date">
           <option value="all">All</option>
           <option value="last7">Last 7 days</option>
           <option value="last30">Last 30 days</option>
@@ -58,7 +58,7 @@
       </div>
       <br style="clear:both" />
     </div>
-    <div id="editor-book-tree" class="widget-vsize"></div>
+    <div id="editor-book-tree" class="widget-vsize panel-scrollable-content"></div>
   </div>
 </script>
 
