@@ -768,9 +768,9 @@ body .modal-dialog.full {
 
 #tree-finder-dialog {
 
-    .modal-header {
-        padding-left: 15px!important;   // important since rcloud base specifies important
-        padding-right: 15px!important;
+    .modal-dialog {
+        padding: 0;
+        margin-top: -4px;
     }
 
     label {
@@ -782,11 +782,6 @@ body .modal-dialog.full {
 
     input {
         width: 385px;
-    }
-
-    hr {
-        border-top-style: solid;
-        border-top-style: #aaa;
     }
 
     .results {
