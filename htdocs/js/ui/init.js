@@ -66,6 +66,9 @@ RCloud.UI.init = function() {
     RCloud.UI.import_export.init();
     RCloud.UI.pull_and_replace.init();
 
+    // incremental search
+    RCloud.UI.incremental_search.init();
+
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     ui_utils.prevent_backspace($(document));

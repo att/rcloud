@@ -388,6 +388,7 @@ RCloud.create = function(rcloud_ocaps) {
             ["session_init"],
             ["compute_init"],
             ["search"],
+            ["search_description"],
             ["update_notebook"],
             ["create_notebook"],
             ["fork_notebook"],
@@ -463,6 +464,7 @@ RCloud.create = function(rcloud_ocaps) {
         };
 
         rcloud.search = rcloud_ocaps.searchAsync; // may be null
+        rcloud.search_description = rcloud_ocaps.search_descriptionAsync; // may be null
 
         rcloud.create_notebook = function(content, is_current) {
             if(is_current === undefined)
