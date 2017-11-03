@@ -184,7 +184,7 @@ future releases.
 RCloud 1.0 uses Apache Solr to index gists and provide search
 functionality if desired. See `conf/solr/README.md` for
 details. Quick start: install Java JDK (Debian/Ubuntu
-`sudo apt-get install openjdk-7-jdk`) and run
+`sudo apt-get install openjdk-8-jdk`) and run
 
     cd $ROOT/conf/solr
     sh solrsetup.sh $ROOT/services/solr

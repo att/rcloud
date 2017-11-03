@@ -31,7 +31,7 @@ cd "$DEST"
 # get the absolute path
 DEST="`pwd`"
 
-VER=5.5.1
+VER=7.1.0
 curl -L  http://archive.apache.org/dist/lucene/solr/$VER/solr-$VER.tgz | tar xz
 ## Apache servers are *extremely* slow (<3Mbit!), so use our server instead
 # curl -L -O http://r.research.att.com/solr/solr-$VER.tgz
@@ -47,20 +47,26 @@ ln -s -f solr-$VER solr
 echo "starting Apache Solr or default port - 8983 ... "
 "$DEST"/solr/bin/solr start
 
+SOLR_DEST="$DEST/solrdata"
+INSTANCEDIR="$SOLR_DEST/solr/rcloudnotebooks"
+DATADIR="${INSTANCEDIR}/data"
+CONFDIR="${INSTANCEDIR}/conf"
+
 #cp -R solr/example/solr/collection1/ solr/example/solr/rcloudnotebooks
-mkdir -p solr/example/solr/rcloudnotebooks/data
-mkdir -p solr/example/solr/rcloudnotebooks/conf
+mkdir -p $DATADIR
+mkdir -p $CONFDIR
 #rm solr/example/solr/rcloudnotebooks/core.properties
-cp "$WD/schema.xml" solr/example/solr/rcloudnotebooks/conf/
-cp "$WD/solrconfig.xml" solr/example/solr/rcloudnotebooks/conf/
-cp "$WD/word-delim-types.txt" solr/example/solr/rcloudnotebooks/conf/
-cp  "$WD/synonyms.txt" solr/example/solr/rcloudnotebooks/conf/
-cp  "$WD/elevate.xml" solr/example/solr/rcloudnotebooks/conf/
-cp  "$WD/stopwords.txt" solr/example/solr/rcloudnotebooks/conf/
-cp -r "$WD/lang" solr/example/solr/rcloudnotebooks/conf/
+cp "$WD/schema.xml" ${CONFDIR}/
+cp "$WD/solrconfig.xml" ${CONFDIR}/
+cp "$WD/word-delim-types.txt" ${CONFDIR}/
+cp "$WD/code-delim-types.txt" ${CONFDIR}/
+cp  "$WD/synonyms.txt" ${CONFDIR}/
+cp  "$WD/elevate.xml" ${CONFDIR}/
+cp  "$WD/stopwords.txt" ${CONFDIR}/
+cp -r "$WD/lang" ${CONFDIR}/
 # Create a collection for the RCloud Notebooks
-INSTANCEDIR="$DEST/solr/example/solr/rcloudnotebooks"
-DATADIR="${INSTANCEDIR}/data" 
+
+ 
 QUERY="http://localhost:8983/solr/admin/cores?action=CREATE&name=rcloudnotebooks&instanceDir=$INSTANCEDIR&config=solrconfig.xml&schema=schema.xml&dataDir=$DATADIR"
 curl "$QUERY"
 
