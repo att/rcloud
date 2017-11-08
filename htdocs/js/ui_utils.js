@@ -542,7 +542,7 @@ ui_utils.editable = function(elem$, command) {
                 // allow default action but don't bubble (causing erroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
-                if(e.keyCode === $.ui.keyCode.ENTER) {
+                if(e.keyCode === $.ui.keyCode.ENTER || e.keyCode === $.ui.keyCode.TAB) {
                     var txt = decode(elem$.text());
                     function execute_if_valid_else_ignore(f) {
                         if(options().validate(txt)) {
