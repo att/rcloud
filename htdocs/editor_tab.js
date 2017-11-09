@@ -450,7 +450,12 @@ var editor = function () {
                 e.preventDefault();
                 var gist = $(e.currentTarget).data('gist');
                 $('.dropdown-toggle.recent-btn').dropdown("toggle");
-                result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
+                if(e.altKey) {
+                  var url = ui_utils.make_url('view.html', {notebook: gist});
+                  window.open(url, "_blank");
+                } else {
+                  result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
+                }
             };
             var create_recent_link = function(notebook) {
                 var li = $('<li></li>');
