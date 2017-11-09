@@ -1,11 +1,11 @@
 RCloud.UI.incremental_search = (function() { 
     
-    var _template = _.template($('#tree-finder-template').html()),
-        _resultsTemplate = _.template($('#tree-finder-result-template').html()),
-        _elementSelector = '#tree-finder-dialog',
-        _inputsSelector = _elementSelector + ' input',
-        _resultsSelector = _elementSelector + ' .results',
-        _resultItemSelector = _resultsSelector + '> p';
+    var _template,
+        _resultsTemplate,
+        _elementSelector,
+        _inputsSelector,
+        _resultsSelector,
+        _resultItemSelector,
         _dialogVisible = false,
         _dialog = undefined,
         _search_service = new notebook_tree_search_service();
@@ -20,7 +20,15 @@ RCloud.UI.incremental_search = (function() {
     
     var result = {
         init: function() {
-            
+
+            _template = _.template($('#tree-finder-template').html()),
+            _resultsTemplate = _.template($('#tree-finder-result-template').html()),
+            _elementSelector = '#tree-finder-dialog',
+            _inputsSelector = _elementSelector + ' input',
+            _resultsSelector = _elementSelector + ' .results',
+            _resultItemSelector = _resultsSelector + '> p';
+            _search_service = new notebook_tree_search_service();
+
             RCloud.UI.shortcut_manager.add([{
                 category: 'Incremental Search',
                 id: 'incremental_search',
