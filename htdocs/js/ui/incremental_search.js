@@ -29,19 +29,21 @@ RCloud.UI.incremental_search = (function() {
             _resultItemSelector = _resultsSelector + '> p';
             _search_service = new notebook_tree_search_service();
 
-            RCloud.UI.shortcut_manager.add([{
-                category: 'Incremental Search',
-                id: 'incremental_search',
-                description: 'Show incremental search',
-                keys: {
-                    win_mac: [
-                        ['alt', 's']
-                    ]
-                },
-                action: function() {
-                    toggle_incremental_search();
-                }
-            }]);
+            if(RCloud.search) {
+                RCloud.UI.shortcut_manager.add([{
+                    category: 'Incremental Search',
+                    id: 'incremental_search',
+                    description: 'Show incremental search',
+                    keys: {
+                        win_mac: [
+                            ['alt', 's']
+                        ]
+                    },
+                    action: function() {
+                        toggle_incremental_search();
+                    }
+                }]);
+            }
             
             $('body').append(_template({
                 // pass data in here
