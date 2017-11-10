@@ -93,6 +93,10 @@ var notebook_tree_view = function(model) {
                 return true;
             });
         }
+
+        if(args.filter_props.prop == 'tree-filter-date') {
+            view_obj.date_filter_.val(args.filter_props.value);
+        }
     });
 
     this.model_.on_load_by_user.attach(function(sender, args) {

@@ -5,12 +5,16 @@ var date_filter = function(selector) {
     var that = this;
     this.$el_.on('change', function() {
         that.on_change.notify({
-            prop: 'tree_filter_date', 
+            prop: 'tree-filter-date', 
             value: $(this).val()
         });
     });
+
+    this.val = function(value) {
+        this.$el_.val(value);
+    }
 };
 
 date_filter.protoype = {
-
+    
 };
