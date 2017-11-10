@@ -67,7 +67,9 @@ RCloud.UI.init = function() {
     RCloud.UI.pull_and_replace.init();
 
     // incremental search
-    RCloud.UI.incremental_search.init();
+    if(!shell.is_view_mode()) {
+        RCloud.UI.incremental_search.init();
+    }
 
     //////////////////////////////////////////////////////////////////////////
     // view mode things
