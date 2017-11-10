@@ -324,7 +324,7 @@ authenticated.ocaps <- function(mode)
   )
 
   ## search is optional
-  if (nzConf("solr.url")) {
+  if (is.rcloud.solr.feature.enabled()) {
     changes$rcloud$search <- make.oc(rcloud.solr::rcloud.search)
     changes$rcloud$search_description <- make.oc(rcloud.solr::rcloud.search.description)
   }
