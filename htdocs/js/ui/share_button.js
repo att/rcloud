@@ -81,6 +81,18 @@ RCloud.UI.share_button = (function() {
         update_link: function() {
             return rcloud.get_notebook_property(shell.gistname(), "view-type")
                 .then(set_page);
+        },
+        resolve_view_link: function(gistname) {
+            return rcloud.get_notebook_property(gistname, "view-type").then(function(title) {
+              title = (title && extension_.get(title)) ? title : default_item_;
+              var view_type = extension_.get(title);
+              if(!title)
+                  return Promise.reject(new Error('share button view types set up wrong'));
+              var page = view_type.page;
+              var opts = {notebook: gistname,
+                      do_path: view_type.do_path};
+              return ui_utils.make_url(page, opts);
+            });
         }
     };
 })();
