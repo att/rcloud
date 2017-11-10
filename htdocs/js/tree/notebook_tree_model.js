@@ -830,7 +830,7 @@ notebook_tree_model.prototype = {
     },
 
     update_filter: function(filter_props) {
-        if(filter_props.prop == 'tree_filter_date') {
+        if(filter_props.prop == 'tree-filter-date') {
             switch(filter_props.value) {
                 case null: 
                 case 'all':
@@ -851,7 +851,8 @@ notebook_tree_model.prototype = {
         this.matches_filter_ = this.get_filter_matches(this.tree_data_);
          
         this.on_update_show_nodes.notify({
-            nodes: this.matches_filter_
+            nodes: this.matches_filter_,
+            filter_props: filter_props
         });
 
         rcloud.config.set_user_option(filter_props.prop, filter_props.value);                        
