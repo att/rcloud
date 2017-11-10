@@ -69,7 +69,7 @@ var notebook_tree_view = function(model) {
             // or node states:
             var state = view_obj.$tree_.tree('getState');
 
-            _.each(args, function(node) {
+            _.each(args.nodes, function(node) {
                 var parent = view_obj.$tree_.tree('getNodeById', node.node_id);
                 view_obj.$tree_.tree('loadData', node.children, parent);
             });
@@ -77,6 +77,8 @@ var notebook_tree_view = function(model) {
             // restore the state:
             view_obj.$tree_.tree('setState', state);
         }
+
+        view_obj.$sort_order_select_.val(args.sort_type);
     });
 
     this.model_.on_update_show_nodes.attach(function(sender, args) {
