@@ -897,10 +897,13 @@ notebook_tree_model.prototype = {
 
                 update_children(this.tree_data_);
 
-                this.on_update_sort_order.notify(nodes_and_children);
+                this.on_update_sort_order.notify({
+                    nodes: nodes_and_children,
+                    sort_type: sort_type
+                });
             }
 
-            rcloud.config.set_user_option("tree-sort-order", sort_type);            
+            rcloud.config.set_user_option("tree-sort-order", sort_type);
         }
     },
 
