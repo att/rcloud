@@ -11,7 +11,7 @@ rcloud.post.comment <- function(id, content)
 {
   res <- create.gist.comment(id, content, ctx = .rcloud.get.gist.context())
   rcloud.comments.email(id, content, ' posted a new')
-  if (nzConf("solr.url")) mcparallel(rcloud.solr::solr.post.comment(id, content, res$content$id), detached=TRUE)
+  if (is.rcloud.solr.feature.enabled()) mcparallel(rcloud.solr::solr.post.comment(id, content, res$content$id), detached=TRUE)
   res
 }
 
@@ -19,13 +19,17 @@ rcloud.modify.comment <- function(id, cid, content)
 {
   res <- modify.gist.comment(id,cid,content, ctx = .rcloud.get.gist.context())
   rcloud.comments.email(id, content, ' modified an old')
-  mcparallel(rcloud.solr::solr.modify.comment(id, content, cid), detached=TRUE)
+  if(is.rcloud.solr.feature.enabled()) {
+    mcparallel(rcloud.solr::solr.modify.comment(id, content, cid), detached=TRUE)
+  }
   res$ok
 }
 
 rcloud.delete.comment <- function(id,cid)
 {
-  mcparallel(rcloud.solr::solr.delete.comment(id, cid), detached=TRUE)
+  if(is.rcloud.solr.feature.enabled()) {
+    mcparallel(rcloud.solr::solr.delete.comment(id, cid), detached=TRUE)
+  }
   res <- delete.gist.comment(id,cid, ctx = .rcloud.get.gist.context())
   res$ok
 }

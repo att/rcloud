@@ -26,6 +26,10 @@ rcloud.get.conf.values <- function(pattern) {
   lapply(matched, getConf)
 }
 
+is.rcloud.solr.feature.enabled <- function() {
+  nzConf("solr.url") && requireNamespace("rcloud.solr", quietly = TRUE)
+}
+
 filter.notebooks <- function(f, ids)
   if(is.list(ids)) {
     ids[filter.notebooks(f, names(ids))]
@@ -350,7 +354,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
     rcloud.discovery.set.recently.modified.notebook(id, res$content$updated_at)
 
-    if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
+    if (is.rcloud.solr.feature.enabled() && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
         rcloud.solr::update_solr(res, star.count)
     }
@@ -501,9 +505,13 @@ rcloud.is.notebook.visible <- function(id)
 
 rcloud.set.notebook.visibility <- function(id, value){
   rcloud.set.notebook.property(id, "visible", value != 0);
-  if(value){
-    response <- rcloud.solr::update_solr(rcloud.get.notebook(id,raw=TRUE),rcloud.notebook.star.count(id))
-  } else {response <- rcloud.solr::solr.delete.doc(id)}
+  if(is.rcloud.solr.feature.enabled()) {
+    if(value) {
+      response <- rcloud.solr::update_solr(rcloud.get.notebook(id,raw=TRUE), rcloud.notebook.star.count(id))
+    } else {
+      response <- rcloud.solr::solr.delete.doc(id)
+    }
+  }
 }
 
 ## "Import External Notebook" - a slight misnomer since this
