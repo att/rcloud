@@ -810,7 +810,7 @@ notebook_tree_model.prototype = {
     sanitize_tree_setting: function(setting_key, value) {
         var settings = [
             { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30' ]},
-            { key: 'tree-sort-order', default_value: 'alpha', valid_values: ['alpha', 'date_desc' ]}            
+            { key: 'tree-sort-order', default_value: 'name', valid_values: ['name', 'date_desc' ]}            
         ];
 
         var setting = _.findWhere(settings, { key: setting_key });
