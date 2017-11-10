@@ -1122,7 +1122,7 @@ a.accordion-toggle.right > i {
 
 .notebook-sizer {
     position:absolute;
-    z-index: 10000;
+    z-index: 999;
     cursor: ew-resize;
     bottom: 0;
     opacity: 0;
