@@ -772,6 +772,7 @@ notebook_tree_model.prototype = {
         // do the filtering:
         var matching_notebooks = [],
         that = this,
+        empty_folders = [],
         current_matches = [],
         set_status = function(notebooks, matches_filter) {
             _.each(notebooks, function(n) {
@@ -784,7 +785,7 @@ notebook_tree_model.prototype = {
                     if(o[i].hasOwnProperty('children')) {                        
                         current_matches = _.filter(o[i].children, function(child) {
                             return child.gistname && !child.version;
-                        });
+                        }); 
 
                         set_status(current_matches, false);
 
@@ -794,6 +795,10 @@ notebook_tree_model.prototype = {
                             matching_notebooks.push.apply(matching_notebooks, current_matches);
                             // these match:
                             set_status(current_matches, true);
+                        } else {
+                            if(!o[i].gistname) {
+                                empty_folders.push(o[i]);
+                            }                          
                         }
                     }
 
