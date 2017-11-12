@@ -782,7 +782,8 @@ notebook_tree_model.prototype = {
         get_matching_notebooks = function(o) {
             for(var i in o) {
                 if (!!o[i] && typeof(o[i])=="object") {
-                    if(o[i].hasOwnProperty('children')) {                        
+                    if(o[i].hasOwnProperty('children')) {  
+                                        
                         current_matches = _.filter(o[i].children, function(child) {
                             return child.gistname;
                         }); 
@@ -795,7 +796,21 @@ notebook_tree_model.prototype = {
                             matching_notebooks.push.apply(matching_notebooks, current_matches);
                             // these match:
                             set_status(current_matches, true);
+
+                            // this is a folder with children; ensure that any parent folders
+                            // that were previously marked as hidden are removed:
+                            if(!o[i].gistname) {
+                                var ancestors = [];
+                                _.each(empty_folders, function(folder) {
+                                    if(o[i].id.startsWith(folder.id)) {
+                                        ancestors.push(folder);
+                                    }
+                                });
+
+                                empty_folders = _.difference(empty_folders, ancestors);
+                            }
                         } else {
+                            // this is a folder with no matching notebooks:
                             if(!o[i].gistname) {
                                 empty_folders.push(o[i]);
                             }                          
