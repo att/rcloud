@@ -883,7 +883,10 @@ notebook_tree_model.prototype = {
 
                             if(o[i].hasOwnProperty('children')) {
 
-                                o[i].children.sort(that.compare_nodes.bind(that));
+                                // don't reorder history nodes:
+                                if(!o[i].children[0].version) {
+                                    o[i].children.sort(that.compare_nodes.bind(that));
+                                }
 
                                 nodes_and_children.push({
                                     node_id: o[i].id,
