@@ -424,7 +424,12 @@ notebook_tree_view.prototype = {
         element.append(right);
 
         if(node.gistname) {
-            element.parent()[this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();
+            if(node.version) {
+                // history node:
+                element.show();
+            } else {
+                element.parent()[this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();                
+            }
         }
     }
 };
