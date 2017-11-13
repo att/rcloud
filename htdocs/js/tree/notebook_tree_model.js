@@ -783,7 +783,7 @@ notebook_tree_model.prototype = {
                 if (!!o[i] && typeof(o[i])=="object") {
                     if(o[i].hasOwnProperty('children')) {                        
                         current_matches = _.filter(o[i].children, function(child) {
-                            return child.gistname;
+                            return child.gistname && !child.version;
                         });
 
                         set_status(current_matches, false);
