@@ -28,10 +28,10 @@ RCloud.UI.share_button = (function() {
     function resolve_view_url(gistname, version) {
           var notebook_options = null;
           if(version) {
-            fetch_version = rcloud.get_tag_by_version(gistname, version)
+            notebook_options = rcloud.get_tag_by_version(gistname, version)
             .then(function(tag) {
               var opts = {notebook: gistname,
-                    version: x};
+                    version: version};
                 if(tag) {
                     opts.tag = tag;
                 }
