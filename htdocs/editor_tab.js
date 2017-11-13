@@ -358,7 +358,7 @@ var editor = function () {
                 promises.push(shell.fork_and_name_notebook(is_mine, node.gistname, null, false, function(desc) {
                     return Promise.resolve(desc.replace(match, replace));
                 }).then(function(notebook) {
-                    if(notebook_info_[notebook.id])
+                    if(tree_controller_.has_notebook_info(notebook.id))
                         return notebook.description;
                     else
                         return editor.star_and_show(notebook, false, false);
