@@ -451,7 +451,7 @@ var editor = function () {
                 var gist = $(e.currentTarget).data('gist');
                 $('.dropdown-toggle.recent-btn').dropdown("toggle");
                 if(e.altKey) {
-                  RCloud.UI.share_button.resolve_view_link(gist).then(function(url) {
+                  RCloud.UI.share_button.resolve_view_link(gist, undefined).then(function(url) {
                     window.open(url, "_blank");
                   });
                 } else {
