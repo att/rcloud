@@ -84,7 +84,15 @@ var notebook_tree_view = function(model) {
                     } else {
                         $(node.element).hide();
                     }
-                } 
+                } else {
+                    if(node.sort_order === 1) {
+                        if(args.empty_folders.indexOf(node.id) != -1) {
+                            $(node.element).hide();
+                        } else {
+                            $(node.element).show();
+                        }
+                    }
+                }
 
                 return true;
             });
@@ -417,13 +425,15 @@ notebook_tree_view.prototype = {
 
         element.append(right);
 
-        if(node.gistname) {
-            if(node.version) {
-                // history node:
-                element.show();
+        if(node.gistname || (!node.gistname && node.sort_order == 1)) {
+            var display;
+            if(node.gistname) {
+                display = this.model_.does_notebook_match_filter(node.id);
             } else {
-                element.parent()[this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();                
+                display = this.model_.does_folder_have_matching_descendants(node.id);
             }
+
+            element.parent()[display ? 'show' : 'hide']();            
         }
     }
 };
