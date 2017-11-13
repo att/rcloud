@@ -451,7 +451,12 @@ notebook_tree_model.prototype = {
     },
 
     load_user_notebooks: function(username) {
-        var that = this;
+        var that = this,
+            merge_filter_matches = function(matches) {
+                that.matches_filter_.matching_notebooks = _.union(that.matches_filter_.matching_notebooks, matches.matching_notebooks);
+                that.matches_filter_.empty_folders = _.union(that.matches_filter_.empty_folders, matches.empty_folders);
+            };    
+            
         if(!that.lazy_load_[username])
             return Promise.resolve();
 
@@ -462,11 +467,11 @@ notebook_tree_model.prototype = {
 
             var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
             var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes.bind(that));
-        
-            that.matches_filter_ = _.union(that.matches_filter_, that.get_filter_matches([{
+
+            merge_filter_matches(that.get_filter_matches([{
                 children: alls_data
             }]));
-            
+
             delete that.lazy_load_[username];
 
             // add nodes to the model:
@@ -477,7 +482,7 @@ notebook_tree_model.prototype = {
                 // update model for friend's notebooks:
                 var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
 
-                that.matches_filter_ = _.union(that.matches_filter_, that.get_filter_matches([
+                merge_filter_matches(that.get_filter_matches([
                     ftree
                 ]));
 
@@ -824,7 +829,10 @@ notebook_tree_model.prototype = {
 
         get_matching_notebooks(notebooks);
         
-        return _.pluck(matching_notebooks, 'id');
+        return {
+            matching_notebooks: _.pluck(matching_notebooks, 'id'),
+            empty_folders: _.pluck(empty_folders, 'id')
+        };
     },
 
     sanitize_tree_setting: function(setting_key, value) {
@@ -871,7 +879,8 @@ notebook_tree_model.prototype = {
         this.matches_filter_ = this.get_filter_matches(this.tree_data_);
          
         this.on_update_show_nodes.notify({
-            nodes: this.matches_filter_,
+            nodes: this.matches_filter_.matching_notebooks,
+            empty_folders: this.matches_filter_.empty_folders,
             filter_props: filter_props
         });
 
@@ -879,7 +888,11 @@ notebook_tree_model.prototype = {
     },
 
     does_notebook_match_filter: function(notebook_id) {
-        return this.matches_filter_.indexOf(notebook_id) != -1;
+        return this.matches_filter_.matching_notebooks.indexOf(notebook_id) != -1;
+    },
+
+    does_folder_have_matching_descendants: function(folder_id) {
+        return this.matches_filter_.empty_folders.indexOf(folder_id) == -1;
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {
