@@ -65,16 +65,8 @@ var notebook_tree_view = function(model) {
 
     this.model_.on_update_sort_order.attach(function(sender, args) {
         if(view_obj.$tree_) {
-            // get the state, because 'loadData' doesn't persist selected
-            // or node states:
             var state = view_obj.$tree_.tree('getState');
-
-            _.each(args.nodes, function(node) {
-                var parent = view_obj.$tree_.tree('getNodeById', node.node_id);
-                view_obj.$tree_.tree('loadData', node.children, parent);
-            });
-
-            // restore the state:
+            view_obj.$tree_.tree('loadData', args.tree_data);
             view_obj.$tree_.tree('setState', state);
         }
 
