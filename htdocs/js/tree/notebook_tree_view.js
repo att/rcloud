@@ -85,7 +85,9 @@ var notebook_tree_view = function(model) {
         if(view_obj.$tree_) {
             view_obj.$tree_.tree('getTree').iterate(function(node) {
                 if(node.gistname) {
-                    if(args.nodes.indexOf(node.id) != -1) {
+                    if(_.find(args.nodes, function(node_id) {
+                        return node.id.startsWith(node_id);
+                    })) {
                         $(node.element).show();
                     } else {
                         $(node.element).hide();
@@ -424,7 +426,12 @@ notebook_tree_view.prototype = {
         element.append(right);
 
         if(node.gistname) {
-            element.parent()[this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();
+            if(node.version) {
+                // history node:
+                element.show();
+            } else {
+                element.parent()[this.model_.does_notebook_match_filter(node.id) ? 'show' : 'hide']();                
+            }
         }
     }
 };
