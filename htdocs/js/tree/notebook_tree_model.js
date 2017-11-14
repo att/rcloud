@@ -902,7 +902,7 @@ notebook_tree_model.prototype = {
                 update_children(this.tree_data_);
 
                 this.on_update_sort_order.notify({
-                    nodes: nodes_and_children,
+                    tree_data: this.tree_data_,
                     sort_type: sort_type
                 });
             }
