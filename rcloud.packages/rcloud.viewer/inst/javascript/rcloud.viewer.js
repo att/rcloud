@@ -3,13 +3,11 @@
 
     var viewer_panel = {
         body: function() {
-            return $.el.div({id: "viewer-body-wrapper", 'class': 'panel-body tight'},
-                           $.el.div({id: "viewer-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
-                                    $.el.div({id:"viewer-body", 'class': 'widget-vsize'})));
+            return $.el.div({id: "viewer-body-wrapper", 'class': 'panel-body tight'});
         }
     };
     function clear_display() {
-        $('#viewer-body > table').remove();
+        $('#viewer-body > div').remove();
     }
 return {
     init: function(k) {
@@ -28,8 +26,8 @@ return {
         k();
     },
     view: function(data, title, k) {
-        $('#viewer-body > div').remove();
-        $('#viewer-body').append($(data));
+        $('#viewer-body-wrapper > div').remove();
+        $('#viewer-body-wrapper').append($(data));
         RCloud.UI.right_panel.collapse($("#collapse-data-viewer"), false, false);
         k();
     }
