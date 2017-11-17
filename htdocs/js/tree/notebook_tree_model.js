@@ -790,8 +790,8 @@ notebook_tree_model.prototype = {
                     if(o[i].hasOwnProperty('children')) {  
                                         
                         current_matches = _.filter(o[i].children, function(child) {
-                            return child.gistname;
-                        }); 
+                            return child.gistname && !child.version;
+                        });
 
                         set_status(current_matches, false);
 
@@ -916,7 +916,10 @@ notebook_tree_model.prototype = {
 
                             if(o[i].hasOwnProperty('children')) {
 
-                                o[i].children.sort(that.compare_nodes.bind(that));
+                                // don't reorder history nodes:
+                                if(o[i].children.length && !o[i].children[0].version) {
+                                    o[i].children.sort(that.compare_nodes.bind(that));
+                                }
 
                                 nodes_and_children.push({
                                     node_id: o[i].id,
@@ -932,7 +935,7 @@ notebook_tree_model.prototype = {
                 update_children(this.tree_data_);
 
                 this.on_update_sort_order.notify({
-                    nodes: nodes_and_children,
+                    tree_data: this.tree_data_,
                     sort_type: sort_type
                 });
             }

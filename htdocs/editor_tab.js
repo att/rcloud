@@ -358,7 +358,7 @@ var editor = function () {
                 promises.push(shell.fork_and_name_notebook(is_mine, node.gistname, null, false, function(desc) {
                     return Promise.resolve(desc.replace(match, replace));
                 }).then(function(notebook) {
-                    if(notebook_info_[notebook.id])
+                    if(tree_controller_.has_notebook_info(notebook.id))
                         return notebook.description;
                     else
                         return editor.star_and_show(notebook, false, false);
@@ -451,8 +451,9 @@ var editor = function () {
                 var gist = $(e.currentTarget).data('gist');
                 $('.dropdown-toggle.recent-btn').dropdown("toggle");
                 if(e.altKey) {
-                  var url = ui_utils.make_url('view.html', {notebook: gist});
-                  window.open(url, "_blank");
+                  RCloud.UI.share_button.resolve_view_link(gist, undefined).then(function(url) {
+                    window.open(url, "_blank");
+                  });
                 } else {
                   result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
                 }

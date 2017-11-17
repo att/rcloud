@@ -70,7 +70,7 @@ RCloud.UI.init = function() {
     if(!shell.is_view_mode()) {
         RCloud.UI.incremental_search.init();
     }
-
+    
     //////////////////////////////////////////////////////////////////////////
     // view mode things
     ui_utils.prevent_backspace($(document));

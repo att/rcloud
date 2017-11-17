@@ -1,11 +1,11 @@
 Package: rcloud.support
 Title: Support Package for the RCloud environment
-Version: 1.8-0
+Version: 1.9-0
 Author: Simon Urbanek <urbanek@research.att.com>, Gordon Woodhull <gordon@research.att.com>, Carlos Scheidegger <cscheid@cscheid.net>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: It's used by RCloud internally.
 Depends: base64enc (>= 0.1-3), rjson, parallel, R (>= 3.1.0)
 Imports: uuid, RCurl, unixtools, Rserve (>= 1.8-5), rediscc (>= 0.1-3), jsonlite, knitr, markdown, png, Cairo, httr, gist, mime, sendmailR, PKI
 NOTE: --- packages that are not on CRAN/RForge.net *must* be in Suggests! ---
-Suggests: FastRWeb, RSclient, rcloud.client
+Suggests: FastRWeb, RSclient, rcloud.client, rcloud.solr, rcloud.r
 License: MIT

@@ -65,16 +65,8 @@ var notebook_tree_view = function(model) {
 
     this.model_.on_update_sort_order.attach(function(sender, args) {
         if(view_obj.$tree_) {
-            // get the state, because 'loadData' doesn't persist selected
-            // or node states:
             var state = view_obj.$tree_.tree('getState');
-
-            _.each(args.nodes, function(node) {
-                var parent = view_obj.$tree_.tree('getNodeById', node.node_id);
-                view_obj.$tree_.tree('loadData', node.children, parent);
-            });
-
-            // restore the state:
+            view_obj.$tree_.tree('loadData', args.tree_data);
             view_obj.$tree_.tree('setState', state);
         }
 
@@ -85,7 +77,9 @@ var notebook_tree_view = function(model) {
         if(view_obj.$tree_) {
             view_obj.$tree_.tree('getTree').iterate(function(node) {
                 if(node.gistname) {
-                    if(args.nodes.indexOf(node.id) != -1) {
+                    if(_.find(args.nodes, function(node_id) {
+                        return node.id.startsWith(node_id);
+                    })) {
                         $(node.element).show();
                     } else {
                         $(node.element).hide();
@@ -435,11 +429,17 @@ notebook_tree_view.prototype = {
             var display;
             if(node.gistname) {
                 display = this.model_.does_notebook_match_filter(node.id);
+            } else if(node.version) {
+                display = true;
             } else {
                 display = this.model_.does_folder_have_matching_descendants(node.id);
             }
 
-            element.parent()[display ? 'show' : 'hide']();            
+            if(node.version) {
+                element.show();
+            } else {
+                element.parent()[display ? 'show' : 'hide']();     
+            }
         }
     }
 };
