@@ -273,7 +273,7 @@ notebook_tree_view.prototype = {
             this.$tree_.tree('openNode', p);
             p = p.parent;
         }
-        ui_utils.scroll_into_view(this.$tree_.parent(), 50, 100, null, $(node.element));
+        ui_utils.scroll_into_view(this.$tree_, 50, 100, null, $(node.element));
     },
 
     remove_node: function(node) {
@@ -352,7 +352,7 @@ notebook_tree_view.prototype = {
                     that.$tree_.tree('openNode', p);
                     p = p.parent;
                 }
-                ui_utils.scroll_into_view(that.$tree_.parent(), 150, 150, function() {
+                ui_utils.scroll_into_view(that.$tree_, 150, 150, function() {
                     $(node.element).closest('.jqtree_common').effect('highlight', { color: '#fd0' }, 1500, function() {
                         resolve();
                     });
