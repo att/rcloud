@@ -469,7 +469,9 @@ notebook_tree_model.prototype = {
             var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
             var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes.bind(that));
 
-            merge_filter_matches(that.get_filter_matches(alls_data));
+            merge_filter_matches(that.get_filter_matches([{
+                children: alls_data
+            }]));
 
             delete that.lazy_load_[username];
 
@@ -481,7 +483,9 @@ notebook_tree_model.prototype = {
                 // update model for friend's notebooks:
                 var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
 
-                merge_filter_matches(that.get_filter_matches(ftree));
+                merge_filter_matches(that.get_filter_matches([{
+                    children: ftree
+                }]));
 
                 // add nodes to the model:
                 that.load_tree_data(ftree.children, that.node_id('friends', username));
