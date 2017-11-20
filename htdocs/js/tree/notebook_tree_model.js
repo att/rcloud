@@ -304,9 +304,16 @@ notebook_tree_model.prototype = {
                 return lc;
 
             } else {
-                var dateA = a.last_commit ? new Date(a.last_commit) : _.max(_.map(a.children, function(child) { return new Date(child.last_commit); }));
-                var dateB = b.last_commit ? new Date(b.last_commit) : _.max(_.map(b.children, function(child) { return new Date(child.last_commit); }));
-                return dateB - dateA;
+
+                var get_date = function(node) {
+                    if(!node.last_commit && !node.children) {
+                        return Infinity;
+                    } else {
+                        return node.last_commit ? new Date(node.last_commit) : _.max(_.map(node.children, function(child) { return new Date(child.last_commit); }));                        
+                    }
+                };
+
+                return get_date(b) - get_date(a);
             }            
         }
     },
