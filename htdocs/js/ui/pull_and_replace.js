@@ -5,8 +5,6 @@ RCloud.UI.pull_and_replace = (function() {
         pull_notebook_file_ = $('#pull-notebook-file'),
         pull_notebook_url_ = $('#pull-notebook-url'),
         pull_notebook_id_ = $('#pull-notebook-id'),
-        btn_cancel_ = dialog_.find('.btn-cancel'),
-        btn_close_ = dialog_.find('.close'),
         error_selector_ = '#pull-error',
         btn_pull_ = dialog_.find('.btn-primary'),
         inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
@@ -40,7 +38,6 @@ RCloud.UI.pull_and_replace = (function() {
             // reset pulling state:
             reset_pulling_state();
 
-            //
             inputs_.forEach(function(input) {
                 input.val('');
             });
@@ -49,8 +46,6 @@ RCloud.UI.pull_and_replace = (function() {
 
             // default to URL for the next time:
             update_pulled_by('url');
-
-            dialog_.modal('hide');
         },
         update_pulled_by = function(pulled_method, value) {
             clear_error();
@@ -175,8 +170,8 @@ RCloud.UI.pull_and_replace = (function() {
                 }
             });
 
-            [btn_cancel_, btn_close_].forEach(function(button) {
-                button.click(close_dialog);
+            $(dialog_).on('hide.bs.modal', function(){
+                close_dialog();
             });
 
             select_by_.change(function() {
