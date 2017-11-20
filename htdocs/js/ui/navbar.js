@@ -174,11 +174,20 @@ RCloud.UI.navbar = (function() {
                     modes: ['edit'],
                     create: function() {
                         var control = RCloud.UI.navbar.create_button('fork-notebook', 'Fork', 'icon-code-fork');
-                        $(control.control).click(function() {
+                        $(control.control).click(function(e) {
                             var is_mine = shell.notebook.controller.is_mine();
                             var gistname = shell.gistname();
                             var version = shell.version();
-                            editor.fork_notebook(is_mine, gistname, version);
+                            
+                            if(e.metaKey || e.ctrlKey) {
+                              editor.fork_notebook(is_mine, gistname, version, false).then(function(notebook) {
+                                var url = ui_utils.make_url('edit.html', {notebook: notebook.id});
+                                window.open(url, "_blank");
+                              });
+                            } else {
+                              editor.fork_notebook(is_mine, gistname, version, true);
+                            }
+                            
                         });
                         return control;
                     }
