@@ -591,6 +591,10 @@ ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
 
 .notebook-commands .fontawesome-button {
     margin: 0;
+
+    &.hidden-notebook {
+        color: black;
+    }
 }
 
 .no-arrow{
