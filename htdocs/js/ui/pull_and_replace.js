@@ -33,7 +33,7 @@ RCloud.UI.pull_and_replace = (function() {
                 });
             });
         },
-        close_dialog = function() {
+        reset_dialog = function() {
 
             // reset pulling state:
             reset_pulling_state();
@@ -112,7 +112,8 @@ RCloud.UI.pull_and_replace = (function() {
                 return Promise.all([
                     rcloud.set_notebook_property(shell.gistname(), 'pull-changes-by', method + ':' + value),
                     editor.pull_and_replace_notebook(notebook).then(function() {
-                        close_dialog();
+                        reset_dialog();
+                        dialog_.modal('hide');
                     })
                 ]);
             }).catch(function(e) {
@@ -171,7 +172,7 @@ RCloud.UI.pull_and_replace = (function() {
             });
 
             $(dialog_).on('hide.bs.modal', function(){
-                close_dialog();
+                reset_dialog();
             });
 
             select_by_.change(function() {
