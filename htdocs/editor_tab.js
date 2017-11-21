@@ -339,16 +339,16 @@ var editor = function () {
         show_history: function(node, opts) {        
             tree_controller_.show_history(node, opts);
         },
-        fork_notebook: function(is_mine, gistname, version) {
+        fork_notebook: function(is_mine, gistname, version, open_it) {
             var that = this;
-            return shell.fork_notebook(is_mine, gistname, version)
-                .bind(this)
-                .then(function(notebook) {
-                    if(that.has_notebook_info(notebook.id)) {
-                        alert(github_nonfork_warning);
-                    }
-                    return this.star_and_show(notebook, true, !!version);
-                });
+            return shell.fork_notebook(is_mine, gistname, version, open_it)
+                  .bind(this)
+                  .then(function(notebook) {
+                      if(that.has_notebook_info(notebook.id)) {
+                          alert(github_nonfork_warning);
+                      }
+                      return this.star_and_show(notebook, open_it, !!version);
+                  });
         },
         fork_folder: function(node, match, replace) {
             var that = this;
