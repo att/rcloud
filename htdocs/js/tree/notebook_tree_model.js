@@ -34,6 +34,7 @@ var notebook_tree_model = function(username, show_terse_dates) {
 
     this.sorted_by_ = this.orderType.DEFAULT;
     this.matches_filter_ = [];
+    this.empty_folders_ = [];
 
     // functions that filter the tree:
     this.tree_filters_ = {
@@ -451,7 +452,12 @@ notebook_tree_model.prototype = {
     },
 
     load_user_notebooks: function(username) {
-        var that = this;
+        var that = this,
+            merge_filter_matches = function(details) {
+                that.matches_filter_ = _.union(that.matches_filter_, details.matching_notebooks);
+                that.empty_folders_ = _.union(that.empty_folders_, details.empty_folders);
+            };    
+            
         if(!that.lazy_load_[username])
             return Promise.resolve();
 
@@ -462,11 +468,11 @@ notebook_tree_model.prototype = {
 
             var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
             var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes.bind(that));
-        
-            that.matches_filter_ = _.union(that.matches_filter_, that.get_filter_matches([{
+
+            merge_filter_matches(that.get_filter_matches([{
                 children: alls_data
             }]));
-            
+
             delete that.lazy_load_[username];
 
             // add nodes to the model:
@@ -477,9 +483,9 @@ notebook_tree_model.prototype = {
                 // update model for friend's notebooks:
                 var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
 
-                that.matches_filter_ = _.union(that.matches_filter_, that.get_filter_matches([
-                    ftree
-                ]));
+                merge_filter_matches(that.get_filter_matches([{
+                    children: ftree
+                }]));
 
                 // add nodes to the model:
                 that.load_tree_data(ftree.children, that.node_id('friends', username));
@@ -772,6 +778,7 @@ notebook_tree_model.prototype = {
         // do the filtering:
         var matching_notebooks = [],
         that = this,
+        empty_folders = [],
         current_matches = [],
         set_status = function(notebooks, matches_filter) {
             _.each(notebooks, function(n) {
@@ -781,7 +788,8 @@ notebook_tree_model.prototype = {
         get_matching_notebooks = function(o) {
             for(var i in o) {
                 if (!!o[i] && typeof(o[i])=="object") {
-                    if(o[i].hasOwnProperty('children')) {                        
+                    if(o[i].hasOwnProperty('children')) {  
+                                        
                         current_matches = _.filter(o[i].children, function(child) {
                             return child.gistname && !child.version;
                         });
@@ -794,6 +802,24 @@ notebook_tree_model.prototype = {
                             matching_notebooks.push.apply(matching_notebooks, current_matches);
                             // these match:
                             set_status(current_matches, true);
+
+                            // this is a folder with children; ensure that any parent folders
+                            // that were previously marked as hidden are removed:
+                            if(!o[i].gistname) {
+                                var ancestors = [];
+                                _.each(empty_folders, function(folder) {
+                                    if(o[i].id.startsWith(folder.id)) {
+                                        ancestors.push(folder);
+                                    }
+                                });
+
+                                empty_folders = _.difference(empty_folders, ancestors);
+                            }
+                        } else {
+                            // this is a folder with no matching notebooks:
+                            if(!o[i].gistname) {
+                                empty_folders.push(o[i]);
+                            }                          
                         }
                     }
 
@@ -804,7 +830,10 @@ notebook_tree_model.prototype = {
 
         get_matching_notebooks(notebooks);
         
-        return _.pluck(matching_notebooks, 'id');
+        return {
+            matching_notebooks: _.pluck(matching_notebooks, 'id'),
+            empty_folders: _.pluck(empty_folders, 'id')
+        };
     },
 
     sanitize_tree_setting: function(setting_key, value) {
@@ -848,10 +877,13 @@ notebook_tree_model.prototype = {
             }
         }
 
-        this.matches_filter_ = this.get_filter_matches(this.tree_data_);
+        var details = this.get_filter_matches(this.tree_data_);
+        this.matches_filter_ = details.matching_notebooks;
+        this.empty_folders_ = details.empty_folders;
          
         this.on_update_show_nodes.notify({
             nodes: this.matches_filter_,
+            empty_folders: this.empty_folders_,
             filter_props: filter_props
         });
 
@@ -860,6 +892,10 @@ notebook_tree_model.prototype = {
 
     does_notebook_match_filter: function(notebook_id) {
         return this.matches_filter_.indexOf(notebook_id) != -1;
+    },
+
+    does_folder_have_matching_descendants: function(folder_id) {
+        return this.empty_folders_.indexOf(folder_id) == -1;
     },
 
     update_sort_type: function(sort_type, reorder_nodes) {

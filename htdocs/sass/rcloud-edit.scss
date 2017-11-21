@@ -539,10 +539,6 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     font-weight: bold;
 }
 
-.jqtree-title.jqtree_common.history {
-    color: #7CB9E8
-}
-
 .jqtree-title {
 }
 
@@ -552,6 +548,10 @@ ul.jqtree-tree .jqtree-title.hidden-notebook, .hidden-notebook {
 
 ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
     color: #66bb44;
+}
+
+ul.jqtree-tree .jqtree-title.jqtree_common.history {
+    color: #7CB9E8
 }
 
 .notebook-date {
