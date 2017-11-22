@@ -591,6 +591,10 @@ ul.jqtree-tree .jqtree-title.jqtree_common.history {
 
 .notebook-commands .fontawesome-button {
     margin: 0;
+
+    &.hidden-notebook {
+        color: black;
+    }
 }
 
 .no-arrow{
