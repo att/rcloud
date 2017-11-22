@@ -90,8 +90,8 @@ RCloud.UI.notebook_commands = (function() {
                         return node.user === editor.username();
                     },
                     create: function(node) {
-                        var make_hidden = ui_utils.fa_button('icon-eye-close', 'hide notebook', 'hidden-notebook', icon_style_, true),
-                            make_shown = ui_utils.fa_button('icon-eye-open', 'show notebook', 'shown-notebook', icon_style_, true);
+                        var make_hidden = ui_utils.fa_button('icon-eye-close', 'hide notebook', 'hide-notebook', icon_style_, true),
+                            make_shown = ui_utils.fa_button('icon-eye-open', 'show notebook', 'show-notebook', icon_style_, true);
                         if(node.visible)
                             make_shown.hide();
                         else
