@@ -43,6 +43,8 @@ var Mode = function(suppressHighlighting, doc, session) {
          true);
 
     this.createModeDelegates({
+        "jscode2-": JavaScriptMode,
+        "csscode2-": CssMode,
         "jscode-": JavaScriptMode,
         "csscode-": CssMode,
         "r-": RMode
