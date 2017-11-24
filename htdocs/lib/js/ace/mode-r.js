@@ -110,8 +110,18 @@ define("ace/mode/r", function(require, exports, module)
          }
          return false;
       };
-  
+      
       this.lineCommentStart = ["#"];
+      
+      this.getCompletionsAsync = function(state, session, pos, callback) {
+        if(this.$completer) {
+          this.$completer.getCompletions(null, session, pos, callback);
+        } else {
+          callback(null, []);
+        }
+      };
+      
+      this.$id = "ace/mode/r";
    }).call(Mode.prototype);
    exports.Mode = Mode;
 });
