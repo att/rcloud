@@ -1153,8 +1153,9 @@ var AcePopup = function(parentNode) {
         this.renderer.$textLayer.checkForSizeChanges();
         
         var requiredWidth = 0;
-        popup.data.forEach(function(x) { 
-          var fullSize = x.value.length + (x.meta && x.meta.length);
+        popup.data.forEach(function(x) {
+          var value = x.caption || x.value;
+          var fullSize = value.length + (x.meta && x.meta.length);
           if ( fullSize > requiredWidth ) { 
             requiredWidth = fullSize; 
           } 
@@ -1852,13 +1853,35 @@ var keyWordCompleter = {
         var state = editor.session.getState(pos.row);
         var completions = session.$mode.getCompletions(state, session, pos, prefix);
         if(completions && completions.length > 0) {
-          callback(null, completions.map(function(x) { 
-            x.prefix = prefix;
+          callback(null, completions.map(function(x) {
+            if(!x.prefix) {
+              x.prefix = prefix;
+            }
             return x;
           }));
           return;
         }
         callback(null, null);
+    }
+};
+
+var keyWordCompleterAsync = {
+    getCompletions: function(editor, session, pos, callback) {
+        var state = editor.session.getState(pos.row);
+        session.$mode.getCompletionsAsync(state, session, pos, function(err, result) {
+          if(!err) {
+            callback(null, result.map(function(x) {
+              if(!x.prefix) {
+                var line = session.getLine(pos.row);
+                var prefix = util.retrievePrecedingIdentifier(line, pos.column);
+                x.prefix = prefix;
+              }
+              return x;
+            }));
+          } else {
+            callback(err, result);
+          }
+        });
     }
 };
 
@@ -1900,7 +1923,7 @@ var snippetCompleter = {
     }
 };
 
-var completers = [modeCompleter, keyWordCompleter, textCompleter, snippetCompleter];
+var completers = [modeCompleter, keyWordCompleter, keyWordCompleterAsync, textCompleter, snippetCompleter];
 exports.setCompleters = function(val) {
     completers.length = 0;
     if (val) completers.push.apply(completers, val);
