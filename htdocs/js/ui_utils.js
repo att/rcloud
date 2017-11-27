@@ -187,11 +187,11 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     widget.navigateLineEnd();
                 }
                 RCloud.UI.command_prompt.history().add_entry(code);
-                shell.new_cell(code, get_language())
-                    .spread(function(_, controller) {
-                        controller.enqueue_execution_snapshot();
-                        shell.scroll_to_end();
-                    });
+                var append = shell.new_cell(code, get_language());
+                append.updatePromise.then(function() {
+                    append.controller.enqueue_execution_snapshot();
+                    shell.scroll_to_end();
+                });
             }
         },
 

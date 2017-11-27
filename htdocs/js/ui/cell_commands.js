@@ -150,10 +150,10 @@ RCloud.UI.cell_commands = (function() {
                     enable_flags: ['modify'],
                     create: function(cell_model) {
                         return that.create_button("icon-plus-sign", "insert cell", function() {
-                            shell.insert_cell_before("", cell_model.language(), cell_model.id())
-                                .spread(function(_, controller) {
-                                    controller.edit_source(true);
-                                });
+                            var insert = shell.insert_cell_before("", cell_model.language(), cell_model.id());
+                            insert.updatePromise.then(function() {
+                                insert.controller.edit_source(true);
+                            });
                         });
                     }
                 },

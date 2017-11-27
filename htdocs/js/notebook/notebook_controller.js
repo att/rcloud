@@ -271,19 +271,19 @@ Notebook.create_controller = function(model)
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
-                .then(function(notebook) {
-                    return [notebook, cch.controller];
-                });
+            return {
+                controller: cch.controller,
+                updatePromise: update_notebook(refresh_buffers().concat(cch.changes))
+                    .then(default_callback())
+            };
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
-                .then(function(notebook) {
-                    return [notebook, cch.controller];
-                });
+            return {
+                controller: cch.controller,
+                updatePromise: update_notebook(refresh_buffers().concat(cch.changes))
+                    .then(default_callback())
+            };
         },
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
