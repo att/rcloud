@@ -20,18 +20,16 @@ Notebook.Cell.create_model = function(content, language)
                 throw new Error("can't set filename of cell");
             return Notebook.part_name(this.id(), this.language());
         },
-        get_execution_snapshot: function() {
+        get_execution_snapshot: function(versionPromise) {
+            console.assert(versionPromise);
             // freeze the cell as it is now, to execute it later
             var language = this.language() || 'Text'; // null is a synonym for Text
-            var version = this.parent_model.controller.current_version();
-            if(!version)
-                RCloud.UI.session_pane.append_text('Warning: executing unknown version, may be stale\n');
             return {
                 controller: this.controller,
                 json_rep: this.json(),
                 partname: Notebook.part_name(this.id(), language),
                 language: language,
-                version: version
+                versionPromise: versionPromise
             };
         },
         set_focus: function() {

@@ -1,7 +1,6 @@
 Notebook.create_controller = function(model)
 {
     var current_gist_,
-        current_version_,
         dirty_ = false,
         save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
@@ -67,7 +66,6 @@ Notebook.create_controller = function(model)
                 shell.is_view_mode();
     
         current_gist_ = notebook;
-        current_version_ = notebook.history[0].version;
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
@@ -171,7 +169,6 @@ Notebook.create_controller = function(model)
         if (!changes.length && _.isUndefined(more)) {
             return Promise.cast(current_gist_);
         }
-        current_version_ = null;
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {}, creates = {};
@@ -202,7 +199,6 @@ Notebook.create_controller = function(model)
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
-                current_version_ = notebook.history[0].version;
                 model.update_files(notebook.files);
                 return notebook;
             })
@@ -249,9 +245,6 @@ Notebook.create_controller = function(model)
         current_gist: function() {
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
-        },
-        current_version: function() {
-            return current_version_;
         },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
@@ -534,37 +527,36 @@ Notebook.create_controller = function(model)
             }
             rcloud.record_cell_execution(info.json_rep);
             var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
-            return cell_eval(context_id, info.partname, info.language, info.version, false).then(execute_cell_callback);
+            return info.versionPromise.then(function(version) {
+                return cell_eval(context_id, info.partname, info.language, version, false).then(execute_cell_callback);
+            });
         },
         run_all: function() {
-            var that = this;
-            return this.save().then(function() {
-                _.each(model.cells, function(cell_model) {
-                    cell_model.controller.enqueue_execution_snapshot();
-                });
+            var updatePromise = this.save();
+            _.each(model.cells, function(cell_model) {
+                cell_model.controller.enqueue_execution_snapshot(updatePromise);
             });
+            return updatePromise;
         },
         run_from: function(cell_id) {
-            var that = this,
-                process = false;
-            return this.save().then(function() {
-                _.each(model.cells, function(cell_model) {
-                    if(process || cell_model.id() === cell_id) {
-                        process = true;
-                        cell_model.controller.enqueue_execution_snapshot();
-                    }
-                });
+            var process = false;
+            var updatePromise = this.save();
+            _.each(model.cells, function(cell_model) {
+                if(process || cell_model.id() === cell_id) {
+                    process = true;
+                    cell_model.controller.enqueue_execution_snapshot(updatePromise);
+                }
             });
+            return updatePromise;
         },
         run_cells: function(cell_ids) {
-            var that = this;
-            return this.save().then(function() {
-                _.each(model.cells, function(cell_model) {
-                    if(cell_ids.indexOf(cell_model.id()) > -1) {
-                        cell_model.controller.enqueue_execution_snapshot();
-                    }
-                });
+            var updatePromise = this.save();
+            _.each(model.cells, function(cell_model) {
+                if(cell_ids.indexOf(cell_model.id()) > -1) {
+                    cell_model.controller.enqueue_execution_snapshot(updatePromise);
+                }
             });
+            return updatePromise;
         },
         show_cell_numbers: function(whether) {
             _.each(model.views, function(view) {

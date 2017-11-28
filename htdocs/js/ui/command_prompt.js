@@ -44,10 +44,8 @@ RCloud.UI.command_prompt = (function() {
             if(code.length) {
                 RCloud.UI.command_prompt.history().add_entry(code);
                 var append = shell.new_cell(code, language_);
-                append.updatePromise.then(function() {
-                    append.controller.enqueue_execution_snapshot();
-                    shell.scroll_to_end();
-                });
+                shell.scroll_to_end();
+                append.controller.enqueue_execution_snapshot(append.updatePromise);
                 change_prompt('');
             }
         }

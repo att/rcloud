@@ -1,8 +1,11 @@
 Notebook.Cell.create_controller = function(cell_model)
 {
     var execution_context_ = null;
+    function update_version(notebook) {
+        return notebook.history[0].version;
+    }
     var result = {
-        enqueue_execution_snapshot: function() {
+        enqueue_execution_snapshot: function(updatePromise) {
             var that = this;
             if(!execution_context_) {
                 function appender(type) {
@@ -23,7 +26,7 @@ Notebook.Cell.create_controller = function(cell_model)
             var context_id = RCloud.register_output_context(execution_context_);
             that.set_run_state("waiting");
             that.edit_source(false);
-            var snapshot = cell_model.get_execution_snapshot();
+            var snapshot = cell_model.get_execution_snapshot(updatePromise.then(update_version));
             RCloud.UI.run_button.enqueue(
                 function() {
                     that.set_run_state("running");

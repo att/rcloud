@@ -797,10 +797,7 @@ function create_cell_html_view(language, cell_model) {
         //////////////////////////////////////////////////////////////////////
 
         execute_cell: function() {
-            return cell_model.parent_model.controller.save()
-                .then(function() {
-                    cell_model.controller.enqueue_execution_snapshot();
-                });
+            cell_model.controller.enqueue_execution_snapshot(cell_model.parent_model.controller.save());
         },
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
