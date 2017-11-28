@@ -1,5 +1,4 @@
 ((function() {
-    var ocaps_;
 
     var viewer_panel = {
         body: function() {
@@ -10,8 +9,28 @@
         $('#viewer-body > div').remove();
     }
 return {
-    init: function(k) {
+    init: function(ocaps, k) {
+        ocaps = RCloud.promisify_paths(ocaps, [["view_dataframe_page"]], true);
+        
         clear_display();
+                            
+               
+        RCloud.UI.viewer = {
+              view_dataframe_page : ocaps.view_dataframe_page,
+              dataFrameCallback : function(variable, data, callback, settings) {
+                  var page = window.parent.RCloud.UI.viewer.view_dataframe_page(variable, data)
+                        .then(function (response) {
+                            var dataObject = {};
+                            var tableData = JSON.parse(response.data);
+                            dataObject.data = tableData;
+                            dataObject.recordsTotal = response.recordsTotal;
+                            dataObject.recordsFiltered = response.recordsTotal;
+                            dataObject.draw = response.draw;
+                            callback(dataObject);
+                  }); 
+              }
+        };
+        
         RCloud.UI.panel_loader.add({
             Dataframe: {
                 side: 'right',
