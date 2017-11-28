@@ -39,6 +39,33 @@ View <- function (x, title, expr)
   invisible(rcloud.viewer.caps$view(x, title))
 }
 
+#'
+#' @param name data.frame variable name
+#' @param options dataTables request parameters
+#' @return datatables JS result object (see datatables documentation)
+rcloud.viewer.view.dataframe.page <- function(name, options) {
+  val <- get(name, .GlobalEnv)
+  
+  result <- list(draw = options$draw)
+  
+  if(is.data.frame(val)) {
+    records <- nrow(val)
+    result$recordsTotal <- records
+    result$recordsFiltered <- records 
+    page <- seq(options$start,min(options$start+options$length, records))
+    data <- tryCatch(jsonlite::toJSON(cbind(as.integer(rownames(val)[page]),val[page,]), dataframe = "values"))
+    if(typeof(data) == "try-error") {
+      result$error <- paste0("Could not marshal data.frame data. Error: ", as.character(data))
+    } else {
+      result$data <- data
+    }
+    return(result)
+  } else {
+    result$error <- paste0("Unsupported variable type: ", typeof(val))
+  }
+  return(result)
+}
+
 #' Returns HTML representation of given variable
 #' If varValue is a data.frame it renders DT widget which delegates paging to the server.
 #' If the varValue is of other type than data.frame, it is converted to data.frame and rendereed as 'static' DT (i.e. all variable data is sent to client) 
@@ -51,8 +78,8 @@ renderDataFrame <- function(varName, varValue, title) {
       options$paging <- (nrow(varValue) > ENVIEWER_PAGE_SIZE)
       # htmlwidget is displayed in an iframe, but data.frame paging OCAP is available on the parent page. 
       options$ajax <- JS(paste0('function(data, callback, settings) {
-    if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.enviewer) {
-        window.parent.RCloud.UI.enviewer.dataFrameCallback("', varName, '", data, callback, settings);
+    if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
+        window.parent.RCloud.UI.viewer.dataFrameCallback("', varName, '", data, callback, settings);
     }
     }'))
       data <- data.frame(matrix(ncol = ncol(varValue), nrow = 0))
