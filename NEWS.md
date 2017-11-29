@@ -1,10 +1,61 @@
 ## RCloud 1.9
 
 ### Features
+ * New implementation of notebook search (in `rcloud.solr` package), with improved
+   robustness, ability to constrain by language and asset type, and sensible pagination
+   for notebooks from multiple sources.
+
+ * Sorting of notebook tree by date (#522)
+
+ * Filtering of notebook tree by date, i.e. showing only notebook modified in the last
+   week or month (#1817)
+
+ * Incremental search of notebooks by name (#2391)
+
+ * Dataframe viewer is paginated, via [DT](https://rstudio.github.io/DT/)
+
+ * Case-sensitive and whole-word search in notebooks (#2425)
 
 ### Improvements
 
+ * Autocompletion of multiple languages in RMarkdown/Markdown cells (#2429)
+
+ * Scrolling and more in recent notebooks menu (#2423)
+
+ * <kbd>ctrl click</kbd> or <kbd>cmd click</kbd> on the fork button opens the forked
+   notebook in a new tab, without killing the current session (#2441)
+
+ * <kbd>alt click</kbd> a notebook in the Recent Notebooks menu to open it in View mode (#2424)
+
+ * Pressing <kbd>tab</kbd> on editable fields like notebook names and asset names
+   accepts the value instead of cancelling (#2440)
+
+ * Build script will fail if you don't have npm, unless you specify
+   `--no-js`. Previously the warning would get buried. (#2438)
+
+ * Login page (`rcloud.html`) is included in RCloud distribution
+
 ### Bugfixes
+ * R Autocompletion works the same as on the R command line, fixing various issues with
+   duplicated text (#645), path completion (#1645) etc. Autocomplete dialog is
+   autosized so that items are not truncated (#1635).
+
+ * Some concurrency issues were fixed where an earlier version of a cell could be run
+   (#2303) or cells could be run out of order (#2513) if the user interacted with a
+   notebook while it was saving.
+
+ * Improved error reporting when cell contains an illegal character (#2396)
+
+ * When an invalid source was specified in URL, the valid notebook sources were not
+   shown and the page hung (#2444)
+
+ * History of hidden notebooks had inconsistent coloring (#2496)
+
+ * Hide notebook button looked disabled (#2510)
+
+ * Recent notebooks menu was behind notebook sizer (#2463)
+
+ * Pull and Replace dialog was not cleared (#2377)
 
 
 ## RCloud 1.8.1
