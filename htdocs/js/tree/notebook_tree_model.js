@@ -125,6 +125,10 @@ notebook_tree_model.prototype = {
         }
     },
 
+    get_gist_sources: function() {
+        return this.gist_sources_;
+    },
+
     // work around oddities of rserve.js
     each_r_list: function(list, f) {
         for(var key in list)

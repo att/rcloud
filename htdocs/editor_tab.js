@@ -99,9 +99,6 @@ var editor = function () {
         username: function() {
             return username_;
         },
-        gist_sources: function() {
-            return gist_sources_;
-        },
         num_stars: function(gistname) {
             return tree_controller_.get_notebook_star_count(gistname);
         },
@@ -138,12 +135,13 @@ var editor = function () {
             var before;
             var last_notebook = shell.gistname(), last_version = shell.version();
             if(source) {
+                var gist_sources = tree_controller_.get_gist_sources();
                 if(source==='default')
                     source = null; // drop it
-                else if(gist_sources_.indexOf(source)<0) {
+                else if(gist_sources.indexOf(source)<0) {
                     before = Promise.reject(new Error(
                         "Invalid gist source '" + source + "'; available sources are: " +
-                            gist_sources_.join(', ')));
+                            gist_sources.join(', ')));
                 } else if(!get_notebook_info(gistname)) {
                     set_notebook_info(gistname, { source: source });
                     before = rcloud.set_notebook_property(gistname, "source", source);

@@ -36,6 +36,10 @@ notebook_tree_controller.prototype = {
         return this.model_.get_next();
     },
 
+    get_gist_sources: function() {
+        return this.model_.get_gist_sources();
+    },
+
     get_notebook_star_count: function(gistname) {
         return this.model_.get_notebook_star_count(gistname);
     },
