@@ -142,7 +142,7 @@ var editor = function () {
                     before = Promise.reject(new Error(
                         "Invalid gist source '" + source + "'; available sources are: " +
                             gist_sources.join(', ')));
-                } else if(!get_notebook_info(gistname)) {
+                } else if(!get_notebook_info(gistname).username) {
                     set_notebook_info(gistname, { source: source });
                     before = rcloud.set_notebook_property(gistname, "source", source);
                 }
@@ -633,7 +633,7 @@ var editor = function () {
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)
                         : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
-                            if(!that.get_notebook_info(result.id))
+                            if(!that.get_notebook_info(result.id).username)
                                 that.set_notebook_info(result.id, {});
                             options.source = that.get_notebook_info(result.id).source = source;
                         });
