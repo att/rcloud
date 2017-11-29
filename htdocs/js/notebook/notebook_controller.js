@@ -1,6 +1,7 @@
 Notebook.create_controller = function(model)
 {
     var current_gist_,
+        current_update_,
         dirty_ = false,
         save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
@@ -66,6 +67,7 @@ Notebook.create_controller = function(model)
                 shell.is_view_mode();
     
         current_gist_ = notebook;
+        current_update_ = Promise.resolve(notebook);
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
@@ -167,7 +169,7 @@ Notebook.create_controller = function(model)
         if (model.read_only())
             return Promise.reject(new Error("attempted to update read-only notebook"));
         if (!changes.length && _.isUndefined(more)) {
-            return Promise.resolve(current_gist_);
+            return current_update_;
         }
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
@@ -194,7 +196,7 @@ Notebook.create_controller = function(model)
             return {files: files};
         }
         var gist = add_more_changes(changes_to_gist(changes));
-        return rcloud.update_notebook(gistname, gist)
+        current_update_ = rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
                     throw notebook;
@@ -499,7 +501,7 @@ Notebook.create_controller = function(model)
         },
         save: function() {
             if(!dirty_)
-                return Promise.resolve(current_gist_);
+                return Promise.resolve(current_update_);
             return update_notebook(refresh_buffers())
                 .then(default_callback());
         },
