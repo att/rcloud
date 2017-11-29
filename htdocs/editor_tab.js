@@ -634,7 +634,7 @@ var editor = function () {
                 var promise_source = options.source ? Promise.resolve(undefined)
                         : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
                             if(!that.get_notebook_info(result.id).username)
-                                that.set_notebook_info(result.id, {});
+                                set_notebook_info(result.id, {});
                             options.source = that.get_notebook_info(result.id).source = source;
                         });
                 return promise_source.then(function() {
