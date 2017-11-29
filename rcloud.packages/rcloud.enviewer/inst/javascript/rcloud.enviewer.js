@@ -116,7 +116,7 @@ return {
                     side: 'right',
                     name: 'environment-viewer',
                     title: 'Workspace',
-                    icon_class: 'icon-sun',
+                    icon_class: 'icon-cogs',
                     colwidth: 3,
                     sort: 2500,
                     panel: enviewer_panel(ocaps)
