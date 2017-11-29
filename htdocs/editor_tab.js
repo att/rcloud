@@ -6,7 +6,7 @@ var editor = function () {
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
         tree_controller_;
-    
+
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
     }
@@ -31,7 +31,7 @@ var editor = function () {
             username_ = rcloud.username();
 
             var tree_model = new notebook_tree_model(
-                rcloud.username(), 
+                rcloud.username(),
                 this.show_terse_dates_
             );
 
@@ -47,7 +47,7 @@ var editor = function () {
                     args.selroot,
                     args.new_window
                 );
-            });  
+            });
 
             var promise = tree_controller_.load_everything().then(function() {
                 if(opts.notebook) { // notebook specified in url
@@ -184,7 +184,7 @@ var editor = function () {
             if(arguments.length) {
                 new_notebook_prefix_ = _;
                 return this;
-            } else { 
+            } else {
                 return new_notebook_prefix_;
             }
         },
@@ -213,7 +213,7 @@ var editor = function () {
                         return Promise.resolve(undefined);
 
                     tree_controller_.tag_notebook_version(id, version, tag);
-                    
+
                     var promises = [];
                     if(id === current_.notebook && version === current_.version) {
                         promises.push(update_url({notebook: id, version: version, tag: tag}));
@@ -263,7 +263,7 @@ var editor = function () {
                     }
 
                     // this is a new friend:
-                    if(tree_controller_.add_interest(user, gistname) && tree_controller_.get_my_star_count_by_friend(user) === 1) 
+                    if(tree_controller_.add_interest(user, gistname) && tree_controller_.get_my_star_count_by_friend(user) === 1)
                         tree_controller_.toggle_folder_friendness(user);
 
                     var p;
@@ -312,7 +312,7 @@ var editor = function () {
                 });
         },
         highlight_imported_notebooks: function(notebooks) {
-            return tree_controller_.highlight_notebooks(notebooks);           
+            return tree_controller_.highlight_notebooks(notebooks);
         },
         set_notebook_visibility: function(gistname, visible) {
             var promise = tree_controller_.set_visibility(gistname, visible);
@@ -334,7 +334,7 @@ var editor = function () {
                 })
                 .return(notebook);
         },
-        show_history: function(node, opts) {        
+        show_history: function(node, opts) {
             tree_controller_.show_history(node, opts);
         },
         fork_notebook: function(is_mine, gistname, version, open_it) {
@@ -491,18 +491,18 @@ var editor = function () {
                   allRecent.shift(); //remove the first item
                   var isLastBatch = (allRecent.length < loaded + recentNotebooksBatchSize);
                   var toAdd = allRecent.slice(loaded, loaded + recentNotebooksBatchSize);
-                  
+
                   for(var i = 0; i < toAdd.length; i ++) {
                       create_recent_link(toAdd[i])
                   }
-                  
+
                   var moreLink = link.parent().detach();
                   if(!isLastBatch) {
                     moreLink.appendTo($('.recent-notebooks-list'));
                   }
                 });
               };
-              
+
               var li = $('<li></li>');
               li.appendTo($('.recent-notebooks-list'));
               var anchor = $('<a title="Show more recent notebooks"></a>');
