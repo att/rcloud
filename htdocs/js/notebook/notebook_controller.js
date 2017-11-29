@@ -210,6 +210,8 @@ Notebook.create_controller = function(model)
                     editor.fatal_reload(e.message);
                 throw e;
             });
+        // return RCloud.utils.slow_promise(current_update_, 5000);
+        return current_update_;
     }
 
     function apply_changes_and_load(changes, gistname) {

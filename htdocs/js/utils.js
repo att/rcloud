@@ -19,6 +19,18 @@ RCloud.utils.promise_sequence = function(collection, operator) {
         0);
 };
 
+RCloud.utils.slow_promise = function(promise, sleep) {
+    return new Promise(function(resolve, reject) {
+        window.setTimeout(function() {
+            promise.then(function(result) {
+                resolve(result);
+            }, function(error) {
+                reject(error);
+            });
+        }, sleep);
+    });
+};
+
 RCloud.utils.get_url_parameter = function(name) {
     return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
 };
