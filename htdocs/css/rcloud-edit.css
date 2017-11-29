@@ -314,9 +314,6 @@ rect.frame {
   color: #ddd;
   cursor: default; }
 
-.notebook-tree {
-  overflow-y: auto; }
-
 /* this is really just the "new notebook" button, but part of it
    may apply to other buttons */
 .header-button {
@@ -441,14 +438,14 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
   text-shadow: none;
   font-weight: bold; }
 
-.jqtree-title.jqtree_common.history {
-  color: #7CB9E8; }
-
 ul.jqtree-tree .jqtree-title.hidden-notebook, .hidden-notebook {
   color: #aaa; }
 
 ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
   color: #66bb44; }
+
+ul.jqtree-tree .jqtree-title.jqtree_common.history {
+  color: #7CB9E8; }
 
 .notebook-time {
   display: inline-block;
@@ -576,6 +573,10 @@ ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
   width: auto;
   padding: 0;
   padding-left: 1ex; }
+
+.search-result-solr-highlight {
+  font-weight: bold;
+  background: yellow; }
 
 /******************************************************************************/
 #help-wrapper {
@@ -897,7 +898,7 @@ a.accordion-toggle.right > i {
 
 .notebook-sizer {
   position: absolute;
-  z-index: 10000;
+  z-index: 999;
   cursor: ew-resize;
   bottom: 0;
   opacity: 0; }
