@@ -29,7 +29,7 @@ RCloud.UI.incremental_search = (function() {
             _resultItemSelector = _resultsSelector + '> p';
             _search_service = new notebook_tree_search_service();
 
-            if(RCloud.search) {
+            if(rcloud.search) {
                 RCloud.UI.shortcut_manager.add([{
                     category: 'Incremental Search',
                     id: 'incremental_search',

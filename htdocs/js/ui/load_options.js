@@ -32,6 +32,10 @@ RCloud.UI.load_options = function() {
             RCloud.UI.middle_column.init();
             RCloud.UI.right_panel.init();
 
+            if(!shell.is_view_mode()) {
+                RCloud.UI.incremental_search.init();
+            }
+
             RCloud.UI.command_prompt.init();
 
             $(".panel-collapse").collapse({toggle: false});

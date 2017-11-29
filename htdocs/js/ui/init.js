@@ -65,11 +65,6 @@ RCloud.UI.init = function() {
     // adds to advanced menu
     RCloud.UI.import_export.init();
     RCloud.UI.pull_and_replace.init();
-
-    // incremental search
-    if(!shell.is_view_mode()) {
-        RCloud.UI.incremental_search.init();
-    }
     
     //////////////////////////////////////////////////////////////////////////
     // view mode things
