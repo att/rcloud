@@ -1,12 +1,39 @@
 #!/bin/sh
+#
+# Usage: build_package.sh <pkg-directory> [<repo>]
+#
 set +x
 
-dir=`echo $1 | sed -e 's:/.*::'`
-pkg=`echo $1 | sed -e 's:.*/::'`
-if [ "$1" = "$dir" ]; then
-    dir=.
+if [ -z "$1" ]; then
+    echo "ERROR: missing package directory" >&2
+    exit 1
 fi
-echo dir $dir
-pwd
-(cd $dir; R CMD build $pkg && R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz)
 
+if [ ! -e "$1/DESCRIPTION" ]; then
+    echo "ERROR: $1 is not a package (missing DESCRIPTION)" >&2
+    exit 1
+fi
+
+src=`(cd $1; pwd)`
+dir=`dirname $src`
+pkg=`basename $src`
+
+name=`(cd $dir; sed -n 's/Package: *//p' $pkg/DESCRIPTION)`
+ver=`(cd $dir; sed -n 's/Version: *//p' $pkg/DESCRIPTION)`
+if [ -z "$name" -o -z "$ver" ]; then
+    echo "ERROR: cannot determine package/version" >&2
+    exit 1
+fi
+fn="${name}_${ver}.tar.gz"
+
+echo "=== Building $pkg (in $dir) -> $fn"
+
+if (cd $dir; R CMD build $pkg); then
+    if [ -n "$2" ]; then
+        cp -p $dir/$fn "$2/"
+    fi
+    (cd $dir; R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz)
+else 
+    echo "ERROR: failed to build $pkg (in $dir)" >&2
+    exit 1
+fi

@@ -61,12 +61,17 @@ sh scripts/fetch-mathjax.sh
 
 export RCS_SILENCE_LOADCHECK=TRUE
 
+if [ -d pkg-repo ]; then
+    repo=`(cd pkg-repo; pwd)`
+    echo "Package repository: $repo"
+fi
+
 # build internal packages (not in git) & rcloud.packages
 for dir in $PACKAGE_DIRS; do
     if [ -e $dir ]; then
         for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
             echo $pkg
-	    if ! scripts/build_package.sh $pkg; then
+	    if ! scripts/build_package.sh $pkg $repo; then
                 echo;echo;echo; echo package $pkg FAILED to build!;echo;echo
                 if [ $BREAK -gt 0 ]; then
                     exit 1
@@ -76,8 +81,8 @@ for dir in $PACKAGE_DIRS; do
     fi
 done
 
-scripts/build_package.sh rcloud.client || exit 1
-scripts/build_package.sh rcloud.support || exit 1
+scripts/build_package.sh rcloud.client $repo || exit 1
+scripts/build_package.sh rcloud.support $repo || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info
