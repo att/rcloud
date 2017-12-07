@@ -1129,7 +1129,8 @@ notebook_tree_model.prototype = {
             //var dp = node.parent;
             var dp = this.get_parent(node.id);
 
-            if(dp === parent && node./*name*/label === data.label) {
+            if(this.sorted_by_ === this.orderType.DEFAULT && 
+                dp === parent && node.label === data.label) {
                 this.update_tree_node(node, data);
             } else {
                 // remove from model:
