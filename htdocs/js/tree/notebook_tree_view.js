@@ -12,6 +12,15 @@ var notebook_tree_view = function(model) {
 
     var view_obj = this;
 
+    var append_node = function(parent) {
+        if (parent && parent.children) {
+            _.each(parent.children, function(child) {
+                view_obj.$tree_.tree('appendNode', child, view_obj.$tree_.tree('getNodeById', parent.id));                    
+                append_node(child);
+            });
+        }
+    };
+
     // attach view component listeners:
     this.date_filter_.on_change.attach(function(sender, args) { 
         view_obj.model_.update_filter(args);
@@ -151,11 +160,15 @@ var notebook_tree_view = function(model) {
         view_obj.$tree_.tree('addNodeBefore',
             args.node_to_insert,
             view_obj.$tree_.tree('getNodeById', args.existing_node.id)); 
+
+        append_node(args.node_to_insert);
     });
 
     this.model_.on_append_node.attach(function(sender, args) {
-        view_obj.$tree_.tree('appendNode', args.node_to_insert, 
-            view_obj.$tree_.tree('getNodeById', args.parent_id));
+
+        view_obj.$tree_.tree('appendNode', args.node_to_insert, view_obj.$tree_.tree('getNodeById', args.parent_id));
+        
+        append_node(args.node_to_insert);
     });
 
     this.model_.on_load_data.attach(function(sender, args) {
@@ -174,7 +187,7 @@ var notebook_tree_view = function(model) {
         if(args.fake_hover) {
             ui_utils.fake_hover(node);
         }
-        
+
         view_obj.$tree_.tree('removeNode', node);
     });
 

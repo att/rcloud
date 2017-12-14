@@ -60,6 +60,28 @@ var notebook_tree_model = function(username, show_terse_dates) {
     this.on_update_sort_order = new event(this);
     this.on_update_show_nodes = new event(this);
     this.on_settings_complete = new event(this);
+
+    this.get_most_recent_child = function(node) {
+        var latest_commit = null;
+
+        var get_children = function(parent) {
+            if (parent && parent.children) {
+                _.each(parent.children, function(child) {
+                    if(child.last_commit > latest_commit) {
+                        latest_commit = child.last_commit;
+                    }   
+
+                    get_children(child);
+                });
+            }
+        };
+
+        get_children(node);
+
+        return latest_commit;
+
+        //return _.max(_.map(node.children, function(child) { return new Date(child.last_commit); }));
+    };
 };
 
 notebook_tree_model.prototype = {
@@ -272,7 +294,8 @@ notebook_tree_model.prototype = {
 
     compare_nodes: function(a, b) {
 
-        var so = a.sort_order - b.sort_order;
+        var so = a.sort_order - b.sort_order,
+            that = this;
         if(so) {
             return so;
         }
@@ -313,7 +336,7 @@ notebook_tree_model.prototype = {
                     if(!node.last_commit && !node.children) {
                         return Infinity;
                     } else {
-                        return node.last_commit ? new Date(node.last_commit) : _.max(_.map(node.children, function(child) { return new Date(child.last_commit); }));                        
+                        return node.last_commit ? new Date(node.last_commit) : that.get_most_recent_child(node);                        
                     }
                 };
 
@@ -390,6 +413,7 @@ notebook_tree_model.prototype = {
     },
 
     as_folder_hierarchy: function(nodes, prefix, name_prefix) {
+
         var that = this;
         function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
         var in_folders = nodes;
@@ -420,6 +444,7 @@ notebook_tree_model.prototype = {
                 full_name: full_name,
                 user: v[0].user,
                 sort_order: that.order.NOTEBOOK,
+
                 id: id,
                 children: that.as_folder_hierarchy(children, id, full_name)
             };
@@ -430,7 +455,10 @@ notebook_tree_model.prototype = {
         outside_folders.forEach(function(v) {
             v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
         });
-        return outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
+
+        var result = outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
+        
+        return result;
     },
 
     convert_notebook_set: function(root, username, set) {
@@ -1126,25 +1154,54 @@ notebook_tree_model.prototype = {
                 last_chance(node); // hacky
             }
 
-            //var dp = node.parent;
             var dp = this.get_parent(node.id);
 
             if(this.sorted_by_ === this.orderType.DEFAULT && 
                 dp === parent && node.label === data.label) {
                 this.update_tree_node(node, data);
-            } else {
-                // remove from model:
-                dp.children = _.without(dp.children, _.findWhere(dp.children, {
-                    id: node.id
-                }));
+            } else if(this.sorted_by_ === this.orderType.DATE_DESC) {
 
-                this.remove_node_notify({
-                    node: node
-                });
+                this.update_tree_node(node, data);
 
-                node = this.insert_in_order(data, parent);
+                var update_node_position = function(parent, node, data) {
+                    
+                    // remove from model:
+                    parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                        id: node.id
+                    }));
+
+                    that.remove_node_notify({
+                        node: node
+                    });
+                    
+                    if(data) {
+                        // assign:
+                        node = that.insert_in_order(data, parent);                        
+                    } else {
+                        that.insert_in_order(node, parent);
+                    }
+                };
+
+                if(this.sorted_by_ === this.orderType.DATE_DESC) {
+
+                    var current_node = node;
+                    
+                    do {
+                        parent = this.get_parent(current_node.id);
+
+                        if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                            parent = null;
+                        } else {
+                            update_node_position(parent, current_node);
+                        }
+    
+                        current_node = parent;
+    
+                    } while(parent);
+                }
 
                 this.remove_empty_parents(dp);
+                
             }
 
         } else {
