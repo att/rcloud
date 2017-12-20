@@ -31,8 +31,6 @@ module.exports = function (grunt) {
             "htdocs/js/notebook/notebook_view.js",
             "htdocs/js/notebook/notebook_model.js",
             "htdocs/js/notebook/notebook_controller.js",
-            "htdocs/js/tree/event.js",
-
             "htdocs/js/notebook/util.js",
             "htdocs/js/discovery_model.js",
             "htdocs/js/notebook.js",
@@ -40,6 +38,7 @@ module.exports = function (grunt) {
             "htdocs/js/language.js",
             "htdocs/js/upload_utils.js",
             "htdocs/js/ui/_begin.js",
+            "htdocs/js/tree/event.js",            
             "htdocs/js/ui/advanced_menu.js",
             "htdocs/js/ui/cell_commands.js",
             "htdocs/js/ui/column.js",
