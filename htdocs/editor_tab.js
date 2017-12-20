@@ -30,13 +30,13 @@ var editor = function () {
             var that = this;
             username_ = rcloud.username();
 
-            var tree_model = new notebook_tree_model(
+            var tree_model = new RCloud.UI.notebook_tree_model(
                 rcloud.username(),
                 this.show_terse_dates_
             );
 
-            tree_controller_ = new notebook_tree_controller(tree_model,
-                new notebook_tree_view(tree_model)
+            tree_controller_ = new RCloud.UI.notebook_tree_controller(tree_model,
+                new RCloud.UI.notebook_tree_view(tree_model)
             );
 
             tree_controller_.on_notebook_open.attach(function (sender, args) {
