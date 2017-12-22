@@ -383,7 +383,7 @@ Notebook.create_controller = function(model)
                     } else {
                       new_content = create_code_block(prior.language(), prior.content()) +
                                     opt_cr(cell_model.content());
-                      changes = changes.concat(model.change_cell_language(prior, MARKDOWN));
+                      changes = changes.concat(model.change_cell_language(prior, cell_model.language()));
                     }
                 }
                 prior.content(new_content);
