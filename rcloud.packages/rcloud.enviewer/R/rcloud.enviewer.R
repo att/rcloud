@@ -2,12 +2,15 @@ rcloud.enviewer.refresh <- function()
   rcloud.enviewer.on.change(.GlobalEnv)
 
 ## OCAP
-rcloud.enviewer.view.dataframe <- function(expr)
-  View(get(expr, .GlobalEnv))
+rcloud.enviewer.view.dataframe <- function(expr) {
+  # pass un-evaluated expression, so it can be used by View
+  View(get(expr, .GlobalEnv), expr = expr)
+}
 
 ## -- how to handle each group --
-rcloud.enviewer.display.dataframe <- function(x, val)
+rcloud.enviewer.display.dataframe <- function(x, val) {
   structure(list(command="view", object=x, text=paste0("data.frame [",paste(dim(val), collapse=', '),"]")), class="data")
+}
 
 rcloud.enviewer.display.value <- function(val) {
     type <- class(val)

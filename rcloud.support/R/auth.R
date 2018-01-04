@@ -41,7 +41,7 @@ RC.authenticate <- function(v, check.only=FALSE)
         if (exec.usr == FALSE) return(FALSE)
         if (identical(getConf("exec.match.user"), "login") && !check.only) .setup.su(exec.usr)
         .session$exec.usr <- exec.usr
-        ulog("setup exec for", exec.usr, "successful")
+        ulog("setup exec for ", exec.usr, " successful")
     }
 
     ## if not, just check the first token.

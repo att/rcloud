@@ -1,0 +1,2 @@
+. => SUBWORD_DELIM
+_ => SUBWORD_DELIM

@@ -5,5 +5,5 @@ if [ -z "$ROOT" ]; then
     echo Defaulting ROOT to /data/rcloud
     ROOT=/data/rcloud
 fi
-cd $ROOT/services/solr/example
+cd $ROOT/services/solr
 exec $JAVA -jar start.jar >> solr.out

@@ -95,6 +95,10 @@ div.panel-heading:hover {
     border: 0;
 }
 
+.panel-scrollable-content {
+    overflow-y: auto;
+}
+
 .code-div {
     position: relative;
     tab-size: 4;
@@ -340,7 +344,7 @@ td {
         vertical-align: middle;
     }
 
-    input {
+    input[ type = "text"] {
         width: 160px;
         padding-right: 4px;
         background-color: white!important;
@@ -352,6 +356,18 @@ td {
                 -webkit-box-shadow: 0 0 0px 1000px #fff inset;
             }
         }
+    }
+    
+    #find-options-menu {
+      .btn.active {
+        background-color: orange;
+      }
+    }
+    
+    .checkbox {
+      margin-bottom: 1px;
+      margin-top: 1px;
+      margin-left: 5px;
     }
 
     #find-input {
@@ -552,6 +568,9 @@ ul.recent-notebooks-list {
     top: 25px;
     font-size: 12px;
     max-width: 330px;
+    min-width: 220px;
+    max-height: 26em;
+    overflow: auto;
 }
 
 ul.recent-notebooks-list li {
@@ -577,6 +596,15 @@ ul.recent-notebooks-list li a .description {
     overflow: hidden;
 }
 
+ul.recent-notebooks-list li a .more {
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+    padding-top: 10px;
+    max-width: 330px;
+    overflow: hidden;
+}
+
 ul.recent-notebooks-list li a {
     padding-top: 2px;
     padding-bottom: 2px;
@@ -587,6 +615,29 @@ ul.recent-notebooks-list li a {
     display: inline-block;
     overflow: hidden;
     white-space: nowrap;
+}
+
+/* tree filtering and ordering */
+.notebook-tree {
+    padding: 0;
+}
+
+#editor-book-tree {
+    padding: 5px;
+}
+
+#tree-controls {
+    padding: 5px 5px 2px 5px;
+    background: #efefef;
+}
+
+#tree-sort-by, #tree-filter-by {
+    width: 50%;
+    float: left;
+}
+
+#tree-filter-by {
+    text-align: right;
 }
 
 .jqtree-element .jqtree-title.jqtree_common {
@@ -735,6 +786,49 @@ body .modal-dialog.full {
 
         .btn-cancel, .close {
             display: none;
+        }
+    }
+}
+
+#tree-finder-dialog {
+
+    .modal-dialog {
+        padding: 0;
+        margin-top: -4px;
+    }
+
+    label {
+        span {
+            display: inline-block;
+            width: 150px;
+        }
+    }
+
+    input {
+        width: 385px;
+    }
+
+    .results {
+        max-height: 50vh;
+        overflow-y: auto;
+        > p {
+            font-size: 12px;
+            cursor: pointer; 
+            padding: 5px 2px;
+            margin: 0;
+            &:hover {
+                background: #dedede;
+            }
+            .creator {
+                font-style: italic;
+                color: #555;
+            }
+            .star_count {
+                float: right;
+                i {
+                    margin-left: 3px;
+                }
+            }
         }
     }
 }

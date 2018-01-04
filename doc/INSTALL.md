@@ -1,9 +1,5 @@
 # Setting up RCloud
 
-## Installing from Docker Hub
-
-(https://hub.docker.com/r/rcl0ud/rcloud/)
-
 ## Installing using VM images
 
 (https://github.com/att/rcloud/wiki/Cloud-Images)
@@ -188,7 +184,7 @@ future releases.
 RCloud 1.0 uses Apache Solr to index gists and provide search
 functionality if desired. See `conf/solr/README.md` for
 details. Quick start: install Java JDK (Debian/Ubuntu
-`sudo apt-get install openjdk-7-jdk`) and run
+`sudo apt-get install openjdk-8-jdk`) and run
 
     cd $ROOT/conf/solr
     sh solrsetup.sh $ROOT/services/solr
@@ -243,3 +239,7 @@ to the user than has authenticated. For this to work, RCloud must be
 started as root, e.g., `sudo conf/start`. Again, use only if you know
 what you're doing since misconfiguring RCloud run as root can have
 grave security implications.
+
+## Installing from Docker Hub
+
+(https://hub.docker.com/r/rcl0ud/rcloud/)

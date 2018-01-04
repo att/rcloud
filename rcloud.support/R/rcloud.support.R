@@ -26,6 +26,10 @@ rcloud.get.conf.values <- function(pattern) {
   lapply(matched, getConf)
 }
 
+is.rcloud.solr.feature.enabled <- function() {
+  nzConf("solr.url") && requireNamespace("rcloud.solr", quietly = TRUE)
+}
+
 filter.notebooks <- function(f, ids)
   if(is.list(ids)) {
     ids[filter.notebooks(f, names(ids))]
@@ -293,6 +297,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
     ## governed by the encrypted content
     group <- rcloud.get.notebook.cryptgroup(id)
 
+    ulog("INFO: rcloud.update.notebook (", id, ")")
     ## there is one special case: if the notebook is encrypted and this is a request for a
     ## partial update of the files, we have to compute the new encrypted content by merging
     ## the request. This is only the case if the request doesn't involve direct
@@ -349,9 +354,9 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
 
     rcloud.discovery.set.recently.modified.notebook(id, res$content$updated_at)
 
-    if (nzConf("solr.url") && is.null(group)) { # don't index private/encrypted notebooks
+    if (is.rcloud.solr.feature.enabled() && is.null(group)) { # don't index private/encrypted notebooks
         star.count <- rcloud.notebook.star.count(id)
-        update.solr(res, star.count)
+        rcloud.solr::update_solr(res, star.count)
     }
     aug.res
 }
@@ -370,7 +375,9 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
           rcloud.reset.session()
         }
     }
-    rcloud.augment.notebook(res)
+    res <- rcloud.augment.notebook(res)
+    ulog("INFO: rcloud.create.notebook (", res$content$id, ")")
+    res
   }, error = function(e) { list(ok = FALSE) })
 }
 
@@ -417,6 +424,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         rcloud.set.notebook.cryptgroup(new.nb$content$id, group$id, FALSE)
 
     rcloud.update.fork.count(id)
+    ulog("INFO: rcloud.fork.notebook (", id, " -> ", new.nb$content$id, ")")
     new.nb
 }
 
@@ -497,9 +505,13 @@ rcloud.is.notebook.visible <- function(id)
 
 rcloud.set.notebook.visibility <- function(id, value){
   rcloud.set.notebook.property(id, "visible", value != 0);
-  if(value){
-    response <- update.solr(rcloud.get.notebook(id,raw=TRUE),rcloud.notebook.star.count(id))
-  } else {response <- .solr.delete.doc(id)}
+  if(is.rcloud.solr.feature.enabled()) {
+    if(value) {
+      response <- rcloud.solr::update_solr(rcloud.get.notebook(id,raw=TRUE), rcloud.notebook.star.count(id))
+    } else {
+      response <- rcloud.solr::solr.delete.doc(id)
+    }
+  }
 }
 
 ## "Import External Notebook" - a slight misnomer since this
@@ -661,6 +673,7 @@ rcloud.config.add.notebook <- function(id)
 rcloud.config.remove.notebook <- function(id) {
   # also set visibility for easy filtering
   rcloud.set.notebook.visibility(id, FALSE)
+  ulog("INFO: rcloud.config.remove.notebook (", id, ")")
   rcs.rm(usr.key(user=.session$username, notebook="system", "config", "notebooks", id))
 }
 

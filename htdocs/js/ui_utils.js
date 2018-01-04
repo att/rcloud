@@ -112,7 +112,6 @@ ui_utils.disable_bs_button = function(el) {
     el.addClass("disabled");
 };
 
-
 ui_utils.ace_editor_height = function(widget, min_rows, max_rows)
 {
     min_rows = _.isUndefined(min_rows) ? 0  : min_rows;
@@ -188,11 +187,9 @@ ui_utils.install_common_ace_key_bindings = function(widget, get_language) {
                     widget.navigateLineEnd();
                 }
                 RCloud.UI.command_prompt.history().add_entry(code);
-                shell.new_cell(code, get_language())
-                    .spread(function(_, controller) {
-                        controller.enqueue_execution_snapshot();
-                        shell.scroll_to_end();
-                    });
+                var append = shell.new_cell(code, get_language());
+                shell.scroll_to_end();
+                append.controller.enqueue_execution_snapshot(append.updatePromise);
             }
         },
 
@@ -543,7 +540,7 @@ ui_utils.editable = function(elem$, command) {
                 // allow default action but don't bubble (causing erroneous reselection in notebook tree)
             },
             'keydown.editable': function(e) {
-                if(e.keyCode === $.ui.keyCode.ENTER) {
+                if(e.keyCode === $.ui.keyCode.ENTER || e.keyCode === $.ui.keyCode.TAB) {
                     var txt = decode(elem$.text());
                     function execute_if_valid_else_ignore(f) {
                         if(options().validate(txt)) {

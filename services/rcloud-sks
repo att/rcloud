@@ -12,4 +12,4 @@ if [ ! -e key.db ]; then
    chmod 0700 key.db
 fi
 
-exec $JAVA -Xmx256m -Djava.library.path=. -cp SessionKeyServer.jar com.att.research.RCloud.SessionKeyServer -l 127.0.0.1 -p 4301 -d key.db >> server.log
+exec $JAVA -Xmx256m -Djava.library.path=. -cp SessionKeyServer.jar com.att.research.RCloud.SessionKeyServer -tls /etc/ssl/rcloud/rcloud.jks -PF /etc/ssl/rcloud/rcloud.jks.pwd -p 4301 -d key.db >> server.log

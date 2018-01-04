@@ -32,23 +32,17 @@ define("ace/mode/r", function(require, exports, module)
    var FoldMode = require("./folding/cstyle").FoldMode;
    var RMatchingBraceOutdent = require("ace/mode/r_matching_brace_outdent").RMatchingBraceOutdent;
    var AutoBraceInsert = require("ace/mode/auto_brace_insert").AutoBraceInsert;
+   var RCompletions = require("ace/mode/r_completions").RCompletions;
    var unicode = require("ace/unicode");
 
    var Mode = function(suppressHighlighting, doc, session)
    {
-      this.getCompletions = function(state, session, pos, prefix, callback) {
-          rcloud.get_completions('R', session.getValue(),
-                                 session.getDocument().positionToIndex(pos))
-              .then(function(ret) {
-                  callback(null, ret);
-              });
-      };
       this.HighlightRules = RHighlightRules;
       if (suppressHighlighting)
          this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
       else
          this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
-
+      this.$completer = new RCompletions();
       this.$highlightRules = new this.HighlightRules();
       this.codeModel = new RCodeModel(doc, this.$tokenizer, null);
       this.foldingRules = new FoldMode();
@@ -116,7 +110,85 @@ define("ace/mode/r", function(require, exports, module)
          }
          return false;
       };
+      
       this.lineCommentStart = ["#"];
+      
+      this.getCompletionsAsync = function(state, session, pos, callback) {
+        if(this.$completer) {
+          this.$completer.getCompletions(null, session, pos, callback);
+        } else {
+          callback(null, []);
+        }
+      };
+      
+      this.$id = "ace/mode/r";
    }).call(Mode.prototype);
    exports.Mode = Mode;
+});
+
+
+define("ace/mode/r_completions", ["require","exports","module"], function(require, exports, module) {
+"use strict";
+
+
+var RCompletions = function() {
+  
+};
+
+(function() {
+    this.getCompletions = function(editor, session, pos, callback) {
+          var that = this;
+          var line = session.getLine(pos.row);
+          rcloud.get_completions('R', line, pos.column)
+                                 .then(function(ret) { 
+                                   ret.forEach(function(x) { x.completer = that; }); 
+                                  return ret;
+                                 })
+                                .then(function(ret) {
+                                    callback(null, ret);
+                                  });
+      };
+      
+   this.insertMatch = function(editor, completion) {
+      var completions = editor.completer.completions;
+      var session = editor.getSession();
+      var pos = editor.getCursorPosition();
+      var startPosition = completion.position;
+      var line = session.getLine(pos.row);
+      var left = line.substr(startPosition, pos.column);
+      var right = line.substr(pos.column, line.length);
+      
+      var removeToLeft = function(editor) {
+          var range = editor.selection.getRange();
+          range.start.column = startPosition;
+          editor.session.remove(range);
+      };
+      
+      if ( completions ) {
+        // Note: filterText may contain initial text and any extra characters that user typed in to filter
+        // the set of available completions produced when autocomplete dialog was created.
+        if(completions.filterText) {
+          if( left.endsWith(completions.filterText) && completion.value.startsWith(completions.filterText) ) {
+            // Avoid unnecessary autocompletion
+            var replacementTail = completion.value.substr(completions.filterText.length, completion.value.length);
+            if(right.startsWith(replacementTail)) {
+              var gotoRange = editor.selection.getRange();
+              gotoRange.end.column += replacementTail.length;
+              gotoRange.start.column += replacementTail.length;
+              editor.selection.setSelectionRange(gotoRange);
+              return;
+            }
+          }
+          removeToLeft(editor);
+        }
+      }
+      
+      if (completion.snippet)
+         editor.completer.snippetManager.insertSnippet(editor, completion.snippet);
+      else
+         editor.execCommand("insertstring", completion.value || completion);
+   };
+}).call(RCompletions.prototype);
+
+exports.RCompletions = RCompletions;
 });

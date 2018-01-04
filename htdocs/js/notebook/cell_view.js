@@ -473,10 +473,10 @@ function create_cell_html_view(language, cell_model) {
                 sender: 'editor'
             },
             exec: function() {
-                shell.insert_cell_before("", cell_model.language(), cell_model.id())
-                    .spread(function(_, controller) {
-                        controller.edit_source(true);
-                    });
+                var insert = shell.insert_cell_before("", cell_model.language(), cell_model.id());
+                insert.updatePromise.then(function() {
+                    insert.controller.edit_source(true);
+                });
             }
         }, {
             name: 'insertCellAfter',
@@ -486,10 +486,10 @@ function create_cell_html_view(language, cell_model) {
                 sender: 'editor'
             },
             exec: function() {
-                shell.insert_cell_after("", cell_model.language(), cell_model.id())
-                    .spread(function(_, controller) {
-                        controller.edit_source(true);
-                    });
+                var insert = shell.insert_cell_after("", cell_model.language(), cell_model.id());
+                insert.updatePromise.then(function() {
+                    insert.controller.edit_source(true);
+                });
             }
         }, {
             name: 'blurCell',
@@ -797,10 +797,7 @@ function create_cell_html_view(language, cell_model) {
         //////////////////////////////////////////////////////////////////////
 
         execute_cell: function() {
-            return cell_model.parent_model.controller.save()
-                .then(function() {
-                    cell_model.controller.enqueue_execution_snapshot();
-                });
+            cell_model.controller.enqueue_execution_snapshot(cell_model.parent_model.controller.save());
         },
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);

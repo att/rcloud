@@ -1,7 +1,7 @@
 Notebook.create_controller = function(model)
 {
     var current_gist_,
-        current_version_,
+        current_update_,
         dirty_ = false,
         save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
@@ -57,13 +57,17 @@ Notebook.create_controller = function(model)
     function on_load(version, notebook) {
         // the git backend should determine readonly but that's another huge refactor
         // and it would require multiple usernames, which would be a rather huge change
-        var ninf = editor.get_notebook_info(notebook.id);
+        var ninf;
+        if(!shell.is_view_mode()) {
+            ninf = editor.get_notebook_info(notebook.id);
+        }
         var is_read_only = ninf && ninf.source ||
                 version !== null ||
                 (notebook.user.login !== rcloud.username() && !is_collaborator(notebook, rcloud.username())) ||
                 shell.is_view_mode();
+    
         current_gist_ = notebook;
-        current_version_ = notebook.history[0].version;
+        current_update_ = Promise.resolve(notebook);
         model.read_only(is_read_only);
         if (!_.isUndefined(notebook.files)) {
             var i;
@@ -165,9 +169,8 @@ Notebook.create_controller = function(model)
         if (model.read_only())
             return Promise.reject(new Error("attempted to update read-only notebook"));
         if (!changes.length && _.isUndefined(more)) {
-            return Promise.cast(current_gist_);
+            return current_update_;
         }
-        current_version_ = null;
         gistname = gistname || shell.gistname();
         function changes_to_gist(changes) {
             var files = {}, creates = {};
@@ -193,12 +196,11 @@ Notebook.create_controller = function(model)
             return {files: files};
         }
         var gist = add_more_changes(changes_to_gist(changes));
-        return rcloud.update_notebook(gistname, gist)
+        current_update_ = rcloud.update_notebook(gistname, gist)
             .then(function(notebook) {
                 if('error' in notebook)
                     throw notebook;
                 current_gist_ = notebook;
-                current_version_ = notebook.history[0].version;
                 model.update_files(notebook.files);
                 return notebook;
             })
@@ -208,6 +210,8 @@ Notebook.create_controller = function(model)
                     editor.fatal_reload(e.message);
                 throw e;
             });
+        // return RCloud.utils.slow_promise(current_update_, 5000);
+        return current_update_;
     }
 
     function apply_changes_and_load(changes, gistname) {
@@ -246,9 +250,6 @@ Notebook.create_controller = function(model)
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
         },
-        current_version: function() {
-            return current_version_;
-        },
         append_asset: function(content, filename) {
             var cch = append_asset_helper(content, filename);
             return update_notebook(refresh_buffers().concat(cch.changes))
@@ -267,19 +268,19 @@ Notebook.create_controller = function(model)
         },
         append_cell: function(content, type, id) {
             var cch = append_cell_helper(content, type, id);
-            return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
-                .then(function(notebook) {
-                    return [notebook, cch.controller];
-                });
+            return {
+                controller: cch.controller,
+                updatePromise: update_notebook(refresh_buffers().concat(cch.changes))
+                    .then(default_callback())
+            };
         },
         insert_cell: function(content, type, id) {
             var cch = insert_cell_helper(content, type, id);
-            return update_notebook(refresh_buffers().concat(cch.changes))
-                .then(default_callback())
-                .then(function(notebook) {
-                    return [notebook, cch.controller];
-                });
+            return {
+                controller: cch.controller,
+                updatePromise: update_notebook(refresh_buffers().concat(cch.changes))
+                    .then(default_callback())
+            };
         },
         remove_cell: function(cell_model) {
             var changes = refresh_buffers().concat(model.remove_cell(cell_model));
@@ -502,7 +503,7 @@ Notebook.create_controller = function(model)
         },
         save: function() {
             if(!dirty_)
-                return Promise.resolve(undefined);
+                return Promise.resolve(current_update_);
             return update_notebook(refresh_buffers())
                 .then(default_callback());
         },
@@ -530,37 +531,36 @@ Notebook.create_controller = function(model)
             }
             rcloud.record_cell_execution(info.json_rep);
             var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
-            return cell_eval(context_id, info.partname, info.language, info.version, false).then(execute_cell_callback);
+            return info.versionPromise.then(function(version) {
+                return cell_eval(context_id, info.partname, info.language, version, false).then(execute_cell_callback);
+            });
         },
         run_all: function() {
-            var that = this;
-            return this.save().then(function() {
-                _.each(model.cells, function(cell_model) {
-                    cell_model.controller.enqueue_execution_snapshot();
-                });
+            var updatePromise = this.save();
+            _.each(model.cells, function(cell_model) {
+                cell_model.controller.enqueue_execution_snapshot(updatePromise);
             });
+            return updatePromise;
         },
         run_from: function(cell_id) {
-            var that = this,
-                process = false;
-            return this.save().then(function() {
-                _.each(model.cells, function(cell_model) {
-                    if(process || cell_model.id() === cell_id) {
-                        process = true;
-                        cell_model.controller.enqueue_execution_snapshot();
-                    }
-                });
+            var process = false;
+            var updatePromise = this.save();
+            _.each(model.cells, function(cell_model) {
+                if(process || cell_model.id() === cell_id) {
+                    process = true;
+                    cell_model.controller.enqueue_execution_snapshot(updatePromise);
+                }
             });
+            return updatePromise;
         },
         run_cells: function(cell_ids) {
-            var that = this;
-            return this.save().then(function() {
-                _.each(model.cells, function(cell_model) {
-                    if(cell_ids.indexOf(cell_model.id()) > -1) {
-                        cell_model.controller.enqueue_execution_snapshot();
-                    }
-                });
+            var updatePromise = this.save();
+            _.each(model.cells, function(cell_model) {
+                if(cell_ids.indexOf(cell_model.id()) > -1) {
+                    cell_model.controller.enqueue_execution_snapshot(updatePromise);
+                }
             });
+            return updatePromise;
         },
         show_cell_numbers: function(whether) {
             _.each(model.views, function(view) {

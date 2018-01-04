@@ -45,7 +45,20 @@
 <!-- snippets for panels, see load_snippet -->
 <script type="text/html" id="notebooks-snippet">
   <div class="panel-body notebook-tree">
-    <div id="editor-book-tree" class="widget-vsize"></div>
+    <div id="tree-controls" class="panel-fixed-header">
+      <div id="tree-sort-by">
+        <label><i class="icon-sort"></i> <select id="tree_sort_order" data-settingkey="tree_sort_order"><option selected>name</option><option value="date_desc">date</option></select>
+      </div>
+      <div id="tree-filter-by">
+        <label><i class="icon-filter"></i> <select id="tree_filter_date" data-settingkey="tree_filter_date">
+          <option value="all">All</option>
+          <option value="last7">Last 7 days</option>
+          <option value="last30">Last 30 days</option>
+        </select>
+      </div>
+      <br style="clear:both" />
+    </div>
+    <div id="editor-book-tree" class="widget-vsize panel-scrollable-content"></div>
   </div>
 </script>
 
@@ -69,14 +82,21 @@
       <i class="icon-search"></i>
       <div class="find">
         <span id="find-details">
-          <input type=text id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
-          <span id="match-status"><span id="match-index"></span> of <span id="match-total"></span></span>
+          <input type="text" id="find-input" class="form-control-ext mousetrap" placeholder="Find"></input>
+          <span id="match-status"><span id="match-index"/> of <span id="match-total"/></span>
+        </span>
+        <span class="btn-group" id="find-options-menu">
+            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="icon-ellipsis-horizontal"></i></button>
+            <ul class="dropdown-menu">
+              <li><span class="checkbox"><label><input type="checkbox" id="match-case-opt"/>Match case</label></span></li>
+              <li><span class="checkbox"><label><input type="checkbox" id="match-word-opt"/>Match word</label></span></li>
+            </ul>
         </span>
         <button id="find-last" class="btn" title="Find Previous"><i class="icon-arrow-left"></i></button>
         <button id="find-next" class="btn btn-primary" title="Find Next"><i class="icon-arrow-right"></i></button>
       </div>
       <div class="replace" style="display:none">
-        <input type=text id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
+        <input type="text" id="replace-input" class="form-control-ext mousetrap" placeholder="Replace"></input>
         <button id="replace" class="btn">Replace</button>
         <button id="replace-all" class="btn">Replace All</button>
       </div>
@@ -98,6 +118,7 @@
               </button>
               <!--Sort By :-->
               <select id="sort-by" class="form-control-ext"  data-target="#sort-by" style="width: 65px;">
+                  <option value="score" selected>Score</option>
                 <option value="starcount" selected>Stars</option>
                 <option value="user">User</option>
                 <option value="description">Name</option>
@@ -131,6 +152,74 @@
       </div>
     </div>
   </div>
+</script>
+
+<script type="text/template" id="search_results_template">
+  <% _.each(notebooks, function(result, i) { %>
+    
+    <table class="search-result-item" width="100%">
+      <tbody>
+        <tr>
+          <td width="10%">
+            <% if (result.source == "main_source") { %>
+              <% var url = ui_utils.make_url('edit.html', {notebook: result.id}) %>
+            <a id="open_<%= i %>" href="<%= url %>"
+               class="search-result-heading"
+               title="source: local"
+               data-gistname=<%= result.id %>
+               data-gistsource="">
+            <% }else{ %> 
+              <% var url = ui_utils.make_url('edit.html', {notebook: result.id, source: result.source}) %>
+              <a id="open_<%= i %>" href="<%= url %>"
+                class="search-result-heading foreign-notebook"
+                title="source: <%=result.source%>"
+                data-gistname=<%= result.id %>
+                data-gistsource<%= result.source %> >
+            <% } %>
+
+              <%=result.user%> / <%=result.description%>
+            </a>
+            <i class="icon-star search-star"><sub>,<%=result.starcount%></sub></i> <br/>
+            <span class="search-result-modified-date">modified at <i><%=result.updated_at%></i></span>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" width="100%" style="font-size: 12">
+            <div>
+              <div>
+                <div id="docs<%=result.id%>">
+                  <table style="width: 100%">
+                    <tbody>
+                      <% _.each(result.doclist.docs, function(doc) { %>
+                        <tr>
+                          <th class="search-result-part-name"><%=doc.filename%></th>
+                        </tr>
+                        <tr>
+                          <td>
+                            <table style="width: 100%">
+                              <tbody>
+                                <tr>
+                                  <td class="search-result-code">
+                                    <code>
+                                      <%=doc.highlighting.content%>
+                                    </code>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  <% }); %>
 </script>
 
 <script type="text/html" id="help-snippet">
@@ -181,7 +270,7 @@
             <input type="file" data-pull="change" id="pull-notebook-file" size="32" />
           </div>
         <div class="modal-footer">
-          <span class="btn btn-cancel">Cancel</span>
+          <span class="btn btn-cancel" data-dismiss="modal">Cancel</span>
           <span class="btn btn-primary">Pull</span>
         </div>
       </div>
@@ -535,6 +624,29 @@
   <% }); %>
 </script>
 
+<script type="text/template" id="tree-finder-template">
+  <div id="tree-finder-dialog" class="modal fade" aria-hidden="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-body">
+          <div class="row"><label><span>Notebook name</span><input /></label></div>          
+          <div class="row"><label><span>Username</span><input /></label></div>    
+          <div class="results"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="tree-finder-result-template">
+  <% if(notebooks.length) { %>
+  <% _.each(notebooks, function(notebook) { %>   
+    <p data-id="<%=notebook.id%>"><%=notebook.name%> <span class="creator"><%=notebook.author%></span><span class="star_count"><%=notebook.star_count%><i class="icon-star"></i></span></p>
+  <% }); %>  
+  <% } else { %>
+    <p>No matching results</p>    
+  <% } %>
+</script>
 
 <div class="container nopad" id="main-div">
   <div class="row">

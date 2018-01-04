@@ -1,19 +1,36 @@
 ((function() {
-    var ocaps_;
 
     var viewer_panel = {
         body: function() {
-            return $.el.div({id: "viewer-body-wrapper", 'class': 'panel-body tight'},
-                           $.el.div({id: "viewer-scroller", style: "width: 100%; height: 100%; overflow-x: auto"},
-                                    $.el.div({id:"viewer-body", 'class': 'widget-vsize'})));
+            return $.el.div({id: "viewer-body-wrapper", 'class': 'panel-body tight'});
         }
     };
     function clear_display() {
-        $('#viewer-body > table').remove();
+        $('#viewer-body > div').remove();
     }
 return {
-    init: function(k) {
+    init: function(ocaps, k) {
+        ocaps = RCloud.promisify_paths(ocaps, [["view_dataframe_page"]], true);
+        
         clear_display();
+                            
+               
+        RCloud.UI.viewer = {
+              view_dataframe_page : ocaps.view_dataframe_page,
+              dataFrameCallback : function(variable, data, callback, settings) {
+                  var page = window.parent.RCloud.UI.viewer.view_dataframe_page(variable, data)
+                        .then(function (response) {
+                            var dataObject = {};
+                            var tableData = JSON.parse(response.data);
+                            dataObject.data = tableData;
+                            dataObject.recordsTotal = response.recordsTotal;
+                            dataObject.recordsFiltered = response.recordsTotal;
+                            dataObject.draw = response.draw;
+                            callback(dataObject);
+                  }); 
+              }
+        };
+        
         RCloud.UI.panel_loader.add({
             Dataframe: {
                 side: 'right',
@@ -28,33 +45,22 @@ return {
         k();
     },
     view: function(data, title, k) {
-        $('#viewer-body > table').remove();
-        var columns = data.r_attributes.names;
-        if(typeof columns === 'string')
-            columns = [columns];
-        columns = _.without(columns, 'r_attributes', 'r_type');
-        if(columns.length<1)
-            k();
-        var nrows = data[columns[0]].length;
-        if(nrows>1000) nrows = 1000;
-        // styling the table would go better with CSS but we can only
-        // install CSS by URL right now(?)
-        var header_style = 'border: 0; background-color: #dedede; font-family: sans-serif; font-size: 12px; text-align: right; white-space: nowrap';
-        var datum_style = 'border-style: solid; border-width: thin 0; border-color: #aaa; text-align: right; padding-left: 10px; white-space: nowrap';
-        var header = $.el.tr({}, [$.el.th({style: 'border: none'})].concat(columns.map(function(x) {
-            return $.el.th({scope:'col', style: header_style}, x);
-        })));
-        var rows = [header];
-        for(var i = 0; i<nrows; ++i) {
-            function fetch(col) {
-                return $.el.td({style: datum_style}, data[col][i]);
-            }
-            var items = [$.el.th({scope: 'row', style: header_style}, i)].concat(columns.map(fetch));;
-            rows.push($.el.tr({}, items));
+        $('#viewer-body-wrapper > div').remove();
+        $('#collapse-data-viewer').data('panel-sizer', function(panel) {
+          var widgetDiv = $(panel).find('.rcloud-htmlwidget-content');
+          var height = widgetDiv.data('panel-initial-height'); 
+          var padding = RCloud.UI.collapsible_column.default_padder(panel);
+          return {height: height, padding: padding};
+        });
+        var widgetDiv = $(data);
+        widgetDiv.height('100%');
+        var iframe = widgetDiv.find('iframe');
+        if(iframe.length > 0) {
+          // override whatever fixed value is set on iframe, so it can be resized by column.js
+          widgetDiv.data('panel-initial-height', iframe.get(0).height);
+          iframe.get(0).height = '100%';
         }
-        $('#viewer-body').append($.el.table({style: "border-collapse: collapse; max-width: none"}, rows));
-        $('#viewer-body tr:first-child + tr td').css({'border-top': 0});
-        $('#viewer-body tr:first-child th').css({'padding-left': '10px'});
+        $('#viewer-body-wrapper').append(widgetDiv);
         RCloud.UI.right_panel.collapse($("#collapse-data-viewer"), false, false);
         k();
     }

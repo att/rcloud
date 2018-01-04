@@ -9,6 +9,8 @@ rcloud.viewer.caps <- NULL
     caps
   }
   rcloud.viewer.caps <<- f("rcloud.viewer", "rcloud.viewer.js")
-  if(!is.null(rcloud.viewer.caps))
-    rcloud.viewer.caps$init()
+  if(!is.null(rcloud.viewer.caps)) {
+    ocaps <- list(view_dataframe_page = rcloud.support:::make.oc(rcloud.viewer.view.dataframe.page))
+    rcloud.viewer.caps$init(ocaps)
+  }
 }

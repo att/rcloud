@@ -1153,8 +1153,9 @@ var AcePopup = function(parentNode) {
         this.renderer.$textLayer.checkForSizeChanges();
         
         var requiredWidth = 0;
-        popup.data.forEach(function(x) { 
-          var fullSize = x.value.length + (x.meta && x.meta.length);
+        popup.data.forEach(function(x) {
+          var value = x.caption || x.value;
+          var fullSize = value.length + (x.meta && x.meta.length);
           if ( fullSize > requiredWidth ) { 
             requiredWidth = fullSize; 
           } 
@@ -1251,16 +1252,16 @@ exports.parForEach = function(array, fn, callback) {
 // gw: add [:\.] to identifiers for R completions
 var ID_REGEX = /[a-zA-Z_0-9:\$\-\.\u00A2-\uFFFF]/;
 
-exports.retrievePrecedingIdentifier = function(text, pos, regex) {
-    regex = regex || ID_REGEX;
+exports.retrievePrecedingIdentifier = function(text, pos) {
     var buf = [];
     for (var i = pos-1; i >= 0; i--) {
-        if (regex.test(text[i]))
+        if (ID_REGEX.test(text[i]))
             buf.push(text[i]);
         else
             break;
     }
-    return buf.reverse().join("");
+    var identifier = buf.reverse().join("");
+    return identifier;
 };
 
 exports.retrieveFollowingIdentifier = function(text, pos, regex) {
@@ -1275,19 +1276,14 @@ exports.retrieveFollowingIdentifier = function(text, pos, regex) {
     return buf;
 };
 
-exports.getCompletionPrefix = function (editor) {
+exports.getCompletionPrefix = function (editor, callback) {
     var pos = editor.getCursorPosition();
     var line = editor.session.getLine(pos.row);
-    var prefix;
     editor.completers.forEach(function(completer) {
-        if (completer.identifierRegexps) {
-            completer.identifierRegexps.forEach(function(identifierRegex) {
-                if (!prefix && identifierRegex)
-                    prefix = this.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
-            }.bind(this));
+        if(completer.extractCompletionPrefix) {
+            completer.extractCompletionPrefix(editor, line, pos.column, callback);
         }
     }.bind(this));
-    return prefix || this.retrievePrecedingIdentifier(line, pos.column);
 };
 
 });
@@ -1308,6 +1304,7 @@ var Autocomplete = function() {
     this.autoSelect = true;
     this.exactMatch = false;
     this.gatherCompletionsId = 0;
+    this.completerIndex=-1;
     this.keyboardHandler = new HashHandler();
     this.keyboardHandler.bindKeys(this.commands);
 
@@ -1321,6 +1318,7 @@ var Autocomplete = function() {
     }.bind(this));
 
     this.tooltipTimer = lang.delayedCall(this.updateDocTooltip.bind(this), 50);
+    this.completerSelectionTimer = lang.delayedCall(this.resetCompleterIndex.bind(this), 2000);
 };
 
 (function() {
@@ -1380,6 +1378,7 @@ var Autocomplete = function() {
         this.editor.off("mousewheel", this.mousewheelListener);
         this.changeTimer.cancel();
         this.hideDocTooltip();
+        this.completerSelectionTimer.schedule();
 
         this.gatherCompletionsId += 1;
         if (this.popup && this.popup.isOpen)
@@ -1389,6 +1388,14 @@ var Autocomplete = function() {
             this.base.detach();
         this.activated = false;
         this.completions = this.base = null;
+    };
+    
+    this.resetCompleterIndex = function() {
+        if(!this.activated) {
+          this.completerIndex = -1;
+        } else {
+          this.completerSelectionTimer.schedule();
+        }
     };
 
     this.changeListener = function(e) {
@@ -1486,32 +1493,34 @@ var Autocomplete = function() {
         "PageDown": function(editor) { editor.completer.popup.gotoPageDown(); }
     };
 
-    this.gatherCompletions = function(editor, callback) {
+    this.gatherCompletions = function(editor, completerIndex, callback) {
+        var that = this;
+        if(isNaN(completerIndex) || completerIndex < 0 || 
+          completerIndex >= editor.completers.length || 
+          editor.completers[completerIndex].getCompletions === undefined) {
+            callback(null, {
+              prefix: null,
+              matches: []
+            });
+        }
+        var completer = editor.completers[completerIndex];
         var session = editor.getSession();
         var pos = editor.getCursorPosition();
-
         var line = session.getLine(pos.row);
-        var prefix = util.getCompletionPrefix(editor);
-
-        this.base = session.doc.createAnchor(pos.row, pos.column - prefix.length);
-        this.base.$insertRight = true;
-
         var matches = [];
-        var total = editor.completers.length;
-        editor.completers.forEach(function(completer, i) {
-            completer.getCompletions(editor, session, pos, prefix, function(err, results) {
-                if (!err && results)
-                    matches = matches.concat(results);
-                var pos = editor.getCursorPosition();
-                var line = session.getLine(pos.row);
-                callback(null, {
-                    prefix: prefix,
-                    matches: matches,
-                    finished: (--total === 0)
-                });
-            });
-        });
-        return true;
+        var prefix = null;
+        completer.getCompletions(editor, session, pos, function(err, results) {
+             if (!err && results && results.length > 0) {
+                 matches = matches.concat(results);
+                 prefix = results[0].prefix;
+                 this.base = session.doc.createAnchor(pos.row, pos.column - prefix.length);
+                 this.base.$insertRight = true;
+             }
+                 callback(err, {
+                     prefix: prefix,
+                     matches: matches
+                  });
+        }.bind(that));
     };
 
     this.showPopup = function(editor) {
@@ -1551,11 +1560,26 @@ var Autocomplete = function() {
             this.openPopup(this.editor, prefix, keepPopupPosition);
             return;
         }
-        var _id = this.gatherCompletionsId;
-        this.gatherCompletions(this.editor, function(err, results) {
+        var _completerCounter = this.editor.completers.length;
+        var completionGatherer = function() {
+          this.completerIndex=(++this.completerIndex % this.editor.completers.length);
+          if(_completerCounter-- > 0) {
+            this.gatherCompletions(this.editor, this.completerIndex, this.completionsResultsHandler(this.gatherCompletionsId, keepPopupPosition, completionGatherer));
+            return true;
+          } else {
+            return false;
+          }
+        }.bind(this);
+        completionGatherer();
+    };
+    
+    this.completionsResultsHandler = function(gatherCompletionsId, keepPopupPosition, onEmptyMatches) {
+      var _id = gatherCompletionsId;
+      return function(err, results) {
             var detachIfFinished = function() {
-                if (!results.finished) return;
-                return this.detach();
+                if(!onEmptyMatches()) { 
+                  this.detach();
+                }
             }.bind(this);
 
             var prefix = results.prefix;
@@ -1577,11 +1601,11 @@ var Autocomplete = function() {
                 return detachIfFinished();
             if (filtered.length == 1 && filtered[0].value == prefix && !filtered[0].snippet)
                 return detachIfFinished();
-            if (this.autoInsert && filtered.length == 1 && results.finished)
+            if (this.autoInsert && filtered.length == 1)
                 return this.insertMatch(filtered[0]);
 
             this.openPopup(this.editor, prefix, keepPopupPosition);
-        }.bind(this));
+        }.bind(this);
     };
 
     this.cancelContextMenu = function() {
@@ -1744,8 +1768,9 @@ exports.FilteredList = FilteredList;
 
 });
 
-define("ace/autocomplete/text_completer",["require","exports","module","ace/range"], function(require, exports, module) {
+define("ace/autocomplete/text_completer",["require","exports","module","ace/range","ace/autocomplete/util"], function(require, exports, module) {
     var Range = require("../range").Range;
+    var util = require("./util");
     
     var splitRegex = /[^a-zA-Z_0-9\$\-\u00C0-\u1FFF\u2C00-\uD7FF\w]+/;
 
@@ -1774,11 +1799,18 @@ define("ace/autocomplete/text_completer",["require","exports","module","ace/rang
         return wordScores;
     }
 
-    exports.getCompletions = function(editor, session, pos, prefix, callback) {
+    exports.getCompletions = function(editor, session, pos, callback) {
+        var line = session.getLine(pos.row);
+        var prefix = util.retrievePrecedingIdentifier(line, pos.column);
+        if(!prefix) {
+            callback(null, null);
+            return;
+        }
         var wordScore = wordDistance(session, pos, prefix);
         var wordList = Object.keys(wordScore);
         callback(null, wordList.map(function(word) {
             return {
+                prefix: prefix,
                 caption: word,
                 value: word,
                 score: wordScore[word],
@@ -1786,6 +1818,7 @@ define("ace/autocomplete/text_completer",["require","exports","module","ace/rang
             };
         }));
     };
+    
 });
 
 define("ace/ext/language_tools",["require","exports","module","ace/snippets","ace/autocomplete","ace/config","ace/lib/lang","ace/autocomplete/util","ace/autocomplete/text_completer","ace/editor","ace/config"], function(require, exports, module) {
@@ -1798,22 +1831,70 @@ var lang = require("../lib/lang");
 var util = require("../autocomplete/util");
 
 var textCompleter = require("../autocomplete/text_completer");
+
+var modeCompleter = {
+    getCompletions: function(editor, session, pos, callback) {
+        if (session.$mode.$completer) {
+            session.$mode.$completer.getCompletions(editor, session, pos, callback);
+            return;
+        }
+        callback(null, null);
+    }
+};
+
 var keyWordCompleter = {
-    getCompletions: function(editor, session, pos, prefix, callback) {
-        if (session.$mode.completer) {
-            return session.$mode.completer.getCompletions(editor, session, pos, prefix, callback);
+    getCompletions: function(editor, session, pos, callback) {
+        var line = session.getLine(pos.row);
+        var prefix = util.retrievePrecedingIdentifier(line, pos.column);
+        if(!prefix) {
+          callback(null, null);
+          return;
         }
         var state = editor.session.getState(pos.row);
-        // gw: pass in callback instead of calling it directly, to support asynchronous results
-        var completions = session.$mode.getCompletions(state, session, pos, prefix, callback);
-        //callback(null, completions);
+        var completions = session.$mode.getCompletions(state, session, pos, prefix);
+        if(completions && completions.length > 0) {
+          callback(null, completions.map(function(x) {
+            if(!x.prefix) {
+              x.prefix = prefix;
+            }
+            return x;
+          }));
+          return;
+        }
+        callback(null, null);
+    }
+};
+
+var keyWordCompleterAsync = {
+    getCompletions: function(editor, session, pos, callback) {
+        var state = editor.session.getState(pos.row);
+        session.$mode.getCompletionsAsync(state, session, pos, function(err, result) {
+          if(!err) {
+            callback(null, result.map(function(x) {
+              if(!x.prefix) {
+                var line = session.getLine(pos.row);
+                var prefix = util.retrievePrecedingIdentifier(line, pos.column);
+                x.prefix = prefix;
+              }
+              return x;
+            }));
+          } else {
+            callback(err, result);
+          }
+        });
     }
 };
 
 var snippetCompleter = {
-    getCompletions: function(editor, session, pos, prefix, callback) {
+    getCompletions: function(editor, session, pos, callback) {
+        var line = session.getLine(pos.row);
+        var prefix = util.retrievePrecedingIdentifier(line, pos.column);
         var snippetMap = snippetManager.snippetMap;
         var completions = [];
+        if(!prefix) {
+          callback(null, null);
+          return;
+        }
         snippetManager.getActiveScopes(editor).forEach(function(scope) {
             var snippets = snippetMap[scope] || [];
             for (var i = snippets.length; i--;) {
@@ -1822,6 +1903,7 @@ var snippetCompleter = {
                 if (!caption)
                     continue;
                 completions.push({
+                    prefix: prefix,
                     caption: caption,
                     snippet: s.content,
                     meta: s.tabTrigger && !s.name ? s.tabTrigger + "\u21E5 " : "snippet",
@@ -1841,7 +1923,7 @@ var snippetCompleter = {
     }
 };
 
-var completers = [snippetCompleter, textCompleter, keyWordCompleter];
+var completers = [modeCompleter, keyWordCompleter, keyWordCompleterAsync, textCompleter, snippetCompleter];
 exports.setCompleters = function(val) {
     completers.length = 0;
     if (val) completers.push.apply(completers, val);
@@ -1852,6 +1934,7 @@ exports.addCompleter = function(completer) {
 exports.textCompleter = textCompleter;
 exports.keyWordCompleter = keyWordCompleter;
 exports.snippetCompleter = snippetCompleter;
+exports.modeCompleter = modeCompleter;
 
 var expandSnippet = {
     name: "expandSnippet",
@@ -1899,17 +1982,21 @@ var doLiveAutocomplete = function(e) {
     var editor = e.editor;
     var hasCompleter = editor.completer && editor.completer.activated;
     if (e.command.name === "backspace") {
-        if (hasCompleter && !util.getCompletionPrefix(editor))
-            editor.completer.detach();
+        if (hasCompleter) {
+          var completions = editor.completer.completions;
+          if(!completions || completions.all === 0 || !completions.filterText || (completions.filterText.length-1) <= 0) {
+              editor.completer.detach(); 
+          }
+        }
     }
     else if (e.command.name === "insertstring") {
-        var prefix = util.getCompletionPrefix(editor);
-        if (prefix && !hasCompleter) {
+        if (!hasCompleter) {
             if (!editor.completer) {
                 editor.completer = new Autocomplete();
             }
             editor.completer.autoInsert = false;
             editor.completer.showPopup(editor);
+            editor.completer.cancelContextMenu();
         }
     }
 };

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head><title>RCloud</title>
+<style>
+  a { text-decoration:none; }
+  p.clear { clear: both; }
+  body { font-family: Sans-Serif; }
+</style>
+<script type="text/javascript">
+window.onload = function(e) {
+  var wdiv = document.getElementById("warn");
+  if (navigator.userAgent.indexOf("MSIE") >= 0) {
+    wdiv.innerHTML = "<span style='color: #d00'>Warning:</span> RCloud requires a modern browser with binary WebSocket support (like Chrome, Firefox, Safari). Internet Exporer is NOT supported as it lacks necessary features.</span>";
+    wdiv.style.border = "2px solid #aa4";
+    wdiv.style.background = "#ffd";
+    wdiv.style.visibility = "visible";
+  }
+  var wsOK = false;
+  var sockFail = function() {
+      wdiv.innerHTML = "Failed to establish binary WebSocket connection. Please make sure you use a browser with binary WebSocket support like <a href='http://www.google.com/chrome' style='color: #a00; text-decoration: none'>Chrome</a> (tested) or any recent version of a modern browser (Firefox, Safari, ...)";
+      wdiv.style.border = "2px solid #a44";
+      wdiv.style.background = "#fbb";
+      wdiv.style.color = "#a00";
+      wdiv.style.fontWeight = 400;
+      wdiv.style.visibility = "visible";
+      document.getElementById("login").style.visibility = "hidden";
+  }
+  // create a test connection to see if we can use WS at all
+  // for that, take the original URL and switchfrom http/s to ws/s andadd test path
+  var ws = window.location.href.replace(/^http/,"ws").replace(/\/[^/]*$/,"/test-qap");
+  var socket = new WebSocket(ws, "QAP1");
+  if (!socket) sockFail();
+  socket.onopen = function() {}
+  socket.onclose = function() { if (!wsOK) sockFail(); }
+  socket.onmessage = function(msg){  
+    // wdiv.innerHTML += "<br>Message from " + msg.origin +": " + msg.data;
+    if (msg.data.size > 16) wsOK = true;
+    socket.close();
+  }  
+  socket.onerror = function(msg){  
+    socket.close();
+    sockFail();
+    wdiv.innerHTML = "Socket connection failed with en error:" + msg +"<br>This may be due to your browser or the server - if you are using latest Chrome, please try later again...";
+  }
+  var querystring = function(key) {
+   var re=new RegExp('(?:\\?|&)'+key+'=(.*?)(?=&|$)','gi');
+   var r=[], m;
+   while ((m=re.exec(document.location.search)) != null) r.push(m[1]);
+   return r;
+  }
+  document.loginForm.user.focus();
+  document.getElementById('i_redirect').value=querystring('redirect');
+  true
+}
+</script>
+</head>
+<body>
+<hr color="#2c2c2c" width="100%">
+<div id='warn' style='visibility:hidden; border-radius: 5px; padding: 10px; margin-left: auto; margin-right: auto; width:800px'></div>
+<div id="body" style="width: 1024px; margin: 150px auto;">
+<img align="left" src="RCloud_Color_Vector_mid.png">
+<font size="+5">Welcome to RCloud.</font>
+<p>
+<div>
+<div id='login'>
+<form action="/login.R" method=POST name=loginForm>
+<input type=hidden name=action value="execLogin">
+<table border="0">
+<tr><td align="right">Login</td><td align="left"><input type=text name=user size=20></td></tr>
+<tr><td align="right">Password</td><td align="left"><input type=password name=pwd size=20></td></tr>
+<tr><td colspan="2" align="center"><input type=submit value="Login"></td></tr>
+</table>
+<input id=i_redirect type=hidden name=redirect value=''>
+</form>
+</div>
+<p>
+<!-- <a href="rcloud_about.html">I want to learn more about RCloud.</a> -->
+</div>
+<p>
+  &nbsp;
+<p>
+</div>
+</body>
+</html>

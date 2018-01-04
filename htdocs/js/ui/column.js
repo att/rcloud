@@ -88,6 +88,17 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
             collapsibles().on("size-changed", function() {
                 that.resize(true);
             });
+            collapsibles().on('shown.bs.collapse', function() {  
+                 var iframes = $(this).find('iframe');
+                 if (iframes) {
+                   for (var i = 0; i < iframes.length; i++) {
+                    var iframe = iframes.get(i);
+                    if(iframe.contentDocument && iframe.contentDocument.location) {
+                      iframe.contentDocument.location.reload(true);
+                    }
+                   }
+                 }
+            });
             $(sel_collapser).click(function() {
                 if (collapsed_)
                     that.show(true);
@@ -206,8 +217,20 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
                 do_fit = true;
             }
             for(id in heights) {
-                $('#' + id).find(".panel-body").height(heights[id]);
-                $('#' + id).trigger('panel-resize');
+                $el = $('#' + id);
+
+                var fixed_header = $el.find(".panel-fixed-header");
+
+                if(fixed_header.length) {
+                    var header_height = fixed_header.outerHeight();
+                    $el.find('.panel-scrollable-content').height(heights[id] - header_height);
+                } else {
+                    $el.find(".panel-body").height(heights[id]);                        
+                }
+
+                //$el.find(".panel-body").height(heights[id]);                                        
+
+                $el.trigger('panel-resize');
             }
             reshadow();
             var expected = $(sel_column).height();
@@ -264,19 +287,21 @@ RCloud.UI.collapsible_column = function(sel_column, sel_accordion, sel_collapser
     return result;
 };
 
-
 RCloud.UI.collapsible_column.default_padder = function(el) {
     var el$ = $(el),
         body$ = el$.find('.panel-body'),
+        fixed_header$ = body$.find('.panel-fixed-header'),
+        scrollable_content$ = body$.find('.panel-scrollable-content'),
         padding = el$.outerHeight() - el$.height() +
-            body$.outerHeight() - body$.height();
+            body$.outerHeight() - body$.height() + 
+            (fixed_header$.length ? scrollable_content$.outerHeight() - scrollable_content$.height() : 0);
     return padding;
 };
 
 RCloud.UI.collapsible_column.default_sizer = function(el) {
     var el$ = $(el),
         $izer = el$.find(".widget-vsize"),
-        height = $izer.height(),
+        height = $izer.height(); 
         padding = RCloud.UI.collapsible_column.default_padder(el);
     return {height: height, padding: padding};
 };

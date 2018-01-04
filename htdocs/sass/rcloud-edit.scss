@@ -389,7 +389,7 @@ rect.frame {
 }
 
 .notebook-tree {
-    overflow-y: auto;
+    // overflow-y: auto;
 }
 
 /* this is really just the "new notebook" button, but part of it
@@ -539,10 +539,6 @@ ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
     font-weight: bold;
 }
 
-.jqtree-title.jqtree_common.history {
-    color: #7CB9E8
-}
-
 .jqtree-title {
 }
 
@@ -552,6 +548,10 @@ ul.jqtree-tree .jqtree-title.hidden-notebook, .hidden-notebook {
 
 ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
     color: #66bb44;
+}
+
+ul.jqtree-tree .jqtree-title.jqtree_common.history {
+    color: #7CB9E8
 }
 
 .notebook-date {
@@ -700,6 +700,11 @@ ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
     width: auto;
     padding: 0;
     padding-left: 1ex;
+}
+
+.search-result-solr-highlight {
+    font-weight: bold;
+    background:yellow;
 }
 
 /******************************************************************************/
@@ -1065,6 +1070,7 @@ a.accordion-toggle.left > i {
 a.accordion-toggle.right > i {
     position: absolute;
     right: 1.1em;
+    line-height: 15px;
 }
 
 .panel-default > .panel-heading {
@@ -1117,7 +1123,7 @@ a.accordion-toggle.right > i {
 
 .notebook-sizer {
     position:absolute;
-    z-index: 10000;
+    z-index: 999;
     cursor: ew-resize;
     bottom: 0;
     opacity: 0;

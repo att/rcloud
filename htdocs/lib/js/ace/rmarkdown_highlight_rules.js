@@ -21,26 +21,48 @@ var oop = require("ace/lib/oop");
 var RHighlightRules = require("ace/mode/r_highlight_rules").RHighlightRules;
 var MarkdownHighlightRules = require("ace/mode/markdown_highlight_rules").MarkdownHighlightRules;
 var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+var JavaScriptHighlightRules = require("ace/mode/javascript_highlight_rules").JavaScriptHighlightRules;
+var CssHighlightRules = require("ace/mode/css_highlight_rules").CssHighlightRules;
 
 var RMarkdownHighlightRules = function() {
 
+
+    function knitr_embed(tag, prefix) {
+        return { // Github style block
+            token : "support.function",
+            regex : "^\\s*```\\s*\\{" + tag + "(?:.*)\\}\\s*$",
+            push  : prefix + "start"
+        };
+    }
     // regexp must not have capturing parentheses
     // regexps are ordered -> the first match is used
 
     this.$rules = new MarkdownHighlightRules().getRules();
-    this.$rules["start"].unshift({
-        token: "support.function.codebegin",
-        regex: "^`{3,}\\s*\\{r(?:.*)\\}\\s*$",
-        next: "r-start"
-    });
-
+    this.$rules["start"].unshift(knitr_embed('r', 'r-'),
+       knitr_embed("js", "jscode2-"),
+       knitr_embed("css", "csscode2-"));
+       
     var rRules = new RHighlightRules().getRules();
-    this.addRules(rRules, "r-");
-    this.$rules["r-start"].unshift({
-        token: "support.function.codeend",
+    
+    this.embedRules(rRules, "r-", [{
+        token: "support.function",
         regex: "^`{3,}\\s*$",
-        next: "start"
-    });
+        next: "pop"
+    }]);
+    
+    this.embedRules(JavaScriptHighlightRules, "jscode2-", [{
+       token : "support.function",
+       regex : "^\\s*```",
+       next  : "pop"
+    }]);
+
+    this.embedRules(CssHighlightRules, "csscode2-", [{
+       token : "support.function",
+       regex : "^\\s*```",
+       next  : "pop"
+    }]);
+
+    this.normalizeRules();
 };
 oop.inherits(RMarkdownHighlightRules, TextHighlightRules);
 

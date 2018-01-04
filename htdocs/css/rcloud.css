@@ -9214,6 +9214,9 @@ div.panel-heading:hover {
 .panel-default {
   border: 0; }
 
+.panel-scrollable-content {
+  overflow-y: auto; }
+
 .code-div {
   position: relative;
   tab-size: 4; }
@@ -9411,14 +9414,20 @@ td {
   #find-dialog .icon-search {
     font-size: 16px;
     vertical-align: middle; }
-  #find-dialog input {
+  #find-dialog input[type="text"] {
     width: 160px;
     padding-right: 4px;
     background-color: white !important; }
-    #find-dialog input:-webkit-autofill {
+    #find-dialog input[type="text"]:-webkit-autofill {
       -webkit-box-shadow: 0 0 0px 1000px #fff inset; }
-      #find-dialog input:-webkit-autofill:hover, #find-dialog input:-webkit-autofill:focus {
+      #find-dialog input[type="text"]:-webkit-autofill:hover, #find-dialog input[type="text"]:-webkit-autofill:focus {
         -webkit-box-shadow: 0 0 0px 1000px #fff inset; }
+  #find-dialog #find-options-menu .btn.active {
+    background-color: orange; }
+  #find-dialog .checkbox {
+    margin-bottom: 1px;
+    margin-top: 1px;
+    margin-left: 5px; }
   #find-dialog #find-input {
     outline: none;
     border: 0; }
@@ -9575,7 +9584,10 @@ ul.recent-notebooks-list {
   left: 0;
   top: 25px;
   font-size: 12px;
-  max-width: 330px; }
+  max-width: 330px;
+  min-width: 220px;
+  max-height: 26em;
+  overflow: auto; }
 
 ul.recent-notebooks-list li {
   max-width: 330px;
@@ -9596,6 +9608,14 @@ ul.recent-notebooks-list li a .description {
   max-width: 235px;
   overflow: hidden; }
 
+ul.recent-notebooks-list li a .more {
+  width: 100%;
+  display: inline-block;
+  text-align: center;
+  padding-top: 10px;
+  max-width: 330px;
+  overflow: hidden; }
+
 ul.recent-notebooks-list li a {
   padding-top: 2px;
   padding-bottom: 2px;
@@ -9606,6 +9626,24 @@ ul.recent-notebooks-list li a {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap; }
+
+/* tree filtering and ordering */
+.notebook-tree {
+  padding: 0; }
+
+#editor-book-tree {
+  padding: 5px; }
+
+#tree-controls {
+  padding: 5px 5px 2px 5px;
+  background: #efefef; }
+
+#tree-sort-by, #tree-filter-by {
+  width: 50%;
+  float: left; }
+
+#tree-filter-by {
+  text-align: right; }
 
 .jqtree-element .jqtree-title.jqtree_common {
   word-break: break-all;
@@ -9705,6 +9743,35 @@ body .modal-dialog.full {
     pointer-events: none; }
     #pull-changes-dialog.pulling .btn-cancel, #pull-changes-dialog.pulling .close {
       display: none; }
+
+#tree-finder-dialog .modal-dialog {
+  padding: 0;
+  margin-top: -4px; }
+
+#tree-finder-dialog label span {
+  display: inline-block;
+  width: 150px; }
+
+#tree-finder-dialog input {
+  width: 385px; }
+
+#tree-finder-dialog .results {
+  max-height: 50vh;
+  overflow-y: auto; }
+  #tree-finder-dialog .results > p {
+    font-size: 12px;
+    cursor: pointer;
+    padding: 5px 2px;
+    margin: 0; }
+    #tree-finder-dialog .results > p:hover {
+      background: #dedede; }
+    #tree-finder-dialog .results > p .creator {
+      font-style: italic;
+      color: #555; }
+    #tree-finder-dialog .results > p .star_count {
+      float: right; }
+      #tree-finder-dialog .results > p .star_count i {
+        margin-left: 3px; }
 
 @media print {
   * {

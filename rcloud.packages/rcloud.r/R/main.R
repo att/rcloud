@@ -27,11 +27,16 @@ rcloud.language.support <- function()
 
   complete <- function(text, pos, rcloud.session) {
     # from rcompgen.completion
+    rc.settings(ops=TRUE, args=TRUE)
     utils:::.assignLinebuffer(text)
     utils:::.assignEnd(pos)
     utils:::.guessTokenFromLine()
     utils:::.completeToken()
-    utils:::.CompletionEnv[["comps"]]
+    result <- list()
+    result$values <- utils:::.CompletionEnv[["comps"]]
+    result$prefix <- utils:::.CompletionEnv[["token"]]
+    result$position <- utils:::.CompletionEnv[["start"]]
+    result
   }
 
   list(language="R",

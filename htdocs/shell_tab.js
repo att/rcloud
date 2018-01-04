@@ -212,19 +212,29 @@ var shell = (function() {
                     });
                 });
         },
-        fork_notebook: function(is_mine, gistname, version) {
+        fork_notebook: function(is_mine, gistname, version, open_it) {
             var that = this;
-            return shell.save_notebook().then(function() {
-                return do_load({ load : function() {
-                    return that.fork_and_name_notebook(is_mine, gistname, version, true, editor.find_next_copy_name)
+            var create_fork = function() {
+              return that.fork_and_name_notebook(is_mine, gistname, version, open_it, editor.find_next_copy_name)
                         .then(function(notebook) {
                             return shell.duplicate_notebook_attributes(gistname, notebook.id)
                                 .return(notebook);
-                        })
+                        });
+            };
+            return shell.save_notebook().then(function() {
+                if(open_it) {
+                  return do_load({ load : function() {
+                    return create_fork()
                         .then(function(notebook) {
                             return [notebook, notebook.id, null];
                         });
                 }} );
+                } else {
+                  return RCloud.UI.with_progress(function() {
+                    return create_fork();
+                  });
+                }
+                
             });
         }, revert_notebook: function(gistname, version) {
             return do_load({ load : function() {

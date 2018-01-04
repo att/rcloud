@@ -95,6 +95,7 @@
 return {
     init: function(ocaps, k) {
         ocaps = RCloud.promisify_paths(ocaps, [["refresh"], ["view_dataframe"]], true);
+        
         if(window.shell) { // are we running in RCloud UI?
             var state = enviewer_state();
             if(state) {// update with new connection
@@ -104,16 +105,18 @@ return {
                 shell.notebook.model.execution_watchers.push({
                     run_cell: function() {
                         var state = enviewer_state();
-                        if(state && state.do_refresh)
+                        if(state && state.do_refresh) {
                             state.ocaps.refresh();
+                        }
                     }
                 });
+            
             RCloud.UI.panel_loader.add({
                 Workspace: {
                     side: 'right',
                     name: 'environment-viewer',
                     title: 'Workspace',
-                    icon_class: 'icon-sun',
+                    icon_class: 'icon-cogs',
                     colwidth: 3,
                     sort: 2500,
                     panel: enviewer_panel(ocaps)
