@@ -617,6 +617,28 @@ ul.recent-notebooks-list li a {
     white-space: nowrap;
 }
 
+/* color-coding of recent notebooks */
+
+.recent-notebooks-group-0 {
+  background-color: #f2e8fd;
+}
+
+.recent-notebooks-group-1 {
+  background-color: #fdf2e8;
+}
+
+.recent-notebooks-group-2 {
+  background-color: #fdfde8;
+}
+
+.recent-notebooks-group-3 {
+  background-color: #f8fde8;
+}
+
+.recent-notebooks-group-4 {
+  background-color: #e9fde8;
+}
+
 /* tree filtering and ordering */
 .notebook-tree {
     padding: 0;
