@@ -504,6 +504,34 @@ var editor = function () {
                 anchor.click(click_recent);
             }
             
+            function backgroundColorStyler(i, element, dateWt) {
+              var styles = [];
+              for(var j = 0; j < 5; j++) {
+                styles.push('recent-notebooks-group-' + j)
+              }
+              var component = 2;
+              var $elem = $(element);
+              styles.forEach(function(style, i) {
+                $elem.removeClass(style);
+              });
+              $elem.addClass(styles[~~((dateWt) * styles.length)]);
+            }
+            
+            function styleByCommitDate(elements, styler) {
+                  if(!styler) {
+                    styler = backgroundColorStyler
+                  }
+                  var commitTimes = elements.map(function(x,y) { 
+                    return get_notebook_info($(y).data('gist')).last_commit; 
+                  }).map(function(x,y) { return Date.parse(y); }).sort();
+                  elements.each(function(i, elem) {
+                    var $self = $(elem),
+                        notebook_id = $self.data('gist');
+                    var lastCommit = Date.parse(get_notebook_info(notebook_id).last_commit);
+                    var dateWt = commitTimes.index(lastCommit)/commitTimes.length;
+                    styler(i, elem, dateWt)
+                  });
+            }
             var sorted = transformData(data);
             sorted.shift(); //remove the first item
             var totalRecentNotebooks = sorted.length;
@@ -512,6 +540,7 @@ var editor = function () {
             for(var i = 0; i < sorted.length; i ++) {
                 create_recent_link(sorted[i])
             }
+            
             if (totalRecentNotebooks > firstRecentNotebooksBatchSize) {
               var that = this;
               var loadMore = function(e) {
@@ -533,12 +562,14 @@ var editor = function () {
                   if(!isLastBatch) {
                     moreLink.appendTo($('.recent-notebooks-list'));
                   }
+                  
+                  styleByCommitDate($('.recent-notebooks-list li a[data-gist]'))
                 });
               };
 
               var li = createMoreLink();
-
               $(li.find('a')).click(loadMore);
+              styleByCommitDate($('.recent-notebooks-list li a[data-gist]'))
             }
 
             function truncateNotebookPath(txt, chars) {
