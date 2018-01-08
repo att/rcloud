@@ -617,17 +617,43 @@ ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
 
-ui_utils.scroll_to_after = function($sel, duration) {
+ui_utils.scroll_to_after = function($sel, duration, $scroller, $offset_elements, scroll_top_offset) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
     if ($sel.length === 0)
         return;
     var opts;
+    if(!scroll_top_offset) {
+      scroll_top_offset = 0;
+    }
     if(duration !== undefined)
         opts = {animation: {duration: duration}};
-    var $parent = $sel.parent();
-    var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
-    $parent.scrollTo(null, y, opts);
+    if(!$scroller) {
+      $scroller = $sel.parent();
+    }
+    var elemtoppos = ui_utils.get_top_offset($offset_elements);
+    var y = $scroller.scrollTop() + elemtoppos + $sel.position().top + $sel.outerHeight() - scroll_top_offset;
+    $scroller.scrollTo(null, y, opts);
+};
+
+ui_utils.get_top_offset = function($offset_elements) {
+    var elemtoppos = 0;
+    if($offset_elements) {
+      $offset_elements.forEach(function(x) {
+          elemtoppos += x.position().top;
+      });
+    }
+    return elemtoppos;
+};
+
+ui_utils.is_visible_in_scrollable = function($scroller, $offset_elements) {
+  
+    var height = +$scroller.css("height").replace("px","");
+    var elemtoppos = ui_utils.get_top_offset($offset_elements);
+    
+    elemtoppos += $offset_elements[$offset_elements.length-1].outerHeight();
+    elemtoppos -= $scroller.get(0).offsetTop;
+    return (elemtoppos <= height)
 };
 
 ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_complete /* , $elem-offset, $elem-offset ... */) {
@@ -637,11 +663,9 @@ ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_co
     }
     var height = +$scroller.css("height").replace("px","");
     var scrolltop = $scroller.scrollTop(),
-        elemtop = 0,
         options = on_complete ? { animation: { complete : on_complete }} : {};
 
-    for(var i = 4; i < arguments.length; ++i)
-        elemtop += arguments[i].position().top;
+    var elemtop = ui_utils.get_top_offset(Array.prototype.slice.call(arguments, 4));
 
     if(elemtop > height)
         $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
