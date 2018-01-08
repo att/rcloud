@@ -650,8 +650,9 @@ ui_utils.is_visible_in_scrollable = function($scroller, $offset_elements) {
   
     var height = +$scroller.css("height").replace("px","");
     var elemtoppos = ui_utils.get_top_offset($offset_elements);
-    
-    elemtoppos += $offset_elements[$offset_elements.length-1].outerHeight();
+    if($($offset_elements[$offset_elements.length-1]).is(":visible")) {
+      elemtoppos += $offset_elements[$offset_elements.length-1].outerHeight();
+    }
     elemtoppos -= $scroller.get(0).offsetTop;
     return (elemtoppos <= height)
 };
