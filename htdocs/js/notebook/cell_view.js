@@ -774,6 +774,7 @@ function create_cell_html_view(language, cell_model) {
             }
             this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'ready' : 'complete');
             current_result_ = current_error_ = null;
+            this.scroll_to_result();
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -927,6 +928,19 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
                 edit_button_border(true);
             }
+        },
+        should_scroll: function() {
+            return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, source_div_]) &&
+                   !ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
+        },
+        scroll_to_result: function() {
+            var that = this;
+            ui_utils.on_next_tick(function() {
+                var cellarea = $('#rcloud-cellarea');
+                if(result_div_ && that.should_scroll()) {
+                  ui_utils.scroll_to_after(result_div_, undefined, cellarea, [notebook_cell_div], cellarea.height());
+                }
+            });
         },
         toggle_results: function(val) {
             if(val===undefined)
