@@ -250,6 +250,18 @@ RCloud.UI.navbar = (function() {
                         });
                         return control;
                     }
+                },
+                stop_notebook: {
+                    area: 'commands',
+                    sort: 7000,
+                    modes: ['edit', 'view'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_highlight_button('stop-notebook', 'Stop', 'icon-stop');
+                        $(control.control).click(function(e) {
+                            RCloud.UI.stop_button.stop();
+                        });
+                        return control;
+                    }
                 }
             });
         },

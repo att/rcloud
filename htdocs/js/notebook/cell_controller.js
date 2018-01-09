@@ -27,7 +27,7 @@ Notebook.Cell.create_controller = function(cell_model)
             that.set_run_state("waiting");
             that.edit_source(false);
             var snapshot = cell_model.get_execution_snapshot(updatePromise.then(update_version));
-            RCloud.UI.run_button.enqueue(
+            RCloud.UI.processing_queue.enqueue(
                 function() {
                     that.set_run_state("running");
                     return cell_model.parent_model.controller.execute_cell_version(context_id, snapshot);
