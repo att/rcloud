@@ -7,7 +7,7 @@ notebook_tree_search_service.prototype = {
         // params.notebook
         // params.username
         return new Promise(function(resolve) {
-            return rcloud.search_description(params.notebook).then(function(res) {                 
+            return rcloud.search_description(params.notebook, params.username).then(function(res) {                 
                 resolve(
                     _.map(res.response.docs, function(item) {
                         return {
