@@ -169,6 +169,14 @@ RCloud.UI.settings_frame = (function() {
                         shell.notebook.controller.show_cell_numbers(val);
                     }
                 }),
+                'color-recent-notebooks-by-modification-date': that.checkbox({
+                    sort: 3500,
+                    default_value: false,
+                    label: "Color recent notebooks by modification date",
+                    set: function(val) {
+                        editor.color_recent_notebooks_by_modification_date(val);
+                    }
+                }),
                 'panel-layout-by-size': that.checkbox({
                     sort: 4000,
                     default_value: true,

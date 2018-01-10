@@ -5,7 +5,8 @@ var editor = function () {
         github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
-        tree_controller_;
+        tree_controller_,
+        color_recent_notebooks_by_modification_date_;
 
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
@@ -322,6 +323,9 @@ var editor = function () {
         set_terse_dates: function(val) {
             this.show_terse_dates_ = val;
         },
+        color_recent_notebooks_by_modification_date: function(val) {
+            this.color_recent_notebooks_by_modification_date_ = val;
+        },
         star_and_show: function(notebook, make_current, is_change) {
             return this.star_notebook(true, {notebook: notebook,
                                              make_current: make_current,
@@ -416,6 +420,58 @@ var editor = function () {
             return rcloud.config.get_recent_notebooks()
                 .then(this.populate_recent_notebooks_list.bind(this));
         },
+        create_recent_notebooks_color_coder: function() {
+          var backgroundColorStyler = function(i, element, dateWt) {
+              var styles = [];
+              for(var j = 0; j < 5; j++) {
+                styles.push('recent-notebooks-group-' + j)
+              }
+              var component = 2;
+              var $elem = $(element);
+              styles.forEach(function(style, i) {
+                $elem.removeClass(style);
+              });
+              $elem.addClass(styles[~~((dateWt) * styles.length)]);
+            };
+            
+          if(this.color_recent_notebooks_by_modification_date_) {
+            var styleByCommitDate = function(elements, styler) {
+                  if(!styler) {
+                    styler = backgroundColorStyler
+                  }
+                  var commitTimes = elements.map(function(x,y) { 
+                    return get_notebook_info($(y).data('gist')).last_commit; 
+                  }).map(function(x,y) { return Date.parse(y); }).sort();
+                  elements.each(function(i, elem) {
+                    var $self = $(elem),
+                        notebook_id = $self.data('gist');
+                    var lastCommit = Date.parse(get_notebook_info(notebook_id).last_commit);
+                    var dateWt = commitTimes.index(lastCommit)/commitTimes.length;
+                    styler(i, elem, dateWt)
+                  });
+            };
+            return styleByCommitDate;
+          } else {
+            var styleByLastAccessDate = function(elements, styler) {
+                  if(!styler) {
+                    styler = backgroundColorStyler
+                  }
+                  var currentDate = Date.now();
+                  var oldest = $(elements[elements.length-1]).data('last-access');
+                  var scalingFactor = currentDate - oldest;
+                  var noOfElements = elements.length;
+                  elements.each(function(i, elem) {
+                    var $self = $(elem),
+                        notebook_id = $self.data('gist');
+                    var lastAccess = $self.data('last-access');
+                    var dateWt = 1-(currentDate - lastAccess)/scalingFactor;
+                    styler(i, elem, dateWt);
+                  });
+            };
+            return styleByLastAccessDate; 
+          }
+        },
+        
         populate_recent_notebooks_list: function(data) {
             var that = this;
             var firstRecentNotebooksBatchSize = 10;
@@ -460,7 +516,7 @@ var editor = function () {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
                 var currentNotebook = that.get_notebook_info(notebook[0]);
-                var anchor = $('<a data-gist="'+notebook[0]+'"></a>');
+                var anchor = $('<a data-gist="'+notebook[0]+'" data-last-access="'+notebook[1]+'"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
                 var $desc;
 
@@ -476,36 +532,6 @@ var editor = function () {
 
                 anchor.click(click_recent);
             }
-            
-            function backgroundColorStyler(i, element, dateWt) {
-              var styles = [];
-              for(var j = 0; j < 5; j++) {
-                styles.push('recent-notebooks-group-' + j)
-              }
-              var component = 2;
-              var $elem = $(element);
-              styles.forEach(function(style, i) {
-                $elem.removeClass(style);
-              });
-              $elem.addClass(styles[~~((dateWt) * styles.length)]);
-            }
-            
-            function styleByCommitDate(elements, styler) {
-                  if(!styler) {
-                    styler = backgroundColorStyler
-                  }
-                  var commitTimes = elements.map(function(x,y) { 
-                    return get_notebook_info($(y).data('gist')).last_commit; 
-                  }).map(function(x,y) { return Date.parse(y); }).sort();
-                  elements.each(function(i, elem) {
-                    var $self = $(elem),
-                        notebook_id = $self.data('gist');
-                    var lastCommit = Date.parse(get_notebook_info(notebook_id).last_commit);
-                    var dateWt = commitTimes.index(lastCommit)/commitTimes.length;
-                    styler(i, elem, dateWt)
-                  });
-            }
-            
             for(var i = 0; i < sorted.length; i ++) {
                 create_recent_link(sorted[i])
             }
@@ -532,7 +558,7 @@ var editor = function () {
                     moreLink.appendTo($('.recent-notebooks-list'));
                   }
                   
-                  styleByCommitDate($('.recent-notebooks-list li a[data-gist]'))
+                  that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'))
                 });
               };
 
@@ -545,7 +571,7 @@ var editor = function () {
                 .appendTo(li);
 
               anchor.click(loadMore);
-              styleByCommitDate($('.recent-notebooks-list li a[data-gist]'))
+              that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'))
             }
 
             function truncateNotebookPath(txt, chars) {
