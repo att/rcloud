@@ -30,6 +30,7 @@ function create_cell_html_view(language, cell_model) {
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
     var running_state_;  // running state
+    var running_ui_state_ = {add_result: {}};
 
     // input1
     var prompt_text_;
@@ -719,6 +720,7 @@ function create_cell_html_view(language, cell_model) {
                     result.hide_source(true);
                 has_result_ = true;
             }
+            running_ui_state_.add_result.result_div_visible_in_cellarea = this.is_result_div_visible_in_cellarea();
             this.toggle_results(true); // always show when updating
             switch(type) {
             case 'selection':
@@ -765,6 +767,7 @@ function create_cell_html_view(language, cell_model) {
             default:
                 throw new Error('unknown result type ' + type);
             }
+            this.scroll_to_result(running_ui_state_.add_result);
             result_updated();
         },
         end_output: function(error) {
@@ -775,7 +778,7 @@ function create_cell_html_view(language, cell_model) {
             }
             this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'unknown' : 'complete');
             current_result_ = current_error_ = null;
-            this.scroll_to_result();
+            this.scroll_to_result(running_ui_state_.add_result);
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -930,15 +933,18 @@ function create_cell_html_view(language, cell_model) {
                 edit_button_border(true);
             }
         },
-        should_scroll: function() {
-            return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, source_div_]) &&
-                   !ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
+        is_result_div_visible_in_cellarea: function() {
+            return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
         },
-        scroll_to_result: function() {
+        scroll_to_result: function(previous_state) {
             var that = this;
+            var shouldScroll = false;
+            if(previous_state) {
+              shouldScroll = previous_state.result_div_visible_in_cellarea && !that.is_result_div_visible_in_cellarea();
+            }
             ui_utils.on_next_tick(function() {
                 var cellarea = $('#rcloud-cellarea');
-                if(result_div_ && that.should_scroll()) {
+                if(result_div_ && shouldScroll) {
                   ui_utils.scroll_to_after(result_div_, undefined, cellarea, [notebook_cell_div], cellarea.height());
                 }
             });
