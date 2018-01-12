@@ -172,6 +172,7 @@ RCloud.UI.settings_frame = (function() {
                 'color-recent-notebooks-by-modification-date': that.checkbox({
                     sort: 3500,
                     default_value: false,
+                    needs_reload: true,
                     label: "Color recent notebooks by modification date",
                     set: function(val) {
                         editor.color_recent_notebooks_by_modification_date(val);
