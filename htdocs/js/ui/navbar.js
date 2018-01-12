@@ -58,6 +58,7 @@ RCloud.UI.navbar = (function() {
                   if(that.highlighted) {
                       if(!el.is(':animated')) {
                         el.animate({color: that.highlight_color}, { duration: duration})
+                          .delay(duration)
                           .animate({color: that.original_color}, { duration: duration, complete: animation_loop});
                       }
                   } else {
