@@ -418,8 +418,46 @@ var editor = function () {
         },
         populate_recent_notebooks_list: function(data) {
             var that = this;
-            var firstRecentNotebooksBatchSize = 10;
-            var recentNotebooksBatchSize = 2*firstRecentNotebooksBatchSize;
+
+            $('.recent-notebooks-list a').each(function() {
+                $(this).off('click');
+            });
+            
+            $('.recent-notebooks-list').empty();
+            
+            function createMoreLink() {
+              var li = $('<li></li>');
+              li.appendTo($('.recent-notebooks-list'));
+              var anchor = $('<a title="Show more recent notebooks"></a>');
+
+              anchor.addClass('ui-all')
+                .append($('<span class="more"><i class="caret"></i></span>'))
+                .appendTo(li);
+              return li;
+            }
+            
+            function computeBatchSize(defaultSize) {
+              // insert tmp element to compute batch size
+              var li = createMoreLink();
+              var paddingTop = li.parent().css('padding-top');
+              var paddingBottom = li.parent().css('padding-bottom');
+              paddingTop = (paddingTop) ? parseInt(paddingTop, 10) : 0;
+              paddingBottom = (paddingBottom) ? parseInt(paddingBottom, 10) : 0;
+              var listMaxHeight = parseInt($('.recent-notebooks-list').css('max-height'), 10);
+              listMaxHeight -= (paddingTop + paddingBottom);
+              var liHeight = parseInt(li.css('height'), 10);
+              var batchSize = ~~(listMaxHeight/liHeight - 1);
+              $('.recent-notebooks-list').empty();
+              
+              if(!batchSize) {
+                batchSize = defaultSize;
+              }
+              return batchSize;
+            }
+            
+            var firstRecentNotebooksBatchSize = computeBatchSize(10);
+            var recentNotebooksBatchSize = (firstRecentNotebooksBatchSize <= 20) ? 20 : firstRecentNotebooksBatchSize;
+            
             var transformData = function(data) {
               return _.chain(data)
                 .pairs()
@@ -430,17 +468,6 @@ var editor = function () {
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
             }
-            var sorted = transformData(data);
-
-            sorted.shift();//remove the first item
-            var totalRecentNotebooks = sorted.length;
-            sorted = sorted.slice(0, firstRecentNotebooksBatchSize);
-
-            $('.recent-notebooks-list a').each(function() {
-                $(this).off('click');
-            });
-
-            $('.recent-notebooks-list').empty();
 
             // premature optimization? define function outside loop to make jshint happy
             var click_recent = function(e) {
@@ -476,6 +503,12 @@ var editor = function () {
 
                 anchor.click(click_recent);
             }
+            
+            var sorted = transformData(data);
+            sorted.shift(); //remove the first item
+            var totalRecentNotebooks = sorted.length;
+            sorted = sorted.slice(0, firstRecentNotebooksBatchSize);
+            
             for(var i = 0; i < sorted.length; i ++) {
                 create_recent_link(sorted[i])
             }
@@ -503,15 +536,9 @@ var editor = function () {
                 });
               };
 
-              var li = $('<li></li>');
-              li.appendTo($('.recent-notebooks-list'));
-              var anchor = $('<a title="Show more recent notebooks"></a>');
+              var li = createMoreLink();
 
-              anchor.addClass('ui-all')
-                .append($('<span class="more"><i class="caret"></i></span>'))
-                .appendTo(li);
-
-              anchor.click(loadMore);
+              $(li.find('a')).click(loadMore);
             }
 
             function truncateNotebookPath(txt, chars) {

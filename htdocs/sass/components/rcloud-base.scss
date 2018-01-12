@@ -569,7 +569,8 @@ ul.recent-notebooks-list {
     font-size: 12px;
     max-width: 330px;
     min-width: 220px;
-    max-height: 26em;
+    min-height: 6em;
+    max-height: calc(100vh - 130px);
     overflow: auto;
 }
 
