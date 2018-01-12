@@ -250,20 +250,6 @@ pre.offscreen {
     border: 0;
 }
 
-.button-highlight {
-  background-image: -o-radial-gradient(circle, #6af, rgba(0,0,0,0) 60%);
-  background-image: -moz-radial-gradient(circle, #6af, rgba(0,0,0,0) 60%);
-  background-image: -webkit-radial-gradient(circle, #6af, rgba(0,0,0,0) 60%);
-  display: inline-block;
-  position: absolute;
-  left: 0; top: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1;
-}
-
 .cell-status {
     position: relative;
     width: 100%;
