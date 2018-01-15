@@ -380,7 +380,7 @@ Notebook.create_controller = function(model)
                     new_content = create_code_block(prior.language(), prior.content()) + 
                                                 create_code_block(cell_model.language(), cell_model.content());
                     changes = changes.concat(model.change_cell_language(prior, MARKDOWN));
-                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
+                    changes[changes.length-1].content = new_content;
                 } else {
                     if(isMarkdown(prior.language()) && isMarkdown(cell_model.language())) {
                       // Rmarkdown and markdown cells get joined - RMarkdown wins
