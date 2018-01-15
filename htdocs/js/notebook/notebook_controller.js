@@ -344,44 +344,65 @@ Notebook.create_controller = function(model)
                     return text + '\n';
                 return text;
             }
-            function crunch_quotes(left, right) {
-                var end = /```\n$/, begin = /^```{r}/;
+            function crunch_quotes(left, right, language) {
+                var begin = new RegExp("^```{" + language.toLowerCase() + "}");
+                var end = /```\n$/;
                 if(end.test(left) && begin.test(right))
                     return left.replace(end, '') + right.replace(begin, '');
                 else return left + right;
             }
-
+            function create_code_block(language, content) {
+              return '```{' + language.toLowerCase()+ '}\n' + opt_cr(content) + '```\n'
+            }
             // note we have to refresh everything and then concat these changes onto
             // that.  which won't work in general but looks like it is okay to
             // concatenate a bunch of change content objects with a move or change
             // to one of the same objects, and an erase of one
             var new_content, changes = refresh_buffers();
-
+            
+            var RMARKDOWN = "RMarkdown";
+            var MARKDOWN = "Markdown"
+            
+            function isMarkdown(language) {
+              var MARKDOWN_CELLS = [MARKDOWN.toLowerCase(), RMARKDOWN.toLowerCase()];
+              return MARKDOWN_CELLS.indexOf(language.toLowerCase()) >= 0;
+            }
+            
             // this may have to be multiple dispatch when there are more than two languages
-            if(prior.language()==cell_model.language()) {
+            if(prior.language() === cell_model.language()) {
                 new_content = crunch_quotes(opt_cr(prior.content()),
-                                            cell_model.content());
+                                            cell_model.content(), prior.language());
+                prior.content(new_content);
+                changes = changes.concat(model.update_cell(prior));
+            } else {
+                if(!isMarkdown(prior.language()) && !isMarkdown(cell_model.language())) {
+                    // Different languages are combined, none of them is markdown
+                    new_content = create_code_block(prior.language(), prior.content()) + 
+                                                create_code_block(cell_model.language(), cell_model.content());
+                    changes = changes.concat(model.change_cell_language(prior, MARKDOWN));
+                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
+                } else {
+                    if(isMarkdown(prior.language()) && isMarkdown(cell_model.language())) {
+                      // Rmarkdown and markdown cells get joined - RMarkdown wins
+                      new_content = crunch_quotes(opt_cr(prior.content()),
+                                                  cell_model.content(), 
+                                                  RMARKDOWN);
+                      changes = changes.concat(model.change_cell_language(prior, RMARKDOWN));
+                    } else if(isMarkdown(prior.language())) {
+                      new_content = opt_cr(prior.content()) +
+                                    create_code_block(cell_model.language(), cell_model.content());
+                    } else {
+                      new_content = create_code_block(prior.language(), prior.content()) +
+                                    opt_cr(cell_model.content());
+                      changes = changes.concat(model.change_cell_language(prior, cell_model.language()));
+                    }
+                }
                 prior.content(new_content);
                 changes = changes.concat(model.update_cell(prior));
             }
-            else {
-                if(prior.language()==="R") {
-                    new_content = crunch_quotes('```{r}\n' + opt_cr(prior.content()) + '```\n',
-                                                cell_model.content());
-                    prior.content(new_content);
-                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
-                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
-                }
-                else {
-                    new_content = crunch_quotes(opt_cr(prior.content()) + '```{r}\n',
-                                                opt_cr(cell_model.content()) + '```\n');
-                    new_content = new_content.replace(/```\n```{r}\n/, '');
-                    prior.content(new_content);
-                    changes = changes.concat(model.update_cell(prior));
-                }
-            }
-            _.each(prior.views, function(v) { v.clear_result(); });
-            return update_notebook(changes.concat(model.remove_cell(cell_model)))
+            _.each(prior.views, function(v) { v.clear_result(); v.hide_source(false); });
+            changes = changes.concat(model.remove_cell(cell_model));
+            return update_notebook(changes)
                 .then(default_callback());
         },
         split_cell: function(cell_model, point1, point2) {
