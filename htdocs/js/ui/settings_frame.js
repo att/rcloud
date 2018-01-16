@@ -191,6 +191,14 @@ RCloud.UI.settings_frame = (function() {
                         RCloud.UI.import_export.export_only_selected_files(val);
                     }
                 }),
+                'autoscroll-notebook-output': that.checkbox({
+                    sort: 6500,
+                    default_value: true,
+                    label: "Autoscroll notebook",
+                    set: function(val) {
+                        shell.notebook.controller.autoscroll_notebook_output(val);
+                    }
+                }),
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,
