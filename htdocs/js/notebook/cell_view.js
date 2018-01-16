@@ -31,6 +31,7 @@ function create_cell_html_view(language, cell_model) {
     var code_preprocessors_ = []; // will be an extension point, someday
     var running_state_;  // running state
     var running_ui_state_ = {add_result: {}};
+    var autoscroll_notebook_output_;
 
     // input1
     var prompt_text_;
@@ -797,6 +798,9 @@ function create_cell_html_view(language, cell_model) {
         set_show_cell_numbers: function(whether) {
             left_controls_.set_flag('cell-numbers', whether);
         },
+        set_autoscroll_notebook_output: function(whether) {
+            autoscroll_notebook_output_ = whether;
+        },
         click_to_edit: click_to_edit,
 
         //////////////////////////////////////////////////////////////////////
@@ -942,6 +946,9 @@ function create_cell_html_view(language, cell_model) {
             if(previous_state) {
               shouldScroll = previous_state.result_div_visible_in_cellarea && !that.is_result_div_visible_in_cellarea();
             }
+            
+            shouldScroll = shouldScroll && autoscroll_notebook_output_;
+            
             ui_utils.on_next_tick(function() {
                 var cellarea = $('#rcloud-cellarea');
                 if(result_div_ && shouldScroll) {

@@ -589,7 +589,12 @@ Notebook.create_controller = function(model)
             });
             return this;
         },
-
+        autoscroll_notebook_output: function(whether) {
+            _.each(model.views, function(view) {
+                view.set_autoscroll_notebook_output(whether);
+            });
+            return this;
+        },
         //////////////////////////////////////////////////////////////////////
 
         is_mine: function() {
