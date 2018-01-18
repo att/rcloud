@@ -143,7 +143,7 @@ var editor = function () {
                     before = Promise.reject(new Error(
                         "Invalid gist source '" + source + "'; available sources are: " +
                             gist_sources.join(', ')));
-                } else if(!get_notebook_info(gistname).username) {
+                } else if(!has_notebook_info(gistname)) {
                     set_notebook_info(gistname, { source: source });
                     before = rcloud.set_notebook_property(gistname, "source", source);
                 }
@@ -195,8 +195,11 @@ var editor = function () {
             return Promise.cast(tree_controller_.find_next_copy_name(username_, new_notebook_prefix_ + '1'))
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
-                    tree_controller_.set_visibility(notebook.id, true);
-                    that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
+                    return tree_controller_.set_visibility(notebook.id, true).then(function(x) {
+                        return notebook;
+                      });
+                }).then(function(notebook) {
+                  return that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
                 });
         },
         validate_name: function(newname) {
@@ -747,7 +750,7 @@ var editor = function () {
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)
                         : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
-                            if(!that.get_notebook_info(result.id).username)
+                            if(!that.has_notebook_info(result.id))
                                 set_notebook_info(result.id, {});
                             options.source = that.get_notebook_info(result.id).source = source;
                         });
