@@ -1,148 +1,154 @@
-var notebook_tree_controller = function(model, view) {
+RCloud.UI.notebook_tree_controller = (function(model, view) {
 
-    "use strict";
+    var notebook_tree_controller = function(model, view) {
 
-    this.model_ = model;
-    this.view_ = view;
-    this.show_terse_dates_ = false;
-    this.on_notebook_open = new event(this);
+        "use strict";
 
-    var controller_obj = this;
+        this.model_ = model;
+        this.view_ = view;
+        this.show_terse_dates_ = false;
+        this.on_notebook_open = new RCloud.UI.event(this);
 
-    this.view_.on_notebook_open.attach(function(sender, args) {
-        controller_obj.on_notebook_open.notify(args);
-    });
-};
+        var controller_obj = this;
 
-notebook_tree_controller.prototype = {
-    
-    get_tree_data: function() {
-        return this.model_.tree_data_;
-    },
+        this.view_.on_notebook_open.attach(function(sender, args) {
+            controller_obj.on_notebook_open.notify(args);
+        });
+    };
 
-    set_current: function(current) {
-        this.model_.set_current(current);
-    },
+    notebook_tree_controller.prototype = {
+        
+        get_tree_data: function() {
+            return this.model_.tree_data_;
+        },
 
-    get_current: function() {
-        return this.model_.get_current();
-    },
+        set_current: function(current) {
+            this.model_.set_current(current);
+        },
 
-    get_previous: function() {
-        return this.model_.get_previous();
-    },
+        get_current: function() {
+            return this.model_.get_current();
+        },
 
-    get_next: function() {
-        return this.model_.get_next();
-    },
+        get_previous: function() {
+            return this.model_.get_previous();
+        },
 
-    get_gist_sources: function() {
-        return this.model_.get_gist_sources();
-    },
+        get_next: function() {
+            return this.model_.get_next();
+        },
 
-    get_notebook_star_count: function(gistname) {
-        return this.model_.get_notebook_star_count(gistname);
-    },
+        get_gist_sources: function() {
+            return this.model_.get_gist_sources();
+        },
 
-    set_notebook_star_count: function(gistname, count) {
-        this.model_.set_notebook_star_count(gistname, count);
-    },
+        get_notebook_star_count: function(gistname) {
+            return this.model_.get_notebook_star_count(gistname);
+        },
 
-    notebook_star_count_exists: function(notebook_id) {
-        return this.model_.notebook_star_count_exists(notebook_id);
-    },
+        set_notebook_star_count: function(gistname, count) {
+            this.model_.set_notebook_star_count(gistname, count);
+        },
 
-    is_notebook_starred_by_current_user: function(gistname) {
-        return this.model_.is_notebook_starred_by_current_user(gistname);
-    },
+        notebook_star_count_exists: function(notebook_id) {
+            return this.model_.notebook_star_count_exists(notebook_id);
+        },
 
-    has_notebook_info: function(gistname) {
-        return this.model_.has_notebook_info(gistname);
-    },
+        is_notebook_starred_by_current_user: function(gistname) {
+            return this.model_.is_notebook_starred_by_current_user(gistname);
+        },
 
-    get_notebook_info: function(gistname) {
-        return this.model_.get_notebook_info(gistname);
-    },
+        has_notebook_info: function(gistname) {
+            return this.model_.has_notebook_info(gistname);
+        },
 
-    set_notebook_info: function(gistname, value) {
-        this.model_.set_notebook_info(gistname, value);
-    },
+        get_notebook_info: function(gistname) {
+            return this.model_.get_notebook_info(gistname);
+        },
 
-    add_interest: function(user, gistname) {
-        this.model_.add_interest(user, gistname);
-    },
+        set_notebook_info: function(gistname, value) {
+            this.model_.set_notebook_info(gistname, value);
+        },
 
-    get_my_star_count_by_friend: function(user) {
-        return this.model_.get_my_star_count_by_friend(user);
-    },
+        add_interest: function(user, gistname) {
+            this.model_.add_interest(user, gistname);
+        },
 
-    user_is_friend: function(user) {
-        return this.model_.user_is_friend(user);
-    },
+        get_my_star_count_by_friend: function(user) {
+            return this.model_.get_my_star_count_by_friend(user);
+        },
 
-    remove_interest: function(user, gistname) {
-        this.model_.remove_interest(user, gistname);
-    },
+        user_is_friend: function(user) {
+            return this.model_.user_is_friend(user);
+        },
 
-    show_terse_dates: function(show_terse_dates) {
-        this.model_.show_terse_dates(show_terse_dates);
-    },   
-    
-    set_visibility: function(gistname, visible) {
-        return this.model_.set_visibility(gistname, visible);
-    },
+        remove_interest: function(user, gistname) {
+            this.model_.remove_interest(user, gistname);
+        },
 
-    load_everything: function() {
-        return this.model_.load_everything();
-    },
+        show_terse_dates: function(show_terse_dates) {
+            this.model_.show_terse_dates(show_terse_dates);
+        },   
+        
+        set_visibility: function(gistname, visible) {
+            return this.model_.set_visibility(gistname, visible);
+        },
 
-    highlight_notebooks: function(notebooks) {
-        this.view_.highlight_notebooks(notebooks);
-    },
+        load_everything: function() {
+            return this.model_.load_everything();
+        },
 
-    select_history_node: function(node) {
-        this.select_node(node);
-        $(node.element).find('.jqtree-element:eq(0)').trigger('click');
-    },
-    
-    update_notebook_view: function(user, gistname, entry, selroot) {
-        return this.model_.update_notebook_view(user, gistname, entry, selroot);
-    },
+        highlight_notebooks: function(notebooks) {
+            this.view_.highlight_notebooks(notebooks);
+        },
 
-    unstar_notebook_view: function(user, gistname, selroot) {
-        this.model_.unstar_notebook_view(user, gistname, selroot);
-    },
+        select_history_node: function(node) {
+            this.select_node(node);
+            $(node.element).find('.jqtree-element:eq(0)').trigger('click');
+        },
+        
+        update_notebook_view: function(user, gistname, entry, selroot) {
+            return this.model_.update_notebook_view(user, gistname, entry, selroot);
+        },
 
-    update_notebook_from_gist: function(result, history, selroot) {
-        return this.model_.update_notebook_from_gist(result, history, selroot);
-    },
+        unstar_notebook_view: function(user, gistname, selroot) {
+            this.model_.unstar_notebook_view(user, gistname, selroot);
+        },
 
-    tag_notebook_version: function(id, version, tag) {
-        this.model_.tag_notebook_version(id, version, tag);
-    },
+        update_notebook_from_gist: function(result, history, selroot) {
+            return this.model_.update_notebook_from_gist(result, history, selroot);
+        },
 
-    toggle_folder_friendness: function(user) {
-        this.model_.toggle_folder_friendness(user);
-    },
+        tag_notebook_version: function(id, version, tag) {
+            this.model_.tag_notebook_version(id, version, tag);
+        },
 
-    show_history: function(node, opts) {
-        this.model_.update_history(node, opts);
-    },
+        toggle_folder_friendness: function(user) {
+            this.model_.toggle_folder_friendness(user);
+        },
 
-    // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
-    find_next_copy_name: function (username, description) {
-        return this.model_.find_next_copy_name(username, description);
-    },
+        show_history: function(node, opts) {
+            this.model_.update_history(node, opts);
+        },
 
-    remove_notebook_view: function(user, gistname) {
-        this.model_.remove_notebook_view(user, gistname);
-    },
+        // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
+        find_next_copy_name: function (username, description) {
+            return this.model_.find_next_copy_name(username, description);
+        },
 
-    traverse: function() {
-        this.model_.traverse();
-    },
+        remove_notebook_view: function(user, gistname) {
+            this.model_.remove_notebook_view(user, gistname);
+        },
 
-    update_sort_type: function(sort_type) {
-        this.model_.update_sort_type(sort_type);
-    }
-};
+        traverse: function() {
+            this.model_.traverse();
+        },
+
+        update_sort_type: function(sort_type) {
+            this.model_.update_sort_type(sort_type);
+        }
+    };
+
+    return notebook_tree_controller;
+
+})();
