@@ -18,7 +18,7 @@ rcloud.language.support <- function()
     readChar(output.html, file.info(output.html)$size)
   }
 
-  ev <- function(command, silent, rcloud.session) {
+  ev <- function(command, silent, rcloud.session, partname) {
     .session <- rcloud.session
     if (is.null(command) || command == "") command <- " "
 

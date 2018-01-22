@@ -11,12 +11,13 @@
 
 rcloud.language.support <- function()
 {
-  ev <- function(command, silent, rcloud.session) {
+  ev <- function(command, silent, rcloud.session, partname) {
     .session <- rcloud.session
     # make sure the last expression is always terminated
     command <- paste0(command, "\n")
     # .session$device.pixel.ratio
-    exp <- tryCatch(parse(text=command), error=function(o) structure(list(error=o$message), class="parse-error"))
+    exp <- tryCatch(parse(text=command, srcfile = srcfilecopy(partname, command)),
+                    error=function(o) structure(list(error=o$message), class="parse-error"))
     # ulog(".EXP: ", paste(capture.output(str(exp)), collapse='\n'))
     res <- if (!inherits(exp, "parse-error")) .eval(exp, FALSE, .GlobalEnv, context=NULL) else exp
     ## R hides PrintWarnings() so this is the only way to get them out

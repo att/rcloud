@@ -4,7 +4,7 @@
 
 rcloud.language.support <- function()
 {
-    ev <- function(command, silent, rcloud.session) {
+    ev <- function(command, silent, rcloud.session, partname) {
         f <- tempfile("script-", fileext=".sh")
         on.exit(try(unlink(f), silent=TRUE))
         writeLines(if (length(command)) command else "", f)

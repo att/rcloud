@@ -91,7 +91,7 @@ rcloud.exec.python <- function(cmd, rcloud.session)
   }
 }
 
-.eval.python <- function(command, silent, rcloud.session) {
+.eval.python <- function(command, silent, rcloud.session, partname) {
   if (is.null(rcloud.session$python.runner))
       .start.python(rcloud.session)  # if there is no backend Python engine, start it
   rcloud.exec.python(command, rcloud.session)
