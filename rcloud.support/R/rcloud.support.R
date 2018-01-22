@@ -225,7 +225,7 @@ rcloud.call.notebook <- function(id, version = NULL, args = NULL, attach = FALSE
     ## sort
     for (o in p[match(sort.int(i), i)]) {
       if (grepl("^part.*\\.R$", o$filename)) { ## R code
-        expr <- parse(text=o$content)
+        expr <- parse(text=o$content, srcfile = srcfilecopy(o$filename, o$content))
         result <- eval(expr, e)
         rcloud.flush.plot()
       } else if (grepl("^part.*\\.md", o$filename)) { ## markdown
