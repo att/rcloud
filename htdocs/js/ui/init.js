@@ -1,6 +1,8 @@
 RCloud.UI.init = function() {
 
+    RCloud.UI.processing_queue.init();
     RCloud.UI.run_button.init();
+    RCloud.UI.stop_button.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them

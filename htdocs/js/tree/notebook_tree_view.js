@@ -189,7 +189,6 @@ RCloud.UI.notebook_tree_view = (function(model) {
             if(args.fake_hover) {
                 ui_utils.fake_hover(node);
             }
-
             view_obj.$tree_.tree('removeNode', node);
         });
 

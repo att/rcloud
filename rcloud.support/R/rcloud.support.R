@@ -549,7 +549,7 @@ rcloud.get.completions <- function(language, text, pos) {
 }
 
 rcloud.help <- function(topic) {
-  result <- help(topic)
+  result <- help(trimws(topic))
   if(length(result)) {
     print(result)
     TRUE

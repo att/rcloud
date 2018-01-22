@@ -104,4 +104,3 @@ RCloud.UI.incremental_search = (function() {
 
     return result;
 })();
-    

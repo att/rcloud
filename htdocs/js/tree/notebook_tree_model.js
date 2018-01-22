@@ -415,7 +415,10 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         },
 
         as_folder_hierarchy: function(nodes, prefix, name_prefix) {
+<<<<<<< HEAD
 
+=======
+>>>>>>> cb6a532c5157ab0cf73240dd52975a48800b27bb
             var that = this;
             function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
             var in_folders = nodes;
