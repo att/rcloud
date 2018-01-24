@@ -426,7 +426,7 @@ var editor = function () {
         create_recent_notebooks_color_coder: function() {
           var backgroundColorStyler = function(i, element, dateWt) {
               var styles = [];
-              for(var j = 0; j < 5; j++) {
+              for(var j = 0; j < 7; j++) {
                 styles.push('recent-notebooks-group-' + j)
               }
               var component = 2;
@@ -434,7 +434,7 @@ var editor = function () {
               styles.forEach(function(style, i) {
                 $elem.removeClass(style);
               });
-              $elem.addClass(styles[~~((dateWt) * styles.length)]);
+              $elem.addClass(styles[~~((1-dateWt) * (styles.length-1))]);
             };
             
           if(this.color_recent_notebooks_by_modification_date_) {
@@ -459,15 +459,49 @@ var editor = function () {
                   if(!styler) {
                     styler = backgroundColorStyler
                   }
-                  var currentDate = Date.now();
-                  var oldest = $(elements[elements.length-1]).data('last-access');
-                  var scalingFactor = currentDate - oldest;
-                  var noOfElements = elements.length;
+                  var MINUTE = 1000*60;
+                  var HOUR=60*MINUTE;
+                  var DAY = 24*HOUR;
+                  var MONTH = 30*DAY;
+                  var latest = $(elements[0]).data('last-access');
+                  
+                  var rules = [ 
+                    { cond: function(x) { return x <= DAY } }, 
+                    { cond: function(x) { return x <= 2*DAY }}, 
+                    { cond: function(x) { return x <= 3*DAY }}, 
+                    { cond: function(x) { return x <= 7*DAY }}, 
+                    { cond: function(x) { return x <= 14*DAY }}, 
+                    { cond: function(x) { return x <= MONTH }}, 
+                    { cond: function(x) { return x > MONTH }}
+                    ];
+                  
+                  var mapping = [];
+                  for (var i=0; i < rules.length; i++) {
+                    mapping.push((i+1)/rules.length);
+                  }
+                  
+                  var bucket = 0;
+                  var lastRule = 0;
+                  
+                  function mapValue(mappingRules, value) {
+                    for (var i=0; i < rules.length; i++) {
+                      if (mappingRules[i].cond(value)) {
+                        if (lastRule < i) {
+                          lastRule = i;
+                          bucket++;
+                        }
+                        break;
+                      }
+                    }
+                    return mapping[bucket];
+                  }
+                  
                   elements.each(function(i, elem) {
                     var $self = $(elem),
                         notebook_id = $self.data('gist');
                     var lastAccess = $self.data('last-access');
-                    var dateWt = 1-(currentDate - lastAccess)/scalingFactor;
+                    var age = latest - lastAccess;
+                    var dateWt = 1 - mapValue(rules, age);
                     styler(i, elem, dateWt);
                   });
             };
@@ -521,7 +555,11 @@ var editor = function () {
               return _.chain(data)
                 .pairs()
                 .filter(function(kv) {
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(that.get_notebook_info(kv[0])) ;
+                    if(kv[0] === 'r_attributes' || kv[0] === 'r_type') {
+                      return false;
+                    }
+                    var notebook_info = that.get_notebook_info(kv[0]);
+                    return  !_.isEmpty(notebook_info) && notebook_info.username && notebook_info.description;
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
@@ -563,34 +601,6 @@ var editor = function () {
                 anchor.click(click_recent);
             }
             
-            function backgroundColorStyler(i, element, dateWt) {
-              var styles = [];
-              for(var j = 0; j < 5; j++) {
-                styles.push('recent-notebooks-group-' + j)
-              }
-              var component = 2;
-              var $elem = $(element);
-              styles.forEach(function(style, i) {
-                $elem.removeClass(style);
-              });
-              $elem.addClass(styles[~~((dateWt) * styles.length)]);
-            }
-            
-            function styleByCommitDate(elements, styler) {
-                  if(!styler) {
-                    styler = backgroundColorStyler
-                  }
-                  var commitTimes = elements.map(function(x,y) { 
-                    return get_notebook_info($(y).data('gist')).last_commit; 
-                  }).map(function(x,y) { return Date.parse(y); }).sort();
-                  elements.each(function(i, elem) {
-                    var $self = $(elem),
-                        notebook_id = $self.data('gist');
-                    var lastCommit = Date.parse(get_notebook_info(notebook_id).last_commit);
-                    var dateWt = commitTimes.index(lastCommit)/commitTimes.length;
-                    styler(i, elem, dateWt)
-                  });
-            }
             var sorted = transformData(data);
             sorted.shift(); //remove the first item
             var totalRecentNotebooks = sorted.length;
