@@ -424,9 +424,10 @@ var editor = function () {
                 .then(this.populate_recent_notebooks_list.bind(this));
         },
         create_recent_notebooks_color_coder: function() {
+          var GROUP_COUNT = 7;
           var backgroundColorStyler = function(i, element, dateWt) {
               var styles = [];
-              for(var j = 0; j < 7; j++) {
+              for(var j = 0; j < GROUP_COUNT; j++) {
                 styles.push('recent-notebooks-group-' + j)
               }
               var component = 2;
@@ -505,7 +506,44 @@ var editor = function () {
                     styler(i, elem, dateWt);
                   });
             };
-            return styleByLastAccessDate; 
+            var styleByLastAccessDate2 = function(elements, styler) {
+                  if(!styler) {
+                    styler = backgroundColorStyler
+                  }
+                  var MINUTE = 1000*60;
+                  var HOUR = 60*MINUTE;
+                  var previous = $(elements[0]).data('last-access');
+                  
+                  var bucket = 0;
+                  var THRESHOLD = 8*HOUR;
+                  var mapping = [];
+                  for (var i=0; i < GROUP_COUNT; i++) {
+                    mapping.push((i+1)/GROUP_COUNT);
+                  }
+                  
+                  function mapValue(value, baseThreshold) {
+                    var threshold = baseThreshold
+                    if(bucket > (mapping.length-3)) {
+                      threshold = 3*threshold;
+                    } 
+                    if (value > threshold) {
+                      if(bucket < (mapping.length-1)) {
+                        bucket++;
+                      }
+                    }
+                    return mapping[bucket];
+                  }
+                  
+                  elements.each(function(i, elem) {
+                    var $self = $(elem),
+                        notebook_id = $self.data('gist');
+                    var lastAccess = $self.data('last-access');
+                    var age = previous - lastAccess;
+                    var dateWt = 1 - mapValue(age, THRESHOLD);
+                    styler(i, elem, dateWt);
+                  });
+            };
+            return styleByLastAccessDate2; 
           }
         },
         
