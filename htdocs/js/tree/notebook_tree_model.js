@@ -1,6 +1,6 @@
-RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
+RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folder_dates) {
 
-    var notebook_tree_model = function(username, show_terse_dates) {
+    var notebook_tree_model = function(username, show_terse_dates, show_folder_dates) {
         
         "use strict";
 
@@ -19,6 +19,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
         this.username_ = username;
         this.show_terse_dates_ = show_terse_dates;
+        this.show_folder_dates_ = show_folder_dates;
         this.path_tips_ = false; // debugging tool: show path tips on tree
 
         this.tree_data_ = [];
@@ -37,6 +38,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         this.sorted_by_ = this.orderType.DEFAULT;
         this.matches_filter_ = [];
         this.empty_folders_ = [];
+        this.folder_last_commits = {};
 
         // functions that filter the tree:
         this.tree_filters_ = {
@@ -62,28 +64,6 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         this.on_update_sort_order = new RCloud.UI.event(this);
         this.on_update_show_nodes = new RCloud.UI.event(this);
         this.on_settings_complete = new RCloud.UI.event(this);
-
-        this.get_most_recent_child = function(node) {
-            var latest_commit = null;
-
-            var get_children = function(parent) {
-                if (parent && parent.children) {
-                    _.each(parent.children, function(child) {
-                        if(child.last_commit > latest_commit) {
-                            latest_commit = child.last_commit;
-                        }   
-
-                        get_children(child);
-                    });
-                }
-            };
-
-            get_children(node);
-
-            return latest_commit;
-
-            //return _.max(_.map(node.children, function(child) { return new Date(child.last_commit); }));
-        };
     };
 
     notebook_tree_model.prototype = {
@@ -292,6 +272,70 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     return that.lazy_node('friends', u);
                 }).sort(this.compare_nodes.bind(this))
             };
+        },
+
+        get_folder_last_commit_date: function(node_id) {
+            return this.folder_last_commits[node_id];
+        },
+
+        get_most_recent_child: function(node) {
+
+            var that = this,
+                latest_commit = null,
+                node_chain = [],
+                pluck_node_data = function(child) {
+                    return {
+                        id: child.id,
+                        last_commit: child.last_commit
+                    };
+                }, insert_into_chain = function(parent) {
+
+                    var existing_parent_root_chain = _.findWhere(node_chain, { parent_id : parent.id });
+
+                    if(!existing_parent_root_chain) {
+                        node_chain.push({
+                            parent_id: parent.id,
+                            children: _.map(parent.children, function(child) {
+                                return pluck_node_data(child)
+                            })
+                        });
+                    }
+
+                    _.each(parent.children, function(child) {
+
+                        var matching = _.filter(node_chain, function(parent_children) { 
+                            return parent.id != parent_children.parent_id && 
+                                _.pluck(parent_children.children, 'id').indexOf(parent.id) != -1; 
+                        });
+                        
+                        _.each(matching, function(chain) {
+                            chain.children.push(pluck_node_data(child));
+                        });
+                    });
+                }, get_children = function(parent) {
+                
+                if (parent && parent.children) {
+
+                    insert_into_chain(parent);
+
+                    _.each(parent.children, function(child) {
+                        if(child.last_commit > latest_commit) {
+                            latest_commit = child.last_commit;
+                        }  
+
+                        get_children(child);
+
+                    });
+                }
+            };
+
+            get_children(node);
+
+            _.each(node_chain, function(chain) {
+                that.folder_last_commits[chain.parent_id] = _.max(_.pluck(chain.children, 'last_commit'));
+            });
+
+            return latest_commit;
         },
 
         compare_nodes: function(a, b) {

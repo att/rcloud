@@ -51,7 +51,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             var start_widget_time = window.performance ? window.performance.now() : 0;
             view_obj.$tree_ = $("#editor-book-tree");
 
-            console.info('loading tree data: ', args.data);
+            //console.info('loading tree data: ', args.data);
 
             view_obj.$sort_order_select_.on('change', view_obj.change_sort_order.bind(view_obj));
 
@@ -422,13 +422,25 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 title.addClass('history');
             }
 
-            var date;
+            var date, date_element, is_folder;
 
             if(node.last_commit) {
-                date = $.el.span({'class': 'notebook-date'}, this.display_date(node.last_commit));
+                date = node.last_commit;
+            } else if(this.model_.show_folder_dates_) {
+                var folder_commit = this.model_.get_folder_last_commit_date(node.id);
+
+                if(folder_commit) {
+                    date = folder_commit;
+                    is_folder = true;
+                }
             }
 
-            var right = $.el.span({'class': 'notebook-right'}, date);
+            if(date) {
+                date_element = $.el.span({'class': is_folder ? 'notebook-date folder' : 'notebook-date'}, 
+                    this.display_date(date));
+            }
+
+            var right = $.el.span({'class': 'notebook-right'}, date_element);
             // if it was editable before, we need to restore that - either selected or open folder tree node
             if(node.user === this.model_.username_ && (this.$tree_.tree('isNodeSelected', node) ||
                                         !node.gistname && node.full_name && node.is_open)) {
