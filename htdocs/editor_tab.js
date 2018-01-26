@@ -562,11 +562,13 @@ var editor = function () {
                   result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
                 }
             };
+            var dateFormat = d3.time.format('%-m/%-d/%y');
             var create_recent_link = function(notebook) {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
                 var currentNotebook = that.get_notebook_info(notebook[0]);
-                var anchor = $('<a data-gist="'+notebook[0]+'" data-last-access="'+notebook[1]+'"></a>');
+                var anchor = $('<a data-gist="'+notebook[0]+'" data-last-access="'+notebook[1]+
+                               '" title="opened ' + dateFormat(new Date(notebook[1])) + '"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
                 var $desc;
 
