@@ -7,7 +7,6 @@ var editor = function () {
         NOTEBOOK_LOAD_FAILS = 5,
         tree_controller_,
         color_recent_notebooks_by_modification_date_;
-
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
     }
@@ -461,56 +460,6 @@ var editor = function () {
                     styler = backgroundColorStyler
                   }
                   var MINUTE = 1000*60;
-                  var HOUR=60*MINUTE;
-                  var DAY = 24*HOUR;
-                  var MONTH = 30*DAY;
-                  var latest = $(elements[0]).data('last-access');
-                  
-                  var rules = [ 
-                    { cond: function(x) { return x <= DAY } }, 
-                    { cond: function(x) { return x <= 2*DAY }}, 
-                    { cond: function(x) { return x <= 3*DAY }}, 
-                    { cond: function(x) { return x <= 7*DAY }}, 
-                    { cond: function(x) { return x <= 14*DAY }}, 
-                    { cond: function(x) { return x <= MONTH }}, 
-                    { cond: function(x) { return x > MONTH }}
-                    ];
-                  
-                  var mapping = [];
-                  for (var i=0; i < rules.length; i++) {
-                    mapping.push((i+1)/rules.length);
-                  }
-                  
-                  var bucket = 0;
-                  var lastRule = 0;
-                  
-                  function mapValue(mappingRules, value) {
-                    for (var i=0; i < rules.length; i++) {
-                      if (mappingRules[i].cond(value)) {
-                        if (lastRule < i) {
-                          lastRule = i;
-                          bucket++;
-                        }
-                        break;
-                      }
-                    }
-                    return mapping[bucket];
-                  }
-                  
-                  elements.each(function(i, elem) {
-                    var $self = $(elem),
-                        notebook_id = $self.data('gist');
-                    var lastAccess = $self.data('last-access');
-                    var age = latest - lastAccess;
-                    var dateWt = 1 - mapValue(rules, age);
-                    styler(i, elem, dateWt);
-                  });
-            };
-            var styleByLastAccessDate2 = function(elements, styler) {
-                  if(!styler) {
-                    styler = backgroundColorStyler
-                  }
-                  var MINUTE = 1000*60;
                   var HOUR = 60*MINUTE;
                   var previous = $(elements[0]).data('last-access');
                   
@@ -521,15 +470,9 @@ var editor = function () {
                     mapping.push((i+1)/GROUP_COUNT);
                   }
                   
-                  function mapValue(value, baseThreshold) {
-                    var threshold = baseThreshold
-                    if(bucket > (mapping.length-3)) {
-                      threshold = 3*threshold;
-                    } 
+                  function mapValue(value, threshold) {
                     if (value > threshold) {
-                      if(bucket < (mapping.length-1)) {
-                        bucket++;
-                      }
+                      bucket = (++bucket) % mapping.length;
                     }
                     return mapping[bucket];
                   }
@@ -538,12 +481,13 @@ var editor = function () {
                     var $self = $(elem),
                         notebook_id = $self.data('gist');
                     var lastAccess = $self.data('last-access');
-                    var age = previous - lastAccess;
-                    var dateWt = 1 - mapValue(age, THRESHOLD);
+                    var gap = previous - lastAccess;
+                    var dateWt = 1 - mapValue(gap, THRESHOLD);
                     styler(i, elem, dateWt);
+                    previous = lastAccess;
                   });
             };
-            return styleByLastAccessDate2; 
+            return styleByLastAccessDate; 
           }
         },
         
@@ -588,7 +532,7 @@ var editor = function () {
             
             var firstRecentNotebooksBatchSize = computeBatchSize(10);
             var recentNotebooksBatchSize = (firstRecentNotebooksBatchSize <= 20) ? 20 : firstRecentNotebooksBatchSize;
-            
+              
             var transformData = function(data) {
               return _.chain(data)
                 .pairs()
@@ -602,7 +546,7 @@ var editor = function () {
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
-            }
+            };
 
             // premature optimization? define function outside loop to make jshint happy
             var click_recent = function(e) {
