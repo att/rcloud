@@ -426,7 +426,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
 
             if(node.last_commit) {
                 date = node.last_commit;
-            } else if(this.model_.show_folder_dates_) {
+            } else if(this.model_.show_folder_dates_ && this.model_.is_date_sorted()) {
                 var folder_commit = this.model_.get_folder_last_commit_date(node.id);
 
                 if(folder_commit) {

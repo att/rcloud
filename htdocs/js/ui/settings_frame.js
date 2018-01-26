@@ -180,7 +180,7 @@ RCloud.UI.settings_frame = (function() {
                 }),
                 'show-folder-dates': that.checkbox({
                     sort: 3750,
-                    default_value: true,
+                    default_value: false,
                     needs_reload: true,
                     label: "Show folder date for date ordered tree",
                     set: function(val) {

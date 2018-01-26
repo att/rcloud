@@ -338,6 +338,10 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
             return latest_commit;
         },
 
+        is_date_sorted: function() {
+            return this.sorted_by_ === this.orderType.DATE_DESC;
+        },
+
         compare_nodes: function(a, b) {
 
             var so = a.sort_order - b.sort_order,
