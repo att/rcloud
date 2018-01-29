@@ -1208,9 +1208,22 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                 if(this.sorted_by_ === this.orderType.DEFAULT && 
                     dp === parent && node.label === data.label) {
                     this.update_tree_node(node, data);
-                } else if(this.sorted_by_ === this.orderType.DATE_DESC) {
+                } else if(this.sorted_by_ === this.orderType.DEFAULT) {
 
-                    this.update_tree_node(node, data);
+                    // remove from model:
+                    dp.children = _.without(dp.children, _.findWhere(dp.children, {
+                        id: node.id
+                    }));
+
+                    this.remove_node_notify({
+                        node: node
+                    });
+
+                    node = this.insert_in_order(data, parent);
+
+                    this.remove_empty_parents(dp);
+
+                } else if(this.sorted_by_ === this.orderType.DATE_DESC) {
 
                     var update_node_position = function(parent, node, data) {
                         
