@@ -54,7 +54,7 @@ rcloud.execute.asset <- function(name, ..., notebook=rcloud.session.notebook(), 
   system(paste(driver, shQuote(asset), pars), TRUE, wait=wait)
 }
 
-rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(), binary=is.raw(content), file) {
+rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(), binary=is.raw(content), file, del = FALSE) {
     if (!missing(content) && !missing(file)) stop("content and file are mutually exclusive")
     if (!missing(file)) {
         file <- path.expand(file)
@@ -66,9 +66,11 @@ rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(
     if (is.list(notebook))
         notebook <- notebook$content$id
     l <- list(list(content=content))
+    if(del)
+      l <- list(content=content)
     names(l) <- name
     invisible(rcloud.update.notebook(notebook, list(files=l)))
 }
 
 rcloud.delete.asset <- function(name, notebook=rcloud.session.notebook())
-    rcloud.upload.asset(name, NULL, notebook)
+    rcloud.upload.asset(name, NULL, notebook, del = TRUE)

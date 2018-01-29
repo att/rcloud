@@ -1,6 +1,7 @@
 Notebook.create_html_view = function(model, root_div)
 {
     var show_cell_numbers_;
+    var autoscroll_notebook_output_;
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -10,6 +11,7 @@ Notebook.create_html_view = function(model, root_div)
     function init_cell_view(cell_view) {
         cell_view.set_readonly(model.read_only() || shell.is_view_mode());
         cell_view.set_show_cell_numbers(show_cell_numbers_);
+        cell_view.set_autoscroll_notebook_output(autoscroll_notebook_output_);
     }
 
     var result = {
@@ -73,6 +75,12 @@ Notebook.create_html_view = function(model, root_div)
             show_cell_numbers_ = whether;
             _.each(this.sub_views, function(view) {
                 view.set_show_cell_numbers(whether);
+            });
+        },
+        set_autoscroll_notebook_output: function(whether) {
+            autoscroll_notebook_output_ = whether;
+            _.each(this.sub_views, function(view) {
+                view.set_autoscroll_notebook_output(whether);
             });
         },
         update_urls: function() {
