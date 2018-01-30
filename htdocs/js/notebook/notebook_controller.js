@@ -34,12 +34,12 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.append_cell(cell_model, id)};
     }
 
-    function append_asset_helper(content, filename) {
+    function append_asset_helper(content, filename, user_appended) {
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
         return {controller: asset_controller,
-                changes: model.append_asset(asset_model, filename),
+                changes: model.append_asset(asset_model, filename, false, user_appended),
                 model: asset_model};
     }
 
@@ -250,8 +250,8 @@ Notebook.create_controller = function(model)
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
         },
-        append_asset: function(content, filename) {
-            var cch = append_asset_helper(content, filename);
+        append_asset: function(content, filename, user_appended) {
+            var cch = append_asset_helper(content, filename, user_appended);
             return update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback())
                 .then(function(notebook) {
