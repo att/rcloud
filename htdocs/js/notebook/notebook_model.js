@@ -35,14 +35,25 @@ Notebook.create_model = function()
                 return asset.filename() == filename;
             });
         },
-        append_asset: function(asset_model, filename, skip_event) {
+        append_asset: function(asset_model, filename, skip_event, user_appended) {
             asset_model.parent_model = this;
             var changes = [];
             changes.push(asset_model.change_object());
-            this.assets.push(asset_model);
+            var asset_filenames = _.map(this.assets, function(asset) { return asset.filename(); });
+            var new_asset_index;
+           
+            if(user_appended){
+                asset_filenames.push(asset_model.change_object().filename);
+                asset_filenames.sort();
+                new_asset_index =  asset_filenames.indexOf(asset_model.change_object().filename);
+                this.assets.splice(new_asset_index, 0, asset_model);
+                }           
+            else{
+                this.assets.push(asset_model);
+            }
             if(!skip_event)
                 _.each(this.views, function(view) {
-                    view.asset_appended(asset_model);
+                    view.asset_appended(asset_model, new_asset_index);
                 });
             return changes;
         },
