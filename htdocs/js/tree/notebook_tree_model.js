@@ -1172,6 +1172,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                 });
             }
 
+            // create folder path:
             while('children' in path) {
                 node = this.get_node_by_id(path.id); // that.$tree_.tree('getNodeById', path.id);
                 if(!node) {
@@ -1196,6 +1197,26 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
             data.root = root;
             data.user = user;
 
+            // update parents' position according to date:
+            var update_node_position = function(parent, node, data) {
+                            
+                // remove from model:
+                parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                    id: node.id
+                }));
+
+                that.remove_node_notify({
+                    node: node
+                });
+                
+                if(data) {
+                    // assign:
+                    node = that.insert_in_order(data, parent);                        
+                } else {
+                    that.insert_in_order(node, parent);
+                }
+            };
+
             if(node) {
                 children = node.children;
 
@@ -1208,7 +1229,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                 if(this.sorted_by_ === this.orderType.DEFAULT && 
                     dp === parent && node.label === data.label) {
                     this.update_tree_node(node, data);
-                } else if(this.sorted_by_ === this.orderType.DEFAULT) {
+                } else if([this.orderType.DEFAULT, this.orderType.DATE_DESC].indexOf(this.sorted_by_) != -1) {
 
                     // remove from model:
                     dp.children = _.without(dp.children, _.findWhere(dp.children, {
@@ -1223,27 +1244,6 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
 
                     this.remove_empty_parents(dp);
 
-                } else if(this.sorted_by_ === this.orderType.DATE_DESC) {
-
-                    var update_node_position = function(parent, node, data) {
-                        
-                        // remove from model:
-                        parent.children = _.without(parent.children, _.findWhere(parent.children, {
-                            id: node.id
-                        }));
-
-                        that.remove_node_notify({
-                            node: node
-                        });
-                        
-                        if(data) {
-                            // assign:
-                            node = that.insert_in_order(data, parent);                        
-                        } else {
-                            that.insert_in_order(node, parent);
-                        }
-                    };
-
                     if(this.sorted_by_ === this.orderType.DATE_DESC) {
 
                         var current_node = node;
@@ -1254,20 +1254,36 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                             if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
                                 parent = null;
                             } else {
-                                update_node_position(parent, current_node);
+                                update_node_position(parent, current_node,
+                                    current_node.id === data.id ? data : undefined);
                             }
         
                             current_node = parent;
         
                         } while(parent);
                     }
-
-                    this.remove_empty_parents(dp);
-                    
                 }
 
             } else {
                 node = that.insert_in_order(data, parent);
+
+                if(this.sorted_by_ === this.orderType.DATE_DESC) {
+                    var current_node = node;
+                        
+                    do {
+                        parent = this.get_parent(current_node.id);
+
+                        if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                            parent = null;
+                        } else {
+                            update_node_position(parent, current_node,
+                                current_node.id === data.id ? data : undefined);
+                        }
+    
+                        current_node = parent;
+    
+                    } while(parent);
+                }
             }
 
             return node;
