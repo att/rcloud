@@ -40,7 +40,7 @@ Notebook.Asset.create_html_view = function(asset_model)
                     filename_span.text(old_asset_name);
                 } else {
                     shell.notebook.controller
-                        .append_asset(old_asset_content, new_asset_name)
+                        .append_asset(old_asset_content, new_asset_name, true)
                         .spread(function(_, new_controller) {
                             new_controller.select();
                             asset_model.controller.remove(true);
