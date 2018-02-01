@@ -146,11 +146,12 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.model_.on_select_node.attach(function(sender, args) {
             var node = view_obj.$tree_.tree('getNodeById', args.node.id);
             view_obj.$tree_.tree('selectNode', node);
-            view_obj.scroll_into_view(node);
-            if(node.user === sender.username_)
-                RCloud.UI.notebook_title.make_editable(node, node.element, true);
-            else
-                RCloud.UI.notebook_title.make_editable(null);
+            view_obj.scroll_into_view(node).then(function() {
+                if(node.user === sender.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
         });
 
         this.model_.on_load_children.attach(function(sender, args) {
@@ -281,21 +282,27 @@ RCloud.UI.notebook_tree_view = (function(model) {
         },
 
         select_node: function(node) {
-            this.$tree_.tree('selectNode', node);
-            this.scroll_into_view(node);
-            if(node.user === this.model_.username_)
-                RCloud.UI.notebook_title.make_editable(node, node.element, true);
-            else
-                RCloud.UI.notebook_title.make_editable(null);
+            this.scroll_into_view(node).then(function() {
+                this.$tree_.tree('selectNode', node);
+                if(node.user === this.model_.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
         },
 
         scroll_into_view: function(node) {
-            var p = node.parent;
-            while(p.sort_order === this.model_.order.NOTEBOOK) {
-                this.$tree_.tree('openNode', p);
-                p = p.parent;
-            }
-            ui_utils.scroll_into_view(this.$tree_, 50, 100, null, $(node.element));
+            var that = this;
+            return new Promise(function(resolve) {
+                var p = node.parent;
+                while(p) {
+                    that.$tree_.tree('openNode', p);
+                    p = p.parent;
+                }
+                ui_utils.scroll_into_view(that.$tree_, 50, 100, function() {
+                    resolve();
+                }, $(node.element));
+            });
         },
 
         remove_node: function(node) {
