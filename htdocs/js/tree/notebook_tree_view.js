@@ -234,6 +234,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
         change_sort_order: function(event) {
             var val = $(event.target).val();
             this.model_.update_sort_type(val, true);
+            this.scroll_into_view(this.$tree_.tree('getSelectedNode'));
         },
 
         tree_click: function(event) {
