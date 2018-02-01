@@ -1226,10 +1226,9 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
 
                 var dp = this.get_parent(node.id);
 
-                if(this.sorted_by_ === this.orderType.DEFAULT && 
-                    dp === parent && node.label === data.label) {
+                if(dp === parent && node.label === data.label) {
                     this.update_tree_node(node, data);
-                } else if([this.orderType.DEFAULT, this.orderType.DATE_DESC].indexOf(this.sorted_by_) != -1) {
+                } else {
 
                     // remove from model:
                     dp.children = _.without(dp.children, _.findWhere(dp.children, {
@@ -1259,7 +1258,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                             }
         
                             current_node = parent;
-        
+         
                         } while(parent);
                     }
                 }
@@ -1278,6 +1277,10 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                         } else {
                             update_node_position(parent, current_node,
                                 current_node.id === data.id ? data : undefined);
+
+                            if(node.id === current_node.id) {
+                                node = current_node;
+                            }
                         }
     
                         current_node = parent;
