@@ -956,8 +956,9 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                     case 'last7':
                     case 'last30':
                         var period = filter_props.value.replace('last', '');
+                        var that = this;
                         this.tree_filters_[filter_props.prop] = function(item) {
-                            return RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
+                            return item.gistname == that.current_.notebook || RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
                         };
                         break;
                     default:
