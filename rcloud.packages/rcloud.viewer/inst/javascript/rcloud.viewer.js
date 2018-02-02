@@ -28,6 +28,9 @@ return {
                             dataObject.draw = response.draw;
                             callback(dataObject);
                   }); 
+              },
+              initialiseTable: function(doc) {
+                $(doc).find('body').append('<style type="text/css">body {padding:0!important;}</style>');
               }
         };
         
