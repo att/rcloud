@@ -11,7 +11,7 @@
 
 rcloud.language.support <- function()
 {
-  ev <- function(command, silent, rcloud.session, partname) {
+  ev <- function(command, silent, rcloud.session, partname, ...) {
     .session <- rcloud.session
     # make sure the last expression is always terminated
     command <- paste0(command, "\n")
