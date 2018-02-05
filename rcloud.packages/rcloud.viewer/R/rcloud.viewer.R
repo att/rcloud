@@ -11,6 +11,7 @@ defaultEnviewerDTOptions <- function() {
   options$info <- FALSE
   options$ordering <- FALSE
   options$pageLength <- ENVIEWER_PAGE_SIZE
+  options$fixedHeader = TRUE
   invisible(options)
 }
 
@@ -85,7 +86,7 @@ renderDataFrame <- function(varName, varValue, title) {
     }'))
       data <- data.frame(matrix(ncol = ncol(varValue), nrow = 0))
       names(data) <- names(varValue)
-      x <- as.character(DT::datatable(data, caption = title, options = options, style = 'default', width = "100%"))
+      x <- as.character(DT::datatable(data, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = "100%"))
     } else {
       x <- paste0('<div><span>Data frame "', varName, '" is empty.</span></div>')
     }
@@ -110,7 +111,7 @@ renderDataFrame <- function(varName, varValue, title) {
     x <- as.data.frame(x)
     options <- defaultEnviewerDTOptions()
     options$paging <- (nrow(x) > ENVIEWER_PAGE_SIZE)
-    x <- as.character(datatable(x, caption = title, options = options, style = 'default', width = 400))
+    x <- as.character(datatable(x, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = 400))
   }
   invisible(x)
 }
