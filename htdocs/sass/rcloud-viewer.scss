@@ -1,3 +1,30 @@
 body {
     padding: 0!important;
 }
+
+.dataTables_wrapper {
+    .dataTables_paginate {
+        .paginate_button {
+            background-color: #428bca;
+            border-color: #357ebd;
+            color: white!important;
+        
+            &:hover {
+                color: #ffffff;
+                background-color: #3276b1;
+                border-color: #285e8e;
+                background-image: none;
+            }
+
+            &.disabled {
+                background: lighten(#428bca, 15%);
+                color: #fff!important;
+
+                &:hover {
+                    background: lighten(#428bca, 15%);
+                    color: #fff!important;
+                }
+            }
+        }
+    }
+}
