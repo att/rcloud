@@ -14,7 +14,6 @@ return {
         
         clear_display();
                             
-               
         RCloud.UI.viewer = {
               view_dataframe_page : ocaps.view_dataframe_page,
               dataFrameCallback : function(variable, data, callback, settings) {
@@ -29,8 +28,8 @@ return {
                             callback(dataObject);
                   }); 
               },
-              initialiseTable: function(doc) {
-                $(doc).find('body').append('<style type="text/css">body {padding:0!important;}</style>');
+              initialiseTable: function() {
+                $('#viewer-body-wrapper').find('iframe').contents().find('head').append('<link rel="stylesheet" type="text/css" href="/css/rcloud.css"><link rel="stylesheet" type="text/css" href="/css/rcloud-viewer.css">');
               }
         };
         

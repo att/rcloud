@@ -79,13 +79,13 @@ renderDataFrame <- function(varName, varValue, title) {
       # htmlwidget is displayed in an iframe, but data.frame paging OCAP is available on the parent page. 
       options$ajax <- JS(paste0('function(data, callback, settings) {
     if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
-        window.parent.RCloud.UI.viewer.initialiseTable($(document));
+        window.parent.RCloud.UI.viewer.initialiseTable();
         window.parent.RCloud.UI.viewer.dataFrameCallback("', varName, '", data, callback, settings);
     }
     }'))
       data <- data.frame(matrix(ncol = ncol(varValue), nrow = 0))
       names(data) <- names(varValue)
-      x <- paste0('<script type="text/javascript">window.parent.RCloud.UI.viewer.initialiseTable(document);</script>', as.character(DT::datatable(data, caption = title, options = options, style = 'default', width = "100%")))
+      x <- as.character(DT::datatable(data, caption = title, options = options, style = 'default', width = "100%"))
     } else {
       x <- paste0('<div><span>Data frame "', varName, '" is empty.</span></div>')
     }
