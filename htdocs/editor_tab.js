@@ -7,7 +7,6 @@ var editor = function () {
         NOTEBOOK_LOAD_FAILS = 5,
         tree_controller_,
         color_recent_notebooks_by_modification_date_;
-
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
     }
@@ -424,9 +423,10 @@ var editor = function () {
                 .then(this.populate_recent_notebooks_list.bind(this));
         },
         create_recent_notebooks_color_coder: function() {
+          var GROUP_COUNT = 7;
           var backgroundColorStyler = function(i, element, dateWt) {
               var styles = [];
-              for(var j = 0; j < 5; j++) {
+              for(var j = 0; j < GROUP_COUNT; j++) {
                 styles.push('recent-notebooks-group-' + j)
               }
               var component = 2;
@@ -434,7 +434,7 @@ var editor = function () {
               styles.forEach(function(style, i) {
                 $elem.removeClass(style);
               });
-              $elem.addClass(styles[~~((dateWt) * styles.length)]);
+              $elem.addClass(styles[~~((1-dateWt) * (styles.length-1))]);
             };
             
           if(this.color_recent_notebooks_by_modification_date_) {
@@ -459,16 +459,32 @@ var editor = function () {
                   if(!styler) {
                     styler = backgroundColorStyler
                   }
-                  var currentDate = Date.now();
-                  var oldest = $(elements[elements.length-1]).data('last-access');
-                  var scalingFactor = currentDate - oldest;
-                  var noOfElements = elements.length;
+                  var MINUTE = 1000*60;
+                  var HOUR = 60*MINUTE;
+                  var previous = $(elements[0]).data('last-access');
+                  
+                  var bucket = 0;
+                  var THRESHOLD = 8*HOUR;
+                  var mapping = [];
+                  for (var i=0; i < GROUP_COUNT; i++) {
+                    mapping.push((i+1)/GROUP_COUNT);
+                  }
+                  
+                  function mapValue(value, threshold) {
+                    if (value > threshold) {
+                      bucket = (++bucket) % mapping.length;
+                    }
+                    return mapping[bucket];
+                  }
+                  
                   elements.each(function(i, elem) {
                     var $self = $(elem),
                         notebook_id = $self.data('gist');
                     var lastAccess = $self.data('last-access');
-                    var dateWt = 1-(currentDate - lastAccess)/scalingFactor;
+                    var gap = previous - lastAccess;
+                    var dateWt = 1 - mapValue(gap, THRESHOLD);
                     styler(i, elem, dateWt);
+                    previous = lastAccess;
                   });
             };
             return styleByLastAccessDate; 
@@ -516,17 +532,21 @@ var editor = function () {
             
             var firstRecentNotebooksBatchSize = computeBatchSize(10);
             var recentNotebooksBatchSize = (firstRecentNotebooksBatchSize <= 20) ? 20 : firstRecentNotebooksBatchSize;
-            
+              
             var transformData = function(data) {
               return _.chain(data)
                 .pairs()
                 .filter(function(kv) {
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(that.get_notebook_info(kv[0])) ;
+                    if(kv[0] === 'r_attributes' || kv[0] === 'r_type') {
+                      return false;
+                    }
+                    var notebook_info = that.get_notebook_info(kv[0]);
+                    return  !_.isEmpty(notebook_info) && notebook_info.username && notebook_info.description;
                 })
                 .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
                 .sortBy(function(kv) { return kv[1] * -1; })
                 .value();
-            }
+            };
 
             // premature optimization? define function outside loop to make jshint happy
             var click_recent = function(e) {
@@ -542,11 +562,13 @@ var editor = function () {
                   result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
                 }
             };
+            var dateFormat = d3.time.format('%-m/%-d/%y');
             var create_recent_link = function(notebook) {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
                 var currentNotebook = that.get_notebook_info(notebook[0]);
-                var anchor = $('<a data-gist="'+notebook[0]+'" data-last-access="'+notebook[1]+'"></a>');
+                var anchor = $('<a data-gist="'+notebook[0]+'" data-last-access="'+notebook[1]+
+                               '" title="opened ' + dateFormat(new Date(notebook[1])) + '"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
                 var $desc;
 
@@ -563,34 +585,6 @@ var editor = function () {
                 anchor.click(click_recent);
             }
             
-            function backgroundColorStyler(i, element, dateWt) {
-              var styles = [];
-              for(var j = 0; j < 5; j++) {
-                styles.push('recent-notebooks-group-' + j)
-              }
-              var component = 2;
-              var $elem = $(element);
-              styles.forEach(function(style, i) {
-                $elem.removeClass(style);
-              });
-              $elem.addClass(styles[~~((dateWt) * styles.length)]);
-            }
-            
-            function styleByCommitDate(elements, styler) {
-                  if(!styler) {
-                    styler = backgroundColorStyler
-                  }
-                  var commitTimes = elements.map(function(x,y) { 
-                    return get_notebook_info($(y).data('gist')).last_commit; 
-                  }).map(function(x,y) { return Date.parse(y); }).sort();
-                  elements.each(function(i, elem) {
-                    var $self = $(elem),
-                        notebook_id = $self.data('gist');
-                    var lastCommit = Date.parse(get_notebook_info(notebook_id).last_commit);
-                    var dateWt = commitTimes.index(lastCommit)/commitTimes.length;
-                    styler(i, elem, dateWt)
-                  });
-            }
             var sorted = transformData(data);
             sorted.shift(); //remove the first item
             var totalRecentNotebooks = sorted.length;
