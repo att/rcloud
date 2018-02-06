@@ -1,14 +1,24 @@
+@import "utils/utils.scss";
+
 body {
     padding: 0!important;
 }
 
+table.dataTable tbody td,
+table.dataTable thead th {
+    padding: 4px 5px;
+}
+
 .dataTables_wrapper {
+
     .dataTables_paginate {
         .paginate_button {
             background-color: #428bca;
             border-color: #357ebd;
             color: white!important;
-        
+            padding: 4px 6px;
+            @include no-select();
+
             &:hover {
                 color: #ffffff;
                 background-color: #3276b1;
