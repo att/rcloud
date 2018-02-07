@@ -18,7 +18,6 @@ defaultEnviewerDTOptions <- function() {
 View <- function (x, title, expr)
 {
   # borrow pre-processing from base R, replace the final command
-  
   if(!missing(expr)) {
     varName <- expr
   } else {
