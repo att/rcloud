@@ -71,7 +71,9 @@ rcloud.upload.asset <- function(name, content, notebook=rcloud.session.notebook(
 }
 
 rcloud.delete.asset <- function(name, notebook=rcloud.session.notebook()){
+  if (is.list(notebook))
+    notebook <- notebook$content$id
   l <- list(NULL)
   names(l) <- name
-  invisible(rcloud.update.notebook(notebook$content$id, list(files=l)))
+  invisible(rcloud.update.notebook(notebook, list(files=l)))
 }
