@@ -35,8 +35,10 @@ RCloud.UI.advanced_menu = (function() {
                     text: "Merge notebook",
                     modes: ["edit"],
                     action: function() {
-                        let merger = new RCloud.UI.notebook_merger();
-                        merger.show_dialog();
+                        // let merger = new RCloud.UI.notebook_merger();
+                        // merger.show_dialog();
+
+                        new RCloud.UI.merger_factory().show_dialog();
                     }
                 },
                 open_from_github: {
