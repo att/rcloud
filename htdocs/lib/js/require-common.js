@@ -5,6 +5,7 @@ requirejs_config_obj = {
         "jquery": "jquery-2.1.1",
         "rcloud_bundle": "../../js/rcloud_bundle",
         "ace": "../ace_bundle",
+        "vs": "monaco/vs",
         editor_tab: "../../editor_tab",
         discover_model: "../../discover_model",
         shell_tab: "../../shell_tab",
