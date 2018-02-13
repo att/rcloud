@@ -1,3 +1,59 @@
+## RCloud 1.9.1
+
+### Features
+ * Color coding of the items in the recent notebooks menu, to see at a glance which
+   notebooks were opened in the same session. (A session is defined as a period of
+   activity with 8 hours separating it from other sessions.) (#2462)
+
+ * Autoscrolling of output in the notebook pane - when output from the current cell
+   would leave the screen, the notebook scrolls instead. This feature is still
+   experimental, and is disabled by default - please try it out in the Settings pane
+   and provide feedback! (#2222)
+
+ * Import and export of Jupyter notebooks, via the new
+   [rcloud.jupyter.notebooks](https://github.com/att/rcloud.jupyter.notebooks)
+   package. (#2458)
+
+### Improvements
+ * Play button is split into Play and Stop buttons, to avoid accidentally restarting
+   the session and provide a cleaner, simpler interface. (#2442)
+
+ * Recent notebooks menu fits the height of the browser window (#2532)
+
+ * Hover over recent notebooks to see the date opened
+
+ * Incremental search for multiple terms searches for all the terms using AND (#2518)
+
+ * Support for Shiny showcase display mode, for simple debugging of reactive
+   events. Built-in R debugging also shows the source cell name. (rcloud.shiny#23)
+
+ * Easier to maintain a solr search index when solr is restarted (rcloud.solr#86)
+
+### Bugfixes
+ * New notebooks were shown as hidden (#2538)
+
+ * Incremental search did not regard username (#2517)
+
+ * Long cells were not indexed by `rcloud.solr` (#2547)
+
+ * Hidden and private notebooks were not removed from Search, and displayed an error
+   (#2533)
+
+ * `rcloud.delete.asset` now works (#2420)
+
+ * Joining cells of arbitrary languages should always produce the expected language
+   (#2361)
+
+ * Help wouldn't be found if there was leading or trailing whitespace in the input
+   (#1760)
+
+ * Editing a running cell would cause its output to disappear once autosave kicked in
+   (#2529)
+
+ * Components moved out of JS global namespace that were causing incompatibilities with
+   other packages (#2524)
+
+
 ## RCloud 1.9
 
 ### Features
