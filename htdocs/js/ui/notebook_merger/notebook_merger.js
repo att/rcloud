@@ -22,7 +22,8 @@ RCloud.UI.notebook_merger = (function() {
 
                     that._diffNavigator = monaco.editor.createDiffNavigator(that._diffEditor, {
                         ignoreCharChange: true,
-                        followsCaret: true
+                        followsCaret: true,
+                        alwaysRevealFirst: true
                     });
                 });
             });
