@@ -9339,20 +9339,6 @@ pre.offscreen {
   border-radius: 0;
   border: 0; }
 
-.button-highlight {
-  background-image: -o-radial-gradient(circle, #6af, transparent 60%);
-  background-image: -moz-radial-gradient(circle, #6af, transparent 60%);
-  background-image: -webkit-radial-gradient(circle, #6af, transparent 60%);
-  display: inline-block;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1; }
-
 .cell-status {
   position: relative;
   width: 100%;
@@ -9586,7 +9572,8 @@ ul.recent-notebooks-list {
   font-size: 12px;
   max-width: 330px;
   min-width: 220px;
-  max-height: 26em;
+  min-height: 6em;
+  max-height: calc(100vh - 130px);
   overflow: auto; }
 
 ul.recent-notebooks-list li {
@@ -9626,6 +9613,28 @@ ul.recent-notebooks-list li a {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap; }
+
+/* color-coding of recent notebooks */
+.recent-notebooks-group-0 {
+  background-color: #e9fde8; }
+
+.recent-notebooks-group-1 {
+  background-color: #f8fde8; }
+
+.recent-notebooks-group-2 {
+  background-color: #fdfde8; }
+
+.recent-notebooks-group-3 {
+  background-color: #fdf2e8; }
+
+.recent-notebooks-group-4 {
+  background-color: #fde8e8; }
+
+.recent-notebooks-group-5 {
+  background-color: #f8e8fd; }
+
+.recent-notebooks-group-6 {
+  background-color: #f2e8fd; }
 
 /* tree filtering and ordering */
 .notebook-tree {

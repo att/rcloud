@@ -202,7 +202,7 @@ RCloud.UI.settings_frame = (function() {
                 }),
                 'autoscroll-notebook-output': that.checkbox({
                     sort: 6500,
-                    default_value: true,
+                    default_value: false,
                     label: "Autoscroll notebook",
                     set: function(val) {
                         shell.notebook.controller.autoscroll_notebook_output(val);

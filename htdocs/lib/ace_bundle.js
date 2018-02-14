@@ -28227,6 +28227,13 @@ var Mode = function() {
     this.foldingRules = new PythonFoldMode("\\:");
     this.$behaviour = this.$defaultBehaviour;
     this.$completer = new PythonCompletions();
+    this.getCompletionsAsync = function(state, session, pos, callback) {
+        if(this.$completer) {
+            this.$completer.getCompletions(null, session, pos, callback);
+        } else {
+            callback(null, []);
+        }
+    };
 };
 oop.inherits(Mode, TextMode);
 
