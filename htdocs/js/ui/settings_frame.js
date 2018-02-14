@@ -169,6 +169,15 @@ RCloud.UI.settings_frame = (function() {
                         shell.notebook.controller.show_cell_numbers(val);
                     }
                 }),
+                'color-recent-notebooks-by-modification-date': that.checkbox({
+                    sort: 3500,
+                    default_value: false,
+                    needs_reload: true,
+                    label: "Color recent notebooks by modification date",
+                    set: function(val) {
+                        editor.color_recent_notebooks_by_modification_date(val);
+                    }
+                }),
                 'panel-layout-by-size': that.checkbox({
                     sort: 4000,
                     default_value: true,
@@ -189,6 +198,14 @@ RCloud.UI.settings_frame = (function() {
                     label: "Export only selected cells",
                     set: function(val) {
                         RCloud.UI.import_export.export_only_selected_files(val);
+                    }
+                }),
+                'autoscroll-notebook-output': that.checkbox({
+                    sort: 6500,
+                    default_value: false,
+                    label: "Autoscroll notebook",
+                    set: function(val) {
+                        shell.notebook.controller.autoscroll_notebook_output(val);
                     }
                 }),
                 'addons': that.text_input_vector({

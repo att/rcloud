@@ -5,8 +5,8 @@ var editor = function () {
         github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
-        tree_controller_;
-
+        tree_controller_,
+        color_recent_notebooks_by_modification_date_;
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
     }
@@ -30,13 +30,13 @@ var editor = function () {
             var that = this;
             username_ = rcloud.username();
 
-            var tree_model = new notebook_tree_model(
+            var tree_model = new RCloud.UI.notebook_tree_model(
                 rcloud.username(),
                 this.show_terse_dates_
             );
 
-            tree_controller_ = new notebook_tree_controller(tree_model,
-                new notebook_tree_view(tree_model)
+            tree_controller_ = new RCloud.UI.notebook_tree_controller(tree_model,
+                new RCloud.UI.notebook_tree_view(tree_model)
             );
 
             tree_controller_.on_notebook_open.attach(function (sender, args) {
@@ -142,7 +142,7 @@ var editor = function () {
                     before = Promise.reject(new Error(
                         "Invalid gist source '" + source + "'; available sources are: " +
                             gist_sources.join(', ')));
-                } else if(!get_notebook_info(gistname).username) {
+                } else if(!has_notebook_info(gistname)) {
                     set_notebook_info(gistname, { source: source });
                     before = rcloud.set_notebook_property(gistname, "source", source);
                 }
@@ -194,8 +194,11 @@ var editor = function () {
             return Promise.cast(tree_controller_.find_next_copy_name(username_, new_notebook_prefix_ + '1'))
                 .then(shell.new_notebook.bind(shell))
                 .then(function(notebook) {
-                    tree_controller_.set_visibility(notebook.id, true);
-                    that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
+                    return tree_controller_.set_visibility(notebook.id, true).then(function(x) {
+                        return notebook;
+                      });
+                }).then(function(notebook) {
+                  return that.star_notebook(true, {notebook: notebook, make_current: true, version: null});
                 });
         },
         validate_name: function(newname) {
@@ -322,6 +325,9 @@ var editor = function () {
         set_terse_dates: function(val) {
             this.show_terse_dates_ = val;
         },
+        color_recent_notebooks_by_modification_date: function(val) {
+            this.color_recent_notebooks_by_modification_date_ = val;
+        },
         star_and_show: function(notebook, make_current, is_change) {
             return this.star_notebook(true, {notebook: notebook,
                                              make_current: make_current,
@@ -416,31 +422,131 @@ var editor = function () {
             return rcloud.config.get_recent_notebooks()
                 .then(this.populate_recent_notebooks_list.bind(this));
         },
+        create_recent_notebooks_color_coder: function() {
+          var GROUP_COUNT = 7;
+          var backgroundColorStyler = function(i, element, dateWt) {
+              var styles = [];
+              for(var j = 0; j < GROUP_COUNT; j++) {
+                styles.push('recent-notebooks-group-' + j)
+              }
+              var component = 2;
+              var $elem = $(element);
+              styles.forEach(function(style, i) {
+                $elem.removeClass(style);
+              });
+              $elem.addClass(styles[~~((1-dateWt) * (styles.length-1))]);
+            };
+            
+          if(this.color_recent_notebooks_by_modification_date_) {
+            var styleByCommitDate = function(elements, styler) {
+                  if(!styler) {
+                    styler = backgroundColorStyler
+                  }
+                  var commitTimes = elements.map(function(x,y) { 
+                    return get_notebook_info($(y).data('gist')).last_commit; 
+                  }).map(function(x,y) { return Date.parse(y); }).sort();
+                  elements.each(function(i, elem) {
+                    var $self = $(elem),
+                        notebook_id = $self.data('gist');
+                    var lastCommit = Date.parse(get_notebook_info(notebook_id).last_commit);
+                    var dateWt = commitTimes.index(lastCommit)/commitTimes.length;
+                    styler(i, elem, dateWt)
+                  });
+            };
+            return styleByCommitDate;
+          } else {
+            var styleByLastAccessDate = function(elements, styler) {
+                  if(!styler) {
+                    styler = backgroundColorStyler
+                  }
+                  var MINUTE = 1000*60;
+                  var HOUR = 60*MINUTE;
+                  var previous = $(elements[0]).data('last-access');
+                  
+                  var bucket = 0;
+                  var THRESHOLD = 8*HOUR;
+                  var mapping = [];
+                  for (var i=0; i < GROUP_COUNT; i++) {
+                    mapping.push((i+1)/GROUP_COUNT);
+                  }
+                  
+                  function mapValue(value, threshold) {
+                    if (value > threshold) {
+                      bucket = (++bucket) % mapping.length;
+                    }
+                    return mapping[bucket];
+                  }
+                  
+                  elements.each(function(i, elem) {
+                    var $self = $(elem),
+                        notebook_id = $self.data('gist');
+                    var lastAccess = $self.data('last-access');
+                    var gap = previous - lastAccess;
+                    var dateWt = 1 - mapValue(gap, THRESHOLD);
+                    styler(i, elem, dateWt);
+                    previous = lastAccess;
+                  });
+            };
+            return styleByLastAccessDate; 
+          }
+        },
+        
         populate_recent_notebooks_list: function(data) {
             var that = this;
-            var firstRecentNotebooksBatchSize = 10;
-            var recentNotebooksBatchSize = 2*firstRecentNotebooksBatchSize;
-            var transformData = function(data) {
-              return _.chain(data)
-                .pairs()
-                .filter(function(kv) {
-                    return kv[0] != 'r_attributes' && kv[0] != 'r_type' && !_.isEmpty(that.get_notebook_info(kv[0])) ;
-                })
-                .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
-                .sortBy(function(kv) { return kv[1] * -1; })
-                .value();
-            }
-            var sorted = transformData(data);
-
-            sorted.shift();//remove the first item
-            var totalRecentNotebooks = sorted.length;
-            sorted = sorted.slice(0, firstRecentNotebooksBatchSize);
 
             $('.recent-notebooks-list a').each(function() {
                 $(this).off('click');
             });
-
+            
             $('.recent-notebooks-list').empty();
+            
+            function createMoreLink() {
+              var li = $('<li></li>');
+              li.appendTo($('.recent-notebooks-list'));
+              var anchor = $('<a title="Show more recent notebooks"></a>');
+
+              anchor.addClass('ui-all')
+                .append($('<span class="more"><i class="caret"></i></span>'))
+                .appendTo(li);
+              return li;
+            }
+            
+            function computeBatchSize(defaultSize) {
+              // insert tmp element to compute batch size
+              var li = createMoreLink();
+              var paddingTop = li.parent().css('padding-top');
+              var paddingBottom = li.parent().css('padding-bottom');
+              paddingTop = (paddingTop) ? parseInt(paddingTop, 10) : 0;
+              paddingBottom = (paddingBottom) ? parseInt(paddingBottom, 10) : 0;
+              var listMaxHeight = parseInt($('.recent-notebooks-list').css('max-height'), 10);
+              listMaxHeight -= (paddingTop + paddingBottom);
+              var liHeight = parseInt(li.css('height'), 10);
+              var batchSize = ~~(listMaxHeight/liHeight - 1);
+              $('.recent-notebooks-list').empty();
+              
+              if(!batchSize) {
+                batchSize = defaultSize;
+              }
+              return batchSize;
+            }
+            
+            var firstRecentNotebooksBatchSize = computeBatchSize(10);
+            var recentNotebooksBatchSize = (firstRecentNotebooksBatchSize <= 20) ? 20 : firstRecentNotebooksBatchSize;
+              
+            var transformData = function(data) {
+              return _.chain(data)
+                .pairs()
+                .filter(function(kv) {
+                    if(kv[0] === 'r_attributes' || kv[0] === 'r_type') {
+                      return false;
+                    }
+                    var notebook_info = that.get_notebook_info(kv[0]);
+                    return  !_.isEmpty(notebook_info) && notebook_info.username && notebook_info.description;
+                })
+                .map(function(kv) { return [kv[0], Date.parse(kv[1])]; })
+                .sortBy(function(kv) { return kv[1] * -1; })
+                .value();
+            };
 
             // premature optimization? define function outside loop to make jshint happy
             var click_recent = function(e) {
@@ -456,11 +562,13 @@ var editor = function () {
                   result.open_notebook(gist, undefined, undefined, undefined, e.metaKey || e.ctrlKey);
                 }
             };
+            var dateFormat = d3.time.format('%-m/%-d/%y');
             var create_recent_link = function(notebook) {
                 var li = $('<li></li>');
                 li.appendTo($('.recent-notebooks-list'));
                 var currentNotebook = that.get_notebook_info(notebook[0]);
-                var anchor = $('<a data-gist="'+notebook[0]+'"></a>');
+                var anchor = $('<a data-gist="'+notebook[0]+'" data-last-access="'+notebook[1]+
+                               '" title="opened ' + dateFormat(new Date(notebook[1])) + '"></a>');
                 var desc = truncateNotebookPath(currentNotebook.description, 40);
                 var $desc;
 
@@ -476,9 +584,16 @@ var editor = function () {
 
                 anchor.click(click_recent);
             }
+            
+            var sorted = transformData(data);
+            sorted.shift(); //remove the first item
+            var totalRecentNotebooks = sorted.length;
+            sorted = sorted.slice(0, firstRecentNotebooksBatchSize);
+            
             for(var i = 0; i < sorted.length; i ++) {
                 create_recent_link(sorted[i])
             }
+            
             if (totalRecentNotebooks > firstRecentNotebooksBatchSize) {
               var that = this;
               var loadMore = function(e) {
@@ -500,18 +615,14 @@ var editor = function () {
                   if(!isLastBatch) {
                     moreLink.appendTo($('.recent-notebooks-list'));
                   }
+                  
+                  that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'))
                 });
               };
 
-              var li = $('<li></li>');
-              li.appendTo($('.recent-notebooks-list'));
-              var anchor = $('<a title="Show more recent notebooks"></a>');
-
-              anchor.addClass('ui-all')
-                .append($('<span class="more"><i class="caret"></i></span>'))
-                .appendTo(li);
-
-              anchor.click(loadMore);
+              var li = createMoreLink();
+              $(li.find('a')).click(loadMore);
+              that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'))
             }
 
             function truncateNotebookPath(txt, chars) {
@@ -633,7 +744,7 @@ var editor = function () {
                 // need to know if foreign before we can do many other things
                 var promise_source = options.source ? Promise.resolve(undefined)
                         : rcloud.get_notebook_property(result.id, 'source').then(function(source) {
-                            if(!that.get_notebook_info(result.id).username)
+                            if(!that.has_notebook_info(result.id))
                                 set_notebook_info(result.id, {});
                             options.source = that.get_notebook_info(result.id).source = source;
                         });

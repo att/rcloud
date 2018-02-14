@@ -42,20 +42,22 @@ if [ ! -e "solr-$VER" ]; then
 fi
 ln -s -f solr-$VER solr
 
+# If SOLR_HOME exists then use it
+if [ -z ${SOLR_HOME+x} ]; then
+    SOLR_DATA="${DEST}/solrdata"
+else
+    SOLR_DATA=$SOLR_HOME
+fi
 
-# Start apache Solr on default port
-echo "starting Apache Solr or default port - 8983 ... "
-"$DEST"/solr/bin/solr start
-
-SOLR_DEST="$DEST/solrdata"
-INSTANCEDIR="$SOLR_DEST/solr/rcloudnotebooks"
+INSTANCEDIR="${SOLR_DATA}/rcloudnotebooks"
 DATADIR="${INSTANCEDIR}/data"
 CONFDIR="${INSTANCEDIR}/conf"
 
 #cp -R solr/example/solr/collection1/ solr/example/solr/rcloudnotebooks
 mkdir -p $DATADIR
 mkdir -p $CONFDIR
-#rm solr/example/solr/rcloudnotebooks/core.properties
+
+cp "$WD/solr.xml" ${SOLR_DATA}/
 cp "$WD/schema.xml" ${CONFDIR}/
 cp "$WD/solrconfig.xml" ${CONFDIR}/
 cp "$WD/word-delim-types.txt" ${CONFDIR}/
@@ -66,7 +68,11 @@ cp  "$WD/stopwords.txt" ${CONFDIR}/
 cp -r "$WD/lang" ${CONFDIR}/
 # Create a collection for the RCloud Notebooks
 
- 
+# Start apache Solr on default port
+echo "starting Apache Solr or default port - 8983 ... "
+"$DEST"/solr/bin/solr start -s $SOLR_DATA
+
+
 QUERY="http://localhost:8983/solr/admin/cores?action=CREATE&name=rcloudnotebooks&instanceDir=$INSTANCEDIR&config=solrconfig.xml&schema=schema.xml&dataDir=$DATADIR"
 curl "$QUERY"
 

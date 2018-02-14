@@ -8,7 +8,7 @@ RCloud.UI.incremental_search = (function() {
         _resultItemSelector,
         _dialogVisible = false,
         _dialog = undefined,
-        _search_service = new notebook_tree_search_service();
+        _search_service = new RCloud.UI.notebook_tree_search_service();
 
     function toggle_incremental_search() {
         if(!_dialogVisible) {
@@ -27,7 +27,7 @@ RCloud.UI.incremental_search = (function() {
             _inputsSelector = _elementSelector + ' input',
             _resultsSelector = _elementSelector + ' .results',
             _resultItemSelector = _resultsSelector + '> p';
-            _search_service = new notebook_tree_search_service();
+            _search_service = new RCloud.UI.notebook_tree_search_service();
 
             if(rcloud.search) {
                 RCloud.UI.shortcut_manager.add([{
@@ -104,4 +104,3 @@ RCloud.UI.incremental_search = (function() {
 
     return result;
 })();
-    

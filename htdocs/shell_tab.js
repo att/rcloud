@@ -352,19 +352,19 @@ var shell = (function() {
                     editor.set_notebook_visibility(notebook.id, true);
             });
         }, run_notebook: function() {
-            RCloud.UI.with_progress(function() {
+            return RCloud.UI.with_progress(function() {
                 return result.notebook.controller.run_all();
             }).then(function() {
                 RCloud.UI.command_prompt.focus();
             });
         }, run_notebook_from: function(cell_id) {
-            RCloud.UI.with_progress(function() {
+            return RCloud.UI.with_progress(function() {
                 return result.notebook.controller.run_from(cell_id);
             }).then(function() {
                 RCloud.UI.command_prompt.focus();
             });
         }, run_notebook_cells: function(cell_ids) {
-            RCloud.UI.with_progress(function() {
+            return RCloud.UI.with_progress(function() {
                 return result.notebook.controller.run_cells(cell_ids);
             }).then(function() {
                 RCloud.UI.command_prompt.focus();
