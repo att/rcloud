@@ -49,7 +49,7 @@ return {
                 var existing_page_size = $('#viewer-body-wrapper').data('pagesize');
 
                 if(existing_page_size && page_size != existing_page_size) {
-                    console.log('updating the page size...');
+                    rcloud.config.set_user_option("dataframe-page-size", page_size);
                 }
 
                 // update
