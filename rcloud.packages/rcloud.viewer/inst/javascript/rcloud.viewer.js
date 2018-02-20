@@ -44,6 +44,17 @@ return {
               },
               initialiseTable: function() {
                 $('#viewer-body-wrapper').find('iframe').contents().find('head').append('<link rel="stylesheet" type="text/css" href="/css/rcloud.css"><link rel="stylesheet" type="text/css" href="/css/rcloud-viewer.css">');
+              },
+              updateDataSettings: function(page_size) {
+                var existing_page_size = $('#viewer-body-wrapper').data('pagesize');
+
+                if(existing_page_size && page_size != existing_page_size) {
+                    console.log('updating the page size...');
+                }
+
+                // update
+                $('#viewer-body-wrapper').data('pagesize', page_size);
+
               }
         };
         
@@ -58,10 +69,15 @@ return {
                 panel: viewer_panel
             }
         });
+
+        // $('#example').on( 'length.dt', function ( e, settings, len ) {
+        //     console.log( 'New page length: '+len );
+        // } );
+
         k();
     },
     view: function(data, title, k) {
-        $('#viewer-body-wrapper > div').remove();
+        $('#viewer-body-wrapper > div:not(.panel-fixed-header)').remove();
         $('#collapse-data-viewer').data('panel-sizer', function(panel) {
           var widgetDiv = $(panel).find('.rcloud-htmlwidget-content');
           /*
@@ -82,6 +98,7 @@ return {
           widgetDiv.data('panel-initial-height', iframe.get(0).height);
           iframe.get(0).height = '100%';
         }
+
         $('#viewer-body-wrapper').append(widgetDiv);
         RCloud.UI.right_panel.collapse($("#collapse-data-viewer"), false, false);
         k();
