@@ -1,16 +1,13 @@
 # there doesn't seem to be a lower-level way to customize View?
 
-ENVIEWER_PAGE_SIZE <- 20
 
 defaultEnviewerDTOptions <- function() {
   options <- list()
   options$paging <- TRUE
   options$pagingType <- "full"
-  options$lengthChange <- FALSE
   options$searching <- FALSE
-  options$info <- FALSE
   options$ordering <- FALSE
-  options$pageLength <- ENVIEWER_PAGE_SIZE
+  options$pageLength <- rcloud.config.get.user.option('dataframe-page-size') 
   options$fixedHeader = TRUE
   invisible(options)
 }
@@ -75,11 +72,12 @@ renderDataFrame <- function(varName, varValue, title) {
     if(nrow(varValue) > 0 && ncol(varValue) > 0) {
       options <- defaultEnviewerDTOptions()
       options$serverSide <- TRUE
-      options$paging <- (nrow(varValue) > ENVIEWER_PAGE_SIZE)
+      options$paging <- (nrow(varValue) > options$pageLength)
       # htmlwidget is displayed in an iframe, but data.frame paging OCAP is available on the parent page. 
       options$ajax <- JS(paste0('function(data, callback, settings) {
     if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
         window.parent.RCloud.UI.viewer.initialiseTable();
+        window.parent.RCloud.UI.viewer.updateDataSettings(data.length);
         window.parent.RCloud.UI.viewer.dataFrameCallback("', varName, '", data, callback, settings);
     }
     }'))
@@ -109,7 +107,7 @@ renderDataFrame <- function(varName, varValue, title) {
       stop("invalid 'varValue' argument")
     x <- as.data.frame(x)
     options <- defaultEnviewerDTOptions()
-    options$paging <- (nrow(x) > ENVIEWER_PAGE_SIZE)
+    options$paging <- (nrow(x) > options$pageLength)
     x <- as.character(datatable(x, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = 400))
   }
   invisible(x)

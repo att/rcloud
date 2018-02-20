@@ -231,21 +231,6 @@ RCloud.UI.settings_frame = (function() {
                             .filter(function(x, i, a) { return i==a.length-1 || !Notebook.empty_for_github(x); })
                             .join('/');
                     }
-                }),
-                'dataframe-page-size': that.text_input({
-                    sort: 13000,
-                    label: "Dataframe page size",
-                    default_value: "20",
-                    parse: function(val) {
-                        var defaultValue = 20, 
-                            parsed = parseInt(val);
-
-                        if(isNaN(parsed)) {
-                            return defaultValue;
-                        } else {
-                            return parsed < 1 ? 1 : parsed;
-                        }
-                    }
                 })
             });
         },
