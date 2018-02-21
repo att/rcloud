@@ -1,5 +1,16 @@
 # there doesn't seem to be a lower-level way to customize View?
+validLengths <- c(10, 25, 50, 100, 200)
 
+getPageSize <- function() {
+  setting <- rcloud.config.get.user.option('dataframe-page-size')   
+  if(is.null(setting)) {
+    25
+  } else if(setting %in% validLengths) {
+    setting
+  } else {
+    25
+  }
+}
 
 defaultEnviewerDTOptions <- function() {
   options <- list()
@@ -7,8 +18,9 @@ defaultEnviewerDTOptions <- function() {
   options$pagingType <- "full"
   options$searching <- FALSE
   options$ordering <- FALSE
-  options$pageLength <- rcloud.config.get.user.option('dataframe-page-size') 
+  options$pageLength <- getPageSize()
   options$fixedHeader = TRUE
+  options$lengthMenu = validLengths
   invisible(options)
 }
 
