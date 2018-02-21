@@ -85,7 +85,6 @@ renderDataFrame <- function(varName, varValue, title) {
     if(nrow(varValue) > 0 && ncol(varValue) > 0) {
       options <- defaultEnviewerDTOptions()
       options$serverSide <- TRUE
-      options$paging <- (nrow(varValue) > options$pageLength)
       options$drawCallback <- JS('function() { 
         if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
           $("html, body").animate({ scrollTop: 0 }, "fast");
