@@ -11,7 +11,13 @@ table.dataTable thead th {
 
 .dataTables_wrapper {
 
+    .dataTables_info {
+        float: left!important;
+    }
+
     .dataTables_paginate {
+        float: right!important;
+        margin-top: 0!important;
         .paginate_button {
             background-color: #428bca;
             border-color: #357ebd;
