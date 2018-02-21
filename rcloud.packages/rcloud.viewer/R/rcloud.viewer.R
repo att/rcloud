@@ -73,6 +73,11 @@ renderDataFrame <- function(varName, varValue, title) {
       options <- defaultEnviewerDTOptions()
       options$serverSide <- TRUE
       options$paging <- (nrow(varValue) > options$pageLength)
+      options$drawCallback <- JS('function() { 
+        if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
+          $("html, body").animate({ scrollTop: 0 }, "fast");
+        }
+      }')
       # htmlwidget is displayed in an iframe, but data.frame paging OCAP is available on the parent page. 
       options$ajax <- JS(paste0('function(data, callback, settings) {
     if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {

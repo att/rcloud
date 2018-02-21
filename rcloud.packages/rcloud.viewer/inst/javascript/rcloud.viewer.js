@@ -54,7 +54,6 @@ return {
 
                 // update
                 $('#viewer-body-wrapper').data('pagesize', page_size);
-
               }
         };
         
