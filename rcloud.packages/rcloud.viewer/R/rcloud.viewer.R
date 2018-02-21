@@ -22,6 +22,7 @@ defaultEnviewerDTOptions <- function() {
   options$pageLength <- getPageSize()
   options$fixedHeader = TRUE
   options$lengthMenu = validLengths
+  options$dom = "<'row'<'col-sm-12't>><'row'<'col-sm-6'p><'col-sm-6'l>><'row'<'col-sm-12'i>>"
   invisible(options)
 }
 
