@@ -35,6 +35,7 @@ table.dataTable thead th {
             &.disabled {
                 background: lighten(#428bca, 15%);
                 color: #fff!important;
+                cursor: not-allowed;
 
                 &:hover {
                     background: lighten(#428bca, 15%);
