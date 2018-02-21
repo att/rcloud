@@ -88,6 +88,7 @@ renderDataFrame <- function(varName, varValue, title) {
       options$drawCallback <- JS('function() { 
         if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
           $("html, body").animate({ scrollTop: 0 }, "fast");
+          $(".dataTables_paginate")[$(".dataTables_paginate a.disabled").length == $(".dataTables_paginate a").length ? "hide" : "show"]();
         }
       }')
       # htmlwidget is displayed in an iframe, but data.frame paging OCAP is available on the parent page. 
