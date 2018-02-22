@@ -6,17 +6,6 @@
         },
         panel_sizer: function(el) {
             return RCloud.UI.collapsible_column.default_sizer(el);
-/*
-            if(!$('#viewer-body-wrapper').children().length) {
-                return RCloud.UI.collapsible_column.default_sizer(el);
-            } else {
-                console.log('expanding viewer to max...');
-                return {
-                    padding: RCloud.UI.collapsible_column.default_padder(el),
-                    height: 9000
-                };
-            }
-*/
         },
     };
     function clear_display() {
@@ -69,21 +58,12 @@ return {
             }
         });
 
-        // $('#example').on( 'length.dt', function ( e, settings, len ) {
-        //     console.log( 'New page length: '+len );
-        // } );
-
         k();
     },
     view: function(data, title, k) {
         $('#viewer-body-wrapper > div:not(.panel-fixed-header)').remove();
         $('#collapse-data-viewer').data('panel-sizer', function(panel) {
-          var widgetDiv = $(panel).find('.rcloud-htmlwidget-content');
-          /*
-          var height = widgetDiv.data('panel-initial-height'); 
-          var padding = RCloud.UI.collapsible_column.default_padder(panel);
-          return {height: height, padding: padding};
-          */
+        var widgetDiv = $(panel).find('.rcloud-htmlwidget-content');
           return {
               height: 9000,
               padding: RCloud.UI.collapsible_column.default_padder(panel)
