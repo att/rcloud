@@ -7,6 +7,18 @@ body {
 table.dataTable tbody td,
 table.dataTable thead th {
     padding: 0;
+
+    &:first-child {
+        border-right: 1px solid #ddd;
+    }
+}
+
+table.dataTable thead th {
+    border-right: 1px solid #ddd;
+
+    &:last-child {
+        border-right: none;
+    }
 }
 
 .dataTables_wrapper {
@@ -50,5 +62,12 @@ table.dataTable thead th {
                 }
             }
         }
+    }
+}
+
+.row {
+    > div {
+        padding-left: 0;
+        padding-right: 0;
     }
 }
