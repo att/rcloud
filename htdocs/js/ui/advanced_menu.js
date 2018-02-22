@@ -30,17 +30,6 @@ RCloud.UI.advanced_menu = (function() {
                         });
                     }
                 },
-                github_merge: {
-                    sort: 1100,
-                    text: "Merge notebook",
-                    modes: ["edit"],
-                    action: function() {
-                        // let merger = new RCloud.UI.notebook_merger();
-                        // merger.show_dialog();
-
-                        new RCloud.UI.merger_factory().show_dialog();
-                    }
-                },
                 open_from_github: {
                     sort: 2000,
                     text: "Load Notebook by ID",
