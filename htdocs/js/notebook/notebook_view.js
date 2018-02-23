@@ -82,6 +82,7 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.set_autoscroll_notebook_output(whether);
             });
+            
         },
         update_urls: function() {
             RCloud.UI.scratchpad.update_asset_url();
@@ -95,8 +96,17 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.reformat();
             });
+        },
+        on_scroll: function(event) {
+          if(autoscroll_notebook_output_) {
+              _.each(this.sub_views, function(view) {
+                view.on_scroll(event);
+              });
+          }
         }
     };
     model.views.push(result);
+    
+    $('#rcloud-cellarea').on('scroll', function(event) { result.on_scroll(event); });
     return result;
 };
