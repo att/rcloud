@@ -23,6 +23,13 @@ defaultEnviewerDTOptions <- function() {
   options$fixedHeader = TRUE
   options$lengthMenu = validLengths
   options$dom = "<'row'<'col-sm-12't>><'row'<'col-sm-6'p><'col-sm-6'l>><'row'<'col-sm-12'i>>"
+  options$drawCallback <- JS('function() { 
+    if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
+      window.parent.RCloud.UI.viewer.initialiseTable();
+      $("html, body").animate({ scrollTop: 0 }, "fast");
+      $(".dataTables_paginate")[$(".dataTables_paginate a.disabled").length == $(".dataTables_paginate a").length ? "hide" : "show"]();
+    }
+  }')
   invisible(options)
 }
 
@@ -86,23 +93,16 @@ renderDataFrame <- function(varName, varValue, title) {
     if(nrow(varValue) > 0 && ncol(varValue) > 0) {
       options <- defaultEnviewerDTOptions()
       options$serverSide <- TRUE
-      options$drawCallback <- JS('function() { 
-        if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
-          $("html, body").animate({ scrollTop: 0 }, "fast");
-          $(".dataTables_paginate")[$(".dataTables_paginate a.disabled").length == $(".dataTables_paginate a").length ? "hide" : "show"]();
-        }
-      }')
       # htmlwidget is displayed in an iframe, but data.frame paging OCAP is available on the parent page. 
       options$ajax <- JS(paste0('function(data, callback, settings) {
     if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
-        window.parent.RCloud.UI.viewer.initialiseTable();
         window.parent.RCloud.UI.viewer.updateDataSettings(data.length);
         window.parent.RCloud.UI.viewer.dataFrameCallback("', varName, '", data, callback, settings);
     }
     }'))
       data <- data.frame(matrix(ncol = ncol(varValue), nrow = 0))
       names(data) <- names(varValue)
-      x <- as.character(DT::datatable(data, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = "100%"))
+      x <- as.character(DT::datatable(data, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = '100%'))
     } else {
       x <- paste0('<div><span>Data frame "', varName, '" is empty.</span></div>')
     }
@@ -126,8 +126,7 @@ renderDataFrame <- function(varName, varValue, title) {
       stop("invalid 'varValue' argument")
     x <- as.data.frame(x)
     options <- defaultEnviewerDTOptions()
-    options$paging <- (nrow(x) > options$pageLength)
-    x <- as.character(datatable(x, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = 400))
+    x <- as.character(datatable(x, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = '100%'))
   }
   invisible(x)
 }
