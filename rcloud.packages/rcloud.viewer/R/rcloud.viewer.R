@@ -20,12 +20,11 @@ defaultEnviewerDTOptions <- function() {
   options$searching <- FALSE
   options$ordering <- FALSE
   options$pageLength <- getPageSize()
-  options$fixedHeader = TRUE
-  options$lengthMenu = validLengths
+  options$fixedHeader <- TRUE
+  options$lengthMenu <- validLengths
   options$dom = "<'row'<'col-sm-12't>><'row'<'col-sm-6'p><'col-sm-6'l>><'row'<'col-sm-12'i>>"
   options$drawCallback <- JS('function() { 
     if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
-      window.parent.RCloud.UI.viewer.initialiseTable();
       $("html, body").animate({ scrollTop: 0 }, "fast");
       $(".dataTables_paginate")[$(".dataTables_paginate a.disabled").length == $(".dataTables_paginate a").length ? "hide" : "show"]();
     }
@@ -96,6 +95,7 @@ renderDataFrame <- function(varName, varValue, title) {
       # htmlwidget is displayed in an iframe, but data.frame paging OCAP is available on the parent page. 
       options$ajax <- JS(paste0('function(data, callback, settings) {
     if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
+        window.parent.RCloud.UI.viewer.initialiseTable();
         window.parent.RCloud.UI.viewer.updateDataSettings(data.length);
         window.parent.RCloud.UI.viewer.dataFrameCallback("', varName, '", data, callback, settings);
     }
@@ -126,6 +126,18 @@ renderDataFrame <- function(varName, varValue, title) {
       stop("invalid 'varValue' argument")
     x <- as.data.frame(x)
     options <- defaultEnviewerDTOptions()
+
+    options$initComplete <- JS(paste0('function() {
+    if(window.parent && window.parent.RCloud && window.parent.RCloud.UI && window.parent.RCloud.UI.viewer) {
+      window.parent.RCloud.UI.viewer.initialiseTable();
+      setTimeout(function() {
+          var dt = $(".dataTable:eq(0)").DataTable();
+          dt.draw();
+      }, 500);
+    }
+    }'))
+
+    # , width = '100%'
     x <- as.character(datatable(x, extensions = 'FixedHeader', caption = title, options = options, style = 'default', width = '100%'))
   }
   invisible(x)
