@@ -1,6 +1,6 @@
 # there doesn't seem to be a lower-level way to customize View?
 validLengths <- c(10, 20, 50, 100, 200)
-defaultLength <- 20
+defaultLength <- 50
 
 getPageSize <- function() {
   setting <- rcloud.config.get.user.option('dataframe-page-size')   
