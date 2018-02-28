@@ -800,14 +800,50 @@ body .modal-dialog.full {
 }
 
 #merger-dialog {
-
+/*
     .modal-dialog {
         width: 95%;
     }
+*/
 
     #merge-container {
-        height: 96%;
+        height: calc(100% - 400px);
     }
+
+    pointer-events: auto;
+
+    .btn-cancel, .close {
+        display: inline-block;
+    }
+
+    label {
+        width: 150px;
+        margin-top: 10px;
+    }   
+    input {
+        margin-top: 10px;
+    } 
+    input[type="file"] {
+        margin-left: 153px;
+    }
+    div[data-by] {
+        min-height: 70px;
+    }
+
+    #merge-stage {
+        display: none;
+    }
+    
+    /*
+    &.pulling {
+        pointer-events: none;
+
+        .btn-cancel, .close {
+            display: none;
+        }
+    }
+    */
+
 }
 
 #tree-finder-dialog {
