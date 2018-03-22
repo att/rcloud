@@ -198,7 +198,7 @@ var PythonCompletions = function() {
           var line = session.getLine(pos.row);
           var prefix = util.retrievePrecedingIdentifier(line, pos.column);
           if(!prefix) {
-            callback(null, null);
+            callback(null, []);
             return;
           }
           rcloud.get_completions('Python', session.getValue(),

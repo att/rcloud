@@ -5,5 +5,5 @@ Author: Carlos Scheidegger <cscheid@cscheid.net>
 Maintainer: Gordon Woodhull <gordon@research.att.com>
 Description: Adds Python bindings for RCloud
 Imports: knitr, markdown
-Suggests: rpython2
+Suggests: reticulate, jsonlite
 License: MIT
