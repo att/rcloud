@@ -21,7 +21,7 @@ sudo python3 -m pip3 install jupyter
 
 ### Configuring RCloud Jupyter integration
 
-RCloud exposes the following properties:
+RCloud uses these settings from rcloud.conf:
 
  * rcloud.python.path - path to Python installation that should be used (e.g. /usr/bin/python3)
  * python.extra.libs - additional Python lib directories (e.g. where Jupyter Python modules got installed)

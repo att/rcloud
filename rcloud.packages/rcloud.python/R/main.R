@@ -1,11 +1,11 @@
 #' 
 #' Configuration
 #' 
-#' Python version and library path are defined by the following properties:
+#' Python version and library path are defined by the following settings from rcloud.conf:
 #'  * rcloud.python.path - path to Python installation that should be used
 #'  * python.extra.libs - additional Python lib directories (e.g. where Jupyter Python modules got installed)
 #'  
-#' IMPORTANT!!! These two do not affect kernels being used, these are configured by kernel descriptors.
+#' IMPORTANT!!! These two do not affect kernels being used, kernels are configured by kernel descriptors.
 #'  
 #'  For Jupyter configuration options see https://jupyter.readthedocs.io/en/latest/projects/jupyter-directories.html
 #'  
@@ -56,7 +56,7 @@ JUPYTER_CELL_TIMEOUT='jupyter.cell.timeout'
 #'
 #' Initializes Jupyter Adapter and stores reference to it in session with 'jupyter.adapter' key.
 #'
-.start.jupter.adapter <- function(rcloud.session)
+.start.jupyter.adapter <- function(rcloud.session)
 {
   require(reticulate, quietly=TRUE)
   if (rcloud.support:::hasConf(PYTHON_PATH))
@@ -149,19 +149,19 @@ rcloud.exec.python <- function(cmd, rcloud.session)
 rcloud.jupyter.list.kernel.specs <- function(rcloud.session)
 {
   if (is.null(rcloud.session$jupyter.adapter))
-    .start.jupter.adapter(rcloud.session)  # if there is no backend Python engine, start it
+    .start.jupyter.adapter(rcloud.session)  # if there is no backend Python engine, start it
   return(rcloud.session$jupyter.adapter$get_kernel_specs())
 }
 
 .eval.python <- function(command, silent, rcloud.session, ...) {
  if (is.null(rcloud.session$jupyter.adapter))
-      .start.jupter.adapter(rcloud.session)  # if there is no backend Python engine, start it
+      .start.jupyter.adapter(rcloud.session)  # if there is no backend Python engine, start it
   rcloud.exec.python(command, rcloud.session)
 }
 
 pycomplete <- function(text, pos, thissession) {
   if (is.null(thissession$jupyter.adapter))
-    .start.jupter.adapter(thissession)  # if there is no backend Python engine, start it
+    .start.jupyter.adapter(thissession)  # if there is no backend Python engine, start it
   completions <- thissession$jupyter.adapter$complete(.get_python_kernel(), text, pos)
   res <- list()
   if(is.null(completions)) {
