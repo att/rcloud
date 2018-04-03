@@ -164,7 +164,7 @@ RCloud.UI.notebook_merge = (function() {
       // give the user the benefit of the doubt:
       this.clear_error();
 
-      function get_notebook_by_id(id) {
+      var get_notebook_by_id = (id) => {
         if(!Notebook.valid_gist_id(id)) {
           return Promise.reject(new Error(this.invalid_notebook_id_error_));
         } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
@@ -182,7 +182,7 @@ RCloud.UI.notebook_merge = (function() {
       if(method === 'id') {
         get_notebook_func = get_notebook_by_id;
       } else if(method === 'file') {
-          get_notebook_func = function() {
+          get_notebook_func = () => {
             if(notebook_from_file_) {
               return Promise.resolve(notebook_from_file_);
             } else {
@@ -190,7 +190,7 @@ RCloud.UI.notebook_merge = (function() {
             }
           };
       } else if(method === 'url') {
-        get_notebook_func = function(url) {
+        get_notebook_func = (url) => {
           var id = RCloud.utils.get_notebook_from_url(url);
           if(!id) {
             return Promise.reject(new Error('Invalid URL'));
@@ -247,7 +247,7 @@ RCloud.UI.notebook_merge = (function() {
 
       this.reset_getting_changes_state();
 
-      this.inputs_.forEach(function(input) {
+      this.inputs_.forEach((input) => {
           input.val('');
       });
 
