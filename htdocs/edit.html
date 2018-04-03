@@ -287,7 +287,6 @@
           <h3 class="modal-title">Merge Notebook</h3>
         </div>
         <div class="modal-body">
-
           <p>Pull changes from another notebook into your current notebook.</p>
           <label for="merge-changes-by">Notebook source:</label>
           <select id="merge-changes-by">
@@ -307,6 +306,12 @@
             <input type="file" data-pull="change" id="merge-notebook-file" size="32" />
           </div>
 
+          <div class="modal-footer">
+            <span class="btn btn-cancel" data-dismiss="modal">Cancel</span>
+            <span class="btn btn-primary show-changes">Show changes</span>
+          </div>
+
+          <!--
           <div id="merge-stage">
             <div id="merge-nav-buttons">
                 <button id="previous-diff">Previous</button>
@@ -315,7 +320,7 @@
             <div id="merge-container">
             </div>
           </div>
-
+        -->
         </div>
       </div>
     </div>
