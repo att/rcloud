@@ -830,6 +830,14 @@ body .modal-dialog.full {
         min-height: 70px;
     }
 
+    #merge-error {
+        color: red;
+        margin-left: 152px;
+        margin-top: 5px;
+        width: 365px;
+        word-wrap: break-word;
+    }
+
     #merge-stage {
         display: none;
     }
