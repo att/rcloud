@@ -24,7 +24,7 @@ RCloud.UI.notebook_merge = (function() {
       this.diff_editor_ = null;
       this.diff_navigator_ = null;
 
-      $(this._dialog).on("shown.bs.modal", () => {
+      $(this.dialog_).on("shown.bs.modal", () => {
         require(["vs/editor/editor.main"], function() {
           that.diff_editor_ = monaco.editor.createDiffEditor(
             $("#merge-container")[0],
@@ -46,7 +46,7 @@ RCloud.UI.notebook_merge = (function() {
         });
       });
 
-      $(this._dialog).on("hidden.bs.modal", () => {
+      $(this.dialog_).on("hidden.bs.modal", () => {
         this.clear();
       });
 
@@ -92,7 +92,7 @@ RCloud.UI.notebook_merge = (function() {
                 var type = val.substring(0, separatorIndex);
                 var value = val.substring(separatorIndex + 1);
 
-                // update pulled by method:
+                // update merged by method:
                 that.update_merged_by(type, value);
               }
               else {
@@ -129,22 +129,22 @@ RCloud.UI.notebook_merge = (function() {
         )
       });
     }
-    update_merged_by(pulled_method, value) {
+    update_merged_by(merged_method, value) {
       this.clear_error();
-      this.select_by_.val(pulled_method);
+      this.select_by_.val(merged_method);
       $(this.dialog_).find('div[data-by]').hide();
-      $(this.dialog_).find('div[data-by="' + pulled_method + '"]').show();
+      $(this.dialog_).find('div[data-by="' + merged_method + '"]').show();
 
       if(!_.isUndefined(value)) {
         // and set the value coming in:
-        this.get_input().val(pulled_method === 'file' ? '' : value);
+        this.get_input().val(merged_method === 'file' ? '' : value);
       }
     }
     get_method() {
       return this.select_by_.val();
     }
     get_input() {
-      return $('#pull-notebook-' + this.get_method());
+      return $('#merge-notebook-' + this.get_method());
     }
     clear_error() {
       $(this.error_selector_).remove();
@@ -161,11 +161,14 @@ RCloud.UI.notebook_merge = (function() {
     }
     do_get_changes() {
 
+      // give the user the benefit of the doubt:
+      this.clear_error();
+
       function get_notebook_by_id(id) {
         if(!Notebook.valid_gist_id(id)) {
-          return Promise.reject(new Error(invalid_notebook_id_error_));
+          return Promise.reject(new Error(this.invalid_notebook_id_error_));
         } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
-          return Promise.reject(new Error(same_notebook_error_));
+          return Promise.reject(new Error(this.same_notebook_error_));
         }
         return rcloud.get_notebook(id);
       };
@@ -199,36 +202,31 @@ RCloud.UI.notebook_merge = (function() {
     
       var value = this.get_input().val();
       
-      this.dialog_.addClass('expanded');
+      get_notebook_func.call(this, value).then((notebook) => {
+        // return Promise.all([
+        //   rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value),
+        //   editor.pull_and_replace_notebook(notebook).then(function() {
+        //     clear();
+        //     dialog_.modal('hide');
+        //   })
+        // ]);
 
-      setTimeout(() => {
-        get_notebook_func(value).then((notebook) => {
-          // return Promise.all([
-          //   rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value),
-          //   editor.pull_and_replace_notebook(notebook).then(function() {
-          //     clear();
-          //     dialog_.modal('hide');
-          //   })
-          // ]);
-    
-          this.clear();
+        this.dialog_.addClass('expanded');
+
+        setTimeout(() => {  
           this.dialog_.modal('hide');
-  
           return Promise.resolve();
-  
-        }).catch(function(e) {
-          this.reset_getting_changes_state();
-        
-          if(e.message.indexOf('Not Found (404)') !== -1) {
-            show_error(not_found_notebook_error_);
-          } else {
-            show_error(e.message);
-          }
-        });
-      }, 4000);
+        }, 4000);
 
+      }).catch((e) => {
+        this.reset_getting_changes_state();
       
-
+        if(e.message.indexOf('Not Found (404)') !== -1) {
+          this.show_error(not_found_notebook_error_);
+        } else {
+          this.show_error(e.message);
+        }
+      });
     }
     update_when_getting_changes() {
       this.btn_show_changes_.text('Getting changes');
