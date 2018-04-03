@@ -852,6 +852,19 @@ body .modal-dialog.full {
     }
     */
 
+    &.expanded {
+        .modal-dialog {
+            width: 98%;
+            height: 98%;
+            margin: 1%;
+            padding: 0;
+        }
+
+        .modal-content {
+            min-height: 98%;
+        }
+    }
+
 }
 
 #tree-finder-dialog {

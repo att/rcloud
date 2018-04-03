@@ -14,7 +14,7 @@ RCloud.UI.notebook_merge = (function() {
       this.nextDiffButton_ = $("#next-diff");
       this.error_selector_ = '#merge-error';
       
-      this.btn_pull_ = this.dialog_.find('.btn-primary');
+      this.btn_show_changes_ = this.dialog_.find('.btn-primary.btn-primary.show-changes');
       this.inputs_ = [this.merge_notebook_file_, this.merge_notebook_url_, this.merge_notebook_id_];
       this.notebook_from_file_;
       this.same_notebook_error_ = 'You cannot merge from your current notebook; the source must be a different notebook.';
@@ -62,6 +62,20 @@ RCloud.UI.notebook_merge = (function() {
           this.merge_notebook_file_.val(null);
           this.update_merged_by(this.select_by_.val());
       });
+      
+      [this.merge_notebook_file_, this.merge_notebook_url_, this.merge_notebook_id_].forEach(function(control) {
+        control.keydown((e) => {
+          if(e.keyCode === $.ui.keyCode.ENTER) {
+            this.do_get_changes();
+            alert('doing something');
+            e.preventDefault();
+          }
+        });
+      });
+
+      this.btn_show_changes_.click(() => {
+        this.do_get_changes();
+      });
 
       RCloud.UI.advanced_menu.add({
         merge_notebook: {
@@ -73,23 +87,20 @@ RCloud.UI.notebook_merge = (function() {
 
             rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
               if(val && val.indexOf(':') !== -1) {
+                // split and set:
+                var separatorIndex = val.indexOf(':');
+                var type = val.substring(0, separatorIndex);
+                var value = val.substring(separatorIndex + 1);
 
-                  // split and set:
-                  var separatorIndex = val.indexOf(':');
-                  var type = val.substring(0, separatorIndex);
-                  var value = val.substring(separatorIndex + 1);
-
-                  // update pulled by method:
-                  that.update_merged_by(type, value);
+                // update pulled by method:
+                that.update_merged_by(type, value);
               }
               else {
-                  that.update_merged_by('url');
+                that.update_merged_by('url');
               }
 
               that.dialog_.modal({ keyboard: true });
-
             });
-
           }
         }
       });
@@ -133,37 +144,110 @@ RCloud.UI.notebook_merge = (function() {
       return this.select_by_.val();
     }
     get_input() {
-      return $('#pull-notebook-' + get_method());
+      return $('#pull-notebook-' + this.get_method());
     }
     clear_error() {
       $(this.error_selector_).remove();
     }
     show_error(errorText) {
-      clear_error();
+      this.clear_error();
       $('<div />', {
-      id: this.error_selector_.substring(1),
-      text: errorText
-      }).appendTo($(this.dialog_).find('div[data-by="' + get_method() + '"]'));
+        id: this.error_selector_.substring(1),
+        text: errorText
+      }).appendTo($(this.dialog_).find('div[data-by="' + this.get_method() + '"]'));
     }
     has_error() {
       return $(this.error_selector_).length;
     }
-    update_when_pulling() {
-      this.btn_pull_.text('Pulling');
-      this.dialog_.addClass('pulling');
+    do_get_changes() {
+
+      function get_notebook_by_id(id) {
+        if(!Notebook.valid_gist_id(id)) {
+          return Promise.reject(new Error(invalid_notebook_id_error_));
+        } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
+          return Promise.reject(new Error(same_notebook_error_));
+        }
+        return rcloud.get_notebook(id);
+      };
+
+      var method = this.get_method();
+
+      var get_notebook_func, notebook;
+
+      this.update_when_getting_changes();
+
+      if(method === 'id') {
+        get_notebook_func = get_notebook_by_id;
+      } else if(method === 'file') {
+          get_notebook_func = function() {
+            if(notebook_from_file_) {
+              return Promise.resolve(notebook_from_file_);
+            } else {
+              return Promise.reject(new Error('No file to upload'));
+            }
+          };
+      } else if(method === 'url') {
+        get_notebook_func = function(url) {
+          var id = RCloud.utils.get_notebook_from_url(url);
+          if(!id) {
+            return Promise.reject(new Error('Invalid URL'));
+          } else {
+            return get_notebook_by_id(id);
+          }
+        };
+      }
+    
+      var value = this.get_input().val();
+      
+      this.dialog_.addClass('expanded');
+
+      setTimeout(() => {
+        get_notebook_func(value).then((notebook) => {
+          // return Promise.all([
+          //   rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value),
+          //   editor.pull_and_replace_notebook(notebook).then(function() {
+          //     clear();
+          //     dialog_.modal('hide');
+          //   })
+          // ]);
+    
+          this.clear();
+          this.dialog_.modal('hide');
+  
+          return Promise.resolve();
+  
+        }).catch(function(e) {
+          this.reset_getting_changes_state();
+        
+          if(e.message.indexOf('Not Found (404)') !== -1) {
+            show_error(not_found_notebook_error_);
+          } else {
+            show_error(e.message);
+          }
+        });
+      }, 4000);
+
+      
+
     }
-    reset_pulling_state() {
-      this.btn_pull_.text('Pull');
-      this.dialog_.removeClass('pulling');
+    update_when_getting_changes() {
+      this.btn_show_changes_.text('Getting changes');
+      this.dialog_.addClass('gettingchanges');
+    }
+    reset_getting_changes_state() {
+      this.btn_show_changes_.text('Show changes');
+      this.dialog_.removeClass('gettingchanges');
     }
     clear() {
-      this.diff_editor_.dispose();
+      if(this.diff_editor_) {
+        this.diff_editor_.dispose();
+      }
+
       $("#merge-container")
         .children()
         .remove();
 
-      // reset pulling state:
-      this.reset_pulling_state();
+      this.reset_getting_changes_state();
 
       this.inputs_.forEach(function(input) {
           input.val('');
@@ -173,6 +257,8 @@ RCloud.UI.notebook_merge = (function() {
 
       // default to URL for the next time:
       this.update_merged_by('url');
+
+      this.dialog_.removeClass('expanded');
     }
   };
 
