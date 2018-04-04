@@ -814,6 +814,11 @@ body .modal-dialog.full {
     }
 */
 
+    .modal-header {
+        padding-left:20px!important;
+        padding-right:20px!important;
+    }
+
     #merge-container {
         height: calc(100% - 400px);
     }
@@ -846,7 +851,7 @@ body .modal-dialog.full {
         word-wrap: break-word;
     }
 
-    #merge-stage {
+    #merge-stage, #merge-compare-section {
         display: none;
     }
     
@@ -860,7 +865,11 @@ body .modal-dialog.full {
     }
     */
 
-    &.expanded {
+    .btn-init {
+        margin-left: 5px;
+    }
+
+    &.compare {
         .modal-dialog {
             width: 98%;
             height: 98%;
@@ -870,6 +879,15 @@ body .modal-dialog.full {
 
         .modal-content {
             min-height: 98%;
+        }
+
+        .show-changes,
+        #merge-init-section {
+            display: none;
+        }
+
+        #merge-compare-section {
+            display: block;
         }
     }
 

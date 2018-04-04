@@ -1,4 +1,10 @@
 RCloud.UI.notebook_merge = (function() {
+  const DialogStage = Object.freeze({
+    INIT: 'init',
+    GETTINGCHANGES: 'gettingchanges',
+    COMPARE: 'compare'
+  });
+
   const notebook_merge = class {
     constructor() {
       let that = this,
@@ -10,9 +16,12 @@ RCloud.UI.notebook_merge = (function() {
       this.merge_notebook_file_ = $('#merge-notebook-file');
       this.merge_notebook_url_ = $('#merge-notebook-url');
       this.merge_notebook_id_ = $('#merge-notebook-id');
-      this.previousDiffButton_ = $("#previous-diff");
-      this.nextDiffButton_ = $("#next-diff");
+      this.previous_diff_button_ = $("#previous-diff");
+      this.next_diff_button_ = $("#next-diff");
       this.error_selector_ = '#merge-error';
+
+      this.merge_notebook_details_ = $('#merge-notebook-details');
+      this.button_init_ = this.dialog_.find('.btn-init');
       
       this.btn_show_changes_ = this.dialog_.find('.btn-primary.btn-primary.show-changes');
       this.inputs_ = [this.merge_notebook_file_, this.merge_notebook_url_, this.merge_notebook_id_];
@@ -23,6 +32,8 @@ RCloud.UI.notebook_merge = (function() {
 
       this.diff_editor_ = null;
       this.diff_navigator_ = null;
+
+      this.dialog_stage_ = DialogStage.INIT;
 
       $(this.dialog_).on("shown.bs.modal", () => {
         require(["vs/editor/editor.main"], function() {
@@ -50,11 +61,11 @@ RCloud.UI.notebook_merge = (function() {
         this.clear();
       });
 
-      this.previousDiffButton_.click(() => {
+      this.previous_diff_button_.click(() => {
         this.diff_navigator_.previous();
       });
 
-      this.nextDiffButton_.click(() => {
+      this.next_diff_button_.click(() => {
         this.diff_navigator_.next();
       });
 
@@ -75,6 +86,10 @@ RCloud.UI.notebook_merge = (function() {
 
       this.btn_show_changes_.click(() => {
         this.do_get_changes();
+      });
+
+      this.button_init_.click(() => {
+        this.update_stage(DialogStage.INIT);
       });
 
       RCloud.UI.advanced_menu.add({
@@ -211,12 +226,13 @@ RCloud.UI.notebook_merge = (function() {
         //   })
         // ]);
 
-        this.dialog_.addClass('expanded');
+        //this.dialog_.addClass('expanded');
+        this.update_stage(DialogStage.COMPARE);
 
-        setTimeout(() => {  
-          this.dialog_.modal('hide');
-          return Promise.resolve();
-        }, 4000);
+        // setTimeout(() => {  
+        //   this.dialog_.modal('hide');
+        //   return Promise.resolve();
+        // }, 100000);
 
       }).catch((e) => {
         this.reset_getting_changes_state();
@@ -228,13 +244,27 @@ RCloud.UI.notebook_merge = (function() {
         }
       });
     }
+    update_stage(dialogStage) {
+      if(dialogStage == DialogStage.INIT) {
+        this.reset_getting_changes_state();
+      }
+      
+      if(dialogStage == DialogStage.COMPARE) {
+        this.merge_notebook_details_.html(this.get_input().val());
+      } else {
+        this.merge_notebook_details_.html('');
+      }
+
+      this.dialog_
+        .removeClass(Object.keys(DialogStage).map(key => key.toLowerCase()).join(' '))
+        .addClass(dialogStage.toLowerCase());
+    }
     update_when_getting_changes() {
       this.btn_show_changes_.text('Getting changes');
       this.dialog_.addClass('gettingchanges');
     }
     reset_getting_changes_state() {
       this.btn_show_changes_.text('Show changes');
-      this.dialog_.removeClass('gettingchanges');
     }
     clear() {
       if(this.diff_editor_) {
@@ -256,7 +286,7 @@ RCloud.UI.notebook_merge = (function() {
       // default to URL for the next time:
       this.update_merged_by('url');
 
-      this.dialog_.removeClass('expanded');
+      this.update_stage(DialogStage.INIT);
     }
   };
 
