@@ -279,31 +279,38 @@
 </div>
 
 <script type="text/template" id="merger-template">
-  <div id="merger-dialog" class="modal fade" aria-hidden="false">
+  <div id="merger-dialog" class="modal fade init" aria-hidden="false">
     <div class="modal-dialog">
       <div class="modal-content">
-        <div class="modal-header" style="padding-left:20px!important;padding-right:20px!important">
+        <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
           <h3 class="modal-title">Merge Notebook</h3>
         </div>
         <div class="modal-body">
-          <p>Pull changes from another notebook into your current notebook.</p>
-          <label for="merge-changes-by">Notebook source:</label>
-          <select id="merge-changes-by">
-            <option value="url">URL</option>
-            <option value="id" selected="selected">Notebook id</option>          
-            <option value="file">File</option>
-          </select>
-          <div data-by="url">
-            <label for="merge-notebook-url">Notebook URL:</label>
-            <input type="text" data-pull="change paste keyup" id="merge-notebook-url" size="50" spellcheck="false" />
+
+          <div id="merge-init-section" class="merge-section">
+            <p>Merge changes from another notebook into your current notebook.</p>
+            <label for="merge-changes-by">Notebook source:</label>
+            <select id="merge-changes-by">
+              <option value="url">URL</option>
+              <option value="id" selected="selected">Notebook id</option>          
+              <option value="file">File</option>
+            </select>
+            <div data-by="url">
+              <label for="merge-notebook-url">Notebook URL:</label>
+              <input type="text" data-pull="change paste keyup" id="merge-notebook-url" size="50" spellcheck="false" />
+            </div>
+            <div data-by="id">
+              <label for="merge-notebook-id">Notebook ID:</label>
+              <input type="text" data-pull="change paste keyup" id="merge-notebook-id" size="32" spellcheck="false" />
+            </div>          
+            <div data-by="file">
+              <input type="file" data-pull="change" id="merge-notebook-file" size="32" />
+            </div>
           </div>
-          <div data-by="id">
-            <label for="merge-notebook-id">Notebook ID:</label>
-            <input type="text" data-pull="change paste keyup" id="merge-notebook-id" size="32" spellcheck="false" />
-          </div>          
-          <div data-by="file">
-            <input type="file" data-pull="change" id="merge-notebook-file" size="32" />
+
+          <div id="merge-compare-section" class="merge-section">
+            <p>Showing differences between current notebook and notebook <span id="merge-notebook-details"></span><span class="btn btn-primary btn-init">Change</span></p>
           </div>
 
           <div class="modal-footer">
