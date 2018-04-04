@@ -1227,7 +1227,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
 
                 var dp = this.get_parent(node.id);
 
-                if(dp === parent && node.label === data.label) {
+                if(dp === parent && node.label === data.label && this.sorted_by_ !== this.orderType.DATE_DESC) {
                     this.update_tree_node(node, data);
                 } else {
 
