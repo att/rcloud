@@ -28,13 +28,13 @@
   "iperl" : {
     "hljs.class" : "perl",
     "extension" : "pl",
-    "ace.mode" : "ace/mode/Text",
+    "ace.mode" : "ace/mode/perl",
     "display.name" : "Perl 5"
   },
   "julia-0.6" : {
     "hljs.class" : "julia",
     "extension" : "jl",
-    "ace.mode" : "ace/mode/Text",
+    "ace.mode" : "ace/mode/julia",
     "display.name" : "Julia"
   }
 
