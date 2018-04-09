@@ -284,6 +284,22 @@ rcloud.info <- function(name) if (missing(name)) .info$rcloud.info else .info$rc
 
 .info <- new.env(emptyenv())
 
+
+RCloudLanguage <- function(...) {
+  d <- as.list(...)
+  if (is.null(d$language) || !is.character(d$language) || length(d$language) != 1)
+    stop(paste("'language' field must be a length-1 character", sep=''))
+  if (!is.function(d$run.cell) && !is.primitive(d$run.cell))
+    stop(paste("'run.cell' field must be either a function or a primitive", sep=''))
+  if (!is.function(d$setup) && !is.primitive(d$setup))
+    stop(paste("'setup' field must be either a function or a primitive", sep=''))
+  if (!is.function(d$teardown) && !is.primitive(d$teardown))
+    stop(paste("'teardown' field must be either a function or a primitive", sep=''))
+  structure(d, class = "RCloudLanguage")
+}
+
+is.RCloudLanguage <- function(x) inherits(x, "RCloudLanguage")
+
 start.rcloud.common <- function(...) {
   ## This is a bit of a hack (errr.. I mean a serious hack)
   ## we fake out R to think that Rhttpd is running and hijack the browser
@@ -345,7 +361,7 @@ start.rcloud.common <- function(...) {
   }
 
   ## set up the languages which will be supported by this session
-  lang.list <- NULL
+  lang.list <- list()
   file.ext.list <- list(md = "Markdown")
   if (!identical(.session$mode, "call")) {
     lang.str <- getConf("rcloud.languages")
@@ -354,21 +370,28 @@ start.rcloud.common <- function(...) {
     for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
       d <- suppressMessages(suppressWarnings(getNamespace(lang)[["rcloud.language.support"]]))
       if (!is.function(d) && !is.primitive(d))
-        stop(paste("Could not find a function or primitive named rcloud.language.support in package '",lang,"'",sep=''))
-      d <- suppressMessages(suppressWarnings(d()))
-      if (!is.list(d))
-        stop(paste("result of calling rcloud.language.support for package '",lang,"' must be a list", sep=''))
-      if (is.null(d$language) || !is.character(d$language) || length(d$language) != 1)
-        stop(paste("'language' field of list returned by rcloud.language.support for package '", lang, "' must be a length-1 character", sep=''))
-      if (!is.function(d$run.cell) && !is.primitive(d$run.cell))
-        stop(paste("'run.cell' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
-      if (!is.function(d$setup) && !is.primitive(d$setup))
-        stop(paste("'setup' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
-      if (!is.function(d$teardown) && !is.primitive(d$teardown))
-        stop(paste("'teardown' field of list returned by rcloud.language.support for package '", lang, "' must be either a function or a primitive", sep=''))
-      lang.list[[d$language]] <- d
-      suppressMessages(suppressWarnings(lang.list[[d$language]]$setup(.session)))
-      file.ext.list[d$extension] <- d$language
+        stop(paste("Could not find a function or primitive named rcloud.language.support in package '", lang,"'", sep=''))
+      d <- suppressMessages(suppressWarnings(d(.session)))
+      if (!is.RCloudLanguage(d) && !is.list(d))
+        stop(paste("result of calling rcloud.language.support for package '", lang,"' must be a list of RCloudLanguage or RCloudLanguage", sep=''))
+      
+      package.languages <- d
+      if(is.RCloudLanguage(d)) {
+        package.languages <- list(d)
+      }
+      
+      for (package.lang in package.languages) {
+        if (!is.RCloudLanguage(package.lang)) {
+          stop(paste("result of calling rcloud.language.support for package '", lang,"' must be a list of RCloudLanguage or RCloudLanguage", sep=''))
+        }
+        if(package.lang$language %in% names(lang.list)) {
+          stop(paste0("Language Conflict! Package '", lang, "' tried to register language '", package.lang$language, "', but it already exists."))
+        }
+        lang.list[[package.lang$language]] <- package.lang
+        suppressMessages(suppressWarnings(lang.list[[package.lang$language]]$setup(.session)))
+        file.ext.list[package.lang$extension] <- package.lang$language
+      }
+      
     }
   }
   .session$languages <- lang.list

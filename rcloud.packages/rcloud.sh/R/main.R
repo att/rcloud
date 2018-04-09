@@ -2,7 +2,7 @@
 ## set env vars in one cell and use them in another
 ## However, it does share the R env, so you can use R cells to set env vars
 
-rcloud.language.support <- function()
+rcloud.language.support <- function(.session)
 {
     ev <- function(command, silent, rcloud.session, ...) {
         f <- tempfile("script-", fileext=".sh")
@@ -20,12 +20,12 @@ rcloud.language.support <- function()
         character(0)
     }
 
-    list(language="shell",
+    RCloudLanguage(list(language="shell",
          run.cell=ev,
          complete=complete,
          ace.mode="ace/mode/sh",
          hljs.class="sh",
          extension="sh",
          setup=function(rcloud.session) {},
-         teardown=function(rcloud.session) {})
+         teardown=function(rcloud.session) {}))
 }

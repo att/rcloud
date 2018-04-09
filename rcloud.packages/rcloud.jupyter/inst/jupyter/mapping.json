@@ -1,0 +1,41 @@
+{
+  "python2" : {
+    "hljs.class" : "py",
+    "extension" : "py",
+    "ace.mode" : "ace/mode/python",
+    "display.name" : "Python 2",
+    "init.script" : "function(rcloud.session) { retina <- ''; if (rcloud.session$device.pixel.ratio > 1) { retina <- \"config InlineBackend.figure_format = 'retina'\" }; inline_plots <- '%matplotlib inline';  paste0(retina, '\n', inline_plots) }"
+  },
+  "python3" : {
+    "hljs.class" : "py3",
+    "extension" : "py3",
+    "ace.mode" : "ace/mode/python",
+    "display.name" : "Python 3",
+    "init.script" : "function(rcloud.session) { retina <- ''; if (rcloud.session$device.pixel.ratio > 1) { retina <- \"config InlineBackend.figure_format = 'retina'\" }; inline_plots <- '%matplotlib inline';  paste0(retina, '\n', inline_plots) }"
+  },
+  "javascript" : {
+    "hljs.class" : "js",
+    "extension" : "js",
+    "ace.mode" : "ace/mode/javascript",
+    "display.name" : "JavaScript"
+  },
+  "lgo" : {
+    "hljs.class" : "go",
+    "extension" : "go",
+    "ace.mode" : "ace/mode/Text",
+    "display.name" : "go"
+  },
+  "iperl" : {
+    "hljs.class" : "perl",
+    "extension" : "pl",
+    "ace.mode" : "ace/mode/Text",
+    "display.name" : "Perl 5"
+  },
+  "julia-0.6" : {
+    "hljs.class" : "julia",
+    "extension" : "jl",
+    "ace.mode" : "ace/mode/Text",
+    "display.name" : "Julia"
+  }
+
+}

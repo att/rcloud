@@ -1,4 +1,4 @@
-rcloud.language.support <- function()
+rcloud.language.support <- function(.session)
 {
   require(rmarkdown)
 
@@ -39,13 +39,13 @@ rcloud.language.support <- function()
     utils:::.CompletionEnv[["comps"]]
   }
 
-  list(language="RMarkdown",
+  RCloudLanguage(list(language="RMarkdown",
        run.cell=ev,
        complete=complete,
        is.a.markdown=TRUE,
        ace.mode="ace/mode/rmarkdown",
        extension="Rmd",
        setup=function(rcloud.session) {},
-       teardown=function(rcloud.session) {})
+       teardown=function(rcloud.session) {}))
 }
 

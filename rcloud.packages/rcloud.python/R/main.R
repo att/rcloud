@@ -104,14 +104,14 @@ pycomplete <- function(text, pos, thissession) {
   return(res)
 }
 
-rcloud.language.support <- function()
+rcloud.language.support <- function(rcloud.session)
 {
-  list(language="Python",
+  RCloudLanguage(list(language="Python",
        run.cell=.eval.python,
        complete = pycomplete,
        ace.mode="ace/mode/python",
        hljs.class="py",
        extension="py",
        setup=function(rcloud.session) {},
-       teardown=function(rcloud.session) {})
+       teardown=function(rcloud.session) {}))
 }

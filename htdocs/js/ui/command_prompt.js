@@ -69,8 +69,8 @@ RCloud.UI.command_prompt = (function() {
         }
 
         function set_language(language) {
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            session.setMode(new LangMode(false, session.doc, session));
+            var LangMode = RCloud.language.ace_mode(language);
+            session.setMode(new LangMode(false, session.doc, session, language));
         }
 
         ui_utils.install_common_ace_key_bindings(widget, result.language.bind(result));

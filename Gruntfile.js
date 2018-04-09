@@ -103,6 +103,7 @@ module.exports = function (grunt) {
             "htdocs/lib/js/ace/r_matching_brace_outdent.js",
             "htdocs/lib/js/ace/r_code_model.js",
             "htdocs/lib/js/ace/r_scope_tree.js",
+            "htdocs/lib/js/ace/jupyter_completions.js",
             "htdocs/lib/js/ace/tex_highlight_rules.js",
             "htdocs/lib/js/ace/mode-markdown.js",
             "htdocs/lib/js/ace/sweave_background_highlighter.js",

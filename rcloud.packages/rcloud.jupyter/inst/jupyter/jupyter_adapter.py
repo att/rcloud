@@ -144,7 +144,7 @@ class RCloudExecutePreprocessor(ExecutePreprocessor):
     _kernels = Dict()
     _clients = Dict()
     mkm = None
-    init_script = None
+    _init_scripts = Dict()
     console_in = None
     
     def remove_kernel(self, kernel_name):
@@ -168,7 +168,8 @@ class RCloudExecutePreprocessor(ExecutePreprocessor):
         kc.wait_for_ready(timeout=startup_timeout)
         kc.allow_stdin = True
         self._clients[kernel_id] = kc
-        kc.execute(self.init_script, reply = True)
+        if kernel_name in self._init_scripts:
+          kc.execute(self._init_scripts[kernel_name], reply = True)
         return kc
       except RuntimeError:
         kc.stop_channels()
@@ -298,14 +299,17 @@ class JupyterAdapter(object):
     }
     
     
-    def __init__(self, init_script = '', console_in = None, 
+    def __init__(self, console_in = None, 
                 kernel_startup_timeout = 600, cell_exec_timeout=600, kernel_name='python',
                 **kw):
         """Initializes the Jupyter Adapter"""
 
         self.executePreprocessor = RCloudExecutePreprocessor(startup_timeout = kernel_startup_timeout, timeout = cell_exec_timeout, 
                                                             kernel_name = kernel_name,  kernel_manager_class=MultiKernelManager, 
-                                                            console_in = console_in, init_script = init_script)
+                                                            console_in = console_in)
+
+    def add_init_script(self, kernel_name, init_script):
+        self.executePreprocessor._init_scripts[kernel_name] = init_script
 
     def get_kernel_specs(self):
         return KernelSpecManager().get_all_specs()

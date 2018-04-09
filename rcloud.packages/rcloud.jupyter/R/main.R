@@ -17,20 +17,75 @@
 PYTHON_PATH <- 'rcloud.jupyter.python.path'
 PYTHON_EXTRA_LIBS <- 'rcloud.jupyter.python.extra.libs'
 JUPYTER_CELL_TIMEOUT <- 'rcloud.jupyter.cell.timeout'
+JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
 
-.set_python_kernel <- function(python_kernel) {
+.set_default_kernel <- function(language, kernel_name) {
+  default_kernel_key <- paste0(language, '_kernel')
   session <- rcloud.support:::.session
-  session$python_kernel <- python_kernel
+  assign(default_kernel_key, kernel_name, envir = session)
 }
 
-.get_python_kernel <- function() {
-  if('python_kernel' %in% names(rcloud.support:::.session)) {
+.get_default_kernel <- function(language) {
+  default_kernel_key <- paste0(language, '_kernel')
+  if (default_kernel_key %in% names(rcloud.support:::.session)) {
     session <- rcloud.support:::.session
-    session$python_kernel
+    get(default_kernel_key, envir = session)
   } else {
-    'python'
+    language
   }
 }
+
+.load.custom.mapping <- function() {
+  if (rcloud.support:::nzConf(JUPYTER_LANGUAGE_MAPPING)) {
+    customMappingPath <- rcloud.support:::getConf(JUPYTER_LANGUAGE_MAPPING)
+    if (file.exists(customMappingPath)) {
+      return(jsonlite::read_json(path = customMappingPath))
+    }
+  }
+  list()
+}
+
+.load.mapping.from.kernel.metadata <- function(kernel_spec) {
+  rcloud.metadata <- kernel_spec$metadata[grep("^rcloud\\..*", names(kernel_spec$metadata))]
+  if(is.null(rcloud.metadata)) { 
+    return(list())
+  }
+  names(rcloud.metadata) <- sub("^rcloud\\.", "", names(rcloud.metadata))
+  rcloud.metadata
+}
+
+.create.language.settings <- function(kernel_name, spec) {
+  defaultMapping <- jsonlite::read_json(path = system.file("jupyter/mapping.json", package="rcloud.jupyter"))
+  customMapping <- .load.custom.mapping()
+  kernelMapping <- .load.mapping.from.kernel.metadata(spec)
+  res <- list(
+    "hljs.class" = "",
+    "extension" = "",
+    "ace.mode" = "ace/mode/text",
+    "display.name" = spec$display_name,
+    "init.script" = "function (session) { '' }"
+  )
+  defaultLangMapping <- defaultMapping[[kernel_name]]
+  customLangMapping <- customMapping[[kernel_name]]
+  for(key in names(res)) {
+    fromKernel <- kernelMapping[[key]]
+    fromCustom <- customLangMapping[[key]]
+    fromDefault <- defaultLangMapping[[key]]
+    if(!is.null(fromKernel) && nchar(fromKernel)>0) {
+      res[key] <- fromKernel
+    } else if(!is.null(fromCustom) && nchar(fromCustom)>0) {
+      res[key] <- fromCustom
+    } else if(!is.null(fromDefault) && nchar(fromDefault)>0) {
+      res[key] <- fromDefault
+    }
+    if(!nchar(res[key]) > 0) {
+      stop(paste0("Language definition error: language '", kernel_name,"' property '", key, "' is missing value."))
+    }
+  }
+  print(res)
+  res
+}
+
 
 #'
 #' @returnt time in seconds
@@ -41,16 +96,6 @@ JUPYTER_CELL_TIMEOUT <- 'rcloud.jupyter.cell.timeout'
   } else {
     as.integer(600)
   }
-}
-
-.build_init_script <- function(rcloud.session) {
-  retina <- ''  
-  if (rcloud.session$device.pixel.ratio > 1) {
-    retina <- "config InlineBackend.figure_format = 'retina'"
-  }
-  
-  inline_plots <- "%matplotlib inline"
-  paste0(retina, '\n', inline_plots)
 }
 
 #'
@@ -73,9 +118,8 @@ JUPYTER_CELL_TIMEOUT <- 'rcloud.jupyter.cell.timeout'
   
   runner <- jupyter_adapter$JupyterAdapter(
                                            cell_exec_timeout = .get_cell_timeout(),
-                                           rcloud_python_init_script=.build_init_script(rcloud.session),
                                            console_in = .console.in.handler, 
-                                           kernel_name = .get_python_kernel()
+                                           kernel_name = .get_default_kernel('python')
                                            )
   rcloud.session$jupyter.adapter <- runner
   
@@ -104,7 +148,7 @@ JUPYTER_CELL_TIMEOUT <- 'rcloud.jupyter.cell.timeout'
   }
 }
 
-.exec.with.jupyter <- function(cmd, rcloud.session)
+.exec.with.jupyter <- function(kernel, cmd, rcloud.session)
 {
   mime_order <- c("html", "png", "jpeg", "text", "json") # richest representation to poorest [order is debatable!]
   to.chunk <- function(chunk) {
@@ -122,7 +166,7 @@ JUPYTER_CELL_TIMEOUT <- 'rcloud.jupyter.cell.timeout'
       return(c(t, paste0('<pre>', jsonlite:::toJSON(chunk[[t]]), '</pre>')))
   }
   outputs <- tryCatch({
-    rcloud.session$jupyter.adapter$run_cmd(cmd)
+    rcloud.session$jupyter.adapter$run_cmd(cmd, kernel_name = kernel)
   }, error=function(e) {
     msg <- e$message
     rcloud.html.out(msg)
@@ -153,34 +197,69 @@ rcloud.jupyter.list.kernel.specs <- function(rcloud.session)
   return(rcloud.session$jupyter.adapter$get_kernel_specs())
 }
 
-.run.cell.with.jupyter <- function(command, silent, rcloud.session, ...) {
- if (is.null(rcloud.session$jupyter.adapter))
-      .start.jupyter.adapter(rcloud.session)
-  .exec.with.jupyter(command, rcloud.session)
+rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.session) {
+  Filter(function(x) { x$spec$language == language }, rcloud.jupyter.list.kernel.specs(rcloud.session))
 }
 
-.complete.with.jupyter <- function(text, pos, thissession) {
-  if (is.null(thissession$jupyter.adapter))
-    .start.jupyter.adapter(thissession)
-  completions <- thissession$jupyter.adapter$complete(.get_python_kernel(), text, pos)
-  res <- list()
-  if(is.null(completions)) {
+.jupyter.cell.runner.factory <- function(kernel_name) {
+  local <- list(
+    kernel_name = kernel_name
+  )
+  function(command, silent, rcloud.session, ...) {
+   if (is.null(rcloud.session$jupyter.adapter))
+        .start.jupyter.adapter(rcloud.session)
+    .exec.with.jupyter(local$kernel_name, command, rcloud.session)
+  }
+}
+
+.jupyter.completer.factory <- function(kernel_name) {
+  local <- list(
+    kernel_name = kernel_name
+  )
+  function(text, pos, thissession) {
+    if (is.null(thissession$jupyter.adapter))
+      .start.jupyter.adapter(thissession)
+    completions <- thissession$jupyter.adapter$complete(local$kernel_name, text, pos)
+    res <- list()
+    if(is.null(completions)) {
+      return(res)
+    }
+    res$values <- completions$matches
+    res$prefix <- substr(text, completions$cursor_start, completions$cursor_end)
+    res$position <- completions$cursor_end
     return(res)
   }
-  res$values <- completions$matches
-  res$prefix <- substr(text, completions$cursor_start, completions$cursor_end)
-  res$position <- completions$cursor_end
-  return(res)
 }
 
-rcloud.language.support <- function()
+.init.language <- function(kernel_name, kernel_spec, rcloud.session) {
+  language_descriptor <- list(
+    settings = .create.language.settings(kernel_name, kernel_spec),
+    run.cell = .jupyter.cell.runner.factory(kernel_name),
+    complete = .jupyter.completer.factory(kernel_name)
+  )
+  
+  init.script.builder <- eval(parse(text=language_descriptor$settings$init.script))
+  
+  print(init.script.builder)
+  init.script <- init.script.builder(rcloud.session)
+  
+  print(init.script)
+  rcloud.session$jupyter.adapter$add_init_script(kernel_name, init.script)
+  
+  RCloudLanguage(list(language=language_descriptor$settings$display.name,
+                      run.cell=language_descriptor$run.cell,
+                      complete=language_descriptor$complete,
+                      ace.mode=language_descriptor$settings$ace.mode,
+                      hljs.class=language_descriptor$settings$hljs.class,
+                      extension=language_descriptor$settings$extension,
+                      setup=function(rcloud.session) {},
+                      teardown=function(rcloud.session) {}))
+}
+
+rcloud.language.support <- function(rcloud.session)
 {
-  list(language="Python",
-       run.cell=.run.cell.with.jupyter,
-       complete=.complete.with.jupyter,
-       ace.mode="ace/mode/python",
-       hljs.class="py",
-       extension="py",
-       setup=function(rcloud.session) {},
-       teardown=function(rcloud.session) {})
+  kernel.specs <- rcloud.jupyter.list.kernel.specs(rcloud.session)
+  lapply(names(kernel.specs), function(kernel_name, kernel_spec, rcloud.session) {
+    .init.language(kernel_name, kernel_spec, rcloud.session)
+  }, kernel.specs, rcloud.session)
 }

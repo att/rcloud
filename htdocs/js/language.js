@@ -24,7 +24,8 @@ RCloud.language = (function() {
             return languages_[language] ? languages_[language].is_a_markdown : false;
         },
         ace_mode: function(language) {
-            return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
+            var mode = (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
+            return (ace.require(mode) || ace.require(languages_.Text.ace_mode)).Mode; 
         },
         extension: function(language) {
             var ext = (languages_[language] && languages_[language].extension) || '';

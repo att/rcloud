@@ -124,8 +124,8 @@ function create_cell_html_view(language, cell_model) {
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
             set_background_class(ace_div);
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
+            var LangMode = RCloud.language.ace_mode(language);
+            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_, language));
         }
     }
 
