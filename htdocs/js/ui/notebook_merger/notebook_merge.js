@@ -226,13 +226,12 @@ RCloud.UI.notebook_merge = (function() {
         //   })
         // ]);
 
-        //this.dialog_.addClass('expanded');
-        this.update_stage(DialogStage.COMPARE);
+        // massage the returned notebook so that it's easier to work with:
+        notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
+        notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename));
+        notebook.assets = notebook.files.filter(f => !Notebook.is_part_name(f.filename));
 
-        // setTimeout(() => {  
-        //   this.dialog_.modal('hide');
-        //   return Promise.resolve();
-        // }, 100000);
+        this.update_stage(DialogStage.COMPARE);
 
       }).catch((e) => {
         this.reset_getting_changes_state();
