@@ -10,17 +10,29 @@ RCloud.UI.notebook_merge = (function() {
       let that = this,
         _template = _.template($("#merger-template").html());
 
+      this.templates_ = {
+        file_list: _.template($('#compare-file-list-snippet').html()),
+        compare_stage: _.template($('#compare-stage-snippet').html())
+      };
+
       $("body").append(_template({}));
       this.dialog_ = $("#merger-dialog");
       this.select_by_ = $('#merge-changes-by');
       this.merge_notebook_file_ = $('#merge-notebook-file');
       this.merge_notebook_url_ = $('#merge-notebook-url');
       this.merge_notebook_id_ = $('#merge-notebook-id');
+
+      this.compare_editor_selector = '#compare-editor';
+
       this.previous_diff_button_ = $("#previous-diff");
       this.next_diff_button_ = $("#next-diff");
       this.error_selector_ = '#merge-error';
 
       this.merge_notebook_details_ = $('#merge-notebook-details');
+
+      this.compare_file_list_ = $('#compare-file-list');
+      this.compare_stage_ = $('#compare-stage');
+
       this.button_init_ = this.dialog_.find('.btn-init');
       
       this.btn_show_changes_ = this.dialog_.find('.btn-primary.btn-primary.show-changes');
@@ -36,25 +48,7 @@ RCloud.UI.notebook_merge = (function() {
       this.dialog_stage_ = DialogStage.INIT;
 
       $(this.dialog_).on("shown.bs.modal", () => {
-        require(["vs/editor/editor.main"], function() {
-          that.diff_editor_ = monaco.editor.createDiffEditor(
-            $("#merge-container")[0],
-            {
-              renderSideBySide: false,
-              language: "r"
-            }
-          );
-          that.set_model();
-
-          that.diff_navigator_ = monaco.editor.createDiffNavigator(
-            that.diff_editor_,
-            {
-              ignoreCharChange: true,
-              followsCaret: true,
-              alwaysRevealFirst: true
-            }
-          );
-        });
+        
       });
 
       $(this.dialog_).on("hidden.bs.modal", () => {
@@ -78,7 +72,6 @@ RCloud.UI.notebook_merge = (function() {
         control.keydown((e) => {
           if(e.keyCode === $.ui.keyCode.ENTER) {
             this.do_get_changes();
-            alert('doing something');
             e.preventDefault();
           }
         });
@@ -118,30 +111,6 @@ RCloud.UI.notebook_merge = (function() {
             });
           }
         }
-      });
-    }
-    set_model() {
-      this.diff_editor_.setModel({
-        original: monaco.editor.createModel(
-          [
-            'print("There was an Old Man with a beard")',
-            'print("Who said, "It is just as I feared!—")',
-            'print("Two Owls and a Hen, four Larks and a Wren,")',
-            'print("Have all built their nests in my beard.")'
-          ].join("\n")
-        ),
-        modified: monaco.editor.createModel(
-          [
-            'print("A bit of a silly limerick")',
-            'print("~~~~~~~~~~~~~~~~~~~~~~~~~")',
-            'print("There was an Old Woman with a beard")',
-            'print("Who said, "It is just as I feared!—")',
-            'print("Two Pigeons and a Hen, three Larks and a Wren,")',
-            'print("Have all built their nests in my beard.")',
-            'print("")',
-            'print("Edward Lear")'
-          ].join("\n")
-        )
       });
     }
     update_merged_by(merged_method, value) {
@@ -226,12 +195,20 @@ RCloud.UI.notebook_merge = (function() {
         //   })
         // ]);
 
+        // current notebook:
+        
+
+        rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value);
+
         // massage the returned notebook so that it's easier to work with:
-        notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
-        notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename));
-        notebook.assets = notebook.files.filter(f => !Notebook.is_part_name(f.filename));
+        let comparison = {
+          from: this.prepare_notebook_for_comparison(shell.notebook.model.controller.current_gist()),
+          to: this.prepare_notebook_for_comparison(notebook)
+        };
 
         this.update_stage(DialogStage.COMPARE);
+
+        this.update_compare_details(comparison);
 
       }).catch((e) => {
         this.reset_getting_changes_state();
@@ -286,6 +263,70 @@ RCloud.UI.notebook_merge = (function() {
       this.update_merged_by('url');
 
       this.update_stage(DialogStage.INIT);
+    }
+    prepare_notebook_for_comparison(notebook) {
+      notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
+      notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename));
+      notebook.assets = notebook.files.filter(f => !Notebook.is_part_name(f.filename));
+      return notebook;
+    }
+    update_compare_details(comparison) {
+
+      console.log('comparing: ', comparison);
+
+      this.compare_file_list_.html(this.templates_.file_list({
+
+      }));
+      this.compare_stage_.html(this.templates_.compare_stage({
+
+      }));
+      
+      require(["vs/editor/editor.main"], () => {
+        this.diff_editor_ = monaco.editor.createDiffEditor(
+          $(this.compare_editor_selector)[0],
+          {
+            renderSideBySide: false,
+            language: "r"
+          }
+        );
+        this.set_model();
+
+        this.diff_navigator_ = monaco.editor.createDiffNavigator(
+          this.diff_editor_,
+          {
+            ignoreCharChange: true,
+            followsCaret: true,
+            alwaysRevealFirst: true
+          }
+        );
+      });
+      
+    }
+    set_model() {
+      
+      this.diff_editor_.setModel({
+        original: monaco.editor.createModel(
+          [
+            'print("There was an Old Man with a beard")',
+            'print("Who said, "It is just as I feared!—")',
+            'print("Two Owls and a Hen, four Larks and a Wren,")',
+            'print("Have all built their nests in my beard.")'
+          ].join("\n")
+        ),
+        modified: monaco.editor.createModel(
+          [
+            'print("A bit of a silly limerick")',
+            'print("~~~~~~~~~~~~~~~~~~~~~~~~~")',
+            'print("There was an Old Woman with a beard")',
+            'print("Who said, "It is just as I feared!—")',
+            'print("Two Pigeons and a Hen, three Larks and a Wren,")',
+            'print("Have all built their nests in my beard.")',
+            'print("")',
+            'print("Edward Lear")'
+          ].join("\n")
+        )
+      });
+      
     }
   };
 
