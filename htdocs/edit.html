@@ -311,6 +311,8 @@
 
           <div id="merge-compare-section" class="merge-section">
             <p>Showing differences between current notebook and notebook <span id="merge-notebook-details"></span><span class="btn btn-primary btn-init">Change</span></p>
+            <div id="compare-file-list"></div>
+            <div id="compare-stage"></div>
           </div>
 
           <div class="modal-footer">
@@ -318,20 +320,20 @@
             <span class="btn btn-primary show-changes">Show changes</span>
           </div>
 
-          <!--
-          <div id="merge-stage">
-            <div id="merge-nav-buttons">
-                <button id="previous-diff">Previous</button>
-                <button id="next-diff">Next</button>
-            </div>
-            <div id="merge-container">
-            </div>
-          </div>
-        -->
         </div>
       </div>
     </div>
   </div>
+</script>
+
+<script type="text/template" id="compare-file-list-snippet">
+  This is the compare file list
+</script>
+
+<script type="text/template" id="compare-stage-snippet">
+  This is the compare stage
+
+  <div id="compare-editor"></div>
 </script>
 
 <script type="text/html" id="selection-bar-snippet">
