@@ -41,9 +41,7 @@ RCloud.utils.get_notebook_from_url = function(url) {
 };
 
 RCloud.utils.clean_r = function(obj) {
-    delete obj.r_attributes;
-    delete obj.r_type;
-    return obj;
+    return _.omit(obj, 'r_type', 'r_attributes');
 };
 
 RCloud.utils.split_number = function(name) {
