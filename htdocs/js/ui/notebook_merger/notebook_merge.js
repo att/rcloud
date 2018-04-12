@@ -93,7 +93,7 @@ RCloud.UI.notebook_merge = (function() {
           disabled_reason: "You can't merge into a read only notebook",
           action: function() {
 
-            rcloud.get_notebook_property(shell.gistname(), 'pull-changes-by').then(function(val) {
+            rcloud.get_notebook_property(shell.gistname(), 'merge-changes-by').then(function(val) {
               if(val && val.indexOf(':') !== -1) {
                 // split and set:
                 var separatorIndex = val.indexOf(':');
@@ -197,7 +197,6 @@ RCloud.UI.notebook_merge = (function() {
 
         // current notebook:
         
-
         rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value);
 
         // massage the returned notebook so that it's easier to work with:
@@ -272,17 +271,7 @@ RCloud.UI.notebook_merge = (function() {
     }
     update_compare_details(comparison) {
 
-      console.log('comparing: ', comparison);
-
-      // what's common in both, only in from, only in to:
-      // _.pluckassets
-      // files
-
-
-//       var xyz = _.filter(temp1.to.assets, a => { return ['widget_rcap.jpg'].indexOf(a.filename) != -1 })
-// 11:37:25.126 
-
-
+      console.info('comparing: ', comparison);
       
       // from, to
       // assets, files
@@ -311,13 +300,26 @@ RCloud.UI.notebook_merge = (function() {
         });
       });
 
-      this.compare_file_list_.html(this.templates_.file_list({
+      // derive a list of all assets and parts:
+      _.each(['assets', 'parts'], (file_type) => {
+        comparison.fileDiffs['all' + file_type[0].toUpperCase() + file_type.substring(1)] = 
+        _.sortBy(
+        _.union(...
+        _.map(sources, s => {
+          return _.pluck(comparison[s][file_type], 'filename');
+        })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; });
+      });
 
+      this.compare_file_list_.html(this.templates_.file_list({
+        parts: comparison.fileDiffs.parts,
+        assets: comparison.fileDiffs.assets,
+        allAssets: comparison.fileDiffs.allAssets,
+        allParts: comparison.fileDiffs.allParts
       }));
       this.compare_stage_.html(this.templates_.compare_stage({
 
       }));
-      
+
       require(["vs/editor/editor.main"], () => {
         this.diff_editor_ = monaco.editor.createDiffEditor(
           $(this.compare_editor_selector)[0],
