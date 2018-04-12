@@ -274,6 +274,43 @@ RCloud.UI.notebook_merge = (function() {
 
       console.log('comparing: ', comparison);
 
+      // what's common in both, only in from, only in to:
+      // _.pluckassets
+      // files
+
+
+//       var xyz = _.filter(temp1.to.assets, a => { return ['widget_rcap.jpg'].indexOf(a.filename) != -1 })
+// 11:37:25.126 
+
+
+      
+      // from, to
+      // assets, files
+      comparison.fileDiffs = {
+        assets: {},
+        parts: {}
+      };
+
+      const sources = ['from', 'to'];
+
+      _.each(['assets', 'parts'], (file_type) => {
+        _.each(sources, (direction) => {
+          // diffs:
+          comparison.fileDiffs[file_type][direction + 'Only'] = 
+            _.filter(comparison[direction][file_type], a => { 
+              return _.difference(_.pluck(comparison[direction][file_type], 'filename'), 
+                      _.pluck(comparison[_.difference(sources, [direction])][file_type], 'filename')).indexOf(a.filename) != -1; 
+          });
+        });
+
+        // common:
+        comparison.fileDiffs[file_type].common = 
+          _.filter(comparison[sources[0]][file_type], a => { 
+            return _.intersection(_.pluck(comparison[sources[0]][file_type], 'filename'), 
+                    _.pluck(comparison[[sources[1]]][file_type], 'filename')).indexOf(a.filename) != -1; 
+        });
+      });
+
       this.compare_file_list_.html(this.templates_.file_list({
 
       }));
@@ -289,7 +326,8 @@ RCloud.UI.notebook_merge = (function() {
             language: "r"
           }
         );
-        this.set_model();
+
+        this.set_model(comparison);
 
         this.diff_navigator_ = monaco.editor.createDiffNavigator(
           this.diff_editor_,
@@ -302,28 +340,14 @@ RCloud.UI.notebook_merge = (function() {
       });
       
     }
-    set_model() {
+    set_model(comparison) {
       
       this.diff_editor_.setModel({
         original: monaco.editor.createModel(
-          [
-            'print("There was an Old Man with a beard")',
-            'print("Who said, "It is just as I feared!—")',
-            'print("Two Owls and a Hen, four Larks and a Wren,")',
-            'print("Have all built their nests in my beard.")'
-          ].join("\n")
+          comparison.from.files[0].content
         ),
         modified: monaco.editor.createModel(
-          [
-            'print("A bit of a silly limerick")',
-            'print("~~~~~~~~~~~~~~~~~~~~~~~~~")',
-            'print("There was an Old Woman with a beard")',
-            'print("Who said, "It is just as I feared!—")',
-            'print("Two Pigeons and a Hen, three Larks and a Wren,")',
-            'print("Have all built their nests in my beard.")',
-            'print("")',
-            'print("Edward Lear")'
-          ].join("\n")
+          comparison.to.files[0].content
         )
       });
       
