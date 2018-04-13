@@ -47,12 +47,16 @@ RCloud.UI.notebook_merge = (function() {
 
       this.dialog_stage_ = DialogStage.INIT;
 
-      $(this.dialog_).on("shown.bs.modal", () => {
+      $(this.dialog_).on('shown.bs.modal', () => {
         
       });
 
-      $(this.dialog_).on("hidden.bs.modal", () => {
+      $(this.dialog_).on('hidden.bs.modal', () => {
         this.clear();
+      });
+
+      $(this.dialog_).on('click', 'tr.common', () => {
+        console.log('getting ready for comparison...');
       });
 
       this.previous_diff_button_.click(() => {
@@ -271,19 +275,15 @@ RCloud.UI.notebook_merge = (function() {
     }
     update_compare_details(comparison) {
 
-      console.info('comparing: ', comparison);
-      
       // from, to
       // assets, files
       comparison.fileDiffs = {
-        assets: {},
-        parts: {}
       };
 
       const sources = ['from', 'to'];
 
-      /*
       _.each(['assets', 'parts'], (file_type) => {
+        /*
         _.each(sources, (direction) => {
           // diffs:
           comparison.fileDiffs[file_type][direction + 'Only'] = 
@@ -292,15 +292,16 @@ RCloud.UI.notebook_merge = (function() {
                       _.pluck(comparison[_.difference(sources, [direction])][file_type], 'filename')).indexOf(a.filename) != -1; 
           });
         });
+        */
 
         // common:
-        comparison.fileDiffs[file_type].common = 
+        comparison['common' + file_type[0].toUpperCase() + file_type.substring(1)] = 
+          _.pluck(
           _.filter(comparison[sources[0]][file_type], a => { 
             return _.intersection(_.pluck(comparison[sources[0]][file_type], 'filename'), 
                     _.pluck(comparison[[sources[1]]][file_type], 'filename')).indexOf(a.filename) != -1; 
-        });
+          }), 'filename');
       });
-      */
 
       // derive a list of all assets and parts:
       _.each(['assets', 'parts'], (file_type) => {
@@ -311,6 +312,8 @@ RCloud.UI.notebook_merge = (function() {
           return _.pluck(comparison[s][file_type], 'filename');
         })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; });
       });
+
+      //console.info('comparing: ', comparison);
 
       this.compare_file_list_.html(this.templates_.file_list({
         comparison: comparison
