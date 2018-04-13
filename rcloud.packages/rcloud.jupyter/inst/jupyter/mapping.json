@@ -7,7 +7,7 @@
     "init.script" : "function(rcloud.session) { retina <- ''; if (rcloud.session$device.pixel.ratio > 1) { retina <- \"config InlineBackend.figure_format = 'retina'\" }; inline_plots <- '%matplotlib inline';  paste0(retina, '\n', inline_plots) }"
   },
   "python3" : {
-    "hljs.class" : "py3",
+    "hljs.class" : "py",
     "extension" : "py3",
     "ace.mode" : "ace/mode/python",
     "display.name" : "Python 3",
@@ -36,6 +36,36 @@
     "extension" : "jl",
     "ace.mode" : "ace/mode/julia",
     "display.name" : "Julia"
+  },
+  "apache_toree_scala" : {
+    "hljs.class" : "scala",
+    "extension" : "scspark",
+    "ace.mode" : "ace/mode/scala",
+    "display.name" : "Apache Spark Scala"
+  },
+  "apache_toree_pyspark" : {
+    "hljs.class" : "py",
+    "extension" : "pyspark",
+    "ace.mode" : "ace/mode/python",
+    "display.name" : "Apache Spark Python"
+  },
+  "apache_toree_sparkr" : {
+    "hljs.class" : "r",
+    "extension" : "rspark",
+    "ace.mode" : "ace/mode/r",
+    "display.name" : "Apache Spark R"
+  },
+  "spylon-kernel" : {
+    "hljs.class" : "scala",
+    "extension" : "sc",
+    "ace.mode" : "ace/mode/scala",
+    "display.name" : "Scala"
+  },
+  "java" : {
+    "hljs.class" : "java",
+    "extension" : "java",
+    "ace.mode" : "ace/mode/java",
+    "display.name" : "Java"
   }
 
 }

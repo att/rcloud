@@ -115,6 +115,13 @@ module.exports = function (grunt) {
             "htdocs/lib/js/ace/perl_highlight_rules.js",
             "htdocs/lib/js/ace/mode-julia.js",
             "htdocs/lib/js/ace/julia_highlight_rules.js",
+            "htdocs/lib/js/ace/doc_comment_highlight_rules.js",
+            "htdocs/lib/js/ace/java.js",
+            "htdocs/lib/js/ace/java_highlight_rules.js",
+            "htdocs/lib/js/ace/golang.js",
+            "htdocs/lib/js/ace/golang_highlight_rules.js",
+            "htdocs/lib/js/ace/scala.js",
+            "htdocs/lib/js/ace/scala_highlight_rules.js",
             "htdocs/lib/js/ace/mode-sh.js",
             "htdocs/lib/js/ace/_end.js"
         ]

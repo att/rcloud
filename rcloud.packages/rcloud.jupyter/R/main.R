@@ -82,7 +82,6 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
       stop(paste0("Language definition error: language '", kernel_name,"' property '", key, "' is missing value."))
     }
   }
-  print(res)
   res
 }
 
@@ -240,10 +239,8 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
   
   init.script.builder <- eval(parse(text=language_descriptor$settings$init.script))
   
-  print(init.script.builder)
   init.script <- init.script.builder(rcloud.session)
   
-  print(init.script)
   rcloud.session$jupyter.adapter$add_init_script(kernel_name, init.script)
   
   RCloudLanguage(list(language=language_descriptor$settings$display.name,

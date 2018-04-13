@@ -19,10 +19,6 @@ var JupyterCompletions = function(language) {
           }
           rcloud.get_completions(this.language, session.getValue(),
                                  session.getDocument().positionToIndex(pos))
-                                 .then(function(ret) { 
-                                   ret.forEach(function(x) { x.prefix = prefix; }); 
-                                  return ret;
-                                 })
                                 .then(function(ret) {
                                     callback(null, ret);
                                 });

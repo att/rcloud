@@ -24,7 +24,7 @@ import sys
 import tempfile
 debugFD, debugFile = "", ""
 
-_debugging = True
+_debugging = False
 if _debugging:
     debugFD, debugFile = tempfile.mkstemp(suffix=".log", prefix="ipy_log")
     logging.basicConfig(filename=debugFile, level=logging.DEBUG)
@@ -306,7 +306,7 @@ class JupyterAdapter(object):
 
         self.executePreprocessor = RCloudExecutePreprocessor(startup_timeout = kernel_startup_timeout, timeout = cell_exec_timeout, 
                                                             kernel_name = kernel_name,  kernel_manager_class=MultiKernelManager, 
-                                                            console_in = console_in)
+                                                            console_in = console_in, shutdown_kernel = 'immediate')
 
     def add_init_script(self, kernel_name, init_script):
         self.executePreprocessor._init_scripts[kernel_name] = init_script
