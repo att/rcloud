@@ -287,7 +287,10 @@
           <h3 class="modal-title">Merge Notebook</h3>
         </div>
         <div class="modal-body">
-
+          <div class="overlay">
+            <img src="/img/ajax-loader.gif">
+            <p>Getting changes</p>
+          </div>
           <div id="merge-init-section" class="merge-section">
             <p>Merge changes from another notebook into your current notebook.</p>
             <label for="merge-changes-by">Notebook source:</label>
@@ -327,12 +330,17 @@
 </script>
 
 <script type="text/template" id="compare-file-list-snippet">
-  This is the compare file list
+  <h2>Parts</h2>
+    <% _.each(allParts, function(part) { %>
+      <%=part%>
+    <% }); %>
+  <h2>Assets</h2>
+  <% _.each(allAssets, function(asset) { %>
+    <%=asset%>
+  <% }); %>
 </script>
 
 <script type="text/template" id="compare-stage-snippet">
-  This is the compare stage
-
   <div id="compare-editor"></div>
 </script>
 
