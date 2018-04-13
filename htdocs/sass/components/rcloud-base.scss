@@ -925,6 +925,31 @@ body .modal-dialog.full {
             float: left;
             width: 20%;
             max-height: calc(100% - 55px);
+
+            table {
+                width: 98%;
+            }
+
+            thead tr {
+                border-bottom: 1px solid #444;
+            }
+
+            tbody tr {
+                border-bottom: 1px solid #ccc;
+            }
+
+            th, td {
+                padding: 3px;
+            }
+
+            th {
+                font-size: 11px;
+                color: #444;
+            }
+
+            td {
+                color: #222;
+            }
         }
 
         #compare-stage {

@@ -330,14 +330,41 @@
 </script>
 
 <script type="text/template" id="compare-file-list-snippet">
-  <h2>Parts</h2>
-    <% _.each(allParts, function(part) { %>
-      <%=part%>
-    <% }); %>
-  <h2>Assets</h2>
-  <% _.each(allAssets, function(asset) { %>
-    <%=asset%>
-  <% }); %>
+
+  <table>
+    <thead>
+      <tr>
+        <th>from</th>
+        <th>to</th>
+      </tr>
+    </thead>
+    <tbody>
+        <% _.each(comparison.fileDiffs.allParts, function(part) { %>
+          <tr>
+            <td>
+                <%= _.findWhere(comparison.from.parts, { filename: part }) ? part : '' %>
+            </td>
+            <td>
+                <%= _.findWhere(comparison.to.parts, { filename: part }) ? part : '' %>
+            </td>
+          </tr>
+        <% }); %>
+        <% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
+          <tr>
+            <td>
+                <%= _.findWhere(comparison.from.assets, { filename: asset }) ? asset : '' %>
+            </td>
+            <td>
+                <%= _.findWhere(comparison.to.assets, { filename: asset }) ? asset : '' %>
+            </td>
+          </tr>
+        <% }); %>
+      </tr>
+    </tbody>
+  </table>
+
+  
+
 </script>
 
 <script type="text/template" id="compare-stage-snippet">

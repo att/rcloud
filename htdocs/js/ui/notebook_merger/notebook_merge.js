@@ -313,10 +313,7 @@ RCloud.UI.notebook_merge = (function() {
       });
 
       this.compare_file_list_.html(this.templates_.file_list({
-        parts: comparison.fileDiffs.parts,
-        assets: comparison.fileDiffs.assets,
-        allAssets: comparison.fileDiffs.allAssets,
-        allParts: comparison.fileDiffs.allParts
+        comparison: comparison
       }));
       this.compare_stage_.html(this.templates_.compare_stage({
 
