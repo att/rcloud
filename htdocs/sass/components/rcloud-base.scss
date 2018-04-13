@@ -820,7 +820,7 @@ body .modal-dialog.full {
     }
 
     #merge-container {
-        height: calc(100% - 400px);
+        height: calc(100% - 420px);
     }
 
     pointer-events: auto;
@@ -872,8 +872,8 @@ body .modal-dialog.full {
     &.compare {
         .modal-dialog {
             width: 98%;
-            height: 98%;
-            margin: 1%;
+            height: 97%;
+            margin-top: 1%;
             padding: 0;
         }
 
@@ -889,6 +889,21 @@ body .modal-dialog.full {
         #merge-compare-section {
             display: block;
             height: calc(100% - 192px);
+        }
+
+        #compare-file-list {
+            float: left;
+            width: 20%;
+            max-height: calc(100% - 55px);
+        }
+
+        #compare-stage {
+            float: left;
+            width: 78%;
+        }
+
+        #compare-editor {
+            height: calc(100% - 55px);
         }
     }
 
