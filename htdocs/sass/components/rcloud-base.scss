@@ -819,6 +819,36 @@ body .modal-dialog.full {
         padding-right:20px!important;
     }
 
+    .modal-body {
+        .overlay {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+
+            img { 
+                padding-top: 65px;
+                margin: 10px auto;
+                display: block;
+            }
+            p {
+                margin: 10px auto;
+                width: 250px;
+                text-align: center;
+                font-size: 19px;
+            }
+        }
+    }
+
+    &.gettingchanges {
+        .overlay {
+            display: block;
+        }
+    }
+
     #merge-container {
         height: calc(100% - 420px);
     }
