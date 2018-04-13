@@ -925,6 +925,7 @@ body .modal-dialog.full {
             float: left;
             width: 20%;
             max-height: calc(100% - 55px);
+            overflow-y: auto;
 
             table {
                 width: 98%;
@@ -936,6 +937,14 @@ body .modal-dialog.full {
 
             tbody tr {
                 border-bottom: 1px solid #ccc;
+
+                &.common {
+                    cursor: pointer;
+
+                    &:hover {
+                        background-color: #dedede;
+                    }
+                }
             }
 
             th, td {
