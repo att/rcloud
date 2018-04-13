@@ -282,6 +282,7 @@ RCloud.UI.notebook_merge = (function() {
 
       const sources = ['from', 'to'];
 
+      /*
       _.each(['assets', 'parts'], (file_type) => {
         _.each(sources, (direction) => {
           // diffs:
@@ -299,6 +300,7 @@ RCloud.UI.notebook_merge = (function() {
                     _.pluck(comparison[[sources[1]]][file_type], 'filename')).indexOf(a.filename) != -1; 
         });
       });
+      */
 
       // derive a list of all assets and parts:
       _.each(['assets', 'parts'], (file_type) => {
