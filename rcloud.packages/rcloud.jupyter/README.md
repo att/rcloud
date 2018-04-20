@@ -1,6 +1,6 @@
 # RCloud Jupyter Package
 
-`rcloud.jupyter` package introduces support for Python (so far) via Jupyter Notebooks API
+`rcloud.jupyter` package introduces support for Jupyter kernels via Jupyter nbconvert API
 
 > rcloud.jupyter and rcloud.python packages are incompatible and should not be loaded into RCloud at the same time.
 
@@ -8,7 +8,7 @@
 
 ## Jupyter Installation
 
-RCloud integrates with a single Jupyter backend, depending on which Python version it integrates with, run one of the following commands:
+RCloud integrates with a single Jupyter backend, depending on which Python version RCloud integrates with, run one of the following commands:
 
 ### Python 2
 
@@ -27,7 +27,10 @@ sudo python3 -m pip3 install jupyter
 RCloud Jupyter package uses these settings from `rcloud.conf`:
 
  * rcloud.jupyter.python.path - path to Python installation that should be used (e.g. `/usr/bin/python3`)
- * rcloud.jupyter.python.extra.libs - additional Python lib directories (e.g. where Jupyter Python modules got installed)
+ * rcloud.jupyter.python.extra.libs - additional Python lib directories (e.g. where Jupyter Python modules got installed) (optional)
+ * rcloud.jupyter.cell.startup.timeout - timeout (in seconds) for Jupyter kernels to start up, default 600 seconds (optional)
+ * rcloud.jupyter.cell.exec.timeout - timeout (in seconds) for Jupyter cells executions, default 1200 seconds (optional)
+ * rcloud.jupyter.language.mapping.config - specifies custom location of mapping.json file (optional)
 
 To enable `rcloud.jupyter` add it to `rcloud.languages` setting in `rcloud.conf` AND remove `rcloud.python` if it is listed there.
 
@@ -140,20 +143,93 @@ $python3$spec$argv
 ```
 
 
-### Specifying Python Kernel for Notebook
+### Language Support
 
-RCloud by default uses `python` kernel to invoke Python cells. In setups where there are multiple python kernels available (e.g. Python 2 and Python 3) Jupyter will use a kernel with the same version of Python as Jupyter uses.
+RCloud is capable of invoking Jupyter kernels available in the system. General rule is that if a kernel is correctly configured so it can be executed from Jupyter notebook, RCloud will also be able to invoke such kernel.
 
-To specify the kernel version that should be used to invoke Python cells in a notebook, add an R cell to RCloud notebook before all Python cells that sets specific kernel name that should be used:
-```{R}
-rcloud.jupyter:::.set_python_kernel('python2')
+#### Syntax highlighting
+
+RCloud ships ACE modes for the following languages:
+
+ * R
+ * Python
+ * Julia
+ * Perl
+ * Scala
+ * Java
+ * JavaScript
+ * go
+
+#### Language Mapping
+
+Default language mapping is located in `inst/jupyter/mapping.json`, it contains mapping information and configuration necessary to RCloud to support a given language. For example Python 2 support is defined as follows:
+
 ```
-> Note.
-> 'kernel name' is the key of the kernel in the list of kernels returned by the 'rcloud.jupyter.list.kernel.specs' function.
+{
+  "python2" : {
+    "hljs.class" : "py",
+    "extension" : "py",
+    "ace.mode" : "ace/mode/python",
+    "display.name" : "Python 2",
+    "init.script" : "function(rcloud.session) { retina <- ''; if (rcloud.session$device.pixel.ratio > 1) { retina <- \"config InlineBackend.figure_format = 'retina'\" }; inline_plots <- '%matplotlib inline';  paste0(retina, '\n', inline_plots) }"
+  }
+}
+```
+
+The key in the above map is a Jupyter kernel name, the value is a map with the following RCloud language options:
+
+ * `kljs.class` defines highlighting CSS class
+ * `extension` extension that should be used for files storing cell code
+ * `ace.mode` the ACE mode that defines for example the highlighting rules
+ * `display.name` the language name that is displayed in RCloud cell language selection drop-down
+ * `init.script` (optional) R code snippet holding an R function code that is invoked when kernel starts up. That function should produce valid target language code.
+ 
+
+RCloud defines language mapping for the following kernel names:
+
+ * python2
+ * python3
+ * javascript
+ * iperl
+ * ijulia-0.6
+ * lgo
+ * java
+ * spylon-kernel (scala)
+ * apache_toree_scala
+ * apache_toree_pyspark
+ * apache_toree_sparkr
+ 
+#### Custom mapping
+
+In case if default mapping needs to be overriden and/or additional mappings need to be added, the `rcloud.jupyter.language.mapping.config` can be used to provide a custom mapping.json file path. The mapping configuration from this file will override/extend the default mapping rules.
+
+#### Defining Mapping in kernel.json
+
+It is also possible to define mapping configuration in Jupyter kernel configuration file. RCloud will pick up language options (prefixed with 'rcloud.') from kernel.json 'metadata' map, e.g.:
+
+```
+{
+  "display_name": "Julia 0.6.2",
+  "argv": [
+    "/usr/share/julia-d386e40c17/bin/julia",
+    "-i",
+    "--startup-file=yes",
+    "--color=yes",
+    "/home/vagrant/.julia/v0.6/IJulia/src/kernel.jl",
+    "{connection_file}"
+  ],
+  "language": "julia",
+  "env" : {
+    "JULIA_LOAD_PATH": "/home/vagrant/.julia/v0.6/"
+  },
+  "metadata": {
+    "rcloud.init.script" : "function(session) { 'ioff()' }"
+  }
+}
+```
 
 
-> Note. 
-> If you want to change python kernel after running some Python cells, you will need to refresh RCloud Session, for the above command to take an effect.
+> *Note* language options defined in kernel.json have the highest priority 
 
 
 # Additional Information

@@ -16,7 +16,8 @@
 #'  
 PYTHON_PATH <- 'rcloud.jupyter.python.path'
 PYTHON_EXTRA_LIBS <- 'rcloud.jupyter.python.extra.libs'
-JUPYTER_CELL_TIMEOUT <- 'rcloud.jupyter.cell.timeout'
+JUPYTER_CELL_EXEC_TIMEOUT <- 'rcloud.jupyter.cell.exec.timeout'
+JUPYTER_CELL_STARTUP_TIMEOUT <- 'rcloud.jupyter.cell.startup.timeout'
 JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
 
 .set_default_kernel <- function(language, kernel_name) {
@@ -89,13 +90,25 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
 #'
 #' @returnt time in seconds
 #' 
-.get_cell_timeout <- function() {
-  if (rcloud.support:::hasConf(JUPYTER_CELL_TIMEOUT)) {
-    as.integer(rcloud.support:::getConf(JUPYTER_CELL_TIMEOUT))
+.get_cell_exec_timeout <- function() {
+  if (rcloud.support:::hasConf(JUPYTER_CELL_EXEC_TIMEOUT)) {
+    as.integer(rcloud.support:::getConf(JUPYTER_CELL_EXEC_TIMEOUT))
+  } else {
+    as.integer(1200)
+  }
+}
+
+#'
+#' @returnt time in seconds
+#' 
+.get_cell_startup_timeout <- function() {
+  if (rcloud.support:::hasConf(JUPYTER_CELL_STARTUP_TIMEOUT)) {
+    as.integer(rcloud.support:::getConf(JUPYTER_CELL_STARTUP_TIMEOUT))
   } else {
     as.integer(600)
   }
 }
+
 
 #'
 #' Initializes Jupyter Adapter and stores reference to it in session with 'jupyter.adapter' key.
@@ -116,7 +129,8 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
   jupyter_adapter <- import("jupyter_adapter")
   
   runner <- jupyter_adapter$JupyterAdapter(
-                                           cell_exec_timeout = .get_cell_timeout(),
+                                           cell_startup_timeout = .get_cell_startup_timeout(),
+                                           cell_exec_timeout = .get_cell_exec_timeout(),
                                            console_in = .console.in.handler, 
                                            kernel_name = .get_default_kernel('python')
                                            )
