@@ -1,24 +1,22 @@
- /*
- * RCloud contribution:
- * * added getCompletionsAsync method
- * * delegation of completions retrieval to JupyterCompletions component 
- */
- 
-define("ace/mode/golang", ["require","exports","module","ace/mode/jupyter_completions"], function(require, exports, module) {
+
+define("ace/mode/javascript_jup",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/javascript_highlight_rules","ace/mode/jupyter_completions","ace/mode/matching_brace_outdent","ace/worker/worker_client","ace/mode/behaviour/cstyle","ace/mode/folding/cstyle"], function(require, exports, module) {
+"use strict";
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var GolangHighlightRules = require("./golang_highlight_rules").GolangHighlightRules;
+var JavaScriptHighlightRules = require("./javascript_highlight_rules").JavaScriptHighlightRules;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
+var WorkerClient = require("../worker/worker_client").WorkerClient;
 var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
 var Mode = function(suppressHighlighting, doc, session, language) {
-    this.HighlightRules = GolangHighlightRules;
+    this.HighlightRules = JavaScriptHighlightRules;
+    
     this.$outdent = new MatchingBraceOutdent();
-    this.foldingRules = new CStyleFoldMode();
     this.$behaviour = new CstyleBehaviour();
+    this.foldingRules = new CStyleFoldMode();
     this.$completer = new JupyterCompletions(language);
     this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
@@ -31,7 +29,7 @@ var Mode = function(suppressHighlighting, doc, session, language) {
 oop.inherits(Mode, TextMode);
 
 (function() {
-    
+
     this.lineCommentStart = "//";
     this.blockComment = {start: "/*", end: "*/"};
 
@@ -45,16 +43,27 @@ oop.inherits(Mode, TextMode);
         if (tokens.length && tokens[tokens.length-1].type == "comment") {
             return indent;
         }
-        
-        if (state == "start") {
-            var match = line.match(/^.*[\{\(\[]\s*$/);
+
+        if (state == "start" || state == "no_regex") {
+            var match = line.match(/^.*(?:\bcase\b.*:|[\{\(\[])\s*$/);
             if (match) {
                 indent += tab;
+            }
+        } else if (state == "doc-start") {
+            if (endState == "start" || endState == "no_regex") {
+                return "";
+            }
+            var match = line.match(/^\s*(\/?)\*/);
+            if (match) {
+                if (match[1]) {
+                    indent += " ";
+                }
+                indent += "* ";
             }
         }
 
         return indent;
-    };//end getNextLineIndent
+    };
 
     this.checkOutdent = function(state, line, input) {
         return this.$outdent.checkOutdent(line, input);
@@ -64,7 +73,23 @@ oop.inherits(Mode, TextMode);
         this.$outdent.autoOutdent(doc, row);
     };
 
-    this.$id = "ace/mode/golang";
+    this.createWorker = function(session) {
+/*        var worker = new WorkerClient(["ace"], "ace/mode/javascript_worker", "JavaScriptWorker");
+        worker.attachToDocument(session.getDocument());
+
+        worker.on("annotate", function(results) {
+            session.setAnnotations(results.data);
+        });
+
+        worker.on("terminate", function() {
+            session.clearAnnotations();
+        });
+
+        return worker;*/
+        return null;
+    };
+
+    this.$id = "ace/mode/javascript";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

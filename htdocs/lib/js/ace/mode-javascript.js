@@ -695,7 +695,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 
 });
 
-define("ace/mode/javascript",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/javascript_highlight_rules","ace/mode/jupyter_completions","ace/mode/matching_brace_outdent","ace/worker/worker_client","ace/mode/behaviour/cstyle","ace/mode/folding/cstyle"], function(require, exports, module) {
+define("ace/mode/javascript",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/javascript_highlight_rules","ace/mode/matching_brace_outdent","ace/worker/worker_client","ace/mode/behaviour/cstyle","ace/mode/folding/cstyle"], function(require, exports, module) {
 "use strict";
 
 var oop = require("../lib/oop");
@@ -705,7 +705,6 @@ var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutd
 var WorkerClient = require("../worker/worker_client").WorkerClient;
 var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
-var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
 var Mode = function(suppressHighlighting, doc, session, language) {
     this.HighlightRules = JavaScriptHighlightRules;
@@ -713,14 +712,6 @@ var Mode = function(suppressHighlighting, doc, session, language) {
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
-    this.$completer = new JupyterCompletions(language);
-    this.getCompletionsAsync = function(state, session, pos, callback) {
-        if(this.$completer) {
-            this.$completer.getCompletions(null, session, pos, callback);
-        } else {
-            callback(null, []);
-        }
-    };
 };
 oop.inherits(Mode, TextMode);
 

@@ -16,13 +16,13 @@
   "javascript" : {
     "hljs.class" : "js",
     "extension" : "js",
-    "ace.mode" : "ace/mode/javascript",
+    "ace.mode" : "ace/mode/javascript_jup",
     "display.name" : "JavaScript"
   },
   "lgo" : {
     "hljs.class" : "go",
     "extension" : "go",
-    "ace.mode" : "ace/mode/Text",
+    "ace.mode" : "ace/mode/golang",
     "display.name" : "go"
   },
   "iperl" : {

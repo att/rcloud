@@ -110,6 +110,7 @@ module.exports = function (grunt) {
             "htdocs/lib/js/ace/ext-language_tools.js",
             "htdocs/lib/js/ace/ext-searchbox.js",
             "htdocs/lib/js/ace/mode-javascript.js",
+            "htdocs/lib/js/ace/mode-javascript-jup.js",
             "htdocs/lib/js/ace/mode-python.js",
             "htdocs/lib/js/ace/mode-perl.js",
             "htdocs/lib/js/ace/perl_highlight_rules.js",

@@ -223,9 +223,9 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
     if(is.null(completions)) {
       return(res)
     }
+    res$prefix <- if (completions$cursor_start < completions$cursor_end) substr(text, completions$cursor_start+1, completions$cursor_end) else ""
     res$values <- completions$matches
-    res$prefix <- substr(text, completions$cursor_start, completions$cursor_end)
-    res$position <- completions$cursor_end
+    res$position <- completions$cursor_start
     return(res)
   }
 }
