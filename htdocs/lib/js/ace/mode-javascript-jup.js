@@ -11,13 +11,13 @@ var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
-var Mode = function(suppressHighlighting, doc, session, language) {
+var Mode = function(options) {
     this.HighlightRules = JavaScriptHighlightRules;
     
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
-    this.$completer = new JupyterCompletions(language);
+    this.$completer = new JupyterCompletions(options.language);
     this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
             this.$completer.getCompletions(null, session, pos, callback);
@@ -89,7 +89,7 @@ oop.inherits(Mode, TextMode);
         return null;
     };
 
-    this.$id = "ace/mode/javascript";
+    this.$id = "ace/mode/javascript_jup";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

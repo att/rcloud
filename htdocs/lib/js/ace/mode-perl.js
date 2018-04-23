@@ -44,13 +44,13 @@ var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutd
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
-var Mode = function(suppressHighlighting, doc, session, language) {
+var Mode = function(options) {
     this.HighlightRules = PerlHighlightRules;
     
     this.$outdent = new MatchingBraceOutdent();
     this.foldingRules = new CStyleFoldMode({start: "^=(begin|item)\\b", end: "^=(cut)\\b"});
     this.$behaviour = this.$defaultBehaviour;
-    this.$completer = new JupyterCompletions(language);
+    this.$completer = new JupyterCompletions(options.language);
     this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
             this.$completer.getCompletions(null, session, pos, callback);

@@ -53,11 +53,11 @@ var JuliaHighlightRules = require("./julia_highlight_rules").JuliaHighlightRules
 var FoldMode = require("./folding/cstyle").FoldMode;
 var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
-var Mode = function(suppressHighlighting, doc, session, language) {
+var Mode = function(options) {
     this.HighlightRules = JuliaHighlightRules;
     this.foldingRules = new FoldMode();
     this.$behaviour = this.$defaultBehaviour;
-    this.$completer = new JupyterCompletions(language);
+    this.$completer = new JupyterCompletions(options.language);
     this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
             this.$completer.getCompletions(null, session, pos, callback);

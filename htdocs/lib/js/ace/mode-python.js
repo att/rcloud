@@ -193,11 +193,11 @@ var PythonFoldMode = require("./folding/pythonic").FoldMode;
 var Range = require("../range").Range;
 var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
-var Mode = function(suppressHighlighting, doc, session, language) {
+var Mode = function(options) {
     this.HighlightRules = PythonHighlightRules;
     this.foldingRules = new PythonFoldMode("\\:");
     this.$behaviour = this.$defaultBehaviour;
-    this.$completer = new JupyterCompletions(language);
+    this.$completer = new JupyterCompletions(options.language);
     this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
             this.$completer.getCompletions(null, session, pos, callback);

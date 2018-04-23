@@ -12,10 +12,10 @@ var JavaScriptMode = require("./javascript").Mode;
 var JavaHighlightRules = require("./java_highlight_rules").JavaHighlightRules;
 var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
-var Mode = function(suppressHighlighting, doc, session, language) {
+var Mode = function(options) {
     JavaScriptMode.call(this);
     this.HighlightRules = JavaHighlightRules;
-    this.$completer = new JupyterCompletions(language);
+    this.$completer = new JupyterCompletions(options.language);
     this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
             this.$completer.getCompletions(null, session, pos, callback);

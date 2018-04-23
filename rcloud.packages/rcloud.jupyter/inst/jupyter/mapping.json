@@ -15,9 +15,9 @@
   },
   "javascript" : {
     "hljs.class" : "js",
-    "extension" : "js",
+    "extension" : "jsjup",
     "ace.mode" : "ace/mode/javascript_jup",
-    "display.name" : "JavaScript"
+    "display.name" : "JavaScript (Node.js)"
   },
   "lgo" : {
     "hljs.class" : "go",

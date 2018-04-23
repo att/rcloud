@@ -45,7 +45,7 @@ RCloud.UI.scratchpad = (function() {
                     }
                 }]);
 
-                session.setMode(new LangMode(false, doc, session, "R"));
+                session.setMode(new LangMode({ suppressHighlighting : false, doc : doc, session : session, language : "R" }));
                 session.setNewLineMode('unix');
                 session.setOption('indentedSoftWrap', false);
                 session.setUseWrapMode(true);
@@ -265,7 +265,7 @@ RCloud.UI.scratchpad = (function() {
             if(!binary_mode_) {
                 var lang = this.current_model.language();
                 var LangMode = RCloud.language.ace_mode(lang);
-                this.session.setMode(new LangMode(false, this.session.doc, this.session, lang));
+                this.session.setMode(new LangMode({ suppressHighlighting : false, doc : this.session.doc, session : this.session, language : lang }));
             }
         }, set_readonly: function(readonly) {
             if(!shell.is_view_mode()) {

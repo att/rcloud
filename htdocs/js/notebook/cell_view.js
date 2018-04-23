@@ -125,7 +125,7 @@ function create_cell_html_view(language, cell_model) {
             ace_div.toggleClass('active', true);
             set_background_class(ace_div);
             var LangMode = RCloud.language.ace_mode(language);
-            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_, language));
+            ace_session_.setMode(new LangMode({ suppressHighlighting : false, doc : ace_document_, session : ace_session_, language : language }));
         }
     }
 
