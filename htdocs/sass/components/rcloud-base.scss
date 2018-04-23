@@ -938,13 +938,13 @@ body .modal-dialog.full {
             tbody tr {
                 border-bottom: 1px solid #ccc;
 
-                &.common {
+                //&.common {
                     cursor: pointer;
 
                     &:hover {
                         background-color: #dedede;
                     }
-                }
+                //}
             }
 
             th, td {

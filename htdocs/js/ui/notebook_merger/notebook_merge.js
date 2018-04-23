@@ -55,8 +55,14 @@ RCloud.UI.notebook_merge = (function() {
         this.clear();
       });
 
-      $(this.dialog_).on('click', 'tr.common', () => {
-        console.log('getting ready for comparison...');
+      $(this.dialog_).on('click', 'tbody tr', (event) => {
+        console.info(
+          $(event.currentTarget).find('td:eq(0)').data('filecontent'),
+          $(event.currentTarget).find('td:eq(1)').data('filecontent')
+        );
+        
+
+        
       });
 
       this.previous_diff_button_.click(() => {
@@ -321,6 +327,16 @@ RCloud.UI.notebook_merge = (function() {
       this.compare_stage_.html(this.templates_.compare_stage({
 
       }));
+
+      // set up the data items:
+      this.compare_file_list_.find('tr').each((index, rowEl) => {
+        $(rowEl).find('td').each((index, cellEl) => {
+          let coll = comparison[index ? 'to' : 'from'][$(rowEl).hasClass('parts') ? 'parts' : 'assets'],
+              content = _.findWhere(coll, { filename: $(cellEl).data('filename') });
+
+          $(cellEl).data('filecontent', content);
+        });
+      });
 
       require(["vs/editor/editor.main"], () => {
         this.diff_editor_ = monaco.editor.createDiffEditor(
