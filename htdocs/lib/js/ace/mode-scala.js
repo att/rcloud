@@ -695,7 +695,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 
 });
 
-define("ace/mode/javascript-jup",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/javascript_highlight_rules","ace/mode/matching_brace_outdent","ace/worker/worker_client","ace/mode/behaviour/cstyle","ace/mode/folding/cstyle","ace/mode/jupyter_completions"], function(require, exports, module) {
+define("ace/mode/javascript",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/javascript_highlight_rules","ace/mode/matching_brace_outdent","ace/worker/worker_client","ace/mode/behaviour/cstyle","ace/mode/folding/cstyle"], function(require, exports, module) {
 "use strict";
 
 var oop = require("../lib/oop");
@@ -705,22 +705,13 @@ var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutd
 var WorkerClient = require("../worker/worker_client").WorkerClient;
 var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
-var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
-var Mode = function(options) {
+var Mode = function() {
     this.HighlightRules = JavaScriptHighlightRules;
     
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
-    this.$completer = new JupyterCompletions(options.language);
-    this.getCompletionsAsync = function(state, session, pos, callback) {
-        if(this.$completer) {
-            this.$completer.getCompletions(null, session, pos, callback);
-        } else {
-            callback(null, []);
-        }
-    };
 };
 oop.inherits(Mode, TextMode);
 
@@ -784,7 +775,208 @@ oop.inherits(Mode, TextMode);
         return worker;
     };
 
-    this.$id = "ace/mode/javascript-jup";
+    this.$id = "ace/mode/javascript";
+}).call(Mode.prototype);
+
+exports.Mode = Mode;
+});
+
+define("ace/mode/scala_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/doc_comment_highlight_rules","ace/mode/text_highlight_rules"], function(require, exports, module) {
+"use strict";
+
+var oop = require("../lib/oop");
+var DocCommentHighlightRules = require("./doc_comment_highlight_rules").DocCommentHighlightRules;
+var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
+
+var ScalaHighlightRules = function() {
+
+    var keywords = (
+            "case|default|do|else|for|if|match|while|throw|return|try|trye|catch|finally|yield|" +
+            "abstract|class|def|extends|final|forSome|implicit|implicits|import|lazy|new|object|null|" +
+            "override|package|private|protected|sealed|super|this|trait|type|val|var|with|" +
+            "assert|assume|require|print|println|printf|readLine|readBoolean|readByte|readShort|" + // package scala
+            "readChar|readInt|readLong|readFloat|readDouble" // package scala
+    );
+
+    var buildinConstants = ("true|false");
+
+    var langClasses = (
+        "AbstractMethodError|AssertionError|ClassCircularityError|"+
+        "ClassFormatError|Deprecated|EnumConstantNotPresentException|"+
+        "ExceptionInInitializerError|IllegalAccessError|"+
+        "IllegalThreadStateException|InstantiationError|InternalError|"+
+
+        "NegativeArraySizeException|NoSuchFieldError|Override|Process|"+
+        "ProcessBuilder|SecurityManager|StringIndexOutOfBoundsException|"+
+        "SuppressWarnings|TypeNotPresentException|UnknownError|"+
+        "UnsatisfiedLinkError|UnsupportedClassVersionError|VerifyError|"+
+        "InstantiationException|IndexOutOfBoundsException|"+
+        "ArrayIndexOutOfBoundsException|CloneNotSupportedException|"+
+        "NoSuchFieldException|IllegalArgumentException|NumberFormatException|"+
+        "SecurityException|Void|InheritableThreadLocal|IllegalStateException|"+
+        "InterruptedException|NoSuchMethodException|IllegalAccessException|"+
+        "UnsupportedOperationException|Enum|StrictMath|Package|Compiler|"+
+        "Readable|Runtime|StringBuilder|Math|IncompatibleClassChangeError|"+
+        "NoSuchMethodError|ThreadLocal|RuntimePermission|ArithmeticException|"+
+        "NullPointerException|Long|Integer|Short|Byte|Double|Number|Float|"+
+        "Character|Boolean|StackTraceElement|Appendable|StringBuffer|"+
+        "Iterable|ThreadGroup|Runnable|Thread|IllegalMonitorStateException|"+
+        "StackOverflowError|OutOfMemoryError|VirtualMachineError|"+
+        "ArrayStoreException|ClassCastException|LinkageError|"+
+        "NoClassDefFoundError|ClassNotFoundException|RuntimeException|"+
+        "Exception|ThreadDeath|Error|Throwable|System|ClassLoader|"+
+        "Cloneable|Class|CharSequence|Comparable|String|Object|" +
+        "Unit|Any|AnyVal|AnyRef|Null|ScalaObject|Singleton|Seq|Iterable|List|" +
+        "Option|Array|Char|Byte|Int|Long|Nothing|" +
+
+        "App|Application|BufferedIterator|BigDecimal|BigInt|Console|Either|" +
+        "Enumeration|Equiv|Fractional|Function|IndexedSeq|Integral|Iterator|" +
+        "Map|Numeric|Nil|NotNull|Ordered|Ordering|PartialFunction|PartialOrdering|" +
+        "Product|Proxy|Range|Responder|Seq|Serializable|Set|Specializable|Stream|" +
+        "StringContext|Symbol|Traversable|TraversableOnce|Tuple|Vector|Pair|Triple"
+
+
+    );
+
+    var keywordMapper = this.createKeywordMapper({
+        "variable.language": "this",
+        "keyword": keywords,
+        "support.function": langClasses,
+        "constant.language": buildinConstants
+    }, "identifier");
+
+    this.$rules = {
+        "start" : [
+            {
+                token : "comment",
+                regex : "\\/\\/.*$"
+            },
+            DocCommentHighlightRules.getStartRule("doc-start"),
+            {
+                token : "comment", // multi line comment
+                regex : "\\/\\*",
+                next : "comment"
+            }, {
+                token : "string.regexp",
+                regex : "[/](?:(?:\\[(?:\\\\]|[^\\]])+\\])|(?:\\\\/|[^\\]/]))*[/]\\w*\\s*(?=[).,;]|$)"
+            }, {
+                token : "string",
+                regex : '"""',
+                next : "tstring"
+            }, {
+                token : "string",
+                regex : '"(?=.)', // " strings can't span multiple lines
+                next : "string"
+            }, {
+                token : "symbol.constant", // single line
+                regex : "'[\\w\\d_]+"
+            }, {
+                token : "constant.numeric", // hex
+                regex : "0[xX][0-9a-fA-F]+\\b"
+            }, {
+                token : "constant.numeric", // float
+                regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
+            }, {
+                token : "constant.language.boolean",
+                regex : "(?:true|false)\\b"
+            }, {
+                token : keywordMapper,
+                regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+            }, {
+                token : "keyword.operator",
+                regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"
+            }, {
+                token : "paren.lparen",
+                regex : "[[({]"
+            }, {
+                token : "paren.rparen",
+                regex : "[\\])}]"
+            }, {
+                token : "text",
+                regex : "\\s+"
+            }
+        ],
+        "comment" : [
+            {
+                token : "comment", // closing comment
+                regex : ".*?\\*\\/",
+                next : "start"
+            }, {
+                token : "comment", // comment spanning whole line
+                regex : ".+"
+            }
+        ],
+        "string" : [
+            {
+                token : "escape",
+                regex : '\\\\"'
+            }, {
+                token : "string",
+                regex : '"',
+                next : "start"
+            }, {
+                token : "string.invalid",
+                regex : '[^"\\\\]*$',
+                next : "start"
+            }, {
+                token : "string",
+                regex : '[^"\\\\]+'
+            }
+        ],
+        "tstring" : [
+            {
+                token : "string",
+                regex : '"{3,5}',
+                next : "start"
+            }, {
+                defaultToken : "string"
+            }
+        ]
+    };
+
+    this.embedRules(DocCommentHighlightRules, "doc-",
+        [ DocCommentHighlightRules.getEndRule("start") ]);
+};
+
+oop.inherits(ScalaHighlightRules, TextHighlightRules);
+
+exports.ScalaHighlightRules = ScalaHighlightRules;
+});
+
+ /*
+ * RCloud contribution:
+ * * added getCompletionsAsync method
+ * * delegation of completions retrieval to JupyterCompletions component 
+ */
+define("ace/mode/scala",["require","exports","module","ace/lib/oop","ace/mode/javascript","ace/mode/scala_highlight_rules","ace/mode/jupyter_completions"], function(require, exports, module) {
+"use strict";
+
+var oop = require("../lib/oop");
+var JavaScriptMode = require("./javascript").Mode;
+var ScalaHighlightRules = require("./scala_highlight_rules").ScalaHighlightRules;
+var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
+
+var Mode = function(options) {
+    JavaScriptMode.call(this);
+    this.HighlightRules = ScalaHighlightRules;
+    this.$completer = new JupyterCompletions(options.language);
+    this.getCompletionsAsync = function(state, session, pos, callback) {
+        if(this.$completer) {
+            this.$completer.getCompletions(null, session, pos, callback);
+        } else {
+            callback(null, []);
+        }
+    };
+};
+oop.inherits(Mode, JavaScriptMode);
+
+(function() {
+
+    this.createWorker = function(session) {
+        return null;
+    };
+
+    this.$id = "ace/mode/scala";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;

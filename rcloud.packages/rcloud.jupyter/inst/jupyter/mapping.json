@@ -16,7 +16,7 @@
   "javascript" : {
     "hljs.class" : "js",
     "extension" : "jsjup",
-    "ace.mode" : "ace/mode/javascript_jup",
+    "ace.mode" : "ace/mode/javascript-jup",
     "display.name" : "JavaScript (Node.js)"
   },
   "lgo" : {

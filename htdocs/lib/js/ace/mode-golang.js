@@ -1,134 +1,171 @@
-define("ace/mode/perl_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module) {
+define("ace/mode/doc_comment_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module) {
 "use strict";
 
 var oop = require("../lib/oop");
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
-var PerlHighlightRules = function() {
-
-    var keywords = (
-        "base|constant|continue|else|elsif|for|foreach|format|goto|if|last|local|my|next|" +
-         "no|package|parent|redo|require|scalar|sub|unless|until|while|use|vars"
-    );
-
-    var buildinConstants = ("ARGV|ENV|INC|SIG");
-
-    var builtinFunctions = (
-        "getprotobynumber|getprotobyname|getservbyname|gethostbyaddr|" +
-         "gethostbyname|getservbyport|getnetbyaddr|getnetbyname|getsockname|" +
-         "getpeername|setpriority|getprotoent|setprotoent|getpriority|" +
-         "endprotoent|getservent|setservent|endservent|sethostent|socketpair|" +
-         "getsockopt|gethostent|endhostent|setsockopt|setnetent|quotemeta|" +
-         "localtime|prototype|getnetent|endnetent|rewinddir|wantarray|getpwuid|" +
-         "closedir|getlogin|readlink|endgrent|getgrgid|getgrnam|shmwrite|" +
-         "shutdown|readline|endpwent|setgrent|readpipe|formline|truncate|" +
-         "dbmclose|syswrite|setpwent|getpwnam|getgrent|getpwent|ucfirst|sysread|" +
-         "setpgrp|shmread|sysseek|sysopen|telldir|defined|opendir|connect|" +
-         "lcfirst|getppid|binmode|syscall|sprintf|getpgrp|readdir|seekdir|" +
-         "waitpid|reverse|unshift|symlink|dbmopen|semget|msgrcv|rename|listen|" +
-         "chroot|msgsnd|shmctl|accept|unpack|exists|fileno|shmget|system|" +
-         "unlink|printf|gmtime|msgctl|semctl|values|rindex|substr|splice|" +
-         "length|msgget|select|socket|return|caller|delete|alarm|ioctl|index|" +
-         "undef|lstat|times|srand|chown|fcntl|close|write|umask|rmdir|study|" +
-         "sleep|chomp|untie|print|utime|mkdir|atan2|split|crypt|flock|chmod|" +
-         "BEGIN|bless|chdir|semop|shift|reset|link|stat|chop|grep|fork|dump|" +
-         "join|open|tell|pipe|exit|glob|warn|each|bind|sort|pack|eval|push|" +
-         "keys|getc|kill|seek|sqrt|send|wait|rand|tied|read|time|exec|recv|" +
-         "eof|chr|int|ord|exp|pos|pop|sin|log|abs|oct|hex|tie|cos|vec|END|ref|" +
-         "map|die|uc|lc|do"
-    );
-
-    var keywordMapper = this.createKeywordMapper({
-        "keyword": keywords,
-        "constant.language": buildinConstants,
-        "support.function": builtinFunctions
-    }, "identifier");
-
+var DocCommentHighlightRules = function() {
     this.$rules = {
-        "start" : [
-            {
-                token : "comment.doc",
-                regex : "^=(?:begin|item)\\b",
-                next : "block_comment"
-            }, {
-                token : "string.regexp",
-                regex : "[/](?:(?:\\[(?:\\\\]|[^\\]])+\\])|(?:\\\\/|[^\\]/]))*[/]\\w*\\s*(?=[).,;]|$)"
-            }, {
-                token : "string", // single line
-                regex : '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
-            }, {
-                token : "string", // multi line string start
-                regex : '["].*\\\\$',
-                next : "qqstring"
-            }, {
-                token : "string", // single line
-                regex : "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
-            }, {
-                token : "string", // multi line string start
-                regex : "['].*\\\\$",
-                next : "qstring"
-            }, {
-                token : "constant.numeric", // hex
-                regex : "0x[0-9a-fA-F]+\\b"
-            }, {
-                token : "constant.numeric", // float
-                regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
-            }, {
-                token : keywordMapper,
-                regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
-            }, {
-                token : "keyword.operator",
-                regex : "%#|\\$#|\\.\\.\\.|\\|\\|=|>>=|<<=|<=>|&&=|=>|!~|\\^=|&=|\\|=|\\.=|x=|%=|\\/=|\\*=|\\-=|\\+=|=~|\\*\\*|\\-\\-|\\.\\.|\\|\\||&&|\\+\\+|\\->|!=|==|>=|<=|>>|<<|,|=|\\?\\:|\\^|\\||x|%|\\/|\\*|<|&|\\\\|~|!|>|\\.|\\-|\\+|\\-C|\\-b|\\-S|\\-u|\\-t|\\-p|\\-l|\\-d|\\-f|\\-g|\\-s|\\-z|\\-k|\\-e|\\-O|\\-T|\\-B|\\-M|\\-A|\\-X|\\-W|\\-c|\\-R|\\-o|\\-x|\\-w|\\-r|\\b(?:and|cmp|eq|ge|gt|le|lt|ne|not|or|xor)"
-            }, {
-                token : "comment",
-                regex : "#.*$"
-            }, {
-                token : "lparen",
-                regex : "[[({]"
-            }, {
-                token : "rparen",
-                regex : "[\\])}]"
-            }, {
-                token : "text",
-                regex : "\\s+"
-            }
-        ],
-        "qqstring" : [
-            {
-                token : "string",
-                regex : '(?:(?:\\\\.)|(?:[^"\\\\]))*?"',
-                next : "start"
-            }, {
-                token : "string",
-                regex : '.+'
-            }
-        ],
-        "qstring" : [
-            {
-                token : "string",
-                regex : "(?:(?:\\\\.)|(?:[^'\\\\]))*?'",
-                next : "start"
-            }, {
-                token : "string",
-                regex : '.+'
-            }
-        ],
-        "block_comment": [
-            {
-                token: "comment.doc", 
-                regex: "^=cut\\b",
-                next: "start"
-            },
-            {
-                defaultToken: "comment.doc"
-            }
-        ]
+        "start" : [ {
+            token : "comment.doc.tag",
+            regex : "@[\\w\\d_]+" // TODO: fix email addresses
+        }, 
+        DocCommentHighlightRules.getTagRule(),
+        {
+            defaultToken : "comment.doc",
+            caseInsensitive: true
+        }]
     };
 };
 
-oop.inherits(PerlHighlightRules, TextHighlightRules);
+oop.inherits(DocCommentHighlightRules, TextHighlightRules);
 
-exports.PerlHighlightRules = PerlHighlightRules;
+DocCommentHighlightRules.getTagRule = function(start) {
+    return {
+        token : "comment.doc.tag.storage.type",
+        regex : "\\b(?:TODO|FIXME|XXX|HACK)\\b"
+    };
+}
+
+DocCommentHighlightRules.getStartRule = function(start) {
+    return {
+        token : "comment.doc", // doc comment
+        regex : "\\/\\*(?=\\*)",
+        next  : start
+    };
+};
+
+DocCommentHighlightRules.getEndRule = function (start) {
+    return {
+        token : "comment.doc", // closing comment
+        regex : "\\*\\/",
+        next  : start
+    };
+};
+
+
+exports.DocCommentHighlightRules = DocCommentHighlightRules;
+
+});
+
+define("ace/mode/golang_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/doc_comment_highlight_rules","ace/mode/text_highlight_rules"], function(require, exports, module) {
+    var oop = require("../lib/oop");
+    var DocCommentHighlightRules = require("./doc_comment_highlight_rules").DocCommentHighlightRules;
+    var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
+
+    var GolangHighlightRules = function() {
+        var keywords = (
+            "else|break|case|return|goto|if|const|select|" +
+            "continue|struct|default|switch|for|range|" +
+            "func|import|package|chan|defer|fallthrough|go|interface|map|range|" +
+            "select|type|var"
+        );
+        var builtinTypes = (
+            "string|uint8|uint16|uint32|uint64|int8|int16|int32|int64|float32|" +
+            "float64|complex64|complex128|byte|rune|uint|int|uintptr|bool|error"
+        );
+        var builtinFunctions = (
+            "new|close|cap|copy|panic|panicln|print|println|len|make|delete|real|recover|imag|append"
+        );
+        var builtinConstants = ("nil|true|false|iota");
+
+        var keywordMapper = this.createKeywordMapper({
+            "keyword": keywords,
+            "constant.language": builtinConstants,
+            "support.function": builtinFunctions,
+            "support.type": builtinTypes
+        }, "");
+        
+        var stringEscapeRe = "\\\\(?:[0-7]{3}|x\\h{2}|u{4}|U\\h{6}|[abfnrtv'\"\\\\])".replace(/\\h/g, "[a-fA-F\\d]");
+
+        this.$rules = {
+            "start" : [
+                {
+                    token : "comment",
+                    regex : "\\/\\/.*$"
+                },
+                DocCommentHighlightRules.getStartRule("doc-start"),
+                {
+                    token : "comment.start", // multi line comment
+                    regex : "\\/\\*",
+                    next : "comment"
+                }, {
+                    token : "string", // single line
+                    regex : /"(?:[^"\\]|\\.)*?"/
+                }, {
+                    token : "string", // raw
+                    regex : '`',
+                    next : "bqstring"
+                }, {
+                    token : "constant.numeric", // rune
+                    regex : "'(?:[^\\'\uD800-\uDBFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|" + stringEscapeRe.replace('"', '')  + ")'"
+                }, {
+                    token : "constant.numeric", // hex
+                    regex : "0[xX][0-9a-fA-F]+\\b" 
+                }, {
+                    token : "constant.numeric", // float
+                    regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
+                }, {
+                    token : ["keyword", "text", "entity.name.function"],
+                    regex : "(func)(\\s+)([a-zA-Z_$][a-zA-Z0-9_$]*)\\b"
+                }, {
+                    token : function(val) {
+                        if (val[val.length - 1] == "(") {
+                            return [{
+                                type: keywordMapper(val.slice(0, -1)) || "support.function",
+                                value: val.slice(0, -1)
+                            }, {
+                                type: "paren.lparen",
+                                value: val.slice(-1)
+                            }];
+                        }
+                        
+                        return keywordMapper(val) || "identifier";
+                    },
+                    regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b\\(?"
+                }, {
+                    token : "keyword.operator",
+                    regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|==|=|!=|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^="
+                }, {
+                    token : "punctuation.operator",
+                    regex : "\\?|\\:|\\,|\\;|\\."
+                }, {
+                    token : "paren.lparen",
+                    regex : "[[({]"
+                }, {
+                    token : "paren.rparen",
+                    regex : "[\\])}]"
+                }, {
+                    token : "text",
+                    regex : "\\s+"
+                }
+            ],
+            "comment" : [
+                {
+                    token : "comment.end",
+                    regex : "\\*\\/",
+                    next : "start"
+                }, {
+                    defaultToken : "comment"
+                }
+            ],
+            "bqstring" : [
+                {
+                    token : "string",
+                    regex : '`',
+                    next : "start"
+                }, {
+                    defaultToken : "string"
+                }
+            ]
+        };
+
+        this.embedRules(DocCommentHighlightRules, "doc-",
+            [ DocCommentHighlightRules.getEndRule("start") ]);
+    };
+    oop.inherits(GolangHighlightRules, TextHighlightRules);
+
+    exports.GolangHighlightRules = GolangHighlightRules;
 });
 
 define("ace/mode/matching_brace_outdent",["require","exports","module","ace/range"], function(require, exports, module) {
@@ -316,24 +353,23 @@ oop.inherits(FoldMode, BaseFoldMode);
  * * added getCompletionsAsync method
  * * delegation of completions retrieval to JupyterCompletions component
  */
-
-define("ace/mode/perl",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/perl_highlight_rules","ace/mode/matching_brace_outdent","ace/mode/folding/cstyle", "ace/mode/jupyter_completions"], function(require, exports, module) {
-"use strict";
+define("ace/mode/golang",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/golang_highlight_rules","ace/mode/matching_brace_outdent","ace/mode/behaviour/cstyle","ace/mode/folding/cstyle", "ace/mode/jupyter_completions"], function(require, exports, module) {
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
-var PerlHighlightRules = require("./perl_highlight_rules").PerlHighlightRules;
+var GolangHighlightRules = require("./golang_highlight_rules").GolangHighlightRules;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
+var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
 var Mode = function(options) {
-   this.HighlightRules = PerlHighlightRules;
-   this.$outdent = new MatchingBraceOutdent();
-   this.foldingRules = new CStyleFoldMode({start: "^=(begin|item)\\b", end: "^=(cut)\\b"});
-   this.$behaviour = this.$defaultBehaviour;
-   this.$completer = new JupyterCompletions(options.language);
-   this.getCompletionsAsync = function(state, session, pos, callback) {
+    this.HighlightRules = GolangHighlightRules;
+    this.$outdent = new MatchingBraceOutdent();
+    this.foldingRules = new CStyleFoldMode();
+    this.$behaviour = new CstyleBehaviour();
+    this.$completer = new JupyterCompletions(options.language);
+    this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
             this.$completer.getCompletions(null, session, pos, callback);
         } else {
@@ -344,33 +380,30 @@ var Mode = function(options) {
 oop.inherits(Mode, TextMode);
 
 (function() {
-
-    this.lineCommentStart = "#";
-    this.blockComment = [
-        {start: "=begin", end: "=cut", lineStartOnly: true},
-        {start: "=item", end: "=cut", lineStartOnly: true}
-    ];
-
+    
+    this.lineCommentStart = "//";
+    this.blockComment = {start: "/*", end: "*/"};
 
     this.getNextLineIndent = function(state, line, tab) {
         var indent = this.$getIndent(line);
 
         var tokenizedLine = this.getTokenizer().getLineTokens(line, state);
         var tokens = tokenizedLine.tokens;
+        var endState = tokenizedLine.state;
 
         if (tokens.length && tokens[tokens.length-1].type == "comment") {
             return indent;
         }
-
+        
         if (state == "start") {
-            var match = line.match(/^.*[\{\(\[:]\s*$/);
+            var match = line.match(/^.*[\{\(\[]\s*$/);
             if (match) {
                 indent += tab;
             }
         }
 
         return indent;
-    };
+    };//end getNextLineIndent
 
     this.checkOutdent = function(state, line, input) {
         return this.$outdent.checkOutdent(line, input);
@@ -380,7 +413,7 @@ oop.inherits(Mode, TextMode);
         this.$outdent.autoOutdent(doc, row);
     };
 
-    this.$id = "ace/mode/perl";
+    this.$id = "ace/mode/golang";
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
