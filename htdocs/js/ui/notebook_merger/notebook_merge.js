@@ -55,14 +55,17 @@ RCloud.UI.notebook_merge = (function() {
         this.clear();
       });
 
-      $(this.dialog_).on('click', 'tbody tr', (event) => {
-        console.info(
+      $(this.dialog_).on('click', 'tbody tr:not(.selected)', (event) => {
+
+        $(event.currentTarget).closest('table').find('tr').removeClass('selected');
+
+        // for now, only comparison for 'common' files makes sense:
+        this.set_model(
           $(event.currentTarget).find('td:eq(0)').data('filecontent'),
           $(event.currentTarget).find('td:eq(1)').data('filecontent')
         );
-        
 
-        
+        $(event.currentTarget).addClass('selected');
       });
 
       this.previous_diff_button_.click(() => {
@@ -206,7 +209,6 @@ RCloud.UI.notebook_merge = (function() {
         // ]);
 
         // current notebook:
-        
         rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value);
 
         // massage the returned notebook so that it's easier to work with:
@@ -319,8 +321,6 @@ RCloud.UI.notebook_merge = (function() {
         })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; });
       });
 
-      //console.info('comparing: ', comparison);
-
       this.compare_file_list_.html(this.templates_.file_list({
         comparison: comparison
       }));
@@ -347,7 +347,7 @@ RCloud.UI.notebook_merge = (function() {
           }
         );
 
-        this.set_model(comparison);
+        //this.set_model(comparison);
 
         this.diff_navigator_ = monaco.editor.createDiffNavigator(
           this.diff_editor_,
@@ -357,17 +357,24 @@ RCloud.UI.notebook_merge = (function() {
             alwaysRevealFirst: true
           }
         );
-      });
-      
+      }); 
     }
-    set_model(comparison) {
+    set_model(from, to) {
       
+      var getContent = (file) => {
+        if((file.content.r_type && file.content.rtype === 'raw') || !file.content) {
+          return '';
+        } else {
+          return file.content;
+        }
+      }
+
       this.diff_editor_.setModel({
         original: monaco.editor.createModel(
-          comparison.from.files[0].content
+          getContent(from)
         ),
         modified: monaco.editor.createModel(
-          comparison.to.files[0].content
+          getContent(to)
         )
       });
       

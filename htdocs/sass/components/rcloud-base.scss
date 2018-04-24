@@ -876,16 +876,6 @@ body .modal-dialog.full {
     #merge-stage, #merge-compare-section {
         display: none;
     }
-    
-    /*
-    &.pulling {
-        pointer-events: none;
-
-        .btn-cancel, .close {
-            display: none;
-        }
-    }
-    */
 
     .btn-init {
         margin-left: 5px;
@@ -935,6 +925,11 @@ body .modal-dialog.full {
 
                     &:hover {
                         background-color: #dedede;
+                    }
+
+                    &.selected {
+                        background-color: #efefef;
+                        cursor: default;
                     }
                 //}
             }
