@@ -277,8 +277,12 @@ RCloud.UI.notebook_merge = (function() {
     }
     prepare_notebook_for_comparison(notebook) {
       notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
-      notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename));
-      notebook.assets = notebook.files.filter(f => !Notebook.is_part_name(f.filename));
+      notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename)).sort((p1, p2) => { 
+        return p1.filename.localeCompare(p2.filename, undefined, { sensitivity: 'base' })
+      });
+      notebook.assets = notebook.files.filter(f => !Notebook.is_part_name(f.filename)).sort((a1, a2) => { 
+        return a1.filename.localeCompare(a2.filename, undefined, { sensitivity: 'base' })
+      });
       return notebook;
     }
     update_compare_details(comparison) {
@@ -362,10 +366,11 @@ RCloud.UI.notebook_merge = (function() {
     set_model(from, to) {
       
       var getContent = (file) => {
-        if((file.content.r_type && file.content.rtype === 'raw') || !file.content) {
-          return '';
-        } else {
+        //(file.content.r_type && file.content.r_type === 'raw')
+        if(file && (file.content && !file.content.r_type)) {
           return file.content;
+        } else {
+          return '';
         }
       }
 
