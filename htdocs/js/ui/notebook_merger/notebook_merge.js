@@ -46,6 +46,8 @@ RCloud.UI.notebook_merge = (function() {
       this.diff_navigator_ = null;
 
       this.dialog_stage_ = DialogStage.INIT;
+      this.notebook_description;
+      this.can_dispose = false;
 
       $(this.dialog_).on('shown.bs.modal', () => {
         
@@ -208,6 +210,8 @@ RCloud.UI.notebook_merge = (function() {
         //   })
         // ]);
 
+        this.notebook_description = notebook.description;
+
         // current notebook:
         rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value);
 
@@ -234,10 +238,11 @@ RCloud.UI.notebook_merge = (function() {
     update_stage(dialogStage) {
       if(dialogStage == DialogStage.INIT) {
         this.reset_getting_changes_state();
+        this.can_dispose = false;
       }
       
       if(dialogStage == DialogStage.COMPARE) {
-        this.merge_notebook_details_.html(this.get_input().val());
+        this.merge_notebook_details_.html(this.notebook_description);
       } else {
         this.merge_notebook_details_.html('');
       }
@@ -254,7 +259,7 @@ RCloud.UI.notebook_merge = (function() {
       this.btn_show_changes_.text('Show changes');
     }
     clear() {
-      if(this.diff_editor_) {
+      if(this.diff_editor_ && this.can_dispose) {
         this.diff_editor_.dispose();
       }
 
@@ -351,8 +356,6 @@ RCloud.UI.notebook_merge = (function() {
           }
         );
 
-        //this.set_model(comparison);
-
         this.diff_navigator_ = monaco.editor.createDiffNavigator(
           this.diff_editor_,
           {
@@ -382,6 +385,8 @@ RCloud.UI.notebook_merge = (function() {
           getContent(to)
         )
       });
+
+      this.can_dispose = true;
       
     }
   };
