@@ -335,19 +335,22 @@
       <tr>
         <th>from</th>
         <th>to</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
         <% _.each(comparison.fileDiffs.allParts, function(part) { %>
-          <tr class="<%= comparison.commonParts.indexOf(part) != -1 ? 'common parts' : 'parts' %>">
+          <tr class="<%= _.findWhere(comparison.commonParts, { filename : part }) ? 'common parts' : 'parts' %>">
             <td data-filename="<%=part%>"><%= _.findWhere(comparison.from.parts, { filename: part }) ? part : '' %></td>
             <td data-filename="<%=part%>"><%= _.findWhere(comparison.to.parts, { filename: part }) ? part : '' %></td>
+            <td class="diff"><% if(_.findWhere(comparison.commonParts, { filename: part, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
           </tr>
         <% }); %>
         <% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
-          <tr class="<%= comparison.commonAssets.indexOf(asset) != -1 ? 'common assets' : 'assets' %>">
+          <tr class="<%= _.findWhere(comparison.commonAssets, { filename : asset }) ? 'common assets' : 'assets' %>">
             <td data-filename="<%=asset%>"><%= _.findWhere(comparison.from.assets, { filename: asset }) ? asset : '' %></td>
             <td data-filename="<%=asset%>"><%= _.findWhere(comparison.to.assets, { filename: asset }) ? asset : '' %></td>
+            <td class="diff"><% if(_.findWhere(comparison.commonAssets, { filename: asset, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
           </tr>
         <% }); %>
     </tbody>
