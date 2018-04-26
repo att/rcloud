@@ -967,6 +967,17 @@ body .modal-dialog.full {
         }
     }
 
+    .modal-footer {
+
+        padding-left: 0;
+        padding-right: 5px;
+
+        .row div {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+
 }
 
 #tree-finder-dialog {
