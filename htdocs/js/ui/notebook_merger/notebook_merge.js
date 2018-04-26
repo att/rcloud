@@ -5,6 +5,22 @@ RCloud.UI.notebook_merge = (function() {
     COMPARE: 'compare'
   });
 
+  const ChangeType = Object.freeze({
+    NEWFILE: 'newfile', 
+    DELETEDFILE: 'deletedfile',
+    BINARY: 'binary',
+    IDENTICAL: 'nochange',
+    MODIFIED: 'changed'
+  });
+
+  const ChangedTypeDescription = Object.freeze({
+    [ChangeType.NEWFILE]: 'Only in new', 
+    [ChangeType.DELETEDFILE]: 'Deleted',
+    [ChangeType.BINARY]: 'Binary',
+    [ChangeType.IDENTICAL]: 'Identical',
+    [ChangeType.MODIFIED]: 'Files are different'
+  });
+
   const notebook_merge = class {
     constructor() {
       let that = this,
@@ -46,8 +62,10 @@ RCloud.UI.notebook_merge = (function() {
       this.diff_navigator_ = null;
 
       this.dialog_stage_ = DialogStage.INIT;
-      this.notebook_description;
-      this.can_dispose = false;
+      this.notebook_description_;
+      this.can_dispose_ = false;
+
+      this.comparison_ = null;
 
       $(this.dialog_).on('shown.bs.modal', () => {
         
@@ -63,10 +81,12 @@ RCloud.UI.notebook_merge = (function() {
 
         // for now, only comparison for 'common' files makes sense:
         this.set_model(
-          $(event.currentTarget).find('td:eq(0)').data('filecontent'),
-          $(event.currentTarget).find('td:eq(1)').data('filecontent')
+          _.findWhere(this.comparison_.from[$(event.currentTarget).data('filetype')], 
+            { 'filename' : $(event.currentTarget).data('filename') }),
+          _.findWhere(this.comparison_.to[$(event.currentTarget).data('filetype')], 
+            { 'filename' : $(event.currentTarget).data('filename') })
         );
-
+          
         $(event.currentTarget).addClass('selected');
       });
 
@@ -210,20 +230,20 @@ RCloud.UI.notebook_merge = (function() {
         //   })
         // ]);
 
-        this.notebook_description = notebook.description;
+        this.notebook_description_ = notebook.description;
 
         // current notebook:
         rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', method + ':' + value);
 
         // massage the returned notebook so that it's easier to work with:
-        let comparison = {
+        this.comparison_ = {
           from: this.prepare_notebook_for_comparison(shell.notebook.model.controller.current_gist()),
           to: this.prepare_notebook_for_comparison(notebook)
         };
 
         this.update_stage(DialogStage.COMPARE);
 
-        this.update_compare_details(comparison);
+        this.update_compare_details(this.comparison_);
 
       }).catch((e) => {
         this.reset_getting_changes_state();
@@ -232,17 +252,18 @@ RCloud.UI.notebook_merge = (function() {
           this.show_error(not_found_notebook_error_);
         } else {
           this.show_error(e.message);
+          console.error(e);
         }
       });
     }
     update_stage(dialogStage) {
       if(dialogStage == DialogStage.INIT) {
         this.reset_getting_changes_state();
-        this.can_dispose = false;
+        this.can_dispose_ = false;
       }
       
       if(dialogStage == DialogStage.COMPARE) {
-        this.merge_notebook_details_.html(this.notebook_description);
+        this.merge_notebook_details_.html(this.notebook_description_);
       } else {
         this.merge_notebook_details_.html('');
       }
@@ -259,7 +280,7 @@ RCloud.UI.notebook_merge = (function() {
       this.btn_show_changes_.text('Show changes');
     }
     clear() {
-      if(this.diff_editor_ && this.can_dispose) {
+      if(this.diff_editor_ && this.can_dispose_) {
         this.diff_editor_.dispose();
       }
 
@@ -298,18 +319,18 @@ RCloud.UI.notebook_merge = (function() {
       };
 
       const sources = ['from', 'to'];
-
+/*
       _.each(['assets', 'parts'], (file_type) => {
-        /*
-        _.each(sources, (direction) => {
-          // diffs:
-          comparison.fileDiffs[file_type][direction + 'Only'] = 
-            _.filter(comparison[direction][file_type], a => { 
-              return _.difference(_.pluck(comparison[direction][file_type], 'filename'), 
-                      _.pluck(comparison[_.difference(sources, [direction])][file_type], 'filename')).indexOf(a.filename) != -1; 
-          });
-        });
-        */
+        
+        // _.each(sources, (direction) => {
+        //   // diffs:
+        //   comparison.fileDiffs[file_type][direction + 'Only'] = 
+        //     _.filter(comparison[direction][file_type], a => { 
+        //       return _.difference(_.pluck(comparison[direction][file_type], 'filename'), 
+        //               _.pluck(comparison[_.difference(sources, [direction])][file_type], 'filename')).indexOf(a.filename) != -1; 
+        //   });
+        // });
+        
 
         // get common details between 
         const getCommonDetails = (file, file_type) => {
@@ -331,15 +352,40 @@ RCloud.UI.notebook_merge = (function() {
                     _.pluck(comparison[[sources[1]]][file_type], 'filename')).indexOf(a.filename) != -1; 
           }), f => getCommonDetails(f, file_type));
       });
+*/
+
+      const get_change_type = (filename, file_type) => {
+        const from = _.findWhere(comparison.from[file_type], { filename }),
+              to = _.findWhere(comparison.to[file_type], { filename });
+
+        if(!from && to) {
+          return ChangeType.NEWFILE;
+        } else if(from && !to) {
+          return ChangeType.DELETEDFILE;
+        } else if(from.content.r_type) {
+          return ChangeType.BINARY;
+        } else {
+          return from.content == to.content ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
+        }
+      };
 
       // derive a list of all assets and parts:
       _.each(['assets', 'parts'], (file_type) => {
         comparison.fileDiffs['all' + file_type[0].toUpperCase() + file_type.substring(1)] = 
+        _.map(
         _.sortBy(
         _.union(...
         _.map(sources, s => {
           return _.pluck(comparison[s][file_type], 'filename');
-        })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; });
+        })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; }), filename => { 
+          return {
+            filename,
+            change_type: get_change_type(filename, file_type),
+            get change_type_desc() {
+              return ChangedTypeDescription[this.change_type];
+            }
+          }; 
+        });
       });
 
       console.info('comparison: ', comparison);
@@ -351,22 +397,23 @@ RCloud.UI.notebook_merge = (function() {
 
       }));
 
-      // set up the data items:
-      this.compare_file_list_.find('tr').each((index, rowEl) => {
-        $(rowEl).find('td').each((index, cellEl) => {
-          let coll = comparison[index ? 'to' : 'from'][$(rowEl).hasClass('parts') ? 'parts' : 'assets'],
-              content = _.findWhere(coll, { filename: $(cellEl).data('filename') });
+      // // set up the data items:
+      // this.compare_file_list_.find('tr').each((index, rowEl) => {
+      //   $(rowEl).find('td').each((index, cellEl) => {
+      //     let coll = comparison[index ? 'to' : 'from'][$(rowEl).hasClass('parts') ? 'parts' : 'assets'],
+      //         content = _.findWhere(coll, { filename: $(cellEl).data('filename') });
 
-          $(cellEl).data('filecontent', content);
-        });
-      });
+      //     $(cellEl).data('filecontent', content);
+      //   });
+      // });
 
       require(["vs/editor/editor.main"], () => {
         this.diff_editor_ = monaco.editor.createDiffEditor(
           $(this.compare_editor_selector)[0],
           {
             renderSideBySide: true,
-            language: "r"
+            language: "r",
+            readOnly: true
           }
         );
 
@@ -400,7 +447,7 @@ RCloud.UI.notebook_merge = (function() {
         )
       });
 
-      this.can_dispose = true;
+      this.can_dispose_ = true;
       
     }
   };

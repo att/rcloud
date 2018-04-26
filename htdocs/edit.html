@@ -331,31 +331,39 @@
 
 <script type="text/template" id="compare-file-list-snippet">
   <table>
-    <thead>
-      <tr>
-        <th>from</th>
-        <th>to</th>
-        <th></th>
-      </tr>
-    </thead>
     <tbody>
-        <% _.each(comparison.fileDiffs.allParts, function(part) { %>
-          <tr class="<%= _.findWhere(comparison.commonParts, { filename : part }) ? 'common parts' : 'parts' %>">
-            <td data-filename="<%=part%>"><%= _.findWhere(comparison.from.parts, { filename: part }) ? part : '' %></td>
-            <td data-filename="<%=part%>"><%= _.findWhere(comparison.to.parts, { filename: part }) ? part : '' %></td>
-            <td class="diff"><% if(_.findWhere(comparison.commonParts, { filename: part, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
-          </tr>
-        <% }); %>
-        <% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
-          <tr class="<%= _.findWhere(comparison.commonAssets, { filename : asset }) ? 'common assets' : 'assets' %>">
-            <td data-filename="<%=asset%>"><%= _.findWhere(comparison.from.assets, { filename: asset }) ? asset : '' %></td>
-            <td data-filename="<%=asset%>"><%= _.findWhere(comparison.to.assets, { filename: asset }) ? asset : '' %></td>
-            <td class="diff"><% if(_.findWhere(comparison.commonAssets, { filename: asset, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
-          </tr>
-        <% }); %>
+      <% _.each(comparison.fileDiffs.allParts, function(part) { %>
+      <tr data-filetype="parts" data-filename="<%=part.filename%>">
+        <td><%=part.filename%></td>
+        <td><span class="<%=part.change_type%>"><%=part.change_type_desc%></td>       
+      </tr>
+      <% }); %>
+      <% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
+        <tr data-filetype="assets" data-filename="<%=asset.filename%>">
+          <td><%=asset.filename%></td>
+          <td><span class="<%=asset.change_type%>"><%=asset.change_type_desc%></td>       
+        </tr>
+      <% }); %>
     </tbody>
   </table>
 </script>
+
+<!--
+<% _.each(comparison.fileDiffs.allParts, function(part) { %>
+  <tr class="<%= _.findWhere(comparison.commonParts, { filename : part }) ? 'common parts' : 'parts' %>">
+    <td data-filename="<%=part%>"><%= _.findWhere(comparison.from.parts, { filename: part }) ? part : '' %></td>
+    <td data-filename="<%=part%>"><%= _.findWhere(comparison.to.parts, { filename: part }) ? part : '' %></td>
+    <td class="diff"><% if(_.findWhere(comparison.commonParts, { filename: part, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
+  </tr>
+<% }); %>
+<% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
+  <tr class="<%= _.findWhere(comparison.commonAssets, { filename : asset }) ? 'common assets' : 'assets' %>">
+    <td data-filename="<%=asset%>"><%= _.findWhere(comparison.from.assets, { filename: asset }) ? asset : '' %></td>
+    <td data-filename="<%=asset%>"><%= _.findWhere(comparison.to.assets, { filename: asset }) ? asset : '' %></td>
+    <td class="diff"><% if(_.findWhere(comparison.commonAssets, { filename: asset, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
+  </tr>
+<% }); %>
+-->
 
 <script type="text/template" id="compare-stage-snippet">
   <div id="compare-editor"></div>
