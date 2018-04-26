@@ -284,7 +284,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-          <h3 class="modal-title">Merge Notebook</h3>
+          <h3 class="modal-title">Merge Changes <span id="merge-notebook-details"></span></h3>
         </div>
         <div class="modal-body">
           <div class="overlay">
@@ -313,14 +313,20 @@
           </div>
 
           <div id="merge-compare-section" class="merge-section">
-            <p>Showing differences between current notebook and <span id="merge-notebook-details"></span><span class="btn btn-primary btn-init">Change</span></p>
             <div id="compare-file-list"></div>
             <div id="compare-stage"></div>
           </div>
 
           <div class="modal-footer">
-            <span class="btn btn-cancel" data-dismiss="modal">Cancel</span>
-            <span class="btn btn-primary show-changes">Show changes</span>
+            <div class="row">
+              <div class="col-sm-6 text-left">
+                  <span class="btn btn-primary btn-init" style="display:none">Change</span>
+              </div>
+              <div class="col-sm-6 text-right">
+                  <span class="btn btn-cancel" data-dismiss="modal">Cancel</span>
+                  <span class="btn btn-primary show-changes">Show changes</span>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -347,23 +353,6 @@
     </tbody>
   </table>
 </script>
-
-<!--
-<% _.each(comparison.fileDiffs.allParts, function(part) { %>
-  <tr class="<%= _.findWhere(comparison.commonParts, { filename : part }) ? 'common parts' : 'parts' %>">
-    <td data-filename="<%=part%>"><%= _.findWhere(comparison.from.parts, { filename: part }) ? part : '' %></td>
-    <td data-filename="<%=part%>"><%= _.findWhere(comparison.to.parts, { filename: part }) ? part : '' %></td>
-    <td class="diff"><% if(_.findWhere(comparison.commonParts, { filename: part, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
-  </tr>
-<% }); %>
-<% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
-  <tr class="<%= _.findWhere(comparison.commonAssets, { filename : asset }) ? 'common assets' : 'assets' %>">
-    <td data-filename="<%=asset%>"><%= _.findWhere(comparison.from.assets, { filename: asset }) ? asset : '' %></td>
-    <td data-filename="<%=asset%>"><%= _.findWhere(comparison.to.assets, { filename: asset }) ? asset : '' %></td>
-    <td class="diff"><% if(_.findWhere(comparison.commonAssets, { filename: asset, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
-  </tr>
-<% }); %>
--->
 
 <script type="text/template" id="compare-stage-snippet">
   <div id="compare-editor"></div>
