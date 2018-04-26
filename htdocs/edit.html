@@ -278,6 +278,89 @@
   </div>
 </div>
 
+<script type="text/template" id="merger-template">
+  <div id="merger-dialog" class="modal fade init" aria-hidden="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+          <h3 class="modal-title">Merge Notebook</h3>
+        </div>
+        <div class="modal-body">
+          <div class="overlay">
+            <img src="/img/ajax-loader.gif">
+            <p>Getting changes</p>
+          </div>
+          <div id="merge-init-section" class="merge-section">
+            <p>Merge changes from another notebook into your current notebook.</p>
+            <label for="merge-changes-by">Notebook source:</label>
+            <select id="merge-changes-by">
+              <option value="url">URL</option>
+              <option value="id" selected="selected">Notebook id</option>          
+              <option value="file">File</option>
+            </select>
+            <div data-by="url">
+              <label for="merge-notebook-url">Notebook URL:</label>
+              <input type="text" data-pull="change paste keyup" id="merge-notebook-url" size="50" spellcheck="false" />
+            </div>
+            <div data-by="id">
+              <label for="merge-notebook-id">Notebook ID:</label>
+              <input type="text" data-pull="change paste keyup" id="merge-notebook-id" size="32" spellcheck="false" />
+            </div>          
+            <div data-by="file">
+              <input type="file" data-pull="change" id="merge-notebook-file" size="32" />
+            </div>
+          </div>
+
+          <div id="merge-compare-section" class="merge-section">
+            <p>Showing differences between current notebook and <span id="merge-notebook-details"></span><span class="btn btn-primary btn-init">Change</span></p>
+            <div id="compare-file-list"></div>
+            <div id="compare-stage"></div>
+          </div>
+
+          <div class="modal-footer">
+            <span class="btn btn-cancel" data-dismiss="modal">Cancel</span>
+            <span class="btn btn-primary show-changes">Show changes</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="compare-file-list-snippet">
+  <table>
+    <thead>
+      <tr>
+        <th>from</th>
+        <th>to</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+        <% _.each(comparison.fileDiffs.allParts, function(part) { %>
+          <tr class="<%= _.findWhere(comparison.commonParts, { filename : part }) ? 'common parts' : 'parts' %>">
+            <td data-filename="<%=part%>"><%= _.findWhere(comparison.from.parts, { filename: part }) ? part : '' %></td>
+            <td data-filename="<%=part%>"><%= _.findWhere(comparison.to.parts, { filename: part }) ? part : '' %></td>
+            <td class="diff"><% if(_.findWhere(comparison.commonParts, { filename: part, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
+          </tr>
+        <% }); %>
+        <% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
+          <tr class="<%= _.findWhere(comparison.commonAssets, { filename : asset }) ? 'common assets' : 'assets' %>">
+            <td data-filename="<%=asset%>"><%= _.findWhere(comparison.from.assets, { filename: asset }) ? asset : '' %></td>
+            <td data-filename="<%=asset%>"><%= _.findWhere(comparison.to.assets, { filename: asset }) ? asset : '' %></td>
+            <td class="diff"><% if(_.findWhere(comparison.commonAssets, { filename: asset, hasChanges: true })) { %><span>&#10003;</span><% } %></td>
+          </tr>
+        <% }); %>
+    </tbody>
+  </table>
+</script>
+
+<script type="text/template" id="compare-stage-snippet">
+  <div id="compare-editor"></div>
+</script>
+
 <script type="text/html" id="selection-bar-snippet">
   <div id="selection-bar">
     <div class="btn-group">

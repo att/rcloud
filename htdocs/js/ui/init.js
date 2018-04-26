@@ -67,6 +67,7 @@ RCloud.UI.init = function() {
     // adds to advanced menu
     RCloud.UI.import_export.init();
     RCloud.UI.pull_and_replace.init();
+    RCloud.UI.notebook_merge.init();
     
     //////////////////////////////////////////////////////////////////////////
     // view mode things

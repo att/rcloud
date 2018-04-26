@@ -807,6 +807,176 @@ body .modal-dialog.full {
     }
 }
 
+#merger-dialog {
+/*
+    .modal-dialog {
+        width: 95%;
+    }
+*/
+
+    .modal-header {
+        padding-left:20px!important;
+        padding-right:20px!important;
+    }
+
+    .modal-body {
+        .overlay {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+
+            img { 
+                padding-top: 65px;
+                margin: 10px auto;
+                display: block;
+            }
+            p {
+                margin: 10px auto;
+                width: 250px;
+                text-align: center;
+                font-size: 19px;
+            }
+        }
+    }
+
+    &.gettingchanges {
+        .overlay {
+            display: block;
+        }
+    }
+
+    #merge-container {
+        height: calc(100% - 420px);
+    }
+
+    pointer-events: auto;
+
+    .btn-cancel, .close {
+        display: inline-block;
+    }
+
+    label {
+        width: 150px;
+        margin-top: 10px;
+    }   
+    input {
+        margin-top: 10px;
+    } 
+    input[type="file"] {
+        margin-left: 153px;
+    }
+    div[data-by] {
+        min-height: 70px;
+    }
+
+    #merge-error {
+        color: red;
+        margin-left: 152px;
+        margin-top: 5px;
+        width: 365px;
+        word-wrap: break-word;
+    }
+
+    #merge-stage, #merge-compare-section {
+        display: none;
+    }
+
+    .btn-init {
+        margin-left: 5px;
+    }
+
+    &.compare {
+        .modal-dialog {
+            width: 98%;
+            height: 97%;
+            margin-top: 1%;
+            padding: 0;
+        }
+
+        .modal-content {
+            min-height: 98%;
+        }
+
+        .show-changes,
+        #merge-init-section {
+            display: none;
+        }
+
+        #merge-compare-section {
+            display: block;
+            height: calc(100% - 192px);
+        }
+
+        #compare-file-list {
+            float: left;
+            width: 20%;
+            max-height: calc(100% - 55px);
+            overflow-y: auto;
+
+            table {
+                width: 98%;
+            }
+
+            thead tr {
+                border-bottom: 1px solid #444;
+            }
+
+            tbody tr {
+                border-bottom: 1px solid #ccc;
+
+                //&.common {
+                    cursor: pointer;
+
+                    &:hover {
+                        background-color: #dedede;
+                    }
+
+                    &.selected {
+                        background-color: #efefef;
+                        cursor: default;
+                    }
+                //}
+            }
+
+            th, td {
+                padding: 3px;
+            }
+
+            th {
+                font-size: 11px;
+                color: #444;
+            }
+
+            td {
+                color: #222;
+            }
+
+            td.diff {
+                span {
+                    background: red;
+                    color: white;
+                    padding: 4px;
+                    font-weight: bold;
+                }
+            }
+        }
+
+        #compare-stage {
+            float: left;
+            width: 78%;
+        }
+
+        #compare-editor {
+            height: calc(100% - 55px);
+        }
+    }
+
+}
+
 #tree-finder-dialog {
 
     .modal-dialog {
