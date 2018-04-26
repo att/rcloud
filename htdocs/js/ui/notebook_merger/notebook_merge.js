@@ -311,13 +311,25 @@ RCloud.UI.notebook_merge = (function() {
         });
         */
 
+        // get common details between 
+        const getCommonDetails = (file, file_type) => {
+          const from = _.findWhere(comparison[sources[0]][file_type], { filename: file.filename }),
+                to = _.findWhere(comparison[sources[1]][file_type], { filename: file.filename });
+        
+          return {
+            filename: file.filename,
+            // content.r_type, excluding binary files for now:
+            hasChanges: !from.content.r_type && !to.content.r_type && from.content != to.content
+          }
+        };
+
         // common:
         comparison['common' + file_type[0].toUpperCase() + file_type.substring(1)] = 
-          _.pluck(
+          _.map(
           _.filter(comparison[sources[0]][file_type], a => { 
             return _.intersection(_.pluck(comparison[sources[0]][file_type], 'filename'), 
                     _.pluck(comparison[[sources[1]]][file_type], 'filename')).indexOf(a.filename) != -1; 
-          }), 'filename');
+          }), f => getCommonDetails(f, file_type));
       });
 
       // derive a list of all assets and parts:
@@ -329,6 +341,8 @@ RCloud.UI.notebook_merge = (function() {
           return _.pluck(comparison[s][file_type], 'filename');
         })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; });
       });
+
+      console.info('comparison: ', comparison);
 
       this.compare_file_list_.html(this.templates_.file_list({
         comparison: comparison
@@ -351,7 +365,7 @@ RCloud.UI.notebook_merge = (function() {
         this.diff_editor_ = monaco.editor.createDiffEditor(
           $(this.compare_editor_selector)[0],
           {
-            renderSideBySide: false,
+            renderSideBySide: true,
             language: "r"
           }
         );
