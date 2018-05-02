@@ -22,6 +22,15 @@ sudo python -m pip install jupyter
 sudo python3 -m pip3 install jupyter
 ```
 
+### R Dependencies
+
+rcloud.jupyter package uses reticulate and jsonlite packages to invoke Python code, these needs to be installed into R:
+
+```
+install.packages("jsonlite")
+install.packages("reticulate")
+```
+
 ### RCloud Configuration
 
 RCloud Jupyter package uses these settings from `rcloud.conf`:

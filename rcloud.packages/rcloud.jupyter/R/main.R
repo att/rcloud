@@ -40,7 +40,7 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
   if (rcloud.support:::nzConf(JUPYTER_LANGUAGE_MAPPING)) {
     customMappingPath <- rcloud.support:::getConf(JUPYTER_LANGUAGE_MAPPING)
     if (file.exists(customMappingPath)) {
-      return(jsonlite::read_json(path = customMappingPath))
+      return(jsonlite::fromJSON(txt = customMappingPath))
     }
   }
   list()
@@ -56,7 +56,7 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
 }
 
 .create.language.settings <- function(kernel_name, spec) {
-  defaultMapping <- jsonlite::read_json(path = system.file("jupyter/mapping.json", package="rcloud.jupyter"))
+  defaultMapping <- jsonlite::fromJSON(txt = system.file("jupyter/mapping.json", package="rcloud.jupyter"))
   customMapping <- .load.custom.mapping()
   kernelMapping <- .load.mapping.from.kernel.metadata(spec)
   res <- list(
