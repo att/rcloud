@@ -27,11 +27,16 @@ Notebook.create_html_view = function(model, root_div)
             on_rearrange();
             return cell_view;
         },
-        asset_appended: function(asset_model) {
+        asset_appended: function(asset_model, new_asset_index) {
             var asset_view = Notebook.Asset.create_html_view(asset_model);
             asset_model.views.push(asset_view);
-            $("#asset-list").append(asset_view.div());
-            this.asset_sub_views.push(asset_view);
+            if(new_asset_index === undefined){ 
+              $("#asset-list").append(asset_view.div());
+              this.asset_sub_views.push(asset_view);
+            } else {
+              this.asset_sub_views.splice(new_asset_index, 0, asset_view);
+              $('#asset-list').find('li:eq(' + new_asset_index + ')').after(asset_view.div());
+            }
             on_rearrange();
             return asset_view;
         },

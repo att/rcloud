@@ -44,7 +44,7 @@
             else {
                 if(react.add)
                     react.add(filename);
-                promise_controller = shell.notebook.controller.append_asset(content, filename)
+                promise_controller = shell.notebook.controller.append_asset(content, filename, true)
                     .then(function() {
                         return shell.notebook.model.get_asset(filename).controller;
                     });
