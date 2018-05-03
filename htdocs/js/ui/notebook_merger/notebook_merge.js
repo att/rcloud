@@ -26,6 +26,8 @@ RCloud.UI.notebook_merge = (function() {
       let that = this,
         _template = _.template($("#merger-template").html());
 
+      this.diff_engine_ = new RCloud.UI.merging.diff_engine();
+
       this.templates_ = {
         file_list: _.template($('#compare-file-list-snippet').html()),
         compare_stage: _.template($('#compare-stage-snippet').html())
@@ -38,7 +40,8 @@ RCloud.UI.notebook_merge = (function() {
       this.merge_notebook_url_ = $('#merge-notebook-url');
       this.merge_notebook_id_ = $('#merge-notebook-id');
 
-      this.compare_editor_selector = '#compare-editor';
+      this.compare_editor_selector_ = '#compare-editor';
+      this.compare_result_selector_ = '#compare-result';
 
       this.previous_diff_button_ = $("#previous-diff");
       this.next_diff_button_ = $("#next-diff");
@@ -60,6 +63,7 @@ RCloud.UI.notebook_merge = (function() {
 
       this.diff_editor_ = null;
       this.diff_navigator_ = null;
+      //this.result_editor_ = null;
 
       this.dialog_stage_ = DialogStage.INIT;
       this.notebook_description_;
@@ -358,57 +362,55 @@ RCloud.UI.notebook_merge = (function() {
         });
       });
 
-      console.info('comparison: ', comparison);
-
       this.compare_file_list_.html(this.templates_.file_list({
         comparison: comparison
       }));
       this.compare_stage_.html(this.templates_.compare_stage({
 
       }));
-
+  
+      //window.process.getuid = window.process.getuid || function() { return 0; };
       require(["vs/editor/editor.main"], () => {
-        this.diff_editor_ = monaco.editor.createDiffEditor(
-          $(this.compare_editor_selector)[0],
+        this.diff_editor_ = monaco.editor.create(
+          $(this.compare_editor_selector_)[0],  
           {
-            renderSideBySide: false,
-            language: "r",
-            readOnly: true
+            language: 'mySpecialLanguage',
+            fontSize: 11,
+            scrollBeyondLastLine: false,
+            minimap: {
+              enabled: false
+            }
           }
         );
 
-        this.diff_navigator_ = monaco.editor.createDiffNavigator(
-          this.diff_editor_,
-          {
-            ignoreCharChange: true,
-            followsCaret: true,
-            alwaysRevealFirst: true
+        monaco.editor.defineTheme('theme', {
+          base: 'vs',
+          inherit: true,
+          rules: [{ background: '#eef3f7' }],
+          colors: {
+            'editor.background': '#eef3f7'
           }
-        );
+        });
+        this.diff_editor_.setTheme('theme');
       }); 
     }
     set_model(from, to) {
       
-      var getContent = (file) => {
-        //(file.content.r_type && file.content.r_type === 'raw')
-        if(file && (file.content && !file.content.r_type)) {
-          return file.content;
-        } else {
-          return '';
-        }
-      }
+      const diff_info = this.diff_engine_.get_diff_info(from, to);
 
-      this.diff_editor_.setModel({
-        original: monaco.editor.createModel(
-          getContent(from)
-        ),
-        modified: monaco.editor.createModel(
-          getContent(to)
-        )
-      });
+      this.diff_editor_.setValue(diff_info.content);
+
+      this.diff_editor_.deltaDecorations([], _.map(diff_info.lineInfo, (li) => {
+        return {
+          range: new monaco.Range(li.startLine,1,li.endLine,1),
+          options: {
+            isWholeLine: true,
+            className: li.diffType
+          }
+        } 
+      }));
 
       this.can_dispose_ = true;
-      
     }
   };
 
