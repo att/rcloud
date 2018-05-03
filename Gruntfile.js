@@ -39,6 +39,7 @@ module.exports = function (grunt) {
             "htdocs/js/upload_utils.js",
             "htdocs/js/ui/_begin.js",
             "htdocs/js/tree/event.js",  
+            "htdocs/js/ui/notebook_merger/diff_engine.js",
             "htdocs/js/ui/notebook_merger/notebook_merge.js",    
             "htdocs/js/ui/advanced_menu.js",
             "htdocs/js/ui/cell_commands.js",

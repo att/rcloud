@@ -965,6 +965,21 @@ body .modal-dialog.full {
         #compare-editor {
             height: calc(100% - 55px);
         }
+
+        .removed {
+            background: #ffcccb;
+        }
+
+        .added {
+            background: #ebf1dc;
+        }
+
+        
+
+        // #compare-result {
+        //     margin-top: 40px;
+        //     height: 400px;
+        // }
     }
 
     .modal-footer {
