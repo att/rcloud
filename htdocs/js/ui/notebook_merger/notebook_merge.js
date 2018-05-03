@@ -71,6 +71,8 @@ RCloud.UI.notebook_merge = (function() {
 
       this.comparison_ = null;
 
+      this.codelens_provider = null;
+
       $(this.dialog_).on('shown.bs.modal', () => {
         
       });
@@ -371,10 +373,31 @@ RCloud.UI.notebook_merge = (function() {
   
       //window.process.getuid = window.process.getuid || function() { return 0; };
       require(["vs/editor/editor.main"], () => {
+
+        
+        /*
+        monaco.editor.defineTheme('theme', {
+          base: 'vs',
+          inherit: true,
+          //rules: [{ background: '#eef3f7' }],
+          colors: {
+            'editor.background': '#eef3f7'
+          }
+        });
+
+        monaco.editor.setTheme('theme');
+        */
+
+        
+
+        monaco.languages.register({
+          id: 'rcloud'
+        });
+       
         this.diff_editor_ = monaco.editor.create(
           $(this.compare_editor_selector_)[0],  
           {
-            language: 'mySpecialLanguage',
+            language: 'rcloud',
             fontSize: 11,
             scrollBeyondLastLine: false,
             minimap: {
@@ -382,24 +405,20 @@ RCloud.UI.notebook_merge = (function() {
             }
           }
         );
-
-        monaco.editor.defineTheme('theme', {
-          base: 'vs',
-          inherit: true,
-          rules: [{ background: '#eef3f7' }],
-          colors: {
-            'editor.background': '#eef3f7'
-          }
-        });
-        this.diff_editor_.setTheme('theme');
       }); 
     }
     set_model(from, to) {
+
+      $(this.compare_editor_selector_).show();
       
       const diff_info = this.diff_engine_.get_diff_info(from, to);
 
       this.diff_editor_.setValue(diff_info.content);
 
+      if(this.codelens_provider)
+        this.codelens_provider.dispose();
+
+      // deleted, added
       this.diff_editor_.deltaDecorations([], _.map(diff_info.lineInfo, (li) => {
         return {
           range: new monaco.Range(li.startLine,1,li.endLine,1),
@@ -410,7 +429,37 @@ RCloud.UI.notebook_merge = (function() {
         } 
       }));
 
+      const selectCurrentChanges = this.diff_editor_.addCommand(0,() => alert('accepting'), '');
+      const rejectCurrentChanges = this.diff_editor_.addCommand(1,() => alert('rejecting'), ''); 
+
+      this.codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
+        provideCodeLenses: function(model, token) {
+            return _.flatten(_.map(diff_info.modifiedLineInfo, (li, index) => 
+              [{
+                range: { startLineNumber: li.startLine },
+                id: 0,
+                command: {
+                    id: selectCurrentChanges,
+                    title: 'Accept',
+                },
+              }, {
+                range: { startLineNumber: li.startLine },
+                id: 1,
+                command: {
+                    id: rejectCurrentChanges,
+                    title: 'Reject',
+                },
+              }]))
+        },
+        resolveCodeLens: function(model, codeLens, token) {
+            return codeLens;
+          },
+        },
+      );
+
       this.can_dispose_ = true;
+
+      console.log(this.diff_editor_);
     }
   };
 

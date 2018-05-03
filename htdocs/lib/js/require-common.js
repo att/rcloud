@@ -11,7 +11,7 @@ requirejs_config_obj = {
         shell_tab: "../../shell_tab",
         "angular": "angular",
         "angular-selectize": "angular-selectize",
-        "selectize": "selectize"
+        "selectize": "selectize",
     },
     "shim": {
         "tree.jquery": ["jquery"],
@@ -28,7 +28,8 @@ requirejs_config_obj = {
         "rserve": ["underscore"],
         "mousetrap-global-bind.min": ["mousetrap.min"],
         "jquery.fix.clone" : ["jquery-ui"],
-        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
+        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", 
+            "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here
                          ]
     }

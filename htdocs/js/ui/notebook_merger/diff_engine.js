@@ -46,7 +46,8 @@ RCloud.UI.merging = (function() {
 
       return {
         content: _.pluck(diffs, 'value').join(''),
-        lineInfo
+        lineInfo,
+        modifiedLineInfo: _.filter(lineInfo, li => li.diffType !== DiffType.NOCHANGE)
       }
     }
   }
