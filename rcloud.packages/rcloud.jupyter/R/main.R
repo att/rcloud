@@ -189,18 +189,24 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
   if(is.null(outputs)) {
     return()
   }
-  lapply(outputs, function(outval) 
+  processed <- lapply(outputs, function(outval) 
   {
     outType <- outval$output_type
     res <- to.chunk(outval)
     if ( (res[1] == "text") && (outType == "CONSOLE") ) {
       rcloud.out(res[2])
+      return(structure(list(), class='cell-eval-result'))
     } else {
       rcloud.html.out(res[2])
       if(outType %in% c("error"))
-        return(structure(list(error="Python evaluation error"), class='cell-eval-error'))
+        return(structure(list(error="Cell evaluation error"), class='cell-eval-error'))
     }
   })
+  errors <- Filter(function(x) { inherits(x, 'cell-eval-error') }, processed)
+  if (length(errors) > 0) {
+    return(errors[[1]])
+  }
+  return(structure(list(), class='cell-eval-result'))
 }
 
 rcloud.jupyter.list.kernel.specs <- function(rcloud.session)
@@ -219,9 +225,12 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
     kernel_name = kernel_name
   )
   function(command, silent, rcloud.session, ...) {
-   if (is.null(rcloud.session$jupyter.adapter))
-        .start.jupyter.adapter(rcloud.session)
-    .exec.with.jupyter(local$kernel_name, command, rcloud.session)
+    tryCatch(
+      {
+        if (is.null(rcloud.session$jupyter.adapter))
+            .start.jupyter.adapter(rcloud.session)
+        .exec.with.jupyter(local$kernel_name, command, rcloud.session)
+      }, error=function(o) structure(list(error=o$message), class="cell-eval-error"))
   }
 }
 
@@ -230,17 +239,24 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
     kernel_name = kernel_name
   )
   function(text, pos, thissession) {
-    if (is.null(thissession$jupyter.adapter))
-      .start.jupyter.adapter(thissession)
-    completions <- thissession$jupyter.adapter$complete(local$kernel_name, text, pos)
-    res <- list()
-    if(is.null(completions)) {
-      return(res)
-    }
-    res$prefix <- if (completions$cursor_start < completions$cursor_end) substr(text, completions$cursor_start+1, completions$cursor_end) else ""
-    res$values <- completions$matches
-    res$position <- completions$cursor_start
-    return(res)
+    
+    exp <- tryCatch(
+      {
+        if (is.null(thissession$jupyter.adapter))
+          .start.jupyter.adapter(thissession)
+        completions <- thissession$jupyter.adapter$complete(local$kernel_name, text, pos)
+        res <- list()
+        if(is.null(completions)) {
+          return(res)
+        }
+        res$prefix <- if (completions$cursor_start < completions$cursor_end) substr(text, completions$cursor_start+1, completions$cursor_end) else ""
+        res$values <- completions$matches
+        res$position <- completions$cursor_start
+        return(res)
+      }, error=function(o) structure(list(error=o$message), class="cell-complete-error"))
+    
+    result <- if (!inherits(exp, "cell-complete-error")) exp else list()
+    return(result)
   }
 }
 
