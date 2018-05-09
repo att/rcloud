@@ -1,4 +1,6 @@
 RCloud.UI.notebook_merge = (function() {
+
+/*
   const DialogStage = Object.freeze({
     INIT: 'init',
     GETTINGCHANGES: 'gettingchanges',
@@ -126,64 +128,9 @@ RCloud.UI.notebook_merge = (function() {
         this.update_stage(DialogStage.INIT);
       });
 
-      RCloud.UI.advanced_menu.add({
-        merge_notebook: {
-          sort: 1100,
-          text: "Merge notebook",
-          modes: ["edit"],  
-          disabled_reason: "You can't merge into a read only notebook",
-          action: function() {
-
-            rcloud.get_notebook_property(shell.gistname(), 'merge-changes-by').then(function(val) {
-              if(val && val.indexOf(':') !== -1) {
-                // split and set:
-                var separatorIndex = val.indexOf(':');
-                var type = val.substring(0, separatorIndex);
-                var value = val.substring(separatorIndex + 1);
-
-                // update merged by method:
-                that.update_merged_by(type, value);
-              }
-              else {
-                that.update_merged_by('url');
-              }
-
-              that.dialog_.modal({ keyboard: true });
-            });
-          }
-        }
-      });
+      
     }
-    update_merged_by(merged_method, value) {
-      this.clear_error();
-      this.select_by_.val(merged_method);
-      $(this.dialog_).find('div[data-by]').hide();
-      $(this.dialog_).find('div[data-by="' + merged_method + '"]').show();
-
-      if(!_.isUndefined(value)) {
-        // and set the value coming in:
-        this.get_input().val(merged_method === 'file' ? '' : value);
-      }
-    }
-    get_method() {
-      return this.select_by_.val();
-    }
-    get_input() {
-      return $('#merge-notebook-' + this.get_method());
-    }
-    clear_error() {
-      $(this.error_selector_).remove();
-    }
-    show_error(errorText) {
-      this.clear_error();
-      $('<div />', {
-        id: this.error_selector_.substring(1),
-        text: errorText
-      }).appendTo($(this.dialog_).find('div[data-by="' + this.get_method() + '"]'));
-    }
-    has_error() {
-      return $(this.error_selector_).length;
-    }
+    
     do_get_changes() {
 
       // give the user the benefit of the doubt:
@@ -198,7 +145,9 @@ RCloud.UI.notebook_merge = (function() {
         return rcloud.get_notebook(id);
       };
 
-      var method = this.get_method();
+      var method = this.
+      
+      ();
 
       var get_notebook_func, notebook;
 
@@ -374,21 +323,16 @@ RCloud.UI.notebook_merge = (function() {
       //window.process.getuid = window.process.getuid || function() { return 0; };
       require(["vs/editor/editor.main"], () => {
 
-        
-        /*
-        monaco.editor.defineTheme('theme', {
-          base: 'vs',
-          inherit: true,
-          //rules: [{ background: '#eef3f7' }],
-          colors: {
-            'editor.background': '#eef3f7'
-          }
-        });
+        // monaco.editor.defineTheme('theme', {
+        //   base: 'vs',
+        //   inherit: true,
+        //   //rules: [{ background: '#eef3f7' }],
+        //   colors: {
+        //     'editor.background': '#eef3f7'
+        //   }
+        // });
 
-        monaco.editor.setTheme('theme');
-        */
-
-        
+        // monaco.editor.setTheme('theme');
 
         monaco.languages.register({
           id: 'rcloud'
@@ -429,8 +373,14 @@ RCloud.UI.notebook_merge = (function() {
         } 
       }));
 
-      const selectCurrentChanges = this.diff_editor_.addCommand(0,() => alert('accepting'), '');
-      const rejectCurrentChanges = this.diff_editor_.addCommand(1,() => alert('rejecting'), ''); 
+      const selectCurrentChanges = this.diff_editor_.addCommand(0, (x, y, z) => {
+        //console.log(x.get('codeEditorService')), '');
+
+        console.log(this.diff_editor_.getPosition());
+
+      });
+
+      const rejectCurrentChanges = this.diff_editor_.addCommand(1, (x, y, z) => console.log(x.get()), ''); 
 
       this.codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
         provideCodeLenses: function(model, token) {
@@ -441,6 +391,7 @@ RCloud.UI.notebook_merge = (function() {
                 command: {
                     id: selectCurrentChanges,
                     title: 'Accept',
+                    myName: 'SHANE'
                 },
               }, {
                 range: { startLineNumber: li.startLine },
@@ -462,10 +413,25 @@ RCloud.UI.notebook_merge = (function() {
       console.log(this.diff_editor_);
     }
   };
+  */
+
+  const model = new RCloud.UI.merger_model(),
+        view = new RCloud.UI.merger_view(model),
+        controller = new RCloud.UI.merger_controller(model, view);
 
   return {
       init: () => {
-          return new notebook_merge();
+        RCloud.UI.advanced_menu.add({
+          merge_notebook: {
+            sort: 1100,
+            text: "Merge notebook",
+            modes: ["edit"],  
+            disabled_reason: "You can't merge into a read only notebook",
+            action: function() {
+              controller.show_dialog();
+            }
+          }
+        });
       }
   };
 })();

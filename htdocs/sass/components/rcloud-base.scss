@@ -835,7 +835,7 @@ body .modal-dialog.full {
         }
     }
 
-    &.gettingchanges {
+    &.stage-gettingchanges {
         .overlay {
             display: block;
         }
@@ -881,7 +881,7 @@ body .modal-dialog.full {
         margin-left: 5px;
     }
 
-    &.compare {
+    &.stage-compare {
         .modal-dialog {
             width: 98%;
             height: 97%;
