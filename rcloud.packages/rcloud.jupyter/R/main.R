@@ -261,6 +261,7 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
 }
 
 .init.language <- function(kernel_name, kernel_spec, rcloud.session) {
+  
   language_descriptor <- list(
     settings = .create.language.settings(kernel_name, kernel_spec),
     run.cell = .jupyter.cell.runner.factory(kernel_name),
@@ -286,7 +287,14 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
 rcloud.language.support <- function(rcloud.session)
 {
   kernel.specs <- rcloud.jupyter.list.kernel.specs(rcloud.session)
-  lapply(names(kernel.specs), function(kernel_name, kernel_spec, rcloud.session) {
-    .init.language(kernel_name, kernel_spec, rcloud.session)
+  languages <- lapply(names(kernel.specs), function(kernel_name, kernel_spec, rcloud.session) {
+    
+    lang <- tryCatch({.init.language(kernel_name, kernel_spec, rcloud.session)}, error = function(o) structure(list(error=o$message), class="language-init-error"))
+    
+    if(inherits(lang, "language-init-error")) {
+      warning(lang$error)
+    }
+    lang
   }, kernel.specs, rcloud.session)
+  Filter(function(x) { !inherits(x, 'language-init-error') }, languages)
 }
