@@ -117,8 +117,8 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
 {
   require(reticulate, quietly=TRUE)
   if (rcloud.support:::hasConf(PYTHON_PATH))
-    use_python(rcloud.support:::getConf(PYTHON_PATH))
-  sys <- import("sys")
+    reticulate::use_python(rcloud.support:::getConf(PYTHON_PATH))
+  sys <- reticulate::import("sys")
   ## append any admin-specified paths (as ":" - separated paths)
   if (rcloud.support:::nzConf(PYTHON_EXTRA_LIBS)) {
     extraLibs <- unlist(strsplit(rcloud.support:::getConf(PYTHON_EXTRA_LIBS), ':'))
@@ -126,7 +126,7 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
   }
   sys$path <- c(sys$path, system.file("jupyter", package="rcloud.jupyter"))
   
-  jupyter_adapter <- import("jupyter_adapter")
+  jupyter_adapter <- reticulate::import("jupyter_adapter")
   
   runner <- jupyter_adapter$JupyterAdapter(
                                            cell_startup_timeout = .get_cell_startup_timeout(),
