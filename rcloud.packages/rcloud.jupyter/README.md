@@ -57,7 +57,7 @@ If no kernels are configured, Jupyter will create a runtime Python kernel using 
 To register Python 2 kernel run the following command:
 
 ```{bash}
-python -m ipykernel install --user
+sudo python -m ipykernel install
 ```
 
 ### Python 3 kernel
@@ -65,7 +65,7 @@ python -m ipykernel install --user
 To register Python 3 kernel run the following command:
 
 ```{bash}
-python3 -m ipykernel install --user
+sudo python3 -m ipykernel install
 ```
 
 ### Configure PYTHONPATH
@@ -156,6 +156,15 @@ $python3$spec$argv
 
 RCloud is capable of invoking Jupyter kernels available in the system. General rule is that if a kernel is correctly configured so it can be executed from Jupyter notebook, RCloud will also be able to invoke such kernel.
 
+### Jupyter Kernel Installation
+
+For kernel-specific instructions please refer to kernel installation guide that you wish to install.
+
+To avoid issues with discovering kernels (this may happen if Jupyter and RCloud run as different users) install Jupyter kernels globally, i.e. not as local user kernel stored in `~/.local/share/jupyter/kernels`.
+
+Depending on your environment settings, kernels dependencies may be installed in user's local libs directories. In such case Jupyter kernel installed globally may fail to start up, as its dependencies will not be visible to user that actually starts the kernel. You may wish to install such dependencies globally in the system.
+
+
 #### Syntax highlighting
 
 RCloud ships ACE modes for the following languages:
@@ -168,6 +177,8 @@ RCloud ships ACE modes for the following languages:
  * Java
  * JavaScript
  * go
+ 
+ If the language mapping does not specify any ACE mode for a kernel, then the 'Text' mode will be used.
 
 #### Language Mapping
 
