@@ -900,7 +900,7 @@ body .modal-dialog.full {
 
         #merge-compare-section {
             display: block;
-            height: calc(100% - 192px);
+            height: calc(100% - 212px);
         }
 
         #compare-file-list {
@@ -960,6 +960,9 @@ body .modal-dialog.full {
         #compare-stage {
             float: left;
             width: 78%;
+            padding-left: 10px;
+
+            .container { padding: 10 0; }
         }
 
         #compare-editor {
@@ -967,11 +970,11 @@ body .modal-dialog.full {
         }
 
         .removed {
-            background: #ffcccb;
+            background: #ffa3a3;
         }
 
         .added {
-            background: #ebf1dc;
+            background: #dbe6c1;
         }
 
         

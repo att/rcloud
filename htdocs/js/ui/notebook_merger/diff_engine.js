@@ -16,7 +16,7 @@ RCloud.UI.merging = (function() {
       const getContent = (file) => {
         //(file.content.r_type && file.content.r_type === 'raw')
         if(file && (file.content && !file.content.r_type)) {
-          return file.content;
+          return file.content.endsWith('\n') ? file.content : file.content + '\n';
         } else {
           return '';
         }
@@ -44,11 +44,15 @@ RCloud.UI.merging = (function() {
         currentLineNumber += diff.count;
       });
 
-      return {
+      const ret = {
         content: _.pluck(diffs, 'value').join(''),
         lineInfo,
         modifiedLineInfo: _.filter(lineInfo, li => li.diffType !== DiffType.NOCHANGE)
       }
+
+      console.info(ret);
+
+      return ret;
     }
   }
 
