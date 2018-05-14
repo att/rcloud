@@ -102,11 +102,12 @@ RCloud.UI.merger_model = (function() {
       let from = _.findWhere(this._comparison.from[filetype], { 'filename' : filename });
       let to = _.findWhere(this._comparison.to[filetype], { 'filename' : filename });
 
-      
       const diff_info = this._diff_engine.get_diff_info(from, to);
 
       this.on_diff_complete.notify({
-        diff: diff_info
+        diff: diff_info,
+        from: from ? from.content : '',
+        to: to ? to.content : ''
       });
     }
 
