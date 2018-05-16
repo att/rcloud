@@ -15,7 +15,7 @@ RCloud.UI.merger_model = (function() {
     [ChangeType.IDENTICAL]: 'Identical',
     [ChangeType.MODIFIED]: 'Files are different'
   });
-
+  
   const merger_model = class {
     constructor() {
 
@@ -30,8 +30,10 @@ RCloud.UI.merger_model = (function() {
       this.on_getting_changes = new RCloud.UI.event(this);
       this.on_get_changes_error = new RCloud.UI.event(this);
       this.on_reset_complete = new RCloud.UI.event(this);
-      this.on_comparison_complete = new RCloud.UI.event(this);
+      this.on_file_list_complete = new RCloud.UI.event(this);
       this.on_diff_complete = new RCloud.UI.event(this);
+
+      this.on_file_diff_complete = new RCloud.UI.event(this);
 
       this.on_review_change = new RCloud.UI.event(this);
 
@@ -104,6 +106,7 @@ RCloud.UI.merger_model = (function() {
 
     set_comparison_as(filetype, filename) {
 
+      const _ = window._;
       let from = _.findWhere(this._comparison.from[filetype], { 'filename' : filename });
       let to = _.findWhere(this._comparison.to[filetype], { 'filename' : filename });
 
@@ -169,8 +172,6 @@ RCloud.UI.merger_model = (function() {
 
         this.update_compare_details(this._comparison);
 
-        this.update_stage(this.DialogStage.COMPARE);
-
       }).catch((e) => {
 
         let message;
@@ -221,23 +222,36 @@ RCloud.UI.merger_model = (function() {
 
       const sources = ['from', 'to'];
 
-      const get_change_type = (filename, file_type) => {
+      const get_change_details = (filename, file_type) => {
         const from = _.findWhere(comparison.from[file_type], { filename }),
               to = _.findWhere(comparison.to[file_type], { filename });
 
-        if(!from && to) {
-          return ChangeType.NEWFILE;
-        } else if(from && !to) {
-          return ChangeType.DELETEDFILE;
-        } else if(from.content.r_type) {
-          return ChangeType.BINARY;
-        } else {
-          return from.content == to.content ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
-        }
-      };
+        let changeDetails = {};
 
+        if(!from && to) {
+          changeDetails.changeType = ChangeType.NEWFILE;
+        } else if(from && !to) {
+          changeDetails.changeType =  ChangeType.DELETEDFILE;
+        } else if(from.content.r_type) {
+          changeDetails.changeType = ChangeType.BINARY;
+        } else {
+          changeDetails.changeType = from.content == to.content ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
+
+          // do compare:
+          if(changeDetails.changeType == ChangeType.MODIFIED) {
+            changeDetails.changeCount = this._diff_engine.get_diff_info(from, to).modifiedLineInfo.length,
+            changeDetails.isChanged = true;
+          }
+        }
+
+        changeDetails.changeDescription = ChangedTypeDescription[changeDetails.changeType];
+
+        return changeDetails;
+      };
+      
       // derive a list of all assets and parts:
       _.each(['assets', 'parts'], (file_type) => {
+
         comparison.fileDiffs['all' + file_type[0].toUpperCase() + file_type.substring(1)] = 
         _.map(
         _.sortBy(
@@ -246,17 +260,30 @@ RCloud.UI.merger_model = (function() {
           return _.pluck(comparison[s][file_type], 'filename');
         })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; }), filename => { 
           return {
-            filename,
-            change_type: get_change_type(filename, file_type),
-            get change_type_desc() {
-              return ChangedTypeDescription[this.change_type];
-            }
+            filename
           }; 
         });
       });
 
-      this.on_comparison_complete.notify({
-        comparison: this._comparison
+      this._dialog_stage = this.DialogStage.COMPARE;
+      this.on_file_list_complete.notify({
+        comparison
+      });
+
+      // do the comparison:
+      _.each(['assets', 'parts'], (file_type) => {
+        _.each(comparison.fileDiffs['all' + file_type[0].toUpperCase() + file_type.substring(1)], (file) => {
+          
+            // TODO TODO
+            // update the comparison:
+            // TODO TODO
+
+            this.on_file_diff_complete.notify({
+              fileType: file_type,
+              filename: file.filename,
+              changeDetails: get_change_details(file.filename, file_type)
+            });
+        });
       });
     }
 
