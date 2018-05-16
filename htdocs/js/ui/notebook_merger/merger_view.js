@@ -187,7 +187,9 @@ RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_comparison_complete.attach((sender, args) => {
+      this._model.on_file_list_complete.attach((sender, args) => {
+
+        this._dialog.setMergerDialogStage(this._model._dialog_stage);
 
         this._compare_file_list.html(this._templates.file_list({
           comparison: args.comparison
@@ -255,6 +257,20 @@ RCloud.UI.merger_view = (function(model) {
 
         this._can_dispose = true;
 
+      });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+      this._model.on_file_diff_complete.attach((sender, args) => {
+        let htmlContent = '';
+
+        if(args.changeDetails.isChanged) {
+          htmlContent = `<span>${args.changeDetails.changeCount}</span>`;
+        } else {
+          htmlContent = args.changeDetails.changeDescription;
+        }
+
+        this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"] .changes`)
+          .html(htmlContent);
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////

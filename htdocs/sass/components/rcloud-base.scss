@@ -955,6 +955,10 @@ body .modal-dialog.full {
                     font-weight: bold;
                 }
             }
+
+            td.changes {
+                text-align: right;
+            }
         }
 
         #compare-stage {
@@ -975,6 +979,18 @@ body .modal-dialog.full {
 
         .added {
             background: #dbe6c1;
+        }
+
+        .codelens-decoration {
+            background: black;
+            font-size: 11px!important;
+            padding: 2px 4px;
+
+            a { color: white!important; 
+                &:hover {
+                    color: white!important;
+                }
+            }
         }
 
         
