@@ -36,8 +36,8 @@ RCloud.UI.merging = (function() {
 
       diffs.forEach(diff => {
         lineInfo.push({
-          startLine: currentLineNumber,
-          endLine: currentLineNumber + (diff.count - 1),
+          startLineNumber: currentLineNumber,
+          endLineNumber: currentLineNumber + (diff.count - 1),
           diffType: getDiffType(diff)
         });
 

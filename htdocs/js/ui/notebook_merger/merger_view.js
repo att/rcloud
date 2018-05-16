@@ -212,6 +212,10 @@ RCloud.UI.merger_view = (function(model) {
             }
           );
 
+          this.apply_change = this._editor.addCommand(0, (ctx, args) => {
+            this._model.apply_review_change(args);
+          });
+
           this._compare_file_list.find('tr:eq(0)').trigger('click');
         }); 
       });
@@ -227,65 +231,99 @@ RCloud.UI.merger_view = (function(model) {
         if(this.codelens_provider)
           this.codelens_provider.dispose();
 
+        // accepting/rejecting a change:
+
+        // startLineNumber, endLineNumber
+
+        // accept
+        
+        // reject
+          // remove line(s)
+
+        // both
+          // remove highlighting
+          // remove codelens provider
+        
         // deleted, added
-        this._editor.deltaDecorations([], _.map(args.diff.lineInfo, (li) => {
-          return {
-            range: new monaco.Range(li.startLine,1,li.endLine,1),
-            options: {
-              isWholeLine: true,
-              className: li.diffType
-            }
-          } 
-        }));
 
-        const selectCurrentChanges = this._editor.addCommand(0, (ctx, args) => console.log('accepting: ', args));
-        const rejectCurrentChanges = this._editor.addCommand(0, (ctx, args) => console.log('rejecting: ', args)); 
-
-        this.codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
-          provideCodeLenses: function(model, token) {
-              return _.flatten(_.map(args.diff.modifiedLineInfo, (li, index) => 
-                [{
-                  range: { startLineNumber: li.startLine },
-                  id: 0,
-                  command: {
-                      id: selectCurrentChanges,
-                      title: 'Accept',
-                      arguments: {
-                        startLineNumber: li.startLine,
-                        endLineNumber: li.endLine
-                      }
-                  },
-                }, {
-                  range: { startLineNumber: li.startLine },
-                  id: 1,
-                  command: {
-                      id: rejectCurrentChanges,
-                      title: 'Reject',
-                      arguments: {
-                        startLineNumber: li.startLine,
-                        endLineNumber: li.endLine
-                      }
-                  },
-                }]))
-          },
-          resolveCodeLens: function(model, codeLens, token) {
-              return codeLens;
-            },
-          }
-        );
+        this.updateReviewDecorations(args.diff.modifiedLineInfo);
 
         $(this._compare_diff_selector).data({
           original: args.from,
           modified: args.to
-        })
+        });
 
         this._can_dispose = true;
 
       });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+      this._model.on_review_change.attach((sender, args) => {
+        this.updateReviewDecorations(args.reviewList);
+
+        // remove for reject:
+        if(args.change.type == 'reject') {
+          this._editor.executeEdits('', [
+            { range: new monaco.Range(change.startLineNumber,0,changeEndNumber + 1,0), text: '' }
+          ]);        
+        }
+      });
     }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //
+    updateReviewDecorations(reviewList) {
+      if(this.codelens_provider) {
+        this.codelens_provider.dispose();
+      }
+
+      this.codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
+        provideCodeLenses: (model, token) => {
+            return _.flatten(_.map(reviewList, (reviewItem, index) => 
+              [{
+                range: { startLineNumber: reviewItem.startLineNumber },
+                id: 0,
+                command: {
+                    id: this.apply_change,
+                    title: 'Accept',
+                    arguments: {
+                      startLineNumber: reviewItem.startLineNumber,
+                      endLineNumber: reviewItem.endLineNumber,
+                      type: 'approve'
+                    }
+                }
+              }, {
+                range: { startLineNumber: reviewItem.startLineNumber },
+                id: 1,
+                command: {
+                    id: this.apply_change,
+                    title: 'Reject',
+                    arguments: {
+                      startLineNumber: reviewItem.startLineNumber,
+                      endLineNumber: reviewItem.endLineNumber,
+                      type: 'reject'
+                    }
+                }
+              }]))
+        },
+        resolveCodeLens: function(model, codeLens, token) {
+          return codeLens;
+        }
+      });
+
+      let decorations = _.map(reviewList, reviewItem => {
+        return {
+          range: new monaco.Range(reviewItem.startLineNumber, 1, reviewItem.endLineNumber, 1),
+          options: {
+            isWholeLine: true,
+            className: reviewItem.diffType
+          }
+        } 
+      });
+
+      this._model.update_decorations(this._editor.deltaDecorations(this._model.get_decorations(), decorations));
+
+    }
+
     clear_error() {
       $(this._error_selector).remove();
     }

@@ -33,6 +33,8 @@ RCloud.UI.merger_model = (function() {
       this.on_comparison_complete = new RCloud.UI.event(this);
       this.on_diff_complete = new RCloud.UI.event(this);
 
+      this.on_review_change = new RCloud.UI.event(this);
+
       this._dialog_stage = this.DialogStage.INIT;
       this._merge_method;
       this._notebook_from_file = undefined;
@@ -42,6 +44,9 @@ RCloud.UI.merger_model = (function() {
       this._not_found_notebook_error = 'The notebook could not be found.';
 
       this._diff_engine = new RCloud.UI.merging.diff_engine();
+
+      this._delta_decorations = [];
+      this._diff_info = [];
     }
 
     get_notebook_merge_info() {
@@ -102,7 +107,9 @@ RCloud.UI.merger_model = (function() {
       let from = _.findWhere(this._comparison.from[filetype], { 'filename' : filename });
       let to = _.findWhere(this._comparison.to[filetype], { 'filename' : filename });
 
-      const diff_info = this._diff_engine.get_diff_info(from, to);
+      let diff_info = this._diff_engine.get_diff_info(from, to);
+
+      this._diff_list = diff_info.modifiedLineInfo;
 
       this.on_diff_complete.notify({
         diff: diff_info,
@@ -179,6 +186,30 @@ RCloud.UI.merger_model = (function() {
           message 
         });
       });
+    }
+
+    apply_review_change(change) {
+
+      // find index:
+      const index = this._diff_list.findIndex(diff => diff.startLineNumber == change.startLineNumber && 
+        diff.endLineNumber == change.endLineNumber);
+      
+      // remove decoration:
+      this._diff_list.splice(index, 1);
+      
+      // 
+      this.on_review_change.notify({
+        reviewList: this._diff_list,
+        change: change
+      });
+    }
+
+    update_decorations(decorations) {
+      this._delta_decorations = decorations;
+    }
+
+    get_decorations() {
+      return this._delta_decorations;
     }
 
     update_compare_details(comparison) {
