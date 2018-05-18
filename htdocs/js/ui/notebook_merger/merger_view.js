@@ -22,7 +22,7 @@ RCloud.UI.merger_view = (function(model) {
 
       $("body").append(template({}));
       this._dialog = $("#merger-dialog");
-      this._merge_method = $('#merge-changes-by');
+      this._merge_source = $('#merge-changes-by');
       this._merge_notebook_file = $('#merge-notebook-file');
       this._merge_notebook_url = $('#merge-notebook-url');
       this._merge_notebook_id = $('#merge-notebook-id');
@@ -55,7 +55,6 @@ RCloud.UI.merger_view = (function(model) {
       this._diff_editor = null;
       this._diff_navigator = null;
 
-      this._notebook_description;
       this._can_dispose = false;
 
       this._comparison = null;
@@ -67,15 +66,15 @@ RCloud.UI.merger_view = (function(model) {
       //
       //
       this._btn_show_changes.click(() => {
-        this._model.get_changes($(`#merge-notebook-${this._model.get_merge_method()}`).val());
+        this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
       });
 
       this._button_init.click(() => {
         this._model.update_stage(this._model.DialogStage.INIT);
       });
 
-      this._merge_method.change(() => {
-        this._model.update_merge_method(this._merge_method.val());
+      this._merge_source.change(() => {
+        this._model.update_merge_source(this._merge_source.val());
       });
 
       $(this._dialog).on('hidden.bs.modal', () => {
@@ -119,14 +118,14 @@ RCloud.UI.merger_view = (function(model) {
       //
       this._model.on_set_merge_source.attach((sender, args) => {
         this.clear_error();
-        this._merge_method.val(args.type);
+        this._merge_source.val(args.type);
 
         $(this._dialog).find('div[data-by]').hide();
         $(this._dialog).find(`div[data-by="${args.type}"]`).show();
 
         if(!_.isUndefined(args.value)) {
           // and set the value coming in:
-          $(`#merge-notebook-${this._model.get_merge_method()}`).val(args.type === 'file' ? '' : args.value);
+          $(`#merge-notebook-${this._model.get_merge_source()}`).val(args.type === 'file' ? '' : args.value);
         }
 
         this._dialog.modal({ keyboard: true });
@@ -143,7 +142,7 @@ RCloud.UI.merger_view = (function(model) {
         }
         
         if(args.stage == this._model.DialogStage.COMPARE) {
-          this._merge_notebook_details.html(`from ${this._model._notebook_description}`);
+          this._merge_notebook_details.html(`from ${this._model._other_notebook_description}`);
           this._button_init.show();
         } else {
           this._merge_notebook_details.html('');
@@ -192,7 +191,7 @@ RCloud.UI.merger_view = (function(model) {
         this._dialog.setMergerDialogStage(this._model._dialog_stage);
 
         this._compare_file_list.html(this._templates.file_list({
-          comparison: args.comparison
+          files: args.files
         }));
 
         this._editorTab.tab('show');
@@ -251,8 +250,8 @@ RCloud.UI.merger_view = (function(model) {
         this.updateReviewDecorations(args.diff.modifiedLineInfo);
 
         $(this._compare_diff_selector).data({
-          original: args.from,
-          modified: args.to
+          original: args.owned,
+          modified: args.other
         });
 
         this._can_dispose = true;
@@ -266,7 +265,7 @@ RCloud.UI.merger_view = (function(model) {
         if(args.changeDetails.isChanged) {
           htmlContent = `<span>${args.changeDetails.changeCount}</span>`;
         } else {
-          htmlContent = args.changeDetails.changeDescription;
+          htmlContent = args.changeDetails.fileChangeTypeDescription;
         }
 
         this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"] .changes`)
@@ -276,6 +275,9 @@ RCloud.UI.merger_view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_review_change.attach((sender, args) => {
         this.updateReviewDecorations(args.reviewList);
+
+        this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"] .changes span`)
+          .html('TODO');
 
         // remove for reject:
         if(args.change.type == 'reject') {
@@ -349,7 +351,7 @@ RCloud.UI.merger_view = (function(model) {
       $('<div />', {
         id: this._error_selector.substring(1),
         text: errorText
-      }).appendTo($(this._dialog).find(`div[data-by="${this._model.get_merge_method()}"]`));
+      }).appendTo($(this._dialog).find(`div[data-by="${this._model.get_merge_source()}"]`));
     }
 
     has_error() {

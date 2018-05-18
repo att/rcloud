@@ -7,7 +7,7 @@ RCloud.UI.merger_controller = (function(model, view) {
     }
 
     show_dialog() {
-      this._model.get_notebook_merge_info();
+      this._model.get_notebook_merge_property();
     }
   };
 

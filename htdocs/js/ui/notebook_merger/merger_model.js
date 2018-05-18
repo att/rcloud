@@ -1,21 +1,5 @@
 RCloud.UI.merger_model = (function() {
 
-  const ChangeType = Object.freeze({
-    NEWFILE: 'newfile', 
-    DELETEDFILE: 'deletedfile',
-    BINARY: 'binary',
-    IDENTICAL: 'nochange',
-    MODIFIED: 'changed'
-  });
-
-  const ChangedTypeDescription = Object.freeze({
-    [ChangeType.NEWFILE]: 'Added file', 
-    [ChangeType.DELETEDFILE]: 'Deleted file',
-    [ChangeType.BINARY]: 'Binary',
-    [ChangeType.IDENTICAL]: 'Identical',
-    [ChangeType.MODIFIED]: 'Files are different'
-  });
-  
   const merger_model = class {
     constructor() {
 
@@ -38,7 +22,7 @@ RCloud.UI.merger_model = (function() {
       this.on_review_change = new RCloud.UI.event(this);
 
       this._dialog_stage = this.DialogStage.INIT;
-      this._merge_method;
+      this._merge_source;
       this._notebook_from_file = undefined;
 
       this._same_notebook_error = 'You cannot merge from your current notebook; the source must be a different notebook.';
@@ -49,9 +33,16 @@ RCloud.UI.merger_model = (function() {
 
       this._delta_decorations = [];
       this._diff_info = [];
+
+      this._other_notebook_description = undefined;
+
+      this._currentFile = undefined;
     }
 
-    get_notebook_merge_info() {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    //
+    get_notebook_merge_property() {
       rcloud.get_notebook_property(shell.gistname(), 'merge-changes-by').then(val => {
         if(val && val.indexOf(':') !== -1) {
           // split and set:
@@ -59,15 +50,16 @@ RCloud.UI.merger_model = (function() {
           var type = val.substring(0, separatorIndex);
           var value = val.substring(separatorIndex + 1);
 
-          this._merge_method = type;
+          this._merge_source = type;
   
-          // update merged by method:
+          // update view's merged by method from retrieved value:
           this.on_set_merge_source.notify({
             type, 
             value
           });
         }
         else {
+          // default:
           this.on_set_merge_source.notify({
             type: 'url' 
           });        
@@ -76,23 +68,24 @@ RCloud.UI.merger_model = (function() {
     }
 
     reset() {
-      this._merge_method = 'url';
+      this._merge_source = 'url';
       this._notebook_from_file = undefined;
       this._dialog_stage = this.DialogStage.INIT;
       this.on_reset_complete.notify();
     }
 
-    get_merge_method() {
-      return this._merge_method;
+    get_merge_source() {
+      return this._merge_source;
     }
 
-    update_merge_method(merge_method) {
-      this._merge_method = merge_method;
+    update_merge_source(merge_source) {
+      this._merge_source = merge_source;
       this.on_set_merge_source.notify({
-        type: merge_method  
+        type: merge_source  
       });
     }
 
+    
     prepare_notebook_for_comparison(notebook) {
       notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
       notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename)).sort((p1, p2) => { 
@@ -104,20 +97,47 @@ RCloud.UI.merger_model = (function() {
       return notebook;
     }
 
-    set_comparison_as(filetype, filename) {
+    get_notebooks_info(other_notebook) {
+      let info = {
+        'owned': {},
+        'other': {},
+        'union': {}
+      },
+          notebooks_for_compare = {
+            'owned': shell.notebook.model.controller.current_gist(),
+            'other': other_notebook
+          };
+
+      _.each(Object.keys(notebooks_for_compare), (source) => {
+        info[source].files = _.chain(RCloud.utils.clean_r(notebooks_for_compare[source].files))
+          .values().map(f => { return { 
+            isBinary: f.content.r_type,
+            type: Notebook.is_part_name(f.filename) ? 'part' : 'asset',
+            filename: f.filename,
+            content: f.content
+          }}).value();
+      });
+
+      info.union.files = _.uniq(_.union(info.owned.files, info.other.files), false, (item, key, type, filename) => { return item.type && item.filename; });
+
+      return info;
+    }
+
+    set_comparison_as(type, filename) {
 
       const _ = window._;
-      let from = _.findWhere(this._comparison.from[filetype], { 'filename' : filename });
-      let to = _.findWhere(this._comparison.to[filetype], { 'filename' : filename });
 
-      let diff_info = this._diff_engine.get_diff_info(from, to);
+      this._currentFile = { type, filename };
+      let owned = _.findWhere(this._comparison.owned.files, this._currentFile);
+      let other = _.findWhere(this._comparison.other.files, this._currentFile);
+      let diffInfo = _.findWhere(this._comparison.union.files, this._currentFile).changeDetails;
 
-      this._diff_list = diff_info.modifiedLineInfo;
+      this._diff_list = diffInfo ? diffInfo.modifiedLineInfo : [];
 
       this.on_diff_complete.notify({
-        diff: diff_info,
-        from: from ? from.content : '',
-        to: to ? to.content : ''
+        diff: diffInfo,
+        owned: owned ? owned.content : '',
+        other: other ? other.content : ''
       });
     }
 
@@ -136,9 +156,9 @@ RCloud.UI.merger_model = (function() {
 
       this.on_getting_changes.notify();
       
-      if(this._merge_method === 'id') {
+      if(this._merge_source === 'id') {
         get_notebook_func = get_notebook_by_id;
-      } else if(this._merge_method === 'file') {
+      } else if(this._merge_source === 'file') {
           get_notebook_func = () => {
             if(notebook_from_file_) {
               return Promise.resolve(notebook_from_file_);
@@ -146,7 +166,7 @@ RCloud.UI.merger_model = (function() {
               return Promise.reject(new Error('No file to upload'));
             }
           };
-      } else if(this._merge_method === 'url') {
+      } else if(this._merge_source === 'url') {
         get_notebook_func = (url) => {
           var id = RCloud.utils.get_notebook_from_url(url);
           if(!id) {
@@ -159,18 +179,13 @@ RCloud.UI.merger_model = (function() {
         
       get_notebook_func.call(this, from_notebook).then((notebook) => {
 
-        this._notebook_description = notebook.description;
+        this._other_notebook_description = notebook.description;
 
         // current notebook:
-        rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', `${this._merge_method}:${from_notebook}`);
+        rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', `${this._merge_source}:${from_notebook}`);
 
-        // massage the returned notebook so that it's easier to work with:
-        this._comparison = {
-          from: this.prepare_notebook_for_comparison(shell.notebook.model.controller.current_gist()),
-          to: this.prepare_notebook_for_comparison(notebook)
-        };
-
-        this.update_compare_details(this._comparison);
+        this._comparison = this.get_notebooks_info(notebook);
+        this.update_compare_details();
 
       }).catch((e) => {
 
@@ -201,7 +216,8 @@ RCloud.UI.merger_model = (function() {
       // 
       this.on_review_change.notify({
         reviewList: this._diff_list,
-        change: change
+        change: change,
+        file: this._currentFile
       });
     }
 
@@ -213,76 +229,42 @@ RCloud.UI.merger_model = (function() {
       return this._delta_decorations;
     }
 
-    update_compare_details(comparison) {
+    update_compare_details() {
 
-      // from, to
-      // assets, files
-      comparison.fileDiffs = {
+      // info
+        // owned
+        // other
+        // union
+
+          // files []
+            // type
+            // filename
+            // content
+
+      const get_change_details = (filename, type) => {
+        const where = { filename, type },
+              owned = _.findWhere(this._comparison.owned.files, where),
+              other = _.findWhere(this._comparison.other.files, where);
+
+
+        return this._diff_engine.get_diff_info(owned, other);
       };
 
-      const sources = ['from', 'to'];
-
-      const get_change_details = (filename, file_type) => {
-        const from = _.findWhere(comparison.from[file_type], { filename }),
-              to = _.findWhere(comparison.to[file_type], { filename });
-
-        let changeDetails = {};
-
-        if(!from && to) {
-          changeDetails.changeType = ChangeType.NEWFILE;
-        } else if(from && !to) {
-          changeDetails.changeType =  ChangeType.DELETEDFILE;
-        } else if(from.content.r_type) {
-          changeDetails.changeType = ChangeType.BINARY;
-        } else {
-          changeDetails.changeType = from.content == to.content ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
-
-          // do compare:
-          if(changeDetails.changeType == ChangeType.MODIFIED) {
-            changeDetails.changeCount = this._diff_engine.get_diff_info(from, to).modifiedLineInfo.length,
-            changeDetails.isChanged = true;
-          }
-        }
-
-        changeDetails.changeDescription = ChangedTypeDescription[changeDetails.changeType];
-
-        return changeDetails;
-      };
-      
-      // derive a list of all assets and parts:
-      _.each(['assets', 'parts'], (file_type) => {
-
-        comparison.fileDiffs['all' + file_type[0].toUpperCase() + file_type.substring(1)] = 
-        _.map(
-        _.sortBy(
-        _.union(...
-        _.map(sources, s => {
-          return _.pluck(comparison[s][file_type], 'filename');
-        })), f => { return file_type === 'assets' ? f : f.match(/\d+/).map(Number)[0]; }), filename => { 
-          return {
-            filename
-          }; 
-        });
-      });
 
       this._dialog_stage = this.DialogStage.COMPARE;
       this.on_file_list_complete.notify({
-        comparison
+        files: this._comparison.union.files.filter(f => !f.isBinary)
       });
 
-      // do the comparison:
-      _.each(['assets', 'parts'], (file_type) => {
-        _.each(comparison.fileDiffs['all' + file_type[0].toUpperCase() + file_type.substring(1)], (file) => {
-          
-            // TODO TODO
-            // update the comparison:
-            // TODO TODO
+      _.each(this._comparison.union.files, (file) => {
 
-            this.on_file_diff_complete.notify({
-              fileType: file_type,
-              filename: file.filename,
-              changeDetails: get_change_details(file.filename, file_type)
-            });
+        file.changeDetails = get_change_details(file.filename, file.type);
+
+        this.on_file_diff_complete.notify({
+          isBinary: file.isBinary,
+          fileType: file.type,
+          filename: file.filename,
+          changeDetails: file.changeDetails
         });
       });
     }
