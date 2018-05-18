@@ -357,19 +357,11 @@
 <script type="text/template" id="compare-file-list-snippet">
   <table>
     <tbody>
-      <% _.each(comparison.fileDiffs.allParts, function(part) { %>
-      <tr data-filetype="parts" data-filename="<%=part.filename%>">
-        <td><%=part.filename%></td>
+      <% _.each(files, function(file) { %>
+      <tr data-filetype="<%=file.type%>" data-filename="<%=file.filename%>">
+        <td><%=file.filename%></td>
         <td class="changes"><img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" /></td>
-        <!-- <td><span class="<%=part.change_type%>"><%=part.change_type_desc%></td>        -->
       </tr>
-      <% }); %>
-      <% _.each(comparison.fileDiffs.allAssets, function(asset) { %>
-        <tr data-filetype="assets" data-filename="<%=asset.filename%>">
-          <td><%=asset.filename%></td>
-          <td class="changes"><img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" /></td>
-          <!-- <td><span class="<%=asset.change_type%>"><%=asset.change_type_desc%></td>        -->
-        </tr>
       <% }); %>
     </tbody>
   </table>

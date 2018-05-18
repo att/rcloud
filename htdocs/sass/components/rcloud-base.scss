@@ -966,6 +966,16 @@ body .modal-dialog.full {
 
             td.changes {
                 text-align: right;
+
+                span {
+                    background: #369;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 3px;
+                    width: 60px;
+                    display: inline-block;
+                    text-align: center;
+                }
             }
         }
 
