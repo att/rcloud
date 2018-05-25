@@ -387,9 +387,13 @@ start.rcloud.common <- function(...) {
         if(package.lang$language %in% names(lang.list)) {
           stop(paste0("Language Conflict! Package '", lang, "' tried to register language '", package.lang$language, "', but it already exists."))
         }
-        lang.list[[package.lang$language]] <- package.lang
-        suppressMessages(suppressWarnings(lang.list[[package.lang$language]]$setup(.session)))
-        file.ext.list[package.lang$extension] <- package.lang$language
+        if(!package.lang$extension %in% names(file.ext.list)) {
+          lang.list[[package.lang$language]] <- package.lang
+          suppressMessages(suppressWarnings(lang.list[[package.lang$language]]$setup(.session)))
+          file.ext.list[package.lang$extension] <- package.lang$language
+        } else {
+          warning(paste("Ignoring ", package.lang$language, ". Extension", package.lang$extension, "has already been registered for language", file.ext.list[package.lang$extension], "."))
+        }
       }
       
     }

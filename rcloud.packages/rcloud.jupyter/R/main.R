@@ -55,6 +55,18 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
   rcloud.metadata
 }
 
+.replace.null.with.empty.list <- function (param) {
+  if(is.null(param)) return(list())
+  param
+}
+
+.merge.lists <- function(left, right) {
+  for(key in names(right)) {
+      left[key] <- right[[key]]
+  }
+  left
+}
+
 .create.language.settings <- function(kernel_name, spec) {
   defaultMapping <- jsonlite::fromJSON(txt = system.file("jupyter/mapping.json", package="rcloud.jupyter"))
   customMapping <- .load.custom.mapping()
@@ -66,8 +78,15 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
     "display.name" = spec$display_name,
     "init.script" = "function (session) { '' }"
   )
-  defaultLangMapping <- defaultMapping[[kernel_name]]
-  customLangMapping <- customMapping[[kernel_name]]
+  language <- spec$language
+  
+  defaultLangDefinition <- .replace.null.with.empty.list(defaultMapping[['languages']][[language]])
+  customLangDefinition <- .replace.null.with.empty.list(customMapping[['languages']][[language]])
+  defaultKernelMapping <- .replace.null.with.empty.list(defaultMapping[['kernelMapping']][[kernel_name]])
+  customKernelMapping <- .replace.null.with.empty.list(customMapping[['kernelMapping']][[kernel_name]])
+  
+  defaultLangMapping <- .merge.lists(defaultLangDefinition, defaultKernelMapping)
+  customLangMapping <- .merge.lists(customLangDefinition, customKernelMapping)
   for(key in names(res)) {
     fromKernel <- kernelMapping[[key]]
     fromCustom <- customLangMapping[[key]]
@@ -79,6 +98,7 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
     } else if(!is.null(fromDefault) && nchar(fromDefault)>0) {
       res[key] <- fromDefault
     }
+    
     if(!nchar(res[key]) > 0) {
       stop(paste0("Language definition error: language '", kernel_name,"' property '", key, "' is missing value."))
     }
@@ -183,11 +203,14 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
   }, error=function(e) {
     msg <- e$message
     rcloud.html.out(msg)
-    return()
+    return(structure(list(error=e$message), class='cell-eval-error'))
   })
   
   if(is.null(outputs)) {
     return()
+  }
+  if(inherits(outputs, 'cell-eval-error')) {
+    return(outputs)
   }
   processed <- lapply(outputs, function(outval) 
   {
@@ -287,14 +310,15 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
 rcloud.language.support <- function(rcloud.session)
 {
   kernel.specs <- rcloud.jupyter.list.kernel.specs(rcloud.session)
-  languages <- lapply(names(kernel.specs), function(kernel_name, kernel_spec, rcloud.session) {
+  languages <- lapply(names(kernel.specs), function(kernel_name, kernel_specs, rcloud.session) {
     
-    lang <- tryCatch({.init.language(kernel_name, kernel_spec, rcloud.session)}, error = function(o) structure(list(error=o$message), class="language-init-error"))
+    lang <- tryCatch({.init.language(kernel_name, kernel_specs[[kernel_name]]$spec, rcloud.session)}, error = function(o) structure(list(error=o$message), class="language-init-error"))
     
     if(inherits(lang, "language-init-error")) {
       warning(lang$error)
     }
     lang
   }, kernel.specs, rcloud.session)
-  Filter(function(x) { !inherits(x, 'language-init-error') }, languages)
+  languages <- Filter(function(x) { !inherits(x, 'language-init-error') }, languages)
+  languages[order(sapply(languages, function(x) { x$language }))]
 }
