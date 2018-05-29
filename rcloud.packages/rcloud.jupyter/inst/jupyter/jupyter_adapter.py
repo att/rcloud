@@ -5,6 +5,7 @@ import traceback
 from nbconvert.preprocessors import ExecutePreprocessor
 from time import sleep
 import sys
+import os
 import logging
 from RCloud_ansi2html import ansi2html # MIT license from github:Kronuz/ansi2html (Oct 2014) + rename/our changes
 from xml.sax.saxutils import escape as html_escape # based on reco from moin/EscapingHtml
@@ -18,8 +19,6 @@ from nbformat.v4 import output_from_msg
 from traitlets import (
     Dict, List, Unicode, Any
 )
-
-import sys
 
 import tempfile
 debugFD, debugFile = "", ""
@@ -146,6 +145,7 @@ class RCloudExecutePreprocessor(ExecutePreprocessor):
     mkm = None
     _init_scripts = Dict()
     console_in = None
+    connection_dir = '/tmp'
     
     def remove_kernel(self, kernel_name):
       if kernel_name in self._kernels:
@@ -165,11 +165,13 @@ class RCloudExecutePreprocessor(ExecutePreprocessor):
       kc.start_channels()
       if _debugging: logging.debug('Created new kernel with name {} and id {}'.format(kernel_name, kernel_id))
       try:
+        if _debugging: logging.debug('Waiting for kernel {} for {} seconds...'.format(kernel_id, startup_timeout))
         kc.wait_for_ready(timeout=startup_timeout)
         kc.allow_stdin = True
         self._clients[kernel_id] = kc
+        if _debugging: logging.debug('Kernel with name {} and id {} started successfully!'.format(kernel_name, kernel_id))
         if kernel_name in self._init_scripts:
-          kc.execute(self._init_scripts[kernel_name], reply = True)
+           kc.execute(self._init_scripts[kernel_name], reply = True)
         return kc
       except RuntimeError:
         kc.stop_channels()
@@ -180,6 +182,9 @@ class RCloudExecutePreprocessor(ExecutePreprocessor):
     def get_kernel(self, startup_timeout=60, kernel_name=None, **kwargs):
        if self.mkm is None:
          self.mkm = self.kernel_manager_class()
+         self.mkm.connection_dir = os.path.join(self.connection_dir)
+       
+       if _debugging: logging.debug('Kernel connection files are stored in {} '.format(self.mkm.connection_dir))
        
        if kernel_name is None:
          kernel_name = self.kernel_name
@@ -299,14 +304,14 @@ class JupyterAdapter(object):
     }
     
     
-    def __init__(self, console_in = None, 
-                kernel_startup_timeout = 600, cell_exec_timeout=600, kernel_name='python',
+    def __init__(self, kernel_startup_timeout, cell_exec_timeout, connection_dir, console_in = None, 
+                kernel_name='python',
                 **kw):
         """Initializes the Jupyter Adapter"""
 
         self.executePreprocessor = RCloudExecutePreprocessor(startup_timeout = kernel_startup_timeout, timeout = cell_exec_timeout, 
                                                             kernel_name = kernel_name,  kernel_manager_class=MultiKernelManager, 
-                                                            console_in = console_in, shutdown_kernel = 'immediate')
+                                                            console_in = console_in, connection_dir = connection_dir, shutdown_kernel = 'immediate')
 
     def add_init_script(self, kernel_name, init_script):
         self.executePreprocessor._init_scripts[kernel_name] = init_script
@@ -330,6 +335,8 @@ class JupyterAdapter(object):
         """
         Runs python command string.
         """
+        
+        if _debugging: logging.info('Running command: ' + cmd + ' using kernel: ' + kernel_name)
         notebook = nbformat.v4.new_notebook()
         my_cell = nbformat.v4.new_code_cell(source=cmd)
         notebook.cells = [my_cell]

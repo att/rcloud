@@ -17,8 +17,9 @@
 PYTHON_PATH <- 'rcloud.jupyter.python.path'
 PYTHON_EXTRA_LIBS <- 'rcloud.jupyter.python.extra.libs'
 JUPYTER_CELL_EXEC_TIMEOUT <- 'rcloud.jupyter.cell.exec.timeout'
-JUPYTER_CELL_STARTUP_TIMEOUT <- 'rcloud.jupyter.cell.startup.timeout'
+JUPYTER_KERNEL_STARTUP_TIMEOUT <- 'rcloud.jupyter.kernel.startup.timeout'
 JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
+JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
 
 .set_default_kernel <- function(language, kernel_name) {
   default_kernel_key <- paste0(language, '_kernel')
@@ -111,7 +112,7 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
 #' @returnt time in seconds
 #' 
 .get_cell_exec_timeout <- function() {
-  if (rcloud.support:::hasConf(JUPYTER_CELL_EXEC_TIMEOUT)) {
+  if (rcloud.support:::nzConf(JUPYTER_CELL_EXEC_TIMEOUT)) {
     as.integer(rcloud.support:::getConf(JUPYTER_CELL_EXEC_TIMEOUT))
   } else {
     as.integer(1200)
@@ -122,13 +123,23 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
 #' @returnt time in seconds
 #' 
 .get_cell_startup_timeout <- function() {
-  if (rcloud.support:::hasConf(JUPYTER_CELL_STARTUP_TIMEOUT)) {
-    as.integer(rcloud.support:::getConf(JUPYTER_CELL_STARTUP_TIMEOUT))
+  if (rcloud.support:::nzConf(JUPYTER_KERNEL_STARTUP_TIMEOUT)) {
+    as.integer(rcloud.support:::getConf(JUPYTER_KERNEL_STARTUP_TIMEOUT))
   } else {
     as.integer(600)
   }
 }
 
+#'
+#' @returnt connnection dir path
+#' 
+.get_connection_dir_path <- function() {
+  if (rcloud.support:::nzConf(JUPYTER_CONNECTION_DIR_PATH)) {
+    rcloud.support:::getConf(JUPYTER_CONNECTION_DIR_PATH)
+  } else {
+    '/tmp'
+  }
+}
 
 #'
 #' Initializes Jupyter Adapter and stores reference to it in session with 'jupyter.adapter' key.
@@ -149,8 +160,9 @@ JUPYTER_LANGUAGE_MAPPING <- 'rcloud.jupyter.language.mapping.config'
   jupyter_adapter <- reticulate::import("jupyter_adapter")
   
   runner <- jupyter_adapter$JupyterAdapter(
-                                           cell_startup_timeout = .get_cell_startup_timeout(),
+                                           kernel_startup_timeout = .get_cell_startup_timeout(),
                                            cell_exec_timeout = .get_cell_exec_timeout(),
+                                           connection_dir = .get_connection_dir_path(),
                                            console_in = .console.in.handler, 
                                            kernel_name = .get_default_kernel('python')
                                            )

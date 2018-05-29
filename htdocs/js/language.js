@@ -49,7 +49,7 @@ RCloud.language = (function() {
             }
         },
         available_languages: function() {
-            return langs_;
+            return langs_.slice(); // protect internal state
         }
     };
 

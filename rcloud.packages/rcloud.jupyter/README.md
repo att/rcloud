@@ -37,7 +37,8 @@ RCloud Jupyter package uses these settings from `rcloud.conf`:
 
  * `rcloud.jupyter.python.path` - path to Python installation that should be used (e.g. `/usr/bin/python3`)
  * `rcloud.jupyter.python.extra.libs` - additional Python lib directories (e.g. where Jupyter Python modules got installed) (optional)
- * `rcloud.jupyter.cell.startup.timeout` - timeout (in seconds) for Jupyter kernels to start up, default 600 seconds (optional)
+ * `rcloud.jupyter.connection_dir.path` - path to directory where kernel connection files should be created, default `/tmp` (optional)
+ * `rcloud.jupyter.kernel.startup.timeout` - timeout (in seconds) for Jupyter kernels to start up, default 600 seconds (optional)
  * `rcloud.jupyter.cell.exec.timeout` - timeout (in seconds) for Jupyter cells executions, default 1200 seconds (optional)
  * `rcloud.jupyter.language.mapping.config` - specifies custom location of mapping.json file (optional)
 
@@ -380,7 +381,78 @@ $python3$spec$argv
 
 > Instructions in this section are just for reference, they are valid only at the time of this writing and use specific versions of kernel binaries. Refer to each kernel project page for detailed installation and configuration instructions.
 
+## Scala (Jupyter Scala 2.11)
+
+[Jpyter Scala project home page](https://github.com/jupyter-scala/jupyter-scala)
+
+Run the following commands:
+
+```
+cd /opt/src
+wget https://raw.githubusercontent.com/alexarchambault/jupyter-scala/master/jupyter-scala
+chmod +x jupyter-scala
+./jupyter-scala
+```
+
+Move installed user kernel to system kernels directory:
+```
+sudo mv [USER_HOME]/.local/share/jupyter/kernels/scala /usr/local/share/jupyter/kernels/
+```
+
+Update path to kernel JAR in kernel.json:
+
+> if Java 8 is not the default Java version in your system, you will need to update 'java' command path in kernel.json as well
+
+```
+sudo vi /usr/local/share/jupyter/kernels/scala/kernel.json
+```
+so it looks like this:
+
+```
+{
+  "language" : "scala",
+  "display_name" : "Scala",
+  "argv" : [
+    "/usr/lib/jvm/java-8-openjdk-amd64/bin/java",
+    "-noverify",
+    "-jar",
+    "/usr/local/share/jupyter/kernels/scala/launcher.jar",
+    "launch",
+    "-r",
+    "sonatype:releases",
+    "-r",
+    "sonatype:snapshots",
+    "-i",
+    "ammonite",
+    "-I",
+    "ammonite:org.jupyter-scala:ammonite-runtime_2.11.11:0.8.3-1",
+    "-I",
+    "ammonite:org.jupyter-scala:scala-api_2.11.11:0.4.2",
+    "org.jupyter-scala:scala-cli_2.11.11:0.4.2",
+    "--",
+    "--id",
+    "scala",
+    "--name",
+    "Scala",
+    "--quiet",
+    "--connection-file",
+    "{connection_file}"
+  ]
+}
+```
+
+
+
+Fix permissions on default log file used by Jupyter Scala kernel
+```
+touch /tmp/jupyter-scala.log
+sudo chmod go+rw /tmp/jupyter-scala.log
+```
+
+
 ## Julia (IJulia-0.6.2)
+
+[IJulia Project home](https://github.com/JuliaLang/IJulia.jl)
 
 Run the following commands:
 
@@ -403,6 +475,8 @@ exit()
 
 
 ## Perl (Devel::IPerl) Kernel
+
+[Devel::IPerl project home page](https://github.com/EntropyOrg/p5-Devel-IPerl)
 
 Run the following commands:
 
@@ -437,6 +511,8 @@ With the following contents:
 
 
 ## Toree Apache Spark
+
+[Toree Apache Spark project home page](https://toree.incubator.apache.org/)
 
 Note, the commands below will result in Scala, Python and R Spark kernels that spawn Spark instances on demand. In production such setup is discouraged. Instead Spark kernels should be configured to interact with Spark cluster. Refer to Apache Spark and Apache Toree documentation for instructions on how to run Spark in a cluster mode and configuring the kernels to interact with Spark cluster.
 
@@ -486,6 +562,8 @@ Optional:
 
 
 ## NodeJS (IJavascript) Kernel
+
+[IJavaScript project home page](https://github.com/n-riesco/ijavascript)
 
 Run the following commands:
 

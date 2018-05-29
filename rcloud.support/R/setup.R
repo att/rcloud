@@ -392,7 +392,7 @@ start.rcloud.common <- function(...) {
           suppressMessages(suppressWarnings(lang.list[[package.lang$language]]$setup(.session)))
           file.ext.list[package.lang$extension] <- package.lang$language
         } else {
-          warning(paste("Ignoring ", package.lang$language, ". Extension", package.lang$extension, "has already been registered for language", file.ext.list[package.lang$extension], "."))
+          warning(paste("Ignoring", package.lang$language, ". Extension", package.lang$extension, "has already been registered for language", file.ext.list[package.lang$extension], "."))
         }
       }
       
