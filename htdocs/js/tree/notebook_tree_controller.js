@@ -1,4 +1,5 @@
 RCloud.UI.notebook_tree_controller = (function(model, view) {
+
     var notebook_tree_controller = function(model, view) {
 
         "use strict";

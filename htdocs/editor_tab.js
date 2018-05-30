@@ -1,6 +1,7 @@
 var editor = function () {
 
     var show_terse_dates_,
+        show_folder_dates_,
         new_notebook_prefix_ = "Notebook ",
         github_nonfork_warning = ["GitHub returns the same notebook if you fork a notebook more than once, so you are seeing your old fork of this notebook.",
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
@@ -32,7 +33,8 @@ var editor = function () {
 
             var tree_model = new RCloud.UI.notebook_tree_model(
                 rcloud.username(),
-                this.show_terse_dates_
+                this.show_terse_dates_,
+                this.show_folder_dates_
             );
 
             tree_controller_ = new RCloud.UI.notebook_tree_controller(tree_model,
@@ -324,6 +326,9 @@ var editor = function () {
         },
         set_terse_dates: function(val) {
             this.show_terse_dates_ = val;
+        },
+        set_show_folder_dates: function(val) {
+            this.show_folder_dates_ = val;
         },
         color_recent_notebooks_by_modification_date: function(val) {
             this.color_recent_notebooks_by_modification_date_ = val;

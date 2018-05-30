@@ -14,6 +14,15 @@ RCloud.UI.notebook_tree_view = (function(model) {
 
         var view_obj = this;
 
+        var append_node = function(parent) {
+            if (parent && parent.children) {
+                _.each(parent.children, function(child) {
+                    view_obj.$tree_.tree('appendNode', child, view_obj.$tree_.tree('getNodeById', parent.id));                    
+                    append_node(child);
+                });
+            }
+        };
+
         // attach view component listeners:
         this.date_filter_.on_change.attach(function(sender, args) { 
             view_obj.model_.update_filter(args);
@@ -42,7 +51,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             var start_widget_time = window.performance ? window.performance.now() : 0;
             view_obj.$tree_ = $("#editor-book-tree");
 
-            console.info('loading tree data: ', args.data);
+            //console.info('loading tree data: ', args.data);
 
             view_obj.$sort_order_select_.on('change', view_obj.change_sort_order.bind(view_obj));
 
@@ -137,11 +146,12 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.model_.on_select_node.attach(function(sender, args) {
             var node = view_obj.$tree_.tree('getNodeById', args.node.id);
             view_obj.$tree_.tree('selectNode', node);
-            view_obj.scroll_into_view(node);
-            if(node.user === sender.username_)
-                RCloud.UI.notebook_title.make_editable(node, node.element, true);
-            else
-                RCloud.UI.notebook_title.make_editable(null);
+            view_obj.scroll_into_view(node).then(function() {
+                if(node.user === sender.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
         });
 
         this.model_.on_load_children.attach(function(sender, args) {
@@ -153,11 +163,15 @@ RCloud.UI.notebook_tree_view = (function(model) {
             view_obj.$tree_.tree('addNodeBefore',
                 args.node_to_insert,
                 view_obj.$tree_.tree('getNodeById', args.existing_node.id)); 
+
+            append_node(args.node_to_insert);
         });
 
         this.model_.on_append_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('appendNode', args.node_to_insert, 
-                view_obj.$tree_.tree('getNodeById', args.parent_id));
+
+            view_obj.$tree_.tree('appendNode', args.node_to_insert, view_obj.$tree_.tree('getNodeById', args.parent_id));
+            
+            append_node(args.node_to_insert);
         });
 
         this.model_.on_load_data.attach(function(sender, args) {
@@ -176,7 +190,6 @@ RCloud.UI.notebook_tree_view = (function(model) {
             if(args.fake_hover) {
                 ui_utils.fake_hover(node);
             }
-            
             view_obj.$tree_.tree('removeNode', node);
         });
 
@@ -221,6 +234,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
         change_sort_order: function(event) {
             var val = $(event.target).val();
             this.model_.update_sort_type(val, true);
+            this.scroll_into_view(this.$tree_.tree('getSelectedNode'));
         },
 
         tree_click: function(event) {
@@ -269,21 +283,27 @@ RCloud.UI.notebook_tree_view = (function(model) {
         },
 
         select_node: function(node) {
-            this.$tree_.tree('selectNode', node);
-            this.scroll_into_view(node);
-            if(node.user === this.model_.username_)
-                RCloud.UI.notebook_title.make_editable(node, node.element, true);
-            else
-                RCloud.UI.notebook_title.make_editable(null);
+            this.scroll_into_view(node).then(function() {
+                this.$tree_.tree('selectNode', node);
+                if(node.user === this.model_.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
         },
 
         scroll_into_view: function(node) {
-            var p = node.parent;
-            while(p.sort_order === this.model_.order.NOTEBOOK) {
-                this.$tree_.tree('openNode', p);
-                p = p.parent;
-            }
-            ui_utils.scroll_into_view(this.$tree_, 50, 100, null, $(node.element));
+            var that = this;
+            return new Promise(function(resolve) {
+                var p = node.parent;
+                while(p) {
+                    that.$tree_.tree('openNode', p);
+                    p = p.parent;
+                }
+                ui_utils.scroll_into_view(that.$tree_, 50, 100, function() {
+                    resolve();
+                }, $(node.element));
+            });
         },
 
         remove_node: function(node) {
@@ -410,13 +430,25 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 title.addClass('history');
             }
 
-            var date;
+            var date, date_element, is_folder;
 
             if(node.last_commit) {
-                date = $.el.span({'class': 'notebook-date'}, this.display_date(node.last_commit));
+                date = node.last_commit;
+            } else if(this.model_.show_folder_dates_ && this.model_.is_date_sorted()) {
+                var folder_commit = this.model_.get_folder_last_commit_date(node.id);
+
+                if(folder_commit) {
+                    date = folder_commit;
+                    is_folder = true;
+                }
             }
 
-            var right = $.el.span({'class': 'notebook-right'}, date);
+            if(date) {
+                date_element = $.el.span({'class': is_folder ? 'notebook-date folder' : 'notebook-date'}, 
+                    this.display_date(date));
+            }
+
+            var right = $.el.span({'class': 'notebook-right'}, date_element);
             // if it was editable before, we need to restore that - either selected or open folder tree node
             if(node.user === this.model_.username_ && (this.$tree_.tree('isNodeSelected', node) ||
                                         !node.gistname && node.full_name && node.is_open)) {

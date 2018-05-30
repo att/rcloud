@@ -1,6 +1,6 @@
-RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
+RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folder_dates) {
 
-    var notebook_tree_model = function(username, show_terse_dates) {
+    var notebook_tree_model = function(username, show_terse_dates, show_folder_dates) {
         
         "use strict";
 
@@ -19,6 +19,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
         this.username_ = username;
         this.show_terse_dates_ = show_terse_dates;
+        this.show_folder_dates_ = show_folder_dates;
         this.path_tips_ = false; // debugging tool: show path tips on tree
 
         this.tree_data_ = [];
@@ -37,6 +38,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         this.sorted_by_ = this.orderType.DEFAULT;
         this.matches_filter_ = [];
         this.empty_folders_ = [];
+        this.folder_last_commits = {};
 
         // functions that filter the tree:
         this.tree_filters_ = {
@@ -272,9 +274,78 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             };
         },
 
+        get_folder_last_commit_date: function(node_id) {
+            return this.folder_last_commits[node_id];
+        },
+
+        get_most_recent_child: function(node) {
+
+            var that = this,
+                latest_commit = null,
+                node_chain = [],
+                pluck_node_data = function(child) {
+                    return {
+                        id: child.id,
+                        last_commit: child.last_commit
+                    };
+                }, insert_into_chain = function(parent) {
+
+                    var existing_parent_root_chain = _.findWhere(node_chain, { parent_id : parent.id });
+
+                    if(!existing_parent_root_chain) {
+                        node_chain.push({
+                            parent_id: parent.id,
+                            children: _.map(parent.children, function(child) {
+                                return pluck_node_data(child)
+                            })
+                        });
+                    }
+
+                    _.each(parent.children, function(child) {
+
+                        var matching = _.filter(node_chain, function(parent_children) { 
+                            return parent.id != parent_children.parent_id && 
+                                _.pluck(parent_children.children, 'id').indexOf(parent.id) != -1; 
+                        });
+                        
+                        _.each(matching, function(chain) {
+                            chain.children.push(pluck_node_data(child));
+                        });
+                    });
+                }, get_children = function(parent) {
+                
+                if (parent && parent.children) {
+
+                    insert_into_chain(parent);
+
+                    _.each(parent.children, function(child) {
+                        if(child.last_commit > latest_commit) {
+                            latest_commit = child.last_commit;
+                        }  
+
+                        get_children(child);
+
+                    });
+                }
+            };
+
+            get_children(node);
+
+            _.each(node_chain, function(chain) {
+                that.folder_last_commits[chain.parent_id] = _.max(_.pluck(chain.children, 'last_commit'));
+            });
+
+            return latest_commit;
+        },
+
+        is_date_sorted: function() {
+            return this.sorted_by_ === this.orderType.DATE_DESC;
+        },
+
         compare_nodes: function(a, b) {
 
-            var so = a.sort_order - b.sort_order;
+            var so = a.sort_order - b.sort_order,
+                that = this;
             if(so) {
                 return so;
             }
@@ -315,7 +386,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                         if(!node.last_commit && !node.children) {
                             return Infinity;
                         } else {
-                            return node.last_commit ? new Date(node.last_commit) : _.max(_.map(node.children, function(child) { return new Date(child.last_commit); }));                        
+                            return node.last_commit ? new Date(node.last_commit) : that.get_most_recent_child(node);                        
                         }
                     };
 
@@ -422,6 +493,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     full_name: full_name,
                     user: v[0].user,
                     sort_order: that.order.NOTEBOOK,
+
                     id: id,
                     children: that.as_folder_hierarchy(children, id, full_name)
                 };
@@ -432,7 +504,10 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             outside_folders.forEach(function(v) {
                 v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
             });
-            return outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
+
+            var result = outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
+            
+            return result;
         },
 
         convert_notebook_set: function(root, username, set) {
@@ -881,8 +956,9 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     case 'last7':
                     case 'last30':
                         var period = filter_props.value.replace('last', '');
+                        var that = this;
                         this.tree_filters_[filter_props.prop] = function(item) {
-                            return RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
+                            return item.gistname == that.current_.notebook || RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
                         };
                         break;
                     default:
@@ -1097,6 +1173,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                 });
             }
 
+            // create folder path:
             while('children' in path) {
                 node = this.get_node_by_id(path.id); // that.$tree_.tree('getNodeById', path.id);
                 if(!node) {
@@ -1121,6 +1198,26 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             data.root = root;
             data.user = user;
 
+            // update parents' position according to date:
+            var update_node_position = function(parent, node, data) {
+                            
+                // remove from model:
+                parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                    id: node.id
+                }));
+
+                that.remove_node_notify({
+                    node: node
+                });
+                
+                if(data) {
+                    // assign:
+                    node = that.insert_in_order(data, parent);                        
+                } else {
+                    that.insert_in_order(node, parent);
+                }
+            };
+
             if(node) {
                 children = node.children;
 
@@ -1128,12 +1225,12 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     last_chance(node); // hacky
                 }
 
-                //var dp = node.parent;
                 var dp = this.get_parent(node.id);
 
-                if(dp === parent && node./*name*/label === data.label) {
+                if(dp === parent && node.label === data.label && this.sorted_by_ !== this.orderType.DATE_DESC) {
                     this.update_tree_node(node, data);
                 } else {
+
                     // remove from model:
                     dp.children = _.without(dp.children, _.findWhere(dp.children, {
                         id: node.id
@@ -1146,10 +1243,51 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     node = this.insert_in_order(data, parent);
 
                     this.remove_empty_parents(dp);
+
+                    if(this.sorted_by_ === this.orderType.DATE_DESC) {
+
+                        var current_node = node;
+                        
+                        do {
+                            parent = this.get_parent(current_node.id);
+
+                            if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                                parent = null;
+                            } else {
+                                update_node_position(parent, current_node,
+                                    current_node.id === data.id ? data : undefined);
+                            }
+        
+                            current_node = parent;
+         
+                        } while(parent);
+                    }
                 }
 
             } else {
                 node = that.insert_in_order(data, parent);
+
+                if(this.sorted_by_ === this.orderType.DATE_DESC) {
+                    var current_node = node;
+                        
+                    do {
+                        parent = this.get_parent(current_node.id);
+
+                        if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                            parent = null;
+                        } else {
+                            update_node_position(parent, current_node,
+                                current_node.id === data.id ? data : undefined);
+
+                            if(node.id === current_node.id) {
+                                node = current_node;
+                            }
+                        }
+    
+                        current_node = parent;
+    
+                    } while(parent);
+                }
             }
 
             return node;
