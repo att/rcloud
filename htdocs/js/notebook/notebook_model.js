@@ -44,7 +44,7 @@ Notebook.create_model = function()
            
             if(user_appended){
                 asset_filenames.push(asset_model.change_object().filename);
-                asset_filenames.sort((a,b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+                asset_filenames.sort(function(a,b) { return a.localeCompare(b, undefined, {sensitivity: 'base'}); });
                 new_asset_index =  asset_filenames.indexOf(asset_model.change_object().filename);
                 this.assets.splice(new_asset_index, 0, asset_model);
                 }           
