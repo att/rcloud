@@ -34,12 +34,12 @@ Notebook.create_controller = function(model)
         return {controller: cell_controller, changes: model.append_cell(cell_model, id)};
     }
 
-    function append_asset_helper(content, filename, user_appended) {
+    function append_asset_helper(content, filename) {
         var asset_model = Notebook.Asset.create_model(content, filename);
         var asset_controller = Notebook.Asset.create_controller(asset_model);
         asset_model.controller = asset_controller;
         return {controller: asset_controller,
-                changes: model.append_asset(asset_model, filename, false, user_appended),
+                changes: model.append_asset(asset_model, filename),
                 model: asset_model};
     }
 

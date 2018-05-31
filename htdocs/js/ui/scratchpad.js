@@ -161,7 +161,7 @@ RCloud.UI.scratchpad = (function() {
                     };
                     var ext = (filename.indexOf('.')!=-1?filename.match(/\.(.*)/)[1]:"");
                     shell.notebook.controller
-                        .append_asset(comment_text("New file " + filename, ext), filename, true)
+                        .append_asset(comment_text("New file " + filename, ext), filename)
                         .spread(function(_, controller) {
                             controller.select();
                             ui_utils.ace_set_pos(RCloud.UI.scratchpad.widget, 2, 1);

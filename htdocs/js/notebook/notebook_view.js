@@ -30,7 +30,7 @@ Notebook.create_html_view = function(model, root_div)
         asset_appended: function(asset_model, new_asset_index) {
             var asset_view = Notebook.Asset.create_html_view(asset_model);
             asset_model.views.push(asset_view);
-            if(new_asset_index === undefined){ 
+            if(new_asset_index === undefined){
               $("#asset-list").append(asset_view.div());
               this.asset_sub_views.push(asset_view);
             } else {
