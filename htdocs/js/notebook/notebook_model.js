@@ -41,14 +41,14 @@ Notebook.create_model = function()
             changes.push(asset_model.change_object());
             var asset_filenames = _.map(this.assets, function(asset) { return asset.filename(); });
             var new_asset_index;
-           
-            if(user_appended){
+
+            if(user_appended) {
                 asset_filenames.push(asset_model.change_object().filename);
                 asset_filenames.sort(function(a,b) { return a.localeCompare(b, undefined, {sensitivity: 'base'}); });
                 new_asset_index =  asset_filenames.indexOf(asset_model.change_object().filename);
                 this.assets.splice(new_asset_index, 0, asset_model);
-                }           
-            else{
+            }
+            else {
                 this.assets.push(asset_model);
             }
             if(!skip_event)
