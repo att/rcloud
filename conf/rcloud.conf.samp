@@ -13,7 +13,7 @@ github.gist.url: https://gist.github.com/
 rcs.engine: redis
 #solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
 rcloud.alluser.addons: rcloud.viewer, rcloud.enviewer, rcloud.notebook.info, rcloud.htmlwidgets, rcloud.rmd, rcloud.flexdashboard, rcloud.jupyter.notebooks, rcloud.shiny
-rcloud.languages: rcloud.r, rcloud.python, rcloud.rmarkdown, rcloud.sh
+rcloud.languages: rcloud.r, rcloud.jupyter, rcloud.rmarkdown, rcloud.sh
 compute.separation.modes: IDE
 #--: if using rcloud-gist-service
 #rational.githubgist: true
