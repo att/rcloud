@@ -4,6 +4,7 @@ exportPattern("^w.*")      ## wplot, wdc, wgeo...
 export(rcs.key, rcs.get, rcs.set, rcs.rm, rcs.incr, rcs.decr, rcs.list, usr.key)  ## RCS
 export(deferred.rcloud.result)
 export(RCloudDevice, dev.resize)
+export(RCloudLanguage)
 
 ## other user-visible functions
 export(password, select, check.installation, show.iframe)

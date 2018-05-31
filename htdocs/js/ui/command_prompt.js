@@ -62,6 +62,11 @@ RCloud.UI.command_prompt = (function() {
 
         function restore_prompt() {
             var prop = history_.init();
+            if(!_.contains(RCloud.language.available_languages(), prop.lang)) {
+              var default_lang = RCloud.language.available_languages()[0];
+              console.error("Language " + prop.lang + " is not available. Using " + default_lang + " to restore prompt widget.");
+              prop = {cmd: '', lang: default_lang};
+            }
             change_prompt(prop.cmd);
             result.language(prop.lang);
             var r = last_row(widget);
@@ -69,8 +74,8 @@ RCloud.UI.command_prompt = (function() {
         }
 
         function set_language(language) {
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            session.setMode(new LangMode(false, session.doc, session));
+            var LangMode = RCloud.language.ace_mode(language);
+            session.setMode(new LangMode({ suppressHighlighting : false, doc : session.doc, session : session, language : language }));
         }
 
         ui_utils.install_common_ace_key_bindings(widget, result.language.bind(result));

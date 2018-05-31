@@ -35,16 +35,16 @@ define("ace/mode/r", function(require, exports, module)
    var RCompletions = require("ace/mode/r_completions").RCompletions;
    var unicode = require("ace/unicode");
 
-   var Mode = function(suppressHighlighting, doc, session)
+   var Mode = function(options)
    {
       this.HighlightRules = RHighlightRules;
-      if (suppressHighlighting)
+      if (options.suppressHighlighting)
          this.$tokenizer = new Tokenizer(new TextHighlightRules().getRules());
       else
          this.$tokenizer = new Tokenizer(new RHighlightRules().getRules());
       this.$completer = new RCompletions();
       this.$highlightRules = new this.HighlightRules();
-      this.codeModel = new RCodeModel(doc, this.$tokenizer, null);
+      this.codeModel = new RCodeModel(options.doc, this.$tokenizer, null);
       this.foldingRules = new FoldMode();
    };
    oop.inherits(Mode, TextMode);
