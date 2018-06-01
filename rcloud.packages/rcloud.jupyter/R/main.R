@@ -169,12 +169,18 @@ JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
   rcloud.session$jupyter.adapter <- runner
   
   f <- .GlobalEnv$.Rserve.done
+  session <- rcloud.session
   
-  .GlobalEnv$.Rserve.done <- function(...) { 
-    .stop.jupyter.adapter(rcloud.session); 
-    if (is.function(f)) 
-      f(...) 
+  .GlobalEnv$.Rserve.done <- function(...) {
+    tryCatch({
+      .stop.jupyter.adapter(session)
+    }, error=function(e) {
+      warning(paste("Process id", Sys.getpid(), "session id", session$sessionID, " error during jupyter adapter shutdown: " , e, "\n"))
+    })
+    if (is.function(f)) {
+      f(...)
     }
+  }
 }
 
 #'

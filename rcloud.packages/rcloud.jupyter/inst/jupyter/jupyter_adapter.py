@@ -252,7 +252,7 @@ class RCloudExecutePreprocessor(ExecutePreprocessor):
 
         return nb, resources
 
-    def shutdown_kernel(self):
+    def shutdown(self):
       if _debugging: logging.info('Shutting down kernels.')
       if self.mkm is not None:
           self.mkm.shutdown_all(now = self.shutdown_kernel == 'immediate')
@@ -323,10 +323,10 @@ class JupyterAdapter(object):
         return paths.jupyter_path(path)
 
     def __del__(self):
-        self.executePreprocessor.shutdown_kernel()
+        self.executePreprocessor.shutdown()
 
     def shutdown(self):
-        self.executePreprocessor.shutdown_kernel()
+        self.executePreprocessor.shutdown()
 
     def complete(self, text, kernel_name = None, pos = None):
         return self.executePreprocessor.complete(kernel_name, text, pos)
