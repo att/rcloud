@@ -10,7 +10,7 @@ import logging
 from RCloud_ansi2html import ansi2html # MIT license from github:Kronuz/ansi2html (Oct 2014) + rename/our changes
 from xml.sax.saxutils import escape as html_escape # based on reco from moin/EscapingHtml
 import re
-from nbformat.current import NotebookNode
+from nbformat.notebooknode import NotebookNode
 from jupyter_client import KernelManager
 from jupyter_core import paths
 from jupyter_client.kernelspec import KernelSpecManager
