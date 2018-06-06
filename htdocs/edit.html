@@ -356,11 +356,19 @@
 
 <script type="text/template" id="compare-file-list-snippet">
   <table>
+    <thead>
+      <tr>
+        <th>Yours</th>
+        <th></th>
+        <th>Other</th>
+      </tr>
+    </thead>
     <tbody>
       <% _.each(files, function(file) { %>
       <tr data-filetype="<%=file.type%>" data-filename="<%=file.filename%>">
-        <td><%=file.filename%></td>
+        <td class="isTo"></td>
         <td class="changes"><img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" /></td>
+        <td class="isFrom"></td>
       </tr>
       <% }); %>
     </tbody>
