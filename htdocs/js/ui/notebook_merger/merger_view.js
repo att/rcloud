@@ -260,7 +260,7 @@ RCloud.UI.merger_view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_file_diff_complete.attach((sender, args) => {
-        let htmlContent = '';
+        let htmlContent = '', sourceRow;
 
         if(args.changeDetails.isChanged) {
           htmlContent = `<span>${args.changeDetails.changeCount}</span>`;
@@ -268,8 +268,22 @@ RCloud.UI.merger_view = (function(model) {
           htmlContent = args.changeDetails.fileChangeTypeDescription;
         }
 
-        this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"] .changes`)
-          .html(htmlContent);
+        sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
+
+        // set the changes type
+        if(args.changeDetails.owned) {
+          sourceRow.find('.isTo').html(args.filename);
+        }
+
+        if(args.changeDetails.isNewOrDeleted) {
+          sourceRow.find('.changes').html('');  // let the columns speak for themselves
+        } else {
+          sourceRow.find('.changes').html(htmlContent);
+        }
+
+        if(args.changeDetails.other) {
+          sourceRow.find('.isFrom').html(args.filename);
+        }
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////

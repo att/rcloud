@@ -15,8 +15,8 @@ RCloud.UI.merging = (function() {
   });
 
   const ChangedTypeDescription = Object.freeze({
-    [ChangeType.NEWFILE]: 'Only in other', 
-    [ChangeType.DELETEDFILE]: 'Only in yours',
+    [ChangeType.NEWFILE]: 'Only in yours', 
+    [ChangeType.DELETEDFILE]: 'Not found in other',
     [ChangeType.BINARY]: 'Binary',
     [ChangeType.IDENTICAL]: 'Identical',
     [ChangeType.MODIFIED]: 'Different'
@@ -82,7 +82,10 @@ RCloud.UI.merging = (function() {
         lineInfo,
         modifiedLineInfo: _.filter(lineInfo, li => li.diffType !== DiffType.NOCHANGE),
         get changeCount() { return this.modifiedLineInfo.length; },
-        get isChanged() { return this.fileChangeType == ChangeType.MODIFIED; } 
+        get isChanged() { return this.fileChangeType == ChangeType.MODIFIED; } ,
+        owned,
+        other,
+        get isNewOrDeleted() { return [ChangeType.NEWFILE, ChangeType.DELETEDFILE].indexOf(this.fileChangeType) != -1; }
       }
     }
   }
