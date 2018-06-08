@@ -81,7 +81,7 @@ RCloud.UI.merger_view = (function(model) {
         this.clear();
       });
 
-      $(this._dialog).on('click', 'tbody tr:not(.selected)', (event) => {
+      $(this._dialog).on('click', 'tbody tr' /*'tbody tr:not(.selected)'*/, (event) => {
         $(event.currentTarget).closest('table').find('tr').removeClass('selected');  
         $(event.currentTarget).addClass('selected');
 
@@ -89,6 +89,11 @@ RCloud.UI.merger_view = (function(model) {
         this._model.set_comparison_as(
           $(event.currentTarget).data('filetype'),
           $(event.currentTarget).data('filename'));
+      });
+
+      $(this._dialog).on('click', 'tbody .add', (event) => {
+        // TODO: raise event to exclude this file from coming in:
+        $(event.currentTarget).closest('tr').toggleClass('excluded');
       });
 
       $(this._dialog).on('shown.bs.tab', 'a[data-toggle="tab"]', (e) => {
@@ -260,25 +265,40 @@ RCloud.UI.merger_view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_file_diff_complete.attach((sender, args) => {
-        let htmlContent = '', sourceRow;
-
-        if(args.changeDetails.isChanged) {
-          htmlContent = `<span>${args.changeDetails.changeCount}</span>`;
-        } else {
-          htmlContent = args.changeDetails.fileChangeTypeDescription;
-        }
+        let htmlContent = '', 
+            sourceRow, 
+            isToBeAdded,
+            isToSpan,
+            diffLoader,
+            changesCell,
+            changeCountSpan,
+            addSpan,
+            icons = ['icon-backward', 'icon-pause'];
 
         sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
+        isToSpan = sourceRow.find('.isTo span');
+        changesCell = sourceRow.find('.changes');
+        changeCountSpan = changesCell.find('.changeCount');
+        addSpan = changesCell.find('.add');
+        diffLoader = changesCell.find('.diffLoader');
+
+        diffLoader.remove();
 
         // set the changes type
-        if(args.changeDetails.owned) {
-          sourceRow.find('.isTo').html(args.filename);
+        if(args.changeDetails.owned || !args.changeDetails.owned && args.changeDetails.other) {
+          isToSpan.html(args.filename);
+          if(!args.changeDetails.owned) {
+            // show the add arrow:
+            isToBeAdded = true;
+            sourceRow.addClass('addition'); 
+            addSpan.show();       
+          }
         }
 
-        if(args.changeDetails.isNewOrDeleted) {
-          sourceRow.find('.changes').html('');  // let the columns speak for themselves
-        } else {
-          sourceRow.find('.changes').html(htmlContent);
+        // changed, so show changed details:
+        if(args.changeDetails.isChanged) {
+          changeCountSpan.find('span').html(args.changeDetails.changeCount);
+          changeCountSpan.show();
         }
 
         if(args.changeDetails.other) {
