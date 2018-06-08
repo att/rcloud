@@ -360,15 +360,19 @@
       <tr>
         <th>Yours</th>
         <th></th>
-        <th>Other</th>
+        <th>Theirs</th>
       </tr>
     </thead>
     <tbody>
       <% _.each(files, function(file) { %>
       <tr data-filetype="<%=file.type%>" data-filename="<%=file.filename%>">
-        <td class="isTo"></td>
-        <td class="changes"><img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" /></td>
-        <td class="isFrom"></td>
+        <td class="isto"><span></span></td>
+        <td class="changes">
+          <img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" class="diffLoader" />
+          <span class="changeCount" style="display:none"><i class="icon-indent-left"></i><span class="count"></span></span>
+          <span class="add" style="display:none"><i class="icon-backward"></i></span>
+        </td>
+        <td class="isfrom"><span></span></td>
       </tr>
       <% }); %>
     </tbody>

@@ -923,11 +923,16 @@ body .modal-dialog.full {
 
             thead tr {
                 border-bottom: 1px solid #444;
+
+                th {
+                    padding: 6px;
+                }
             }
 
             tbody tr {
                 border-bottom: 1px solid #ccc;
-
+                @include no-select();
+                
                 //&.common {
                     cursor: pointer;
 
@@ -942,9 +947,9 @@ body .modal-dialog.full {
                 //}
             }
 
-            th, td {
-                padding: 3px;
-            }
+            // th, td {
+            //     // padding: 6px;
+            // }
 
             th {
                 font-size: 11px;
@@ -968,14 +973,32 @@ body .modal-dialog.full {
                 text-align: center;
                 text-transform: uppercase;
 
-                span {
-                    background: #369;
-                    color: white;
-                    padding: 2px 8px;
-                    border-radius: 3px;
+                span:not(.count) {
+                    background: rgb(131, 255, 131);
+                    font-weight: bold;
+                    border-radius: 13px;
                     width: 60px;
                     display: inline-block;
                     text-align: center;
+                }
+
+                span.count {
+                    margin-left: 5px;
+                }
+
+                .icon-indent-left {
+                    font-weight: normal;
+                }
+            }
+
+            .isto span, .isfrom span, .add, .changeCount {
+                padding: 5px;
+                display: inline-block;
+            }
+
+            tr.excluded {
+                td.isto, td.changes {
+                    opacity: 0.3;
                 }
             }
         }
