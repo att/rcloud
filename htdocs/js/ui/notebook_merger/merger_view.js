@@ -29,7 +29,13 @@ RCloud.UI.merger_view = (function(model) {
 
       this._compare_editor_selector = '#compare-editor';
       this._compare_diff_selector = '#compare-diff';
+      this._single_editor_selector = '#single-editor';
       this._compare_result_selector = '#compare-result';
+
+      this._compare_editor = null;
+      this._compare_diff_editor = null;
+      this._single_editor = null;
+      this._diff_navigator = null;
 
       this._previous_diff_button = $("#previous-diff");
       this._next_diff_button = $("#next-diff");
@@ -39,6 +45,7 @@ RCloud.UI.merger_view = (function(model) {
 
       this._compare_file_list = $('#compare-file-list');
       this._compare_stage = $('#compare-stage');
+      this._compare_tabs = $('#compare-tabs');
 
       this._button_init = this._dialog.find('.btn-init');
 
@@ -50,10 +57,6 @@ RCloud.UI.merger_view = (function(model) {
       this._btn_show_changes = this._dialog.find('.btn-primary.btn-primary.show-changes');
       this._inputs = [this._merge_notebook_file, this._merge_notebook_url, this._merge_notebook_id];
       this._notebook_from_file;
-
-      this._editor = null;
-      this._diff_editor = null;
-      this._diff_navigator = null;
 
       this._can_dispose = false;
 
@@ -97,21 +100,21 @@ RCloud.UI.merger_view = (function(model) {
       });
 
       $(this._dialog).on('shown.bs.tab', 'a[data-toggle="tab"]', (e) => {
-        if($(e.target).attr("href") === this._compareDiffTabSelector && !this._diff_editor) {
+        if($(e.target).attr("href") === this._compareDiffTabSelector && !this._compare_diff_editor) {
           require(["vs/editor/editor.main"], () => {  
-            this._diff_editor = monaco.editor.createDiffEditor($(this._compare_diff_selector)[0], {
+            this._compare_diff_editor = monaco.editor.createDiffEditor($(this._compare_diff_selector)[0], {
               scrollBeyondLastLine: false,
               fontSize: 11
             });
-            this._diff_editor.setModel({
+            this._compare_diff_editor.setModel({
               original: monaco.editor.createModel($(this._compare_diff_selector).data('original')),
               modified: monaco.editor.createModel($(this._compare_diff_selector).data('modified'))
             });
           }); 
         } else {
-          if(this._diff_editor) {
-            this._diff_editor.dispose();
-            this._diff_editor = null;
+          if(this._compare_diff_editor) {
+            this._compare_diff_editor.dispose();
+            this._compare_diff_editor = null;
             $(this._compare_diff_selector).html('');
           }
         }
@@ -172,7 +175,7 @@ RCloud.UI.merger_view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_reset_complete.attach(() => {
         if(this._can_dispose) {
-          [this._editor, this._diff_editor].forEach(c => { if(c) { c.dispose(); }});
+          [this._editor, this._compare_diff_editor, this._single_editor].forEach(c => { if(c) { c.dispose(); }});
         }
   
         this._compare_file_list.html('');
@@ -198,69 +201,108 @@ RCloud.UI.merger_view = (function(model) {
         this._compare_file_list.html(this._templates.file_list({
           files: args.files
         }));
-
-        this._editorTab.tab('show');
-    
-        require(["vs/editor/editor.main"], () => {  
-          monaco.languages.register({
-            id: 'rcloud'
-          });
-         
-          this._editor = monaco.editor.create(
-            $(this._compare_editor_selector)[0],  
-            {
-              language: 'rcloud',
-              fontSize: 11,
-              scrollBeyondLastLine: false,
-              minimap: {
-                enabled: false
-              }
-            }
-          );
-
-          this.apply_change = this._editor.addCommand(0, (ctx, args) => {
-            this._model.apply_review_change(args);
-          });
-
-          this._compare_file_list.find('tr:eq(0)').trigger('click');
-        }); 
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_diff_complete.attach((sender, args) => {
 
-        this._editorTab.tab('show');
+        if(args.diff.isChanged) {
 
-        $(this._compare_editor_selector).show();
-        this._editor.setValue(args.diff.content);
+          let init = () => {
+            $(this._compare_editor_selector).show();
+            this._compare_editor.setValue(args.diff.content);
+    
+            if(this.codelens_provider)
+              this.codelens_provider.dispose();
+      
+            this.updateReviewDecorations(args.diff.modifiedLineInfo);
+    
+            $(this._compare_diff_selector).data({
+              original: args.owned,
+              modified: args.other
+            });
+    
+            this._can_dispose = true;
+          };
 
-        if(this.codelens_provider)
-          this.codelens_provider.dispose();
+          this._compare_tabs.show();
+          $(this._single_editor_selector).hide();
+          this._editorTab.tab('show');
 
-        // accepting/rejecting a change:
+          if(!this._compare_editor) {
+            this._editorTab.tab('show');
+    
+            require(["vs/editor/editor.main"], () => {  
+              monaco.languages.register({
+                id: 'rcloud'
+              });
+            
+              this._compare_editor = monaco.editor.create(
+                $(this._compare_editor_selector)[0],  
+                {
+                  language: 'rcloud',
+                  fontSize: 11,
+                  scrollBeyondLastLine: false,
+                  minimap: {
+                    enabled: false
+                  }
+                }
+              );
 
-        // startLineNumber, endLineNumber
+              this.apply_change = this._compare_editor.addCommand(0, (ctx, args) => {
+                this._model.apply_review_change(args);
+              });
 
-        // accept
-        
-        // reject
-          // remove line(s)
+              init();
+            }); 
+          } else {
+            init();
+          }
 
-        // both
-          // remove highlighting
-          // remove codelens provider
-        
-        // deleted, added
 
-        this.updateReviewDecorations(args.diff.modifiedLineInfo);
+        } else {
+          // show just the file that's either owned or yours:
+          this._compare_tabs.hide();
+          $(this._single_editor_selector).show();
 
-        $(this._compare_diff_selector).data({
-          original: args.owned,
-          modified: args.other
-        });
+          if(!this._single_editor) {
+    
+            require(["vs/editor/editor.main"], () => {  
+              monaco.languages.register({
+                id: 'rcloud'
+              });
+            
+              this._single_editor = monaco.editor.create(
+                $(this._single_editor_selector)[0],  
+                {
+                  language: 'rcloud',
+                  fontSize: 11,
+                  scrollBeyondLastLine: false,
+                  minimap: {
+                    enabled: false
+                  },
+                  readOnly: true
+                }
+              );
 
-        this._can_dispose = true;
+              this._single_editor.setValue(
+                args.diff.owned ? args.diff.owned.content :
+                  args.diff.other.content
+              );
 
+
+            }); 
+
+
+          } else {
+            this._single_editor.setValue(
+              args.diff.owned ? args.diff.owned.content :
+                args.diff.other.content            
+            );
+          }
+
+
+        }
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -315,7 +357,7 @@ RCloud.UI.merger_view = (function(model) {
 
         // remove for reject:
         if(args.change.type == 'reject') {
-          this._editor.executeEdits('', [
+          this._compare_editor.executeEdits('', [
             { range: new monaco.Range(change.startLineNumber,0,changeEndNumber + 1,0), text: '' }
           ]);        
         }
@@ -372,7 +414,7 @@ RCloud.UI.merger_view = (function(model) {
         } 
       });
 
-      this._model.update_decorations(this._editor.deltaDecorations(this._model.get_decorations(), decorations));
+      this._model.update_decorations(this._compare_editor.deltaDecorations(this._model.get_decorations(), decorations));
 
     }
 
