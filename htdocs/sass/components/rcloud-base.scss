@@ -1011,7 +1011,7 @@ body .modal-dialog.full {
             .container { padding: 10 0; }
         }
 
-        #compare-editor {
+        #single-editor, #compare-editor {
             height: calc(100% - 55px);
         }
 
