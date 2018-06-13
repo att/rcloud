@@ -53,6 +53,7 @@ RCloud.UI.merger_view = (function(model) {
 
       this._editorTab = this._compare_stage.find('.nav-tabs a:first');
       this._compareDiffTabSelector = '#compare-diff-tab';
+      this._merge_compare_section_selector = '#merge-compare-section';
 
       this._btn_show_changes = this._dialog.find('.btn-primary.btn-primary.show-changes');
       this._inputs = [this._merge_notebook_file, this._merge_notebook_url, this._merge_notebook_id];
@@ -175,9 +176,37 @@ RCloud.UI.merger_view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_reset_complete.attach(() => {
         if(this._can_dispose) {
-          [this._editor, this._compare_diff_editor, this._single_editor].forEach(c => { if(c) { c.dispose(); }});
+
+          if(this._compare_editor) {
+            this._compare_editor.getModel().dispose();
+            this._compare_editor.dispose(); 
+            this._compare_editor = null; 
+          }
+          
+          if(this._compare_diff_editor) {
+            this._compare_diff_editor.getModel().dispose();
+            this._compare_diff_editor.dispose(); 
+            this._compare_diff_editor = null; 
+          }
+
+          if(this._single_editor) {
+            this._single_editor.getModel().dispose();
+            this._single_editor.dispose(); 
+            this._single_editor = null; 
+          }
+          //, this._compare_diff_editor, this._single_editor];
+
+          // editors.forEach((el, index) => { 
+          //   if(el) { 
+          //     editors[index].getModel().dispose();
+          //     editors[index].dispose(); 
+          //     editors[index] = null; 
+          //   }
+          // });
         }
   
+        $(this._merge_compare_section_selector).removeClass('active-comparison');
+
         this._compare_file_list.html('');
   
         $("#merge-container").children().remove();
@@ -188,8 +217,13 @@ RCloud.UI.merger_view = (function(model) {
             input.val('');
         });
 
+        [$(this._compare_editor_selector), 
+        $(this._compare_diff_selector),
+        $(this._single_editor_selector)].forEach(el => el.html(''));
+
         this._merge_notebook_details.html('');
         this._button_init.hide();
+        this._compare_tabs.hide();
         this._dialog.setMergerDialogStage(this._model._dialog_stage);
       });
 
@@ -206,8 +240,11 @@ RCloud.UI.merger_view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_diff_complete.attach((sender, args) => {
    
+        // TODO
         if(this.codelens_provider)
           this.codelens_provider.dispose();
+
+        $(this._merge_compare_section_selector).addClass('active-comparison');
 
         if(args.diff.isChanged) {
 
