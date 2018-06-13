@@ -909,11 +909,33 @@ body .modal-dialog.full {
         #merge-compare-section {
             display: block;
             height: calc(100% - 212px);
+
+            #compare-file-list {
+                width: 98%;
+            }
+
+            #compare-stage {
+                width: 0;
+            }
+
+            #compare-file-list, #compare-stage {
+                -webkit-transition: width 0.5s;
+                transition: width 0.5s;
+            }
+
+            &.active-comparison {
+                #compare-file-list {
+                    width: 20%;
+                }
+    
+                #compare-stage {
+                    width: 78%;
+                }
+            }
         }
 
         #compare-file-list {
             float: left;
-            width: 20%;
             max-height: calc(100% - 55px);
             overflow-y: auto;
 
