@@ -1,10 +1,21 @@
 ## RCloud 2.0
 
 ### Features
+ * Upgrade from IPython to Jupyter, and support for arbitrary Jupyter language
+   kernels. See the
+   [rcloud.jupyter](https://github.com/att/rcloud/tree/develop/rcloud.packages/rcloud.jupyter)
+   package for configuration details (#1378, #1334, #2565)
+ * Support for Shiny in flexdashboard (rcloud.flexdashboard#20)
 
 ### Improvements
+ * Performance improvements to notebook output. Notebook autoscrolling now works
+   reliably and is enabled by default. Disable in Settings pane if you don't like
+   it. (#2551, #2552)
+ * Visual and functional improvements to Dataframe viewer panel. Tighter layout,
+   sticky headers, control over paging size. (#2554)
 
 ### Bugfixes
+ * Assets are maintained in sorted order (#388)
 
 
 ## RCloud 1.9.1
