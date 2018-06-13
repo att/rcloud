@@ -205,15 +205,15 @@ RCloud.UI.merger_view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_diff_complete.attach((sender, args) => {
+   
+        if(this.codelens_provider)
+          this.codelens_provider.dispose();
 
         if(args.diff.isChanged) {
 
           let init = () => {
             $(this._compare_editor_selector).show();
             this._compare_editor.setValue(args.diff.content);
-    
-            if(this.codelens_provider)
-              this.codelens_provider.dispose();
       
             this.updateReviewDecorations(args.diff.modifiedLineInfo);
     
