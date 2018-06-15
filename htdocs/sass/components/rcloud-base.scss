@@ -918,10 +918,10 @@ body .modal-dialog.full {
                 width: 0;
             }
 
-            #compare-file-list, #compare-stage {
-                -webkit-transition: width 0.5s;
-                transition: width 0.5s;
-            }
+            // #compare-file-list, #compare-stage {
+            //     -webkit-transition: width 0.4s;
+            //     transition: width 0.4s;
+            // }
 
             &.active-comparison {
                 #compare-file-list {
