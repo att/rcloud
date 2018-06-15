@@ -8,7 +8,6 @@ RCloud.UI.merger_view = (function(model) {
     }; 
   })( jQuery );
 
-
   const merger_view = class {
     constructor(model) {
       this._model = model;
@@ -20,7 +19,16 @@ RCloud.UI.merger_view = (function(model) {
         file_list: _.template($('#compare-file-list-snippet').html())
       };
 
-      $("body").append(template({}));
+      this.transitionTimeSeconds = 0.4;
+
+      this.setTransitionTimeout = (func) => {
+        setTimeout(func, (this.transitionTimeout * 1000) + 200);
+      }
+
+      $("body").append(template({
+        transitionTimeSeconds: this.transitionTimeSeconds
+      }));
+
       this._dialog = $("#merger-dialog");
       this._merge_source = $('#merge-changes-by');
       this._merge_notebook_file = $('#merge-notebook-file');
@@ -113,11 +121,11 @@ RCloud.UI.merger_view = (function(model) {
             });
           }); 
         } else {
-          if(this._compare_diff_editor) {
-            this._compare_diff_editor.dispose();
-            this._compare_diff_editor = null;
-            $(this._compare_diff_selector).html('');
-          }
+          // if(this._compare_diff_editor) {
+          //   this._compare_diff_editor.dispose();
+          //   this._compare_diff_editor = null;
+          //   $(this._compare_diff_selector).html('');
+          // }
         }
       });
 
@@ -143,7 +151,7 @@ RCloud.UI.merger_view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_set_stage.attach((sender, args) => {
-        if(args.stage == this._model.DialogStage.INIT) {
+        if(args.stage == this._modealogStage.INIT) {
           this.reset_getting_changes_state();
           this._merge_notebook_details.html('');
           this._button_init.hide();
@@ -177,24 +185,15 @@ RCloud.UI.merger_view = (function(model) {
       this._model.on_reset_complete.attach(() => {
         if(this._can_dispose) {
 
-          if(this._compare_editor) {
-            this._compare_editor.getModel().dispose();
-            this._compare_editor.dispose(); 
-            this._compare_editor = null; 
-          }
-          
-          if(this._compare_diff_editor) {
-            this._compare_diff_editor.getModel().dispose();
-            this._compare_diff_editor.dispose(); 
-            this._compare_diff_editor = null; 
-          }
-
-          if(this._single_editor) {
-            this._single_editor.getModel().dispose();
-            this._single_editor.dispose(); 
-            this._single_editor = null; 
-          }
-          //, this._compare_diff_editor, this._single_editor];
+          // if(this._compare_editor) {
+          //   this._compare_editor.dispose();
+          // }
+          // if(this._compare_diff_editor) {
+          //   this._compare_diff_editor.dispose();
+          // }
+          // if(this._single_editor) {
+          //   this._single_editor.dispose();
+          // }
 
           // editors.forEach((el, index) => { 
           //   if(el) { 
@@ -204,22 +203,25 @@ RCloud.UI.merger_view = (function(model) {
           //   }
           // });
         }
+
+        // clear it:
+        this._compare_editor && this._compare_editor.setModel(null);
+        this._compare_diff_editor && this._compare_diff_editor.setModel(null);
+        this._single_editor && this._single_editor.setModel(null);
   
         $(this._merge_compare_section_selector).removeClass('active-comparison');
 
         this._compare_file_list.html('');
-  
-        $("#merge-container").children().remove();
-  
+    
         this.reset_getting_changes_state();
   
         this._inputs.forEach((input) => {
             input.val('');
         });
 
-        [$(this._compare_editor_selector), 
-        $(this._compare_diff_selector),
-        $(this._single_editor_selector)].forEach(el => el.html(''));
+        // [$(this._compare_editor_selector), 
+        // $(this._compare_diff_selector),
+        // $(this._single_editor_selector)].forEach(el => el.html(''));
 
         this._merge_notebook_details.html('');
         this._button_init.hide();
@@ -248,9 +250,16 @@ RCloud.UI.merger_view = (function(model) {
 
         if(args.diff.isChanged) {
 
+          $(this._single_editor_selector).hide();
+          this._compare_tabs.show();
+          this._editorTab.tab('show');
+          $(this._compare_editor_selector).show();
+
           let init = () => {
-            $(this._compare_editor_selector).show();
-            this._compare_editor.setValue(args.diff.content);
+
+            this._compare_editor.setModel(
+              monaco.editor.createModel(args.diff.content)
+            );
       
             this.updateReviewDecorations(args.diff.modifiedLineInfo);
     
@@ -262,13 +271,7 @@ RCloud.UI.merger_view = (function(model) {
             this._can_dispose = true;
           };
 
-          this._compare_tabs.show();
-          $(this._single_editor_selector).hide();
-          this._editorTab.tab('show');
-
-          if(!this._compare_editor) {
-            this._editorTab.tab('show');
-    
+          if(!this._compare_editor) {    
             require(["vs/editor/editor.main"], () => {  
               monaco.languages.register({
                 id: 'rcloud'
@@ -290,20 +293,26 @@ RCloud.UI.merger_view = (function(model) {
                 this._model.apply_review_change(args);
               });
 
-              init();
+              this.setTransitionTimeout(init);
             }); 
           } else {
-            init();
+            this.setTransitionTimeout(init);
           }
 
 
         } else {
-          // show just the file that's either owned or yours:
+          // show just the file that's either owned or other:
           this._compare_tabs.hide();
           $(this._single_editor_selector).show();
 
+          let init = () => {
+            this._single_editor.setModel(
+              monaco.editor.createModel(args.diff.owned ? args.diff.owned.content :
+                args.diff.other.content)
+            );
+          }
+
           if(!this._single_editor) {
-    
             require(["vs/editor/editor.main"], () => {  
               monaco.languages.register({
                 id: 'rcloud'
@@ -322,23 +331,11 @@ RCloud.UI.merger_view = (function(model) {
                 }
               );
 
-              this._single_editor.setValue(
-                args.diff.owned ? args.diff.owned.content :
-                  args.diff.other.content
-              );
-
-
+              this.setTransitionTimeout(init);
             }); 
-
-
           } else {
-            this._single_editor.setValue(
-              args.diff.owned ? args.diff.owned.content :
-                args.diff.other.content            
-            );
+            this.setTransitionTimeout(init);
           }
-
-
         }
       });
 
