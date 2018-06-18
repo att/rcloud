@@ -242,9 +242,8 @@ RCloud.UI.merger_view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_diff_complete.attach((sender, args) => {
    
-        // TODO
-        if(this.codelens_provider)
-          this.codelens_provider.dispose();
+        if(this._codelens_provider)
+          this._codelens_provider.dispose();
 
         $(this._merge_compare_section_selector).addClass('active-comparison');
 
@@ -256,11 +255,11 @@ RCloud.UI.merger_view = (function(model) {
           $(this._compare_editor_selector).show();
 
           let init = () => {
-
-            this._compare_editor.setModel(
-              monaco.editor.createModel(args.diff.content)
+            
+            this._compare_editor.setValue(
+                args.diff.content
             );
-      
+
             this.updateReviewDecorations(args.diff.modifiedLineInfo);
     
             $(this._compare_diff_selector).data({
@@ -400,15 +399,18 @@ RCloud.UI.merger_view = (function(model) {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     updateReviewDecorations(reviewList) {
-      if(this.codelens_provider) {
-        this.codelens_provider.dispose();
+      if(this._codelens_provider) {
+        this._codelens_provider.dispose();
       }
 
-      this.codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
+      this._codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
         provideCodeLenses: (model, token) => {
             return _.flatten(_.map(reviewList, (reviewItem, index) => 
               [{
-                range: { startLineNumber: reviewItem.startLineNumber },
+                range: { 
+                  startLineNumber: reviewItem.startLineNumber,
+                  endLineNumber: reviewItem.endLineNumber
+                },
                 id: 0,
                 command: {
                     id: this.apply_change,
@@ -420,7 +422,10 @@ RCloud.UI.merger_view = (function(model) {
                     }
                 }
               }, {
-                range: { startLineNumber: reviewItem.startLineNumber },
+                range: { 
+                  startLineNumber: reviewItem.startLineNumber,
+                  endLineNumber: reviewItem.endLineNumber
+                },
                 id: 1,
                 command: {
                     id: this.apply_change,

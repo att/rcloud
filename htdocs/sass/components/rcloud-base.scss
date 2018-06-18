@@ -996,12 +996,17 @@ body .modal-dialog.full {
                 text-transform: uppercase;
 
                 span:not(.count) {
-                    background: rgb(131, 255, 131);
+                    background: #DBE6C1;
                     font-weight: bold;
                     border-radius: 13px;
                     width: 60px;
                     display: inline-block;
                     text-align: center;
+                    border: 1px solid white;
+
+                    &:hover {
+                        background: darken(#DBE6C1, 10%);
+                    }
                 }
 
                 span.count {
