@@ -1,4 +1,4 @@
-RCloud.UI.merger_view = (function(model) {
+window.RCloud.UI.merger_view = (function(model) {
 
   (function( $ ){
     $.fn.setMergerDialogStage = function(stage) {
@@ -12,8 +12,7 @@ RCloud.UI.merger_view = (function(model) {
     constructor(model) {
       this._model = model;
 
-      let that = this,
-          template = _.template($("#merger-template").html());
+      let template = _.template($("#merger-template").html());
 
       this._templates = {
         file_list: _.template($('#compare-file-list-snippet').html())
@@ -173,7 +172,7 @@ RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_getting_changes.attach((sender, args) => {
+      this._model.on_getting_changes.attach(() => {
         this.clear_error();
         this._btn_show_changes.text('Getting changes');
         this._dialog.setMergerDialogStage('gettingchanges');
@@ -288,7 +287,8 @@ RCloud.UI.merger_view = (function(model) {
                   scrollBeyondLastLine: false,
                   minimap: {
                     enabled: false
-                  }
+                  },
+                  glyphMargin: true
                 }
               );
 
@@ -344,15 +344,12 @@ RCloud.UI.merger_view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_file_diff_complete.attach((sender, args) => {
-        let htmlContent = '', 
-            sourceRow, 
-            isToBeAdded,
+        let sourceRow, 
             isToSpan,
             diffLoader,
             changesCell,
             changeCountSpan,
-            addSpan,
-            icons = ['icon-backward', 'icon-pause'];
+            addSpan;
 
         sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
         isToSpan = sourceRow.find('.isTo span');
@@ -367,8 +364,6 @@ RCloud.UI.merger_view = (function(model) {
         if(args.changeDetails.owned || !args.changeDetails.owned && args.changeDetails.other) {
           isToSpan.html(args.filename);
           if(!args.changeDetails.owned) {
-            // show the add arrow:
-            isToBeAdded = true;
             sourceRow.addClass('addition'); 
             addSpan.attr('title', 'This file will be added. Click to cancel.');
             addSpan.show();       
@@ -395,11 +390,11 @@ RCloud.UI.merger_view = (function(model) {
           .html('TODO');
 
         // remove for reject:
-        if(args.change.type == 'reject') {
-          this._compare_editor.executeEdits('', [
-            { range: new monaco.Range(change.startLineNumber,0,changeEndNumber + 1,0), text: '' }
-          ]);        
-        }
+        // if(args.change.type == 'reject') {
+        //   this._compare_editor.executeEdits('', [
+        //     { range: new monaco.Range(change.startLineNumber, 0, changeEndNumber + 1,0), text: '' }
+        //   ]);        
+        // }
       });
     }
 
@@ -414,8 +409,8 @@ RCloud.UI.merger_view = (function(model) {
       };
 
       this._codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
-        provideCodeLenses: (model, token) => {
-            return _.flatten(_.map(reviewList, (reviewItem, index) => 
+        provideCodeLenses: () => {
+            return _.flatten(_.map(reviewList, (reviewItem) => 
               [{
                 range: { 
                   startLineNumber: reviewItem.startLineNumber,
@@ -450,7 +445,7 @@ RCloud.UI.merger_view = (function(model) {
                 }
               }]))
         },
-        resolveCodeLens: function(model, codeLens, token) {
+        resolveCodeLens: function(model, codeLens) {
           return codeLens;
         }
       });
@@ -460,7 +455,8 @@ RCloud.UI.merger_view = (function(model) {
           range: new monaco.Range(reviewItem.startLineNumber, 1, reviewItem.endLineNumber, 1),
           options: {
             isWholeLine: true,
-            className: reviewItem.diffType
+            className: reviewItem.diffType,
+            glyphMarginClassName: reviewItem.diffType
           }
         } 
       });

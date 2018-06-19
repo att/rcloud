@@ -118,7 +118,7 @@ RCloud.UI.merger_model = (function() {
           }}).value();
       });
 
-      info.union.files = _.uniq(_.union(info.owned.files, info.other.files), false, (item, key, type, filename) => { return item.type && item.filename; });
+      info.union.files = _.uniq(_.union(info.owned.files, info.other.files), false, (item) => { return item.type && item.filename; });
 
       return info;
     }
@@ -152,7 +152,7 @@ RCloud.UI.merger_model = (function() {
         return rcloud.get_notebook(id);
       };
 
-      var get_notebook_func, notebook;
+      var get_notebook_func;
 
       this.on_getting_changes.notify();
       
@@ -160,8 +160,8 @@ RCloud.UI.merger_model = (function() {
         get_notebook_func = get_notebook_by_id;
       } else if(this._merge_source === 'file') {
           get_notebook_func = () => {
-            if(notebook_from_file_) {
-              return Promise.resolve(notebook_from_file_);
+            if(this._notebook_from_file) {
+              return Promise.resolve(this._notebook_from_file);
             } else {
               return Promise.reject(new Error('No file to upload'));
             }
@@ -195,7 +195,6 @@ RCloud.UI.merger_model = (function() {
           message = this._not_found_notebook_error;
         } else {
           message = e.message;
-          console.error(e);
         }
 
         this.on_get_changes_error.notify({
