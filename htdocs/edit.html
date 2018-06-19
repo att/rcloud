@@ -360,6 +360,7 @@
   <table>
     <thead>
       <tr>
+        <th></th>
         <th>Yours</th>
         <th></th>
         <th>Theirs</th>
@@ -368,6 +369,13 @@
     <tbody>
       <% _.each(files, function(file) { %>
       <tr data-filetype="<%=file.type%>" data-filename="<%=file.filename%>">
+        <td class="type">
+          <% if(file.type === 'asset') { %>
+            <i class="icon-file" title="Asset"></i>
+          <% } else if(file.type === 'part') { %>
+            <i class="icon-file-text" title="Notebook part"></i>
+          <% } %>
+        </td>
         <td class="isto"><span></span></td>
         <td class="changes">
           <img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" class="diffLoader" />
