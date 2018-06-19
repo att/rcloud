@@ -1031,6 +1031,15 @@ body .modal-dialog.full {
                 td.isto /*, td.changes*/ {
                     opacity: 0.1;
                 }
+                td.changes {
+                    .add {
+                        background: #FFA3A3;
+
+                        &:hover {
+                            background: darken(#FFA3A3, 10%);
+                        }
+                    }
+                }
             }
         }
 
