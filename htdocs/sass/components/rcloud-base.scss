@@ -1005,6 +1005,10 @@ body .modal-dialog.full {
                     margin-left: 5px;
                 }
 
+                span {
+                    cursor: help;
+                }
+
                 .icon-indent-left {
                     font-weight: normal;
                 }
@@ -1016,8 +1020,8 @@ body .modal-dialog.full {
             }
 
             tr.excluded {
-                td.isto, td.changes {
-                    opacity: 0.3;
+                td.isto /*, td.changes*/ {
+                    opacity: 0.1;
                 }
             }
         }

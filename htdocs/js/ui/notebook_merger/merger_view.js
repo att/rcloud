@@ -105,7 +105,11 @@ RCloud.UI.merger_view = (function(model) {
 
       $(this._dialog).on('click', 'tbody .add', (event) => {
         // TODO: raise event to exclude this file from coming in:
-        $(event.currentTarget).closest('tr').toggleClass('excluded');
+        const row = $(event.currentTarget).closest('tr');
+        row.toggleClass('excluded');
+
+        $(event.currentTarget).attr('title', row.hasClass('excluded') ? 
+          'This file will not be added. Click to add.' : 'This file will be added. Click to cancel.');
       });
 
       $(this._dialog).on('shown.bs.tab', 'a[data-toggle="tab"]', (e) => {
@@ -366,6 +370,7 @@ RCloud.UI.merger_view = (function(model) {
             // show the add arrow:
             isToBeAdded = true;
             sourceRow.addClass('addition'); 
+            addSpan.attr('title', 'This file will be added. Click to cancel.');
             addSpan.show();       
           }
         }
@@ -373,6 +378,7 @@ RCloud.UI.merger_view = (function(model) {
         // changed, so show changed details:
         if(args.changeDetails.isChanged) {
           changeCountSpan.find('span').html(args.changeDetails.changeCount);
+          changeCountSpan.attr('title', `This file has ${args.changeDetails.changeCount} change${args.changeDetails.changeCount > 1 ? 's': ''}`)
           changeCountSpan.show();
         }
 
@@ -403,6 +409,10 @@ RCloud.UI.merger_view = (function(model) {
         this._codelens_provider.dispose();
       }
 
+      const getCodeLensTitle = (diffType, action) => {
+        return `${action} ${diffType == 'removed' ? 'removed' : 'added'} content`;
+      };
+
       this._codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
         provideCodeLenses: (model, token) => {
             return _.flatten(_.map(reviewList, (reviewItem, index) => 
@@ -414,10 +424,11 @@ RCloud.UI.merger_view = (function(model) {
                 id: 0,
                 command: {
                     id: this.apply_change,
-                    title: 'Accept',
+                    title: getCodeLensTitle(reviewItem.diffType, 'Accept'),
                     arguments: {
                       startLineNumber: reviewItem.startLineNumber,
                       endLineNumber: reviewItem.endLineNumber,
+                      diffType: reviewItem.diffType,
                       type: 'approve'
                     }
                 }
@@ -429,10 +440,11 @@ RCloud.UI.merger_view = (function(model) {
                 id: 1,
                 command: {
                     id: this.apply_change,
-                    title: 'Reject',
+                    title: getCodeLensTitle(reviewItem.diffType, 'Reject'),
                     arguments: {
                       startLineNumber: reviewItem.startLineNumber,
                       endLineNumber: reviewItem.endLineNumber,
+                      diffType: reviewItem.diffType,
                       type: 'reject'
                     }
                 }
