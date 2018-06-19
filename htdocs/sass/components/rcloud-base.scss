@@ -337,9 +337,11 @@ td {
 
         &:-webkit-autofill {
             -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+            box-shadow: 0 0 0px 1000px #fff inset;
 
             &:hover,&:focus {
                 -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+                box-shadow: 0 0 0px 1000px #fff inset;
             }
         }
     }
@@ -522,10 +524,6 @@ td {
 .navbar-nav>li>a {
     padding-top: 15px;
     padding-bottom: 15px;
-}
-
-.edit-code.inactive .hljs {
-    /*word-break: break-all;*/
 }
 
 /*recent notebooks*/
@@ -716,6 +714,7 @@ body .modal-dialog.full {
 
         &::-webkit-scrollbar {
             -webkit-appearance: none;
+            appearance: none;
             width: 7px;
         }
 
@@ -723,6 +722,7 @@ body .modal-dialog.full {
             border-radius: 4px;
             background-color: rgba(0,0,0,.5);
             -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+            box-shadow: 0 0 1px rgba(255,255,255,.5);
         }
     }
 
@@ -749,10 +749,6 @@ body .modal-dialog.full {
             background: transparent;
             border: none;
             box-shadow: none;
-        }
-
-        .target {
-
         }
 
         table {
