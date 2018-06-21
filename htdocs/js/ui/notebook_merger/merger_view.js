@@ -103,12 +103,18 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       $(this._dialog).on('click', 'tbody .add', (event) => {
-        // TODO: raise event to exclude this file from coming in:
         const row = $(event.currentTarget).closest('tr');
         row.toggleClass('excluded');
 
-        $(event.currentTarget).attr('title', row.hasClass('excluded') ? 
-          'This file will not be added. Click to add.' : 'This file will be added. Click to cancel.');
+        let isIncluded = !row.hasClass('excluded');
+
+        this._model.setFileInclusion({
+          type: row.data('filetype'),
+          filename: row.data('filename')
+        }, isIncluded);
+
+        $(event.currentTarget).attr('title', isIncluded ? 
+          'This file will be added. Click to cancel.' : 'This file will not be added. Click to add.');
       });
 
       $(this._dialog).on('shown.bs.tab', 'a[data-toggle="tab"]', (e) => {
