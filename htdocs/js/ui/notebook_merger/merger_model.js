@@ -9,17 +9,15 @@ RCloud.UI.merger_model = (function() {
         COMPARE: 'compare'
       });
 
-      this.on_set_merge_source = new RCloud.UI.event(this);
-      this.on_set_stage = new RCloud.UI.event(this);
-      this.on_getting_changes = new RCloud.UI.event(this);
-      this.on_get_changes_error = new RCloud.UI.event(this);
-      this.on_reset_complete = new RCloud.UI.event(this);
-      this.on_file_list_complete = new RCloud.UI.event(this);
       this.on_diff_complete = new RCloud.UI.event(this);
-
       this.on_file_diff_complete = new RCloud.UI.event(this);
-
+      this.on_file_list_complete = new RCloud.UI.event(this);
+      this.on_get_changes_error = new RCloud.UI.event(this);
+      this.on_getting_changes = new RCloud.UI.event(this);
+      this.on_reset_complete = new RCloud.UI.event(this);
       this.on_review_change = new RCloud.UI.event(this);
+      this.on_set_stage = new RCloud.UI.event(this);
+      this.on_set_merge_source = new RCloud.UI.event(this);
 
       this._dialog_stage = this.DialogStage.INIT;
       this._merge_source;
@@ -37,6 +35,8 @@ RCloud.UI.merger_model = (function() {
       this._other_notebook_description = undefined;
 
       this._currentFile = undefined;
+
+      this._notebook_result = undefined;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,6 +70,7 @@ RCloud.UI.merger_model = (function() {
     reset() {
       this._merge_source = 'url';
       this._notebook_from_file = undefined;
+      this._notebook_result = undefined;
       this._dialog_stage = this.DialogStage.INIT;
       this.on_reset_complete.notify();
     }
@@ -84,7 +85,6 @@ RCloud.UI.merger_model = (function() {
         type: merge_source  
       });
     }
-
     
     prepare_notebook_for_comparison(notebook) {
       notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
@@ -103,15 +103,15 @@ RCloud.UI.merger_model = (function() {
         'other': {},
         'union': {}
       },
-          notebooks_for_compare = {
-            'owned': shell.notebook.model.controller.current_gist(),
-            'other': other_notebook
-          };
+      notebooks_for_compare = {
+        'owned': shell.notebook.model.controller.current_gist(),
+        'other': other_notebook
+      };
 
       _.each(Object.keys(notebooks_for_compare), (source) => {
         info[source].files = _.chain(RCloud.utils.clean_r(notebooks_for_compare[source].files))
           .values().map(f => { return { 
-            isBinary: f.content.r_type,
+            isBinary: f.content.hasOwnProperty('r_type'),
             type: Notebook.is_part_name(f.filename) ? 'part' : 'asset',
             filename: f.filename,
             content: f.content
@@ -250,6 +250,7 @@ RCloud.UI.merger_model = (function() {
       };
 
       this._dialog_stage = this.DialogStage.COMPARE;
+
       this.on_file_list_complete.notify({
         files: this._comparison.union.files.filter(f => !f.isBinary)
           .sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true, /*sensitivity: 'base'*/}))
@@ -266,6 +267,19 @@ RCloud.UI.merger_model = (function() {
           changeDetails: file.changeDetails
         });
       });
+
+      // create resulting notebook files:
+      this._notebook_result = {
+        files: []
+      }
+
+      _.each(this._comparison.union.files, (file) => {
+        this._notebook_result.files.push(
+          Object.assign({}, file, {})
+        );
+      });
+
+      ///////////////////////////////////
     }
 
     update_stage(stage) {
