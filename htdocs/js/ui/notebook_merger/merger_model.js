@@ -282,6 +282,10 @@ RCloud.UI.merger_model = (function() {
       ///////////////////////////////////
     }
 
+    setFileInclusion(file, include) {
+      _.findWhere(this._notebook_result.files, file).include = include;
+    }
+
     update_stage(stage) {
       this._dialog_stage_ = stage;
 
