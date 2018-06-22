@@ -392,15 +392,10 @@ window.RCloud.UI.merger_view = (function(model) {
       this._model.on_review_change.attach((sender, args) => {
         this.updateReviewDecorations(args.reviewList);
 
-        this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"] .changes span`)
-          .html('TODO');
-
-        // remove for reject:
-        // if(args.change.type == 'reject') {
-        //   this._compare_editor.executeEdits('', [
-        //     { range: new monaco.Range(change.startLineNumber, 0, changeEndNumber + 1,0), text: '' }
-        //   ]);        
-        // }
+        this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"] .changecount span`)
+          .html(
+            args.reviewList.length - _.filter(args.reviewList, item => item.isRejected).length
+          );
       });
     }
 
@@ -410,62 +405,56 @@ window.RCloud.UI.merger_view = (function(model) {
         this._codelens_provider.dispose();
       }
 
-      const getCodeLensTitle = (diffType, action) => {
-        return `${action} ${diffType == 'removed' ? 'removed' : 'added'} content`;
+      const getCodeLensTitle = (diffType, isRejected) => {
+
+        if(diffType == 'added') {
+          return isRejected ? 'Add content' : 'Ignore added content';
+        } else {
+          return isRejected ? 'Delete content' : 'Keep deleted content'; 
+        }
       };
+
+      console.log('review list: ', reviewList);
 
       this._codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
         provideCodeLenses: () => {
-            return _.flatten(_.map(reviewList, (reviewItem) => 
-              [{
-                range: { 
+            return _.map(reviewList, (reviewItem, key) => {
+              return {
+                range: {
                   startLineNumber: reviewItem.startLineNumber,
                   endLineNumber: reviewItem.endLineNumber
-                },
-                id: 0,
+                }, 
+                id: key,
                 command: {
-                    id: this.apply_change,
-                    title: getCodeLensTitle(reviewItem.diffType, 'Accept'),
-                    arguments: {
-                      startLineNumber: reviewItem.startLineNumber,
-                      endLineNumber: reviewItem.endLineNumber,
-                      diffType: reviewItem.diffType,
-                      type: 'approve'
-                    }
+                  id: this.apply_change,
+                  title: getCodeLensTitle(reviewItem.diffType, reviewItem.isRejected),
+                  arguments: {
+                    startLineNumber: reviewItem.startLineNumber,
+                    endLineNumber: reviewItem.endLineNumber,
+                    diffType: reviewItem.diffType
+                  }
                 }
-              }, {
-                range: { 
-                  startLineNumber: reviewItem.startLineNumber,
-                  endLineNumber: reviewItem.endLineNumber
-                },
-                id: 1,
-                command: {
-                    id: this.apply_change,
-                    title: getCodeLensTitle(reviewItem.diffType, 'Reject'),
-                    arguments: {
-                      startLineNumber: reviewItem.startLineNumber,
-                      endLineNumber: reviewItem.endLineNumber,
-                      diffType: reviewItem.diffType,
-                      type: 'reject'
-                    }
-                }
-              }]))
+              };
+            }); 
         },
-        resolveCodeLens: function(model, codeLens) {
+        resolveCodeLens: (model, codeLens) => {
           return codeLens;
         }
       });
 
-      let decorations = _.map(reviewList, reviewItem => {
+      // get the current decorations (needed for update, below):
+      let decorations = _.chain(reviewList).map(reviewItem => {
         return {
           range: new monaco.Range(reviewItem.startLineNumber, 1, reviewItem.endLineNumber, 1),
           options: {
             isWholeLine: true,
-            className: reviewItem.diffType,
+            // rejected items should not have a class name, but they should
+            // retain their glyph margin class:
+            className: reviewItem.isRejected ? '' : reviewItem.diffType,
             glyphMarginClassName: reviewItem.diffType
           }
         } 
-      });
+      }).value();
 
       this._model.update_decorations(this._compare_editor.deltaDecorations(this._model.get_decorations(), decorations));
 
