@@ -66,8 +66,6 @@ window.RCloud.UI.merger_view = (function(model) {
       this._inputs = [this._merge_notebook_file, this._merge_notebook_url, this._merge_notebook_id];
       this._notebook_from_file;
 
-      this._can_dispose = false;
-
       this._comparison = null;
 
       this._codelens_provider = null;
@@ -164,7 +162,6 @@ window.RCloud.UI.merger_view = (function(model) {
           this.reset_getting_changes_state();
           this._merge_notebook_details.html('');
           this._button_init.hide();
-          this._can_dispose = false;
         }
         
         if(args.stage == this._model.DialogStage.COMPARE) {
@@ -192,26 +189,6 @@ window.RCloud.UI.merger_view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_reset_complete.attach(() => {
-        if(this._can_dispose) {
-
-          // if(this._compare_editor) {
-          //   this._compare_editor.dispose();
-          // }
-          // if(this._compare_diff_editor) {
-          //   this._compare_diff_editor.dispose();
-          // }
-          // if(this._single_editor) {
-          //   this._single_editor.dispose();
-          // }
-
-          // editors.forEach((el, index) => { 
-          //   if(el) { 
-          //     editors[index].getModel().dispose();
-          //     editors[index].dispose(); 
-          //     editors[index] = null; 
-          //   }
-          // });
-        }
 
         // clear it:
         this._compare_editor && this._compare_editor.setModel(null);
@@ -227,10 +204,6 @@ window.RCloud.UI.merger_view = (function(model) {
         this._inputs.forEach((input) => {
             input.val('');
         });
-
-        // [$(this._compare_editor_selector), 
-        // $(this._compare_diff_selector),
-        // $(this._single_editor_selector)].forEach(el => el.html(''));
 
         this._merge_notebook_details.html('');
         this._button_init.hide();
@@ -275,8 +248,6 @@ window.RCloud.UI.merger_view = (function(model) {
               original: args.owned,
               modified: args.other
             });
-    
-            this._can_dispose = true;
           };
 
           if(!this._compare_editor) {    
@@ -291,6 +262,7 @@ window.RCloud.UI.merger_view = (function(model) {
                   language: 'rcloud',
                   fontSize: 11,
                   scrollBeyondLastLine: false,
+                  readOnly: true,
                   minimap: {
                     enabled: false
                   },
