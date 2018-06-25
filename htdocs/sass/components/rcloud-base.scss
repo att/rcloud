@@ -1034,7 +1034,7 @@ body .modal-dialog.full {
                     opacity: 0.1;
                 }
                 td.changes {
-                    .add {
+                    .add, .changeCount {
                         background: #FFA3A3;
 
                         &:hover {

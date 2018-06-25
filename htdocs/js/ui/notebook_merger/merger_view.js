@@ -379,7 +379,7 @@ window.RCloud.UI.merger_view = (function(model) {
         // changed, so show changed details:
         if(args.changeDetails.isChanged) {
           changeCountSpan.find('span').html(args.changeDetails.changeCount);
-          changeCountSpan.attr('title', `This file has ${args.changeDetails.changeCount} change${args.changeDetails.changeCount > 1 ? 's': ''}`)
+          changeCountSpan.attr('title', `This file has ${args.changeDetails.changeCount} change${args.changeDetails.changeCount != 1 ? 's': ''}`);
           changeCountSpan.show();
         }
 
@@ -392,10 +392,13 @@ window.RCloud.UI.merger_view = (function(model) {
       this._model.on_review_change.attach((sender, args) => {
         this.updateReviewDecorations(args.reviewList);
 
-        this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"] .changecount span`)
-          .html(
-            args.reviewList.length - _.filter(args.reviewList, item => item.isRejected).length
-          );
+        let changeCount = args.reviewList.length - _.filter(args.reviewList, item => item.isRejected).length, 
+            sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"]`),
+            changeCountSpan = sourceRow.find('.changeCount');
+
+        changeCountSpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
+        sourceRow[changeCount ? 'removeClass' : 'addClass']('excluded');
+        changeCountSpan.find('span').html(changeCount);
       });
     }
 
@@ -414,7 +417,7 @@ window.RCloud.UI.merger_view = (function(model) {
         }
       };
 
-      console.log('review list: ', reviewList);
+      //console.log('review list: ', reviewList);
 
       this._codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
         provideCodeLenses: () => {
