@@ -409,7 +409,6 @@ window.RCloud.UI.merger_view = (function(model) {
       }
 
       const getCodeLensTitle = (diffType, isRejected) => {
-
         if(diffType == 'added') {
           return isRejected ? 'Add content' : 'Ignore added content';
         } else {

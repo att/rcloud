@@ -206,11 +206,13 @@ RCloud.UI.merger_model = (function() {
     apply_review_change(change) {
 
       // find index:
-      let diff_item = _.findWhere(this._diff_list, diff => diff.startLineNumber == change.startLineNumber && 
-        diff.endLineNumber == change.endLineNumber);
+      let diff_item = _.findWhere(this._diff_list, { 
+        startLineNumber: change.startLineNumber,
+        endLineNumber: change.endLineNumber
+      });
 
       diff_item.isRejected = !diff_item.isRejected;
-
+        
       // 
       this.on_review_change.notify({
         reviewList: this._diff_list,
