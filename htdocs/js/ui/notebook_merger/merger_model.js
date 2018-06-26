@@ -251,7 +251,7 @@ RCloud.UI.merger_model = (function() {
       this._dialog_stage = this.DialogStage.COMPARE;
 
       this.on_file_list_complete.notify({
-        files: this._comparison.union.files.filter(f => !f.isBinary)
+        files: this._comparison.union.files/*.filter(f => !f.isBinary)*/
           .sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true}))
       });
 

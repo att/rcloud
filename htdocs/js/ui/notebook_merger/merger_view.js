@@ -95,7 +95,7 @@ window.RCloud.UI.merger_view = (function(model) {
         this.clear();
       });
 
-      $(this._dialog).on('click', 'tbody tr' /*'tbody tr:not(.selected)'*/, (event) => {
+      $(this._dialog).on('click', 'tbody tr:not(.binary)' /*'tbody tr:not(.selected)'*/, (event) => {
         $(event.currentTarget).closest('table').find('tr').removeClass('selected');  
         $(event.currentTarget).addClass('selected');
 
@@ -217,7 +217,7 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_file_list_complete.attach((sender, args) => {
+      this._model.on_file_list_complete.attach(({}, args) => {
 
         this._dialog.setMergerDialogStage(this._model._dialog_stage);
 
@@ -227,7 +227,7 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_diff_complete.attach((sender, args) => {
+      this._model.on_diff_complete.attach(({}, args) => {
    
         if(this._codelens_provider)
           this._codelens_provider.dispose();
@@ -326,7 +326,7 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_file_diff_complete.attach((sender, args) => {
+      this._model.on_file_diff_complete.attach(({}, args) => {
         let sourceRow, 
             isToSpan,
             diffLoader,
@@ -366,7 +366,7 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_review_change.attach((sender, args) => {
+      this._model.on_review_change.attach(({}, args) => {
         this.updateReviewDecorations(args.reviewList);
 
         let changeCount = args.reviewList.length - _.filter(args.reviewList, item => item.isRejected).length, 
