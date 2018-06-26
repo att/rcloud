@@ -62,7 +62,8 @@ window.RCloud.UI.merger_view = (function(model) {
       this._compareDiffTabSelector = '#compare-diff-tab';
       this._merge_compare_section_selector = '#merge-compare-section';
 
-      this._btn_show_changes = this._dialog.find('.btn-primary.btn-primary.show-changes');
+      this._button_show_changes = this._dialog.find('.btn-primary.btn-primary.show-changes');
+      this._button_merge = this._dialog.find('.btn-merge');
       this._inputs = [this._merge_notebook_file, this._merge_notebook_url, this._merge_notebook_id];
       this._notebook_from_file;
 
@@ -74,8 +75,12 @@ window.RCloud.UI.merger_view = (function(model) {
       //
       //
       //
-      this._btn_show_changes.click(() => {
+      this._button_show_changes.click(() => {
         this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
+      });
+
+      this._button_merge.click(() => {
+        console.log(this._model.getMergedDetails());
       });
 
       this._button_init.click(() => {
@@ -177,13 +182,13 @@ window.RCloud.UI.merger_view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_getting_changes.attach(() => {
         this.clear_error();
-        this._btn_show_changes.text('Getting changes');
+        this._button_show_changes.text('Getting changes');
         this._dialog.setMergerDialogStage('gettingchanges');
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_get_changes_error.attach((sender, args) => {
-        this._btn_show_changes.text('Show changes');
+        this._button_show_changes.text('Show changes');
         this.show_error(args.message);
       });
 
@@ -451,7 +456,7 @@ window.RCloud.UI.merger_view = (function(model) {
     }
 
     reset_getting_changes_state() {
-      this._btn_show_changes.text('Show changes');
+      this._button_show_changes.text('Show changes');
     }
 
     clear() {

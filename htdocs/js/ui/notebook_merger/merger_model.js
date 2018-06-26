@@ -36,7 +36,7 @@ RCloud.UI.merger_model = (function() {
 
       this._currentFile = undefined;
 
-      this._notebook_result = undefined;
+      //this._notebook_result = undefined;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ RCloud.UI.merger_model = (function() {
     reset() {
       this._merge_source = 'url';
       this._notebook_from_file = undefined;
-      this._notebook_result = undefined;
+      //this._notebook_result = undefined;
       this._dialog_stage = this.DialogStage.INIT;
       this.on_reset_complete.notify();
     }
@@ -205,15 +205,14 @@ RCloud.UI.merger_model = (function() {
 
     apply_review_change(change) {
 
-      // find index:
-      let diff_item = _.findWhere(this._diff_list, { 
-        startLineNumber: change.startLineNumber,
-        endLineNumber: change.endLineNumber
-      });
+      let fileModified = _.findWhere(this._comparison.union.files, this._currentFile),
+          fileChange = _.findWhere(fileModified.changeDetails.modifiedLineInfo, {
+            startLineNumber: change.startLineNumber,
+            endLineNumber: change.endLineNumber
+          });
 
-      diff_item.isRejected = !diff_item.isRejected;
+      fileChange.isRejected = !fileChange.isRejected;
         
-      // 
       this.on_review_change.notify({
         reviewList: this._diff_list,
         change: change,
@@ -246,7 +245,6 @@ RCloud.UI.merger_model = (function() {
               owned = _.findWhere(this._comparison.owned.files, where),
               other = _.findWhere(this._comparison.other.files, where);
 
-
         return this._diff_engine.get_diff_info(owned, other);
       };
 
@@ -254,7 +252,7 @@ RCloud.UI.merger_model = (function() {
 
       this.on_file_list_complete.notify({
         files: this._comparison.union.files.filter(f => !f.isBinary)
-          .sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true, /*sensitivity: 'base'*/}))
+          .sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true}))
       });
 
       _.each(this._comparison.union.files, (file) => {
@@ -270,21 +268,32 @@ RCloud.UI.merger_model = (function() {
       });
 
       // create resulting notebook files:
-      this._notebook_result = {
-        files: []
-      }
+      // this._notebook_result = {
+      //   files: []
+      // }
 
-      _.each(this._comparison.union.files, (file) => {
-        this._notebook_result.files.push(
-          Object.assign({}, file, {})
-        );
-      });
+      // _.each(this._comparison.union.files, (file) => {
+      //   this._notebook_result.files.push(
+      //     Object.assign({}, file, {})
+      //   );
+      // });
 
       ///////////////////////////////////
     }
 
     setFileInclusion(file, include) {
-      _.findWhere(this._notebook_result.files, file).include = include;
+      _.findWhere(this._comparison.union.files, file).include = include;
+    }
+
+    getMergedDetails() {
+      return _.chain(this._comparison.union.files)
+              .filter(f => (f.hasOwnProperty('include') && f.include) || !f.hasOwnProperty('include'))
+              .map(f => ({
+                type: f.type,
+                filename: f.filename,
+                content: this._diff_engine.getResolvedContent(f)
+              }))
+              .value();
     }
 
     update_stage(stage) {

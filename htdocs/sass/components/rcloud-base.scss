@@ -885,6 +885,10 @@ body .modal-dialog.full {
         margin-left: 5px;
     }
 
+    .btn-merge {
+        display: none;
+    }
+
     &.stage-compare {
         .modal-dialog {
             width: 98%;
@@ -900,6 +904,10 @@ body .modal-dialog.full {
         .show-changes,
         #merge-init-section {
             display: none;
+        }
+
+        .btn-merge {
+            display: inline-block;
         }
 
         #merge-compare-section {
