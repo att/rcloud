@@ -14,19 +14,42 @@ RCloud.UI.merging = (function() {
     MODIFIED: 'changed'
   });
 
-  const ChangedTypeDescription = Object.freeze({
-    [ChangeType.NEWFILE]: 'Only in yours', 
-    [ChangeType.DELETEDFILE]: 'Not found in other',
-    [ChangeType.BINARY]: 'Binary',
-    [ChangeType.IDENTICAL]: 'Identical',
-    [ChangeType.MODIFIED]: 'Different'
-  });
-
   const diff_engine = class {
     constructor() {
       require(["diff.min"], diff => {
         this.engine_ = diff;
       });
+    }
+    getResolvedContent(file) {
+
+      if(file.isBinary) {
+        return file.content;
+      } else {
+        // deleted means that this file only exists in your notebook:
+        // TODO: change identifier because it's misleading:
+        if([ChangeType.DELETEDFILE, ChangeType.NEWFILE].indexOf(file.changeDetails.fileChangeType) != -1) {
+          return file.content;
+        } else {
+          // diffs:
+          let { diffs, lineInfo } = file.changeDetails,
+              acceptedChanges = _.filter(lineInfo, li => li.diffType != ChangeType.IDENTICAL && !li.isRejected),
+              resolved = [];
+
+          if(!acceptedChanges) {
+            return file.content;
+          } else {
+            _.each(lineInfo, (li, index) => {
+              if(li.diffType == 'removed' && li.isRejected || 
+                 li.diffType == 'added' && !li.isRejected ||
+                 li.diffType == 'nochange') {
+                resolved.push(diffs[index].value);
+              }
+            });
+      
+            return resolved.join('\n');
+          }
+        }
+      }
     }
     get_diff_info(owned, other) {
 
@@ -55,7 +78,7 @@ RCloud.UI.merging = (function() {
 
       const diffs = this.engine_.diffLines(getContent(owned), getContent(other)),
             getDiffType = obj => {
-              if(obj.added) { // optimisation here?
+              if(obj.added) {
                 return DiffType.ADDED;
               } else if(obj.removed) {
                 return DiffType.REMOVED;
@@ -77,15 +100,15 @@ RCloud.UI.merging = (function() {
 
       return {
         fileChangeType,
-        get fileChangeTypeDescription() { return ChangedTypeDescription[this.fileChangeType] },
+        diffs,
         content: _.pluck(diffs, 'value').join(''),
         lineInfo,
         modifiedLineInfo: _.filter(lineInfo, li => li.diffType !== DiffType.NOCHANGE),
         get changeCount() { return this.modifiedLineInfo.length; },
-        get isChanged() { return this.fileChangeType == ChangeType.MODIFIED; } ,
+        get isChanged() { return this.fileChangeType == ChangeType.MODIFIED; },
         owned,
         other,
-        get isNewOrDeleted() { return [ChangeType.NEWFILE, ChangeType.DELETEDFILE].indexOf(this.fileChangeType) != -1; }
+        get isNewOrDeleted() { return [ChangeType.NEWFILE, ChangeType.DELETEDFILE].indexOf(this.fileChangeType) != -1; },
       }
     }
   }
