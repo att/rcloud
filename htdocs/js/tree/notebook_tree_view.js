@@ -9,7 +9,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.tree_controls_root_selector = '#tree-controls';
         this.$sort_order_select_ = $('#tree_sort_order');
         this.date_filter_ = new RCloud.UI.date_filter('#tree-filter-by');
-        
+
         this.on_notebook_open = new RCloud.UI.event(this);
 
         var view_obj = this;
@@ -17,14 +17,14 @@ RCloud.UI.notebook_tree_view = (function(model) {
         var append_node = function(parent) {
             if (parent && parent.children) {
                 _.each(parent.children, function(child) {
-                    view_obj.$tree_.tree('appendNode', child, view_obj.$tree_.tree('getNodeById', parent.id));                    
+                    view_obj.$tree_.tree('appendNode', child, view_obj.$tree_.tree('getNodeById', parent.id));
                     append_node(child);
                 });
             }
         };
 
         // attach view component listeners:
-        this.date_filter_.on_change.attach(function(sender, args) { 
+        this.date_filter_.on_change.attach(function(sender, args) {
             view_obj.model_.update_filter(args);
         });
 
@@ -41,7 +41,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 var settingValue = args[settingKey];
 
                 if(settingValue != null) {
-                    $(this).val(settingValue);                 
+                    $(this).val(settingValue);
                 }
             });
         });
@@ -115,12 +115,12 @@ RCloud.UI.notebook_tree_view = (function(model) {
         });
 
         this.model_.on_load_by_user.attach(function(sender, args) {
-            
-            var root = view_obj.$tree_.tree('getNodeById', args.pid);  
+
+            var root = view_obj.$tree_.tree('getNodeById', args.pid);
             view_obj.$tree_.tree('loadData', args.data, root);
 
             if(args.duplicate_data) {
-                view_obj.$tree_.tree('loadData', args.duplicate_data, 
+                view_obj.$tree_.tree('loadData', args.duplicate_data,
                 view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
             }
         });
@@ -129,7 +129,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             var node = args.node;
 
             if(args.isHistorical) {
-                view_obj.$tree_.tree('openNode', 
+                view_obj.$tree_.tree('openNode',
                     view_obj.$tree_.tree('getNodeById', args.node.id));
 
                 node = view_obj.$tree_.tree('getNodeById', args.id);
@@ -162,7 +162,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.model_.on_add_node_before.attach(function(sender, args) {
             view_obj.$tree_.tree('addNodeBefore',
                 args.node_to_insert,
-                view_obj.$tree_.tree('getNodeById', args.existing_node.id)); 
+                view_obj.$tree_.tree('getNodeById', args.existing_node.id));
 
             append_node(args.node_to_insert);
         });
@@ -170,17 +170,17 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.model_.on_append_node.attach(function(sender, args) {
 
             view_obj.$tree_.tree('appendNode', args.node_to_insert, view_obj.$tree_.tree('getNodeById', args.parent_id));
-            
+
             append_node(args.node_to_insert);
         });
 
         this.model_.on_load_data.attach(function(sender, args) {
-            view_obj.$tree_.tree('loadData', args.children, 
-                view_obj.$tree_.tree('getNodeById', args.node.id));        
+            view_obj.$tree_.tree('loadData', args.children,
+                view_obj.$tree_.tree('getNodeById', args.node.id));
         });
 
         this.model_.on_update_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('updateNode', 
+            view_obj.$tree_.tree('updateNode',
                 view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
         });
 
@@ -206,7 +206,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 $(".history i", $(view_obj.$tree_.tree('getNodeById', args.node.id).element)).addClass("button-disabled");
             }
 
-            view_obj.$tree_.tree('openNode', 
+            view_obj.$tree_.tree('openNode',
                 view_obj.$tree_.tree('getNodeById', args.node.id));
         });
 
@@ -244,10 +244,10 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 this.model_.update_history(event.node.parent, false);
             } else if(event.node.gistname) {
                 if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                    this.on_notebook_open.notify({ 
-                        gistname: event.node.gistname, 
+                    this.on_notebook_open.notify({
+                        gistname: event.node.gistname,
                         version: event.node.version,
-                        source: event.node.source, 
+                        source: event.node.source,
                         selroot: true,
                         new_window: true
                     });
@@ -259,11 +259,11 @@ RCloud.UI.notebook_tree_view = (function(model) {
                         event.node.version == this.model_.get_current().version && event.node.version == null) { // deliberately null-vague here
                         this.select_node(event.node);
                     } else {
-                        this.on_notebook_open.notify({ 
+                        this.on_notebook_open.notify({
                             // gistname, version, source, selroot, new_window
-                            gistname: event.node.gistname, 
+                            gistname: event.node.gistname,
                             version: event.node.version || null,
-                            source: event.node.source, 
+                            source: event.node.source,
                             selroot: event.node.root,
                             new_window: false
                         });
@@ -371,7 +371,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             var now = new Date();
             var diff = now - date;
             return RCloud.utils.format_date_time_stamp(date, diff, true, false, this.model_.show_terse_dates());
-        }, 
+        },
 
         highlight_node: function(node) {
             var that = this;
@@ -389,7 +389,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                     }, $(node.element));
                 });
             };
-        }, 
+        },
 
         highlight_notebooks: function(notebooks) {
 
@@ -405,8 +405,8 @@ RCloud.UI.notebook_tree_view = (function(model) {
             }).reduce(function(cur, next) {
                 return cur.then(next);
             }, Promise.resolve()).then(function() {});
-        }, 
-        
+        },
+
         on_create_tree_li: function(node, $li) {
 
             var element = $li.find('.jqtree-element'),
@@ -444,7 +444,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             }
 
             if(date) {
-                date_element = $.el.span({'class': is_folder ? 'notebook-date folder' : 'notebook-date'}, 
+                date_element = $.el.span({'class': is_folder ? 'notebook-date folder' : 'notebook-date'},
                     this.display_date(date));
             }
 
@@ -453,7 +453,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             if(node.user === this.model_.username_ && (this.$tree_.tree('isNodeSelected', node) ||
                                         !node.gistname && node.full_name && node.is_open)) {
                 RCloud.UI.notebook_title.make_editable(node, $li, true);
-            }   
+            }
 
             RCloud.UI.notebook_commands.decorate($li, node, right);
 
@@ -472,7 +472,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 if(node.version) {
                     element.show();
                 } else {
-                    element.parent()[display ? 'show' : 'hide']();     
+                    element.parent()[display ? 'show' : 'hide']();
                 }
             }
         }
