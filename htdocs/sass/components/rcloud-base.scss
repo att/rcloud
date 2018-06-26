@@ -959,23 +959,21 @@ body .modal-dialog.full {
                 border-bottom: 1px solid #ccc;
                 @include no-select();
                 
-                //&.common {
-                    cursor: pointer;
+                cursor: pointer;
 
-                    &:hover {
-                        background-color: #dedede;
-                    }
+                &:hover {
+                    background-color: #dedede;
+                }
 
-                    &.selected {
-                        background-color: #efefef;
-                        cursor: default;
-                    }
-                //}
+                &.selected {
+                    background-color: #efefef;
+                    cursor: default;
+                }
+
+                &.binary {
+                    cursor: not-allowed;
+                }
             }
-
-            // th, td {
-            //     // padding: 6px;
-            // }
 
             th {
                 font-size: 11px;
