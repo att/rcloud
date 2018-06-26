@@ -1890,7 +1890,8 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                     value: opts['tree-filter-date']
                 });
 
-                this.update_sort_type(opts['tree-sort-order'], true);   
+                this.update_sort_type('name', true);   
+                //this.update_sort_type(opts['tree-sort-order'], true);   
 
                 this.on_initialise_tree.notify({ 
                     data: data
