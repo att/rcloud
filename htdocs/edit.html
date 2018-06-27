@@ -369,7 +369,8 @@
     </thead>
     <tbody>
       <% _.each(files, function(file) { %>
-      <tr data-filetype="<%=file.type%>" data-filename="<%=file.filename%>" class="<%= file.isBinary ? 'binary' : 'nonbinary' %>">
+      <tr data-filetype="<%=file.type%>" data-filename="<%=file.filename%>" class="<%= file.isBinary ? 'binary' : 'nonbinary' %>" 
+        <%= file.isBinary ? 'title="This is a binary asset and cannot be compared"' : '' %>>
         <td class="type">
           <% if(file.type === 'asset') { %>
             <i class="icon-file" title="Asset"></i>
