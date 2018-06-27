@@ -145,7 +145,7 @@ window.RCloud.UI.merger_view = (function(model) {
       //
       //
       //
-      this._model.on_set_merge_source.attach((sender, args) => {
+      this._model.on_set_merge_source.attach(({}, args) => {
         this.clear_error();
         this._merge_source.val(args.type);
 
@@ -332,21 +332,25 @@ window.RCloud.UI.merger_view = (function(model) {
             diffLoader,
             changesCell,
             changeCountSpan,
+            equalSpan,
             addSpan;
 
         sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
         isToSpan = sourceRow.find('.isTo span');
         changesCell = sourceRow.find('.changes');
         changeCountSpan = changesCell.find('.changeCount');
+        equalSpan = changesCell.find('.equal');
         addSpan = changesCell.find('.add');
         diffLoader = changesCell.find('.diffLoader');
 
         diffLoader.remove();
 
+        let { owned, other, isChanged, changeCount } = args.changeDetails;
+
         // set the changes type
-        if(args.changeDetails.owned || !args.changeDetails.owned && args.changeDetails.other) {
+        if(owned || !owned && other) {
           isToSpan.html(args.filename);
-          if(!args.changeDetails.owned) {
+          if(!owned) {
             sourceRow.addClass('addition'); 
             addSpan.attr('title', 'This file will be added. Click to cancel.');
             addSpan.show();       
@@ -354,14 +358,18 @@ window.RCloud.UI.merger_view = (function(model) {
         }
 
         // changed, so show changed details:
-        if(args.changeDetails.isChanged) {
-          changeCountSpan.find('span').html(args.changeDetails.changeCount);
-          changeCountSpan.attr('title', `This file has ${args.changeDetails.changeCount} change${args.changeDetails.changeCount != 1 ? 's': ''}`);
+        if(isChanged) {
+          changeCountSpan.find('span').html(changeCount);
+          changeCountSpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
           changeCountSpan.show();
         }
 
-        if(args.changeDetails.other) {
+        if(other) {
           sourceRow.find('.isFrom').html(args.filename);
+        }
+
+        if(owned && other && !isChanged) {
+          equalSpan.show();
         }
       });
 

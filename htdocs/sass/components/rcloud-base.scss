@@ -1011,6 +1011,15 @@ body .modal-dialog.full {
 
                 span.count {
                     margin-left: 5px;
+                }   
+
+                span.equal {
+                    padding: 5px;
+                    i {
+                        margin-left: 2px;
+                        display: inline-block;
+                        transform: rotate(90deg);
+                    }
                 }
 
                 span {
