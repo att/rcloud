@@ -114,7 +114,8 @@ RCloud.UI.merger_model = (function() {
             isBinary: f.content.hasOwnProperty('r_type'),
             type: Notebook.is_part_name(f.filename) ? 'part' : 'asset',
             filename: f.filename,
-            content: f.content
+            content: f.content,
+            language: f.language
           }}).value();
       });
 
@@ -286,12 +287,20 @@ RCloud.UI.merger_model = (function() {
     }
 
     getMergedDetails() {
+
+      let includeFile = (f) => {
+        let { modifiedLineInfo } = f.changeDetails;
+        return (f.hasOwnProperty('include') && f.include || 
+                (!f.hasOwnProperty('include') && f.isBinary) ||
+           (modifiedLineInfo.length !== _.where(modifiedLineInfo, { isRejected: true }).length))
+      }
+
       return _.chain(this._comparison.union.files)
-              .filter(f => (f.hasOwnProperty('include') && f.include) || !f.hasOwnProperty('include'))
+              .filter(f => includeFile(f))
               .map(f => ({
-                type: f.type,
                 filename: f.filename,
-                content: this._diff_engine.getResolvedContent(f)
+                language: f.isBinary ? null : f.language,
+                content: this._diff_engine.getResolvedContent(f),
               }))
               .value();
     }
