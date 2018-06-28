@@ -831,10 +831,20 @@ body .modal-dialog.full {
         }
     }
 
-    &.stage-gettingchanges {
+    &.stage-gettingchanges, &.stage-applyingchanges {
         .overlay {
             display: block;
         }
+    }
+
+    &.stage-gettingchanges {
+        .getting { display: block; }
+        .applying { display: none; }
+    }
+
+    &.stage-applyingchanges {
+        .getting { display: none; }
+        .applying { display: block; }
     }
 
     #merge-container {
@@ -1100,6 +1110,12 @@ body .modal-dialog.full {
         .row div {
             padding-left: 0;
             padding-right: 0;
+        }
+    }
+
+    &.stage-applyingchanges {
+        .modal-footer {
+            visibility: hidden;
         }
     }
 

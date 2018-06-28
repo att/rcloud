@@ -162,7 +162,7 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_set_stage.attach((sender, args) => {
+      this._model.on_set_stage.attach(({}, args) => {
         if(args.stage == this._modealogStage.INIT) {
           this.reset_getting_changes_state();
           this._merge_notebook_details.html('');
@@ -183,7 +183,7 @@ window.RCloud.UI.merger_view = (function(model) {
       this._model.on_getting_changes.attach(() => {
         this.clear_error();
         this._button_show_changes.text('Getting changes');
-        this._dialog.setMergerDialogStage('gettingchanges');
+        this._dialog.setMergerDialogStage(this._model.DialogStage.GETTINGCHANGES);
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -371,6 +371,11 @@ window.RCloud.UI.merger_view = (function(model) {
         if(owned && other && !isChanged) {
           equalSpan.show();
         }
+      });
+
+      this._model.on_merge_start.attach(() => {
+        this._button_show_changes.text('Applying changes');
+        this._dialog.setMergerDialogStage(this._model.DialogStage.APPLYINGCHANGES);
       });
 
       this._model.on_merge_complete.attach(() => {
