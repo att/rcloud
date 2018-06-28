@@ -18,6 +18,7 @@ RCloud.UI.merger_model = (function() {
       this.on_review_change = new RCloud.UI.event(this);
       this.on_set_stage = new RCloud.UI.event(this);
       this.on_set_merge_source = new RCloud.UI.event(this);
+      this.on_merge_complete = new RCloud.UI.event(this);
 
       this._dialog_stage = this.DialogStage.INIT;
       this._merge_source;
@@ -267,35 +268,33 @@ RCloud.UI.merger_model = (function() {
           changeDetails: file.changeDetails
         });
       });
-
-      // create resulting notebook files:
-      // this._notebook_result = {
-      //   files: []
-      // }
-
-      // _.each(this._comparison.union.files, (file) => {
-      //   this._notebook_result.files.push(
-      //     Object.assign({}, file, {})
-      //   );
-      // });
-
-      ///////////////////////////////////
     }
 
     setFileInclusion(file, include) {
       _.findWhere(this._comparison.union.files, file).include = include;
     }
 
-    getMergedDetails() {
+    applyMerge() {
 
       let includeFile = (f) => {
         let { modifiedLineInfo } = f.changeDetails;
-        return (f.hasOwnProperty('include') && f.include || 
-                (!f.hasOwnProperty('include') && f.isBinary) ||
-           (modifiedLineInfo.length !== _.where(modifiedLineInfo, { isRejected: true }).length))
+
+        if(f.hasOwnProperty('include')) {
+          return f.include;
+        } else if(!f.hasOwnProperty('include') && f.isBinary) {
+          return true;
+        } else if(modifiedLineInfo.length !== _.where(modifiedLineInfo, { isRejected: true }).length) {
+          return true;
+        } else {
+          return false;
+        }
+
+        // return (f.hasOwnProperty('include') && f.include || 
+        //         (!f.hasOwnProperty('include') && f.isBinary) ||
+        //    (modifiedLineInfo.length !== _.where(modifiedLineInfo, { isRejected: true }).length))
       }
 
-      return _.chain(this._comparison.union.files)
+      let changes = _.chain(this._comparison.union.files)
               .filter(f => includeFile(f))
               .map(f => ({
                 filename: f.filename,
@@ -303,6 +302,10 @@ RCloud.UI.merger_model = (function() {
                 content: this._diff_engine.getResolvedContent(f),
               }))
               .value();
+
+      editor.merge_notebook(changes).then(() => {
+        this.on_merge_complete.notify();
+      });
     }
 
     update_stage(stage) {

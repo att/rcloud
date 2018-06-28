@@ -399,6 +399,10 @@ var editor = function () {
             return shell.pull_and_replace_notebook(from_notebook)
                 .then(this.load_callback({is_change: true, selroot: true}));
         },
+        merge_notebook: function(merge_changes) {
+            return shell.merge_notebook(merge_changes)
+                .then(this.load_callback({is_change: true, selroot: true}));
+        },
         step_history_undo: function() {
             var previous_version = tree_controller_.get_previous();
 
