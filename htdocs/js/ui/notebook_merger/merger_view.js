@@ -80,7 +80,7 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       this._button_merge.click(() => {
-        console.log(this._model.getMergedDetails());
+        this._model.applyMerge();
       });
 
       this._button_init.click(() => {
@@ -371,6 +371,10 @@ window.RCloud.UI.merger_view = (function(model) {
         if(owned && other && !isChanged) {
           equalSpan.show();
         }
+      });
+
+      this._model.on_merge_complete.attach(() => {
+        this._dialog.modal('hide');
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
