@@ -6,7 +6,8 @@ RCloud.UI.merger_model = (function() {
       this.DialogStage = Object.freeze({
         INIT: 'init',
         GETTINGCHANGES: 'gettingchanges',
-        COMPARE: 'compare'
+        COMPARE: 'compare',
+        APPLYINGCHANGES: 'applyingchanges'
       });
 
       this.on_diff_complete = new RCloud.UI.event(this);
@@ -18,6 +19,7 @@ RCloud.UI.merger_model = (function() {
       this.on_review_change = new RCloud.UI.event(this);
       this.on_set_stage = new RCloud.UI.event(this);
       this.on_set_merge_source = new RCloud.UI.event(this);
+      this.on_merge_start = new RCloud.UI.event(this);
       this.on_merge_complete = new RCloud.UI.event(this);
 
       this._dialog_stage = this.DialogStage.INIT;
@@ -275,6 +277,8 @@ RCloud.UI.merger_model = (function() {
     }
 
     applyMerge() {
+
+      this.on_merge_start.notify();
 
       let includeFile = (f) => {
         let { modifiedLineInfo } = f.changeDetails;
