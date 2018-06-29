@@ -29,6 +29,8 @@ RCloud.UI.merger_model = (function() {
       this._same_notebook_error = 'You cannot merge from your current notebook; the source must be a different notebook.';
       this._invalid_notebook_id_error = 'Invalid notebook ID.';
       this._not_found_notebook_error = 'The notebook could not be found.';
+      this._no_file_to_upload = 'No file to upload';
+      this._invalid_url = 'Invalid URL';
 
       this._diff_engine = new RCloud.UI.merging.diff_engine();
 
@@ -159,9 +161,9 @@ RCloud.UI.merger_model = (function() {
 
       var get_notebook_by_id = (id) => {
         if(!Notebook.valid_gist_id(id)) {
-          return Promise.reject(new Error(this.invalid_notebook_id_error_));
+          return Promise.reject(new Error(this._invalid_notebook_id_error));
         } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
-          return Promise.reject(new Error(this.same_notebook_error_));
+          return Promise.reject(new Error(this._same_notebook_error));
         }
         return rcloud.get_notebook(id);
       };
@@ -177,14 +179,14 @@ RCloud.UI.merger_model = (function() {
             if(this._notebook_from_file) {
               return Promise.resolve(this._notebook_from_file);
             } else {
-              return Promise.reject(new Error('No file to upload'));
+              return Promise.reject(new Error(this._no_file_to_upload));
             }
           };
       } else if(this._merge_source === 'url') {
         get_notebook_func = (url) => {
           var id = RCloud.utils.get_notebook_from_url(url);
           if(!id) {
-            return Promise.reject(new Error('Invalid URL'));
+            return Promise.reject(new Error(this._invalid_url));
           } else {
             return get_notebook_by_id(id);
           }

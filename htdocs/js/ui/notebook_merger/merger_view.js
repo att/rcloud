@@ -191,7 +191,8 @@ window.RCloud.UI.merger_view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_get_changes_error.attach((sender, args) => {
+      this._model.on_get_changes_error.attach(({}, args) => {
+        this._dialog.setMergerDialogStage(this._model.DialogStage.INIT);
         this._button_show_changes.text('Show changes');
         this.show_error(args.message);
       });
