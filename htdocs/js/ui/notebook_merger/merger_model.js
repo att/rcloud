@@ -85,6 +85,19 @@ RCloud.UI.merger_model = (function() {
         type: merge_source  
       });
     }
+
+    upload_file(file) {
+      Notebook.read_from_file(file, {
+          on_load_end: () => {},
+          on_error: (message) => {
+              this._notebook_from_file = undefined;
+              show_error(message);
+          },
+          on_notebook_parsed: (read_notebook) => {
+              this._notebook_from_file = read_notebook;
+          }
+      });
+    }
     
     prepare_notebook_for_comparison(notebook) {
       notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
@@ -184,6 +197,19 @@ RCloud.UI.merger_model = (function() {
 
         // current notebook:
         rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', `${this._merge_source}:${from_notebook}`);
+
+        const binarySuffix = '.b64';
+
+        // file-based merges don't have filename property, set, for later:
+        if(!notebook.files[Object.keys(notebook.files)[0]].hasOwnProperty('filename')) {
+          Object.keys(notebook.files).forEach(f => {
+            if(f.endsWith(binarySuffix)) {
+              notebook.files[f].filename = f.substring(0, f.length - binarySuffix.length);
+            } else {
+              notebook.files[f].filename = f;
+            }
+          });
+        }
 
         this._comparison = this.get_notebooks_info(notebook);
         this.update_compare_details();

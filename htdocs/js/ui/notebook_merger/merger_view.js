@@ -65,9 +65,6 @@ window.RCloud.UI.merger_view = (function(model) {
       this._button_show_changes = this._dialog.find('.btn-primary.btn-primary.show-changes');
       this._button_merge = this._dialog.find('.btn-merge');
       this._inputs = [this._merge_notebook_file, this._merge_notebook_url, this._merge_notebook_id];
-      this._notebook_from_file;
-
-      this._comparison = null;
 
       this._codelens_provider = null;
 
@@ -89,6 +86,13 @@ window.RCloud.UI.merger_view = (function(model) {
 
       this._merge_source.change(() => {
         this._model.update_merge_source(this._merge_source.val());
+      });
+
+      this._merge_notebook_file.click(() => {
+        this.clear_error();
+        this._merge_notebook_file.val(null);
+      }).change(() => {
+        this._model.upload_file(this._merge_notebook_file[0].files[0]);
       });
 
       $(this._dialog).on('hidden.bs.modal', () => {
