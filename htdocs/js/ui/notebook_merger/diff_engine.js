@@ -26,7 +26,6 @@ RCloud.UI.merging = (function() {
         return file.content;
       } else {
         // deleted means that this file only exists in your notebook:
-        // TODO: change identifier because it's misleading:
         if([ChangeType.DELETEDFILE, ChangeType.NEWFILE].indexOf(file.changeDetails.fileChangeType) != -1) {
           return file.content;
         } else {

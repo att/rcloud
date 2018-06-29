@@ -38,8 +38,6 @@ RCloud.UI.merger_model = (function() {
       this._other_notebook_description = undefined;
 
       this._currentFile = undefined;
-
-      //this._notebook_result = undefined;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +71,6 @@ RCloud.UI.merger_model = (function() {
     reset() {
       this._merge_source = 'url';
       this._notebook_from_file = undefined;
-      //this._notebook_result = undefined;
       this._dialog_stage = this.DialogStage.INIT;
       this.on_reset_complete.notify();
     }
@@ -233,17 +230,6 @@ RCloud.UI.merger_model = (function() {
     }
 
     update_compare_details() {
-
-      // info
-        // owned
-        // other
-        // union
-
-          // files []
-            // type
-            // filename
-            // content
-
       const get_change_details = (filename, type) => {
         const where = { filename, type },
               owned = _.findWhere(this._comparison.owned.files, where),
@@ -255,7 +241,7 @@ RCloud.UI.merger_model = (function() {
       this._dialog_stage = this.DialogStage.COMPARE;
 
       this.on_file_list_complete.notify({
-        files: this._comparison.union.files/*.filter(f => !f.isBinary)*/
+        files: this._comparison.union.files
           .sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true}))
       });
 
@@ -292,10 +278,6 @@ RCloud.UI.merger_model = (function() {
         } else {
           return false;
         }
-
-        // return (f.hasOwnProperty('include') && f.include || 
-        //         (!f.hasOwnProperty('include') && f.isBinary) ||
-        //    (modifiedLineInfo.length !== _.where(modifiedLineInfo, { isRejected: true }).length))
       }
 
       let changes = _.chain(this._comparison.union.files)
@@ -322,6 +304,4 @@ RCloud.UI.merger_model = (function() {
   };
 
   return new merger_model();
-
-
 });
