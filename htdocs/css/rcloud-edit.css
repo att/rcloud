@@ -447,6 +447,9 @@ ul.jqtree-tree .jqtree-title.foreign-notebook, .foreign-notebook {
 ul.jqtree-tree .jqtree-title.jqtree_common.history {
   color: #7CB9E8; }
 
+.notebook-date.folder {
+  margin-right: 30px; }
+
 .notebook-time {
   display: inline-block;
   min-width: 2.5em;
