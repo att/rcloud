@@ -4,8 +4,8 @@ RCloud 2.0 is compatible with R 3.5. (Due to unknown reasons, R 3.4 was not comp
 ### Features
  * RCloud now uses Jupyter for Python language support, and supports arbitrary Jupyter language
    kernels. This means the latest versions of Python (2.7.15, 3.6.5) are supported as separate
-   kernels, as well as new languages like Julia, Scala, and Java - any Jupyter kernel just needs to
-   be configured with metadata like the corresponding Ace editor syntax highlighter. See the
+   kernels, as well as new languages like Julia, Scala, and Java. Any Jupyter kernel just needs to
+   be configured with metadata such as the corresponding Ace editor syntax highlighter. See the
    [rcloud.jupyter](https://github.com/att/rcloud/tree/develop/rcloud.packages/rcloud.jupyter)
    package for configuration details (#1378, #1334, #2565)
  * Support for Shiny in flexdashboard (rcloud.flexdashboard#20)
