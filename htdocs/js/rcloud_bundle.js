@@ -1,5 +1,5 @@
 RCloud = {
-    version: '2.0-devel'
+    version: '2.0'
 };
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
