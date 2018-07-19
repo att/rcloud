@@ -19,5 +19,5 @@ RCloud.UI.event = (function(sender) {
     };
 
     return event;
-    
+
 })();

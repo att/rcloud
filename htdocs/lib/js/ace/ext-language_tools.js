@@ -1868,20 +1868,24 @@ var keyWordCompleter = {
 var keyWordCompleterAsync = {
     getCompletions: function(editor, session, pos, callback) {
         var state = editor.session.getState(pos.row);
-        session.$mode.getCompletionsAsync(state, session, pos, function(err, result) {
-          if(!err) {
-            callback(null, result.map(function(x) {
-              if(!x.prefix) {
-                var line = session.getLine(pos.row);
-                var prefix = util.retrievePrecedingIdentifier(line, pos.column);
-                x.prefix = prefix;
-              }
-              return x;
-            }));
-          } else {
-            callback(err, result);
-          }
-        });
+        if(session.$mode.getCompletionsAsync) {
+          session.$mode.getCompletionsAsync(state, session, pos, function(err, result) {
+            if(!err) {
+              callback(null, result.map(function(x) {
+                if(!x.prefix) {
+                  var line = session.getLine(pos.row);
+                  var prefix = util.retrievePrecedingIdentifier(line, pos.column);
+                  x.prefix = prefix;
+                }
+                return x;
+              }));
+            } else {
+              callback(err, result);
+            }
+          });
+        } else {
+          callback(null, []);
+        }
     }
 };
 

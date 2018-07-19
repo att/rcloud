@@ -1,0 +1,56 @@
+{
+  "languages": {
+  "python" : {
+      "extension" : "py",
+      "hljs.class" : "py",
+      "ace.mode" : "ace/mode/python"
+    },
+  "javascript" : {
+    "extension" : "jsjup",
+    "hljs.class" : "js",
+    "ace.mode" : "ace/mode/javascript-jup"
+  },
+  "go" : {
+    "extension" : "go",
+    "hljs.class" : "go",
+    "ace.mode" : "ace/mode/golang"
+  },
+  "perl" : {
+    "extension" : "pl",
+    "hljs.class" : "perl",
+    "ace.mode" : "ace/mode/perl"
+  },
+  "julia" : {
+    "extension" : "jl",
+    "hljs.class" : "julia",
+    "ace.mode" : "ace/mode/julia"
+  },
+  "scala" : {
+    "extension" : "sc",
+    "hljs.class" : "scala",
+    "ace.mode" : "ace/mode/scala"
+  },
+  "r" : {
+    "extension" : "rjup",
+    "hljs.class" : "r",
+    "ace.mode" : "ace/mode/r"
+  },
+  "java" : {
+    "extension" : "java",
+    "hljs.class" : "java",
+    "ace.mode" : "ace/mode/java"
+  }
+  },
+  
+  "kernelMapping": {
+    "python2" : {
+      "extension" : "py",
+      "init.script" : "function(rcloud.session) { retina <- ''; if (rcloud.session$device.pixel.ratio > 1) { retina <- \"config InlineBackend.figure_format = 'retina'\" }; inline_plots <- '%matplotlib inline';  paste0(retina, '\n', inline_plots) }"
+    },
+    "python3" : {
+      "extension" : "py3",
+      "init.script" : "function(rcloud.session) { retina <- ''; if (rcloud.session$device.pixel.ratio > 1) { retina <- \"config InlineBackend.figure_format = 'retina'\" }; inline_plots <- '%matplotlib inline';  paste0(retina, '\n', inline_plots) }"
+    }
+  }
+
+}

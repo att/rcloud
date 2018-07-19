@@ -1,4 +1,5 @@
 RCloud.UI.notebook_tree_controller = (function(model, view) {
+
     var notebook_tree_controller = function(model, view) {
 
         "use strict";
@@ -16,7 +17,7 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
     };
 
     notebook_tree_controller.prototype = {
-        
+
         get_tree_data: function() {
             return this.model_.tree_data_;
         },
@@ -59,7 +60,7 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
 
         has_notebook_info: function(gistname) {
             return this.model_.has_notebook_info(gistname);
-        },
+o        },
 
         get_notebook_info: function(gistname) {
             return this.model_.get_notebook_info(gistname);
@@ -87,8 +88,8 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
 
         show_terse_dates: function(show_terse_dates) {
             this.model_.show_terse_dates(show_terse_dates);
-        },   
-        
+        },
+
         set_visibility: function(gistname, visible) {
             return this.model_.set_visibility(gistname, visible);
         },
@@ -105,7 +106,7 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
             this.select_node(node);
             $(node.element).find('.jqtree-element:eq(0)').trigger('click');
         },
-        
+
         update_notebook_view: function(user, gistname, entry, selroot) {
             return this.model_.update_notebook_view(user, gistname, entry, selroot);
         },

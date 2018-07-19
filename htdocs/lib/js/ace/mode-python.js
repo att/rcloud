@@ -183,41 +183,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 
 });
 
-define("ace/mode/python_completions", ["require","exports","module"], function(require, exports, module) {
-"use strict";
-
-var util = require("ace/autocomplete/util");
-
-var PythonCompletions = function() {
-  
-};
-
-(function() {
-    this.getCompletions = function(editor, session, pos, callback) {
-          var that = this;
-          var line = session.getLine(pos.row);
-          var prefix = util.retrievePrecedingIdentifier(line, pos.column);
-          if(!prefix) {
-            callback(null, null);
-            return;
-          }
-          rcloud.get_completions('Python', session.getValue(),
-                                 session.getDocument().positionToIndex(pos))
-                                 .then(function(ret) { 
-                                   ret.forEach(function(x) { x.prefix = prefix; }); 
-                                  return ret;
-                                 })
-                                .then(function(ret) {
-                                    callback(null, ret);
-                                });
-      };
-      
-}).call(PythonCompletions.prototype);
-
-exports.PythonCompletions = PythonCompletions;
-});
-
-define("ace/mode/python",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/python_highlight_rules","ace/mode/folding/pythonic","ace/range"], function(require, exports, module) {
+define("ace/mode/python",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/python_highlight_rules","ace/mode/folding/pythonic","ace/range","ace/mode/jupyter_completions"], function(require, exports, module) {
 "use strict";
 
 var oop = require("../lib/oop");
@@ -225,20 +191,20 @@ var TextMode = require("./text").Mode;
 var PythonHighlightRules = require("./python_highlight_rules").PythonHighlightRules;
 var PythonFoldMode = require("./folding/pythonic").FoldMode;
 var Range = require("../range").Range;
-var PythonCompletions = require("ace/mode/python_completions").PythonCompletions;
+var JupyterCompletions = require("./jupyter_completions").JupyterCompletions;
 
-var Mode = function() {
-    this.HighlightRules = PythonHighlightRules;
-    this.foldingRules = new PythonFoldMode("\\:");
-    this.$behaviour = this.$defaultBehaviour;
-    this.$completer = new PythonCompletions();
-    this.getCompletionsAsync = function(state, session, pos, callback) {
+var Mode = function(options) {
+     this.HighlightRules = PythonHighlightRules;
+     this.foldingRules = new PythonFoldMode("\\:");
+     this.$behaviour = this.$defaultBehaviour;
+     this.$completer = new JupyterCompletions(options.language);
+     this.getCompletionsAsync = function(state, session, pos, callback) {
         if(this.$completer) {
             this.$completer.getCompletions(null, session, pos, callback);
         } else {
             callback(null, []);
         }
-    };
+     };
 };
 oop.inherits(Mode, TextMode);
 

@@ -30,8 +30,17 @@ function create_cell_html_view(language, cell_model) {
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
     var running_state_;  // running state
-    var running_ui_state_ = {add_result: {}};
     var autoscroll_notebook_output_;
+    var results_processing_context_ = {
+      options : {
+        no_of_results_in_batch: 20,
+        notebook_update_delay : 20,
+      },
+      results : [],
+      stop : false,
+      prev_scroll : null,
+      scrolled : false
+    };
 
     // input1
     var prompt_text_;
@@ -124,8 +133,8 @@ function create_cell_html_view(language, cell_model) {
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
             set_background_class(ace_div);
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
+            var LangMode = RCloud.language.ace_mode(language);
+            ace_session_.setMode(new LangMode({ suppressHighlighting : false, doc : ace_document_, session : ace_session_, language : language }));
         }
     }
 
@@ -203,12 +212,11 @@ function create_cell_html_view(language, cell_model) {
         else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
-    // postprocessing the dom is slow, so only do this when we have a break
-    var result_updated = _.debounce(function() {
+    function result_updated() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
             post.process(result_div_, result);
         });
-    }, 100);
+    }
 
     function clear_result() {
         result_div_.empty();
@@ -216,7 +224,147 @@ function create_cell_html_view(language, cell_model) {
         if(cell_controls_)
             results_button_border(false);
     }
+    
+    
+    function is_in_document() {
+      return $.contains(document, notebook_cell_div.get(0));
+    }
+    
+    function is_result_div_visible_in_cellarea() {
+        return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
+    }
+    
+    function scroll() {
+        if(!autoscroll_notebook_output_) {
+          return;
+        }
+        var cellarea = $('#rcloud-cellarea');
+        
+        if(result_div_) {
+          var opts = {
+            'axis' : 'y',
+            'duration' : 0,
+            'interrupt' : true,
+            'offset' : {top: 10},
+          };
+          ui_utils.scroll_to_after(result_div_, opts, cellarea, [notebook_cell_div], cellarea.height());
+        }
+    }
+    function consume_result(type, r)  {
+          switch(type) {
+            case 'selection':
+            case 'deferred_result':
+                break;
+            default:
+                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                    r = pre.process(r);
+                });
+            }
 
+            if(type!='code')
+                current_result_ = null;
+            if(type!='error')
+                current_error_ = null;
+            var pre;
+            switch(type) {
+            case 'code':
+                if(!current_result_) {
+                    pre = $('<pre></pre>');
+                    current_result_ = $('<code></code>');
+                    pre.append(current_result_);
+                    result_div_.append(pre);
+                }
+                current_result_.append(_.escape(r));
+                break;
+            case 'error':
+                // sorry about this!
+                if(!current_error_) {
+                    pre = $('<pre></pre>');
+                    current_error_ = $('<code style="color: crimson"></code>');
+                    pre.append(current_error_);
+                    result_div_.append(pre);
+                }
+                current_error_.append(_.escape(r));
+                break;
+            case 'selection':
+            case 'html':
+                result_div_.append(r);
+                break;
+            case 'deferred_result':
+                result_div_.append('<span class="deferred-result">' + r + '</span>');
+                break;
+            default:
+                throw new Error('unknown result type ' + type);
+            }
+    }
+    
+    function should_scroll(initial_condition) {
+      return initial_condition && !is_result_div_visible_in_cellarea() && !results_processing_context_.scrolled;
+    }
+      
+    function schedule_results_consumer(delay) {
+        results_processing_context_.stop = false;
+        results_processing_context_.results.length = 0;
+        var result_consumer = function() {
+            var counter = 0;
+            var scroll_after = is_result_div_visible_in_cellarea();
+            results_processing_context_.scrolled = false;
+            while(counter < results_processing_context_.options.no_of_results_in_batch) {
+              var result = results_processing_context_.results.shift();
+              if(!result) {
+                break;
+              }
+              consume_result(result.type, result.result);
+              counter++;
+              if (should_scroll(scroll_after)) {
+                scroll();
+              }
+            }
+            result_updated();
+            
+            var wait_for_content = function(attempt, callback) {
+              var WAIT_DELAY = 3;
+              var MAX_WAIT_STEPS = 7;
+              var MAX_WAIT_DELAY = 300;
+              if(attempt <= MAX_WAIT_STEPS) {
+                if((result_div_.find('.rcloud-htmlwidget').length > 0 && result_div_.find('.rcloud-htmlwidget').find('div').is(':empty')) 
+                   || result_div_.find('.deferred-result').length > 0) {
+                  var next_attempt = attempt+1;
+                  setTimeout(wait_for_content, Math.max(WAIT_DELAY^(next_attempt), MAX_WAIT_DELAY), next_attempt, callback);
+                  return;
+                }
+              }
+              callback();
+            };
+            
+            setTimeout(wait_for_content, 0, 1, function() {
+              if (should_scroll(scroll_after)) {
+                scroll();
+              }
+              if (is_in_document() && (!results_processing_context_.stop || results_processing_context_.results.length > 0)) {
+                window.setTimeout(result_consumer, results_processing_context_.options.notebook_update_delay);
+              }
+            });
+            
+            
+        };
+        window.setTimeout(result_consumer, delay);
+    }
+    
+    function stop_results_consumer(callback) {
+      results_processing_context_.stop = true;
+      var wait = function() {
+        if(is_in_document()) {
+          if(results_processing_context_.results.length > 0) {
+            setTimeout(wait, results_processing_context_.options.notebook_update_delay);
+          } else {
+            callback();
+          }
+        }
+      };
+      wait();
+    }
+    
     // start trying to refactor out this repetitive nonsense
     function ace_stuff(div, content) {
         ace.require("ace/ext/language_tools");
@@ -720,56 +868,15 @@ function create_cell_html_view(language, cell_model) {
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
+                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
-            running_ui_state_.add_result.result_div_visible_in_cellarea = this.is_result_div_visible_in_cellarea();
             this.toggle_results(true); // always show when updating
-            switch(type) {
-            case 'selection':
-            case 'deferred_result':
-                break;
-            default:
-                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
-                    r = pre.process(r);
-                });
-            }
+            
+            results_processing_context_.results.push({
+              type : type,
+              result : r
+            });
 
-            if(type!='code')
-                current_result_ = null;
-            if(type!='error')
-                current_error_ = null;
-            var pre;
-            switch(type) {
-            case 'code':
-                if(!current_result_) {
-                    pre = $('<pre></pre>');
-                    current_result_ = $('<code></code>');
-                    pre.append(current_result_);
-                    result_div_.append(pre);
-                }
-                current_result_.append(_.escape(r));
-                break;
-            case 'error':
-                // sorry about this!
-                if(!current_error_) {
-                    pre = $('<pre></pre>');
-                    current_error_ = $('<code style="color: crimson"></code>');
-                    pre.append(current_error_);
-                    result_div_.append(pre);
-                }
-                current_error_.append(_.escape(r));
-                break;
-            case 'selection':
-            case 'html':
-                result_div_.append(r);
-                break;
-            case 'deferred_result':
-                result_div_.append('<span class="deferred-result">' + r + '</span>');
-                break;
-            default:
-                throw new Error('unknown result type ' + type);
-            }
-            this.scroll_to_result(running_ui_state_.add_result);
-            result_updated();
         },
         end_output: function(error) {
             if(!has_result_) {
@@ -777,9 +884,12 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'unknown' : 'complete');
-            current_result_ = current_error_ = null;
-            this.scroll_to_result(running_ui_state_.add_result);
+            var that = this;
+            stop_results_consumer(function() {
+              that.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'unknown' : 'complete');
+              current_result_ = current_error_ = null;
+            });
+            
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -800,6 +910,12 @@ function create_cell_html_view(language, cell_model) {
         },
         set_autoscroll_notebook_output: function(whether) {
             autoscroll_notebook_output_ = whether;
+        },
+        on_scroll : function(event) {
+          if(results_processing_context_.prev_scroll) {
+            results_processing_context_.scrolled = (results_processing_context_.prev_scroll > event.currentTarget.scrollTop);
+          }
+          results_processing_context_.prev_scroll = event.currentTarget.scrollTop;
         },
         click_to_edit: click_to_edit,
 
@@ -936,25 +1052,6 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
                 edit_button_border(true);
             }
-        },
-        is_result_div_visible_in_cellarea: function() {
-            return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
-        },
-        scroll_to_result: function(previous_state) {
-            var that = this;
-            var shouldScroll = false;
-            if(previous_state) {
-              shouldScroll = previous_state.result_div_visible_in_cellarea && !that.is_result_div_visible_in_cellarea();
-            }
-            
-            shouldScroll = shouldScroll && autoscroll_notebook_output_;
-            
-            ui_utils.on_next_tick(function() {
-                var cellarea = $('#rcloud-cellarea');
-                if(result_div_ && shouldScroll) {
-                  ui_utils.scroll_to_after(result_div_, undefined, cellarea, [notebook_cell_div], cellarea.height());
-                }
-            });
         },
         toggle_results: function(val) {
             if(val===undefined)

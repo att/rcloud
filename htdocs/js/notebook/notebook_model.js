@@ -39,10 +39,19 @@ Notebook.create_model = function()
             asset_model.parent_model = this;
             var changes = [];
             changes.push(asset_model.change_object());
-            this.assets.push(asset_model);
+
+            var new_asset_index = this.assets.findIndex(function(a2) {
+                return asset_model.change_object().filename.localeCompare(
+                    a2.change_object().filename, undefined, {sensitivity: 'base'}) <= 0;
+            });
+            if(new_asset_index < 0)
+                this.assets.push(asset_model);
+            else
+                this.assets.splice(new_asset_index, 0, asset_model);
+
             if(!skip_event)
                 _.each(this.views, function(view) {
-                    view.asset_appended(asset_model);
+                    view.asset_appended(asset_model, new_asset_index);
                 });
             return changes;
         },

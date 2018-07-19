@@ -178,6 +178,15 @@ RCloud.UI.settings_frame = (function() {
                         editor.color_recent_notebooks_by_modification_date(val);
                     }
                 }),
+                'show-folder-dates': that.checkbox({
+                    sort: 3750,
+                    default_value: false,
+                    needs_reload: true,
+                    label: "Show folder date for date ordered tree",
+                    set: function(val) {
+                        editor.set_show_folder_dates(val);
+                    }
+                }),
                 'panel-layout-by-size': that.checkbox({
                     sort: 4000,
                     default_value: true,
@@ -202,7 +211,7 @@ RCloud.UI.settings_frame = (function() {
                 }),
                 'autoscroll-notebook-output': that.checkbox({
                     sort: 6500,
-                    default_value: false,
+                    default_value: true,
                     label: "Autoscroll notebook",
                     set: function(val) {
                         shell.notebook.controller.autoscroll_notebook_output(val);

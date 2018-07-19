@@ -28,16 +28,16 @@ var SweaveBackgroundHighlighter = require("ace/mode/sweave_background_highlighte
 var RCodeModel = require("ace/mode/r_code_model").RCodeModel;
 var RMode = require("ace/mode/r").Mode;
 
-var Mode = function(suppressHighlighting, doc, session) {
+var Mode = function(options) {
    this.HighlightRules = RMarkdownHighlightRules;
    this.$tokenizer = new Tokenizer(new RMarkdownHighlightRules().getRules());
 
-   this.codeModel = new RCodeModel(doc, this.$tokenizer, /^r-/,
+   this.codeModel = new RCodeModel(options.doc, this.$tokenizer, /^r-/,
                                    /^`{3,}\s*\{r(.*)\}\s*$/);
    this.foldingRules = this.codeModel;
    this.$highlightRules = new this.HighlightRules();
    this.$sweaveBackgroundHighlighter = new SweaveBackgroundHighlighter(
-         session,
+         options.session,
          /^`{3,}\s*\{r(?:.*)\}\s*$/,
          /^`{3,}\s*$/,
          true);
@@ -48,7 +48,7 @@ var Mode = function(suppressHighlighting, doc, session) {
         "jscode-": JavaScriptMode,
         "csscode-": CssMode,
         "r-": RMode
-    }, [suppressHighlighting, doc, session]);
+    }, options);
          
 };
 

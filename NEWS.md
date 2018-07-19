@@ -1,3 +1,25 @@
+## RCloud 2.0
+RCloud 2.0 is compatible with R 3.5. (Due to unknown reasons, R 3.4 was not compatible.)
+
+### Features
+ * RCloud now uses Jupyter for Python language support, and supports arbitrary Jupyter language
+   kernels. This means the latest versions of Python (2.7.15, 3.6.5) are supported as separate
+   kernels, as well as new languages like Julia, Scala, and Java - any Jupyter kernel just needs to
+   be configured with metadata like the corresponding Ace editor syntax highlighter. See the
+   [rcloud.jupyter](https://github.com/att/rcloud/tree/develop/rcloud.packages/rcloud.jupyter)
+   package for configuration details (#1378, #1334, #2565)
+ * Support for Shiny in flexdashboard (rcloud.flexdashboard#20)
+
+### Improvements
+ * Performance improvements to notebook output. Notebook autoscrolling now works reliably and is
+   enabled by default. (Disable in Settings pane if you run into trouble.) (#2551, #2552)
+ * Visual and functional improvements to Dataframe viewer panel: tighter layout, sticky headers,
+   control over paging size. (#2554)
+
+### Bugfixes
+ * Assets are maintained in sorted order (#388)
+
+
 ## RCloud 1.9.1
 
 ### Features

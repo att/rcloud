@@ -1,0 +1,74 @@
+@import "utils/utils.scss";
+
+body {
+    padding: 0!important;
+}
+
+table.dataTable tbody td,
+table.dataTable thead th {
+    padding: 0;
+
+    &:first-child {
+        border-right: 1px solid #ddd;
+    }
+}
+
+table.dataTable thead th {
+    border-right: 1px solid #ddd;
+
+    &:last-child {
+        border-right: none;
+    }
+}
+
+.dataTables_wrapper {
+
+    .dataTables_info {
+        float: left!important;
+        padding-top: 0;
+        margin-top: -5px;
+    }
+
+    .dataTables_length {
+        text-align: left;
+        padding-top: 3px;
+        float: left!important;
+    }
+
+    .dataTables_paginate {
+        float: right!important;
+        margin-top: 0!important;
+        .paginate_button {
+            background-color: #428bca;
+            border-color: #357ebd;
+            color: white!important;
+            padding: 4px 6px;
+            @include no-select();
+
+            &:hover {
+                color: #ffffff;
+                background-color: #3276b1;
+                border-color: #285e8e;
+                background-image: none;
+            }
+
+            &.disabled {
+                background: lighten(#428bca, 15%);
+                color: #fff!important;
+                cursor: not-allowed;
+
+                &:hover {
+                    background: lighten(#428bca, 15%);
+                    color: #fff!important;
+                }
+            }
+        }
+    }
+}
+
+.row {
+    > div {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
