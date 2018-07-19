@@ -1,5 +1,5 @@
 RCloud = {
-    version: '1.9.1'
+    version: '2.0'
 };
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
@@ -1391,23 +1391,21 @@ ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
 
-ui_utils.scroll_to_after = function($sel, duration, $scroller, $offset_elements, scroll_top_offset) {
+ui_utils.scroll_to_after = function($sel, scroll_opts, $scroller, $offset_elements, scroll_top_offset) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
+    var opts = $.extend($.scrollTo.defaults, {'axis':'y'}, scroll_opts);
     if ($sel.length === 0)
         return;
-    var opts;
     if(!scroll_top_offset) {
       scroll_top_offset = 0;
     }
-    if(duration !== undefined)
-        opts = {animation: {duration: duration}};
     if(!$scroller) {
       $scroller = $sel.parent();
     }
     var elemtoppos = ui_utils.get_top_offset($offset_elements);
     var y = $scroller.scrollTop() + elemtoppos + $sel.position().top + $sel.outerHeight() - scroll_top_offset;
-    $scroller.scrollTo(null, y, opts);
+    $scroller.scrollTo(y, opts);
 };
 
 ui_utils.get_top_offset = function($offset_elements) {
@@ -1436,16 +1434,21 @@ ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_co
         console.warn('scroll_into_view needs offset elements');
         return;
     }
+    var opts = $.extend($.scrollTo.defaults, { 'axis':'y', 'duration':600 });
     var height = +$scroller.css("height").replace("px","");
-    var scrolltop = $scroller.scrollTop(),
-        options = on_complete ? { animation: { complete : on_complete }} : {};
+    var scrolltop = $scroller.scrollTop();
+    if(on_complete) {
+      opts.onAfter = function(target, settings) {
+        on_complete();
+      }
+    }
 
     var elemtop = ui_utils.get_top_offset(Array.prototype.slice.call(arguments, 4));
 
     if(elemtop > height)
-        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
+        $scroller.scrollTo( scrolltop + elemtop - height + top_buffer, opts);
     else if(elemtop < 0)
-        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer, options);
+        $scroller.scrollTo( scrolltop + elemtop - bottom_buffer, opts);
     else {
         // no scrolling, so automatically call on_complete if it's defined:
         if(on_complete) {
@@ -2137,8 +2140,17 @@ function create_cell_html_view(language, cell_model) {
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
     var running_state_;  // running state
-    var running_ui_state_ = {add_result: {}};
     var autoscroll_notebook_output_;
+    var results_processing_context_ = {
+      options : {
+        no_of_results_in_batch: 20,
+        notebook_update_delay : 20,
+      },
+      results : [],
+      stop : false,
+      prev_scroll : null,
+      scrolled : false
+    };
 
     // input1
     var prompt_text_;
@@ -2231,8 +2243,8 @@ function create_cell_html_view(language, cell_model) {
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
             set_background_class(ace_div);
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
+            var LangMode = RCloud.language.ace_mode(language);
+            ace_session_.setMode(new LangMode({ suppressHighlighting : false, doc : ace_document_, session : ace_session_, language : language }));
         }
     }
 
@@ -2310,12 +2322,11 @@ function create_cell_html_view(language, cell_model) {
         else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
-    // postprocessing the dom is slow, so only do this when we have a break
-    var result_updated = _.debounce(function() {
+    function result_updated() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
             post.process(result_div_, result);
         });
-    }, 100);
+    }
 
     function clear_result() {
         result_div_.empty();
@@ -2323,7 +2334,147 @@ function create_cell_html_view(language, cell_model) {
         if(cell_controls_)
             results_button_border(false);
     }
+    
+    
+    function is_in_document() {
+      return $.contains(document, notebook_cell_div.get(0));
+    }
+    
+    function is_result_div_visible_in_cellarea() {
+        return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
+    }
+    
+    function scroll() {
+        if(!autoscroll_notebook_output_) {
+          return;
+        }
+        var cellarea = $('#rcloud-cellarea');
+        
+        if(result_div_) {
+          var opts = {
+            'axis' : 'y',
+            'duration' : 0,
+            'interrupt' : true,
+            'offset' : {top: 10},
+          };
+          ui_utils.scroll_to_after(result_div_, opts, cellarea, [notebook_cell_div], cellarea.height());
+        }
+    }
+    function consume_result(type, r)  {
+          switch(type) {
+            case 'selection':
+            case 'deferred_result':
+                break;
+            default:
+                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                    r = pre.process(r);
+                });
+            }
 
+            if(type!='code')
+                current_result_ = null;
+            if(type!='error')
+                current_error_ = null;
+            var pre;
+            switch(type) {
+            case 'code':
+                if(!current_result_) {
+                    pre = $('<pre></pre>');
+                    current_result_ = $('<code></code>');
+                    pre.append(current_result_);
+                    result_div_.append(pre);
+                }
+                current_result_.append(_.escape(r));
+                break;
+            case 'error':
+                // sorry about this!
+                if(!current_error_) {
+                    pre = $('<pre></pre>');
+                    current_error_ = $('<code style="color: crimson"></code>');
+                    pre.append(current_error_);
+                    result_div_.append(pre);
+                }
+                current_error_.append(_.escape(r));
+                break;
+            case 'selection':
+            case 'html':
+                result_div_.append(r);
+                break;
+            case 'deferred_result':
+                result_div_.append('<span class="deferred-result">' + r + '</span>');
+                break;
+            default:
+                throw new Error('unknown result type ' + type);
+            }
+    }
+    
+    function should_scroll(initial_condition) {
+      return initial_condition && !is_result_div_visible_in_cellarea() && !results_processing_context_.scrolled;
+    }
+      
+    function schedule_results_consumer(delay) {
+        results_processing_context_.stop = false;
+        results_processing_context_.results.length = 0;
+        var result_consumer = function() {
+            var counter = 0;
+            var scroll_after = is_result_div_visible_in_cellarea();
+            results_processing_context_.scrolled = false;
+            while(counter < results_processing_context_.options.no_of_results_in_batch) {
+              var result = results_processing_context_.results.shift();
+              if(!result) {
+                break;
+              }
+              consume_result(result.type, result.result);
+              counter++;
+              if (should_scroll(scroll_after)) {
+                scroll();
+              }
+            }
+            result_updated();
+            
+            var wait_for_content = function(attempt, callback) {
+              var WAIT_DELAY = 3;
+              var MAX_WAIT_STEPS = 7;
+              var MAX_WAIT_DELAY = 300;
+              if(attempt <= MAX_WAIT_STEPS) {
+                if((result_div_.find('.rcloud-htmlwidget').length > 0 && result_div_.find('.rcloud-htmlwidget').find('div').is(':empty')) 
+                   || result_div_.find('.deferred-result').length > 0) {
+                  var next_attempt = attempt+1;
+                  setTimeout(wait_for_content, Math.max(WAIT_DELAY^(next_attempt), MAX_WAIT_DELAY), next_attempt, callback);
+                  return;
+                }
+              }
+              callback();
+            };
+            
+            setTimeout(wait_for_content, 0, 1, function() {
+              if (should_scroll(scroll_after)) {
+                scroll();
+              }
+              if (is_in_document() && (!results_processing_context_.stop || results_processing_context_.results.length > 0)) {
+                window.setTimeout(result_consumer, results_processing_context_.options.notebook_update_delay);
+              }
+            });
+            
+            
+        };
+        window.setTimeout(result_consumer, delay);
+    }
+    
+    function stop_results_consumer(callback) {
+      results_processing_context_.stop = true;
+      var wait = function() {
+        if(is_in_document()) {
+          if(results_processing_context_.results.length > 0) {
+            setTimeout(wait, results_processing_context_.options.notebook_update_delay);
+          } else {
+            callback();
+          }
+        }
+      };
+      wait();
+    }
+    
     // start trying to refactor out this repetitive nonsense
     function ace_stuff(div, content) {
         ace.require("ace/ext/language_tools");
@@ -2827,56 +2978,15 @@ function create_cell_html_view(language, cell_model) {
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
+                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
-            running_ui_state_.add_result.result_div_visible_in_cellarea = this.is_result_div_visible_in_cellarea();
             this.toggle_results(true); // always show when updating
-            switch(type) {
-            case 'selection':
-            case 'deferred_result':
-                break;
-            default:
-                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
-                    r = pre.process(r);
-                });
-            }
+            
+            results_processing_context_.results.push({
+              type : type,
+              result : r
+            });
 
-            if(type!='code')
-                current_result_ = null;
-            if(type!='error')
-                current_error_ = null;
-            var pre;
-            switch(type) {
-            case 'code':
-                if(!current_result_) {
-                    pre = $('<pre></pre>');
-                    current_result_ = $('<code></code>');
-                    pre.append(current_result_);
-                    result_div_.append(pre);
-                }
-                current_result_.append(_.escape(r));
-                break;
-            case 'error':
-                // sorry about this!
-                if(!current_error_) {
-                    pre = $('<pre></pre>');
-                    current_error_ = $('<code style="color: crimson"></code>');
-                    pre.append(current_error_);
-                    result_div_.append(pre);
-                }
-                current_error_.append(_.escape(r));
-                break;
-            case 'selection':
-            case 'html':
-                result_div_.append(r);
-                break;
-            case 'deferred_result':
-                result_div_.append('<span class="deferred-result">' + r + '</span>');
-                break;
-            default:
-                throw new Error('unknown result type ' + type);
-            }
-            this.scroll_to_result(running_ui_state_.add_result);
-            result_updated();
         },
         end_output: function(error) {
             if(!has_result_) {
@@ -2884,9 +2994,12 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'unknown' : 'complete');
-            current_result_ = current_error_ = null;
-            this.scroll_to_result(running_ui_state_.add_result);
+            var that = this;
+            stop_results_consumer(function() {
+              that.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'unknown' : 'complete');
+              current_result_ = current_error_ = null;
+            });
+            
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -2907,6 +3020,12 @@ function create_cell_html_view(language, cell_model) {
         },
         set_autoscroll_notebook_output: function(whether) {
             autoscroll_notebook_output_ = whether;
+        },
+        on_scroll : function(event) {
+          if(results_processing_context_.prev_scroll) {
+            results_processing_context_.scrolled = (results_processing_context_.prev_scroll > event.currentTarget.scrollTop);
+          }
+          results_processing_context_.prev_scroll = event.currentTarget.scrollTop;
         },
         click_to_edit: click_to_edit,
 
@@ -3043,25 +3162,6 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
                 edit_button_border(true);
             }
-        },
-        is_result_div_visible_in_cellarea: function() {
-            return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
-        },
-        scroll_to_result: function(previous_state) {
-            var that = this;
-            var shouldScroll = false;
-            if(previous_state) {
-              shouldScroll = previous_state.result_div_visible_in_cellarea && !that.is_result_div_visible_in_cellarea();
-            }
-            
-            shouldScroll = shouldScroll && autoscroll_notebook_output_;
-            
-            ui_utils.on_next_tick(function() {
-                var cellarea = $('#rcloud-cellarea');
-                if(result_div_ && shouldScroll) {
-                  ui_utils.scroll_to_after(result_div_, undefined, cellarea, [notebook_cell_div], cellarea.height());
-                }
-            });
         },
         toggle_results: function(val) {
             if(val===undefined)
@@ -3522,11 +3622,16 @@ Notebook.create_html_view = function(model, root_div)
             on_rearrange();
             return cell_view;
         },
-        asset_appended: function(asset_model) {
+        asset_appended: function(asset_model, new_asset_index) {
             var asset_view = Notebook.Asset.create_html_view(asset_model);
             asset_model.views.push(asset_view);
-            $("#asset-list").append(asset_view.div());
-            this.asset_sub_views.push(asset_view);
+            if(new_asset_index === undefined){
+              $("#asset-list").append(asset_view.div());
+              this.asset_sub_views.push(asset_view);
+            } else {
+              this.asset_sub_views.splice(new_asset_index, 0, asset_view);
+              $('#asset-list').find('li:eq(' + new_asset_index + ')').after(asset_view.div());
+            }
             on_rearrange();
             return asset_view;
         },
@@ -3577,6 +3682,7 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.set_autoscroll_notebook_output(whether);
             });
+            
         },
         update_urls: function() {
             RCloud.UI.scratchpad.update_asset_url();
@@ -3590,9 +3696,18 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.reformat();
             });
+        },
+        on_scroll: function(event) {
+          if(autoscroll_notebook_output_) {
+              _.each(this.sub_views, function(view) {
+                view.on_scroll(event);
+              });
+          }
         }
     };
     model.views.push(result);
+    
+    $('#rcloud-cellarea').on('scroll', function(event) { result.on_scroll(event); });
     return result;
 };
 
@@ -3637,10 +3752,19 @@ Notebook.create_model = function()
             asset_model.parent_model = this;
             var changes = [];
             changes.push(asset_model.change_object());
-            this.assets.push(asset_model);
+
+            var new_asset_index = this.assets.findIndex(function(a2) {
+                return asset_model.change_object().filename.localeCompare(
+                    a2.change_object().filename, undefined, {sensitivity: 'base'}) <= 0;
+            });
+            if(new_asset_index < 0)
+                this.assets.push(asset_model);
+            else
+                this.assets.splice(new_asset_index, 0, asset_model);
+
             if(!skip_event)
                 _.each(this.views, function(view) {
-                    view.asset_appended(asset_model);
+                    view.asset_appended(asset_model, new_asset_index);
                 });
             return changes;
         },
@@ -4258,8 +4382,8 @@ Notebook.create_controller = function(model)
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
         },
-        append_asset: function(content, filename) {
-            var cch = append_asset_helper(content, filename);
+        append_asset: function(content, filename, user_appended) {
+            var cch = append_asset_helper(content, filename, user_appended);
             return update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback())
                 .then(function(notebook) {
@@ -5069,7 +5193,8 @@ RCloud.language = (function() {
             return languages_[language] ? languages_[language].is_a_markdown : false;
         },
         ace_mode: function(language) {
-            return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
+            var mode = (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
+            return (ace.require(mode) || ace.require(languages_.Text.ace_mode)).Mode; 
         },
         extension: function(language) {
             var ext = (languages_[language] && languages_[language].extension) || '';
@@ -5093,7 +5218,7 @@ RCloud.language = (function() {
             }
         },
         available_languages: function() {
-            return langs_;
+            return langs_.slice(); // protect internal state
         }
     };
 
@@ -5281,7 +5406,7 @@ RCloud.UI.event = (function(sender) {
     };
 
     return event;
-    
+
 })();
 
 RCloud.UI.advanced_menu = (function() {
@@ -6114,6 +6239,11 @@ RCloud.UI.command_prompt = (function() {
 
         function restore_prompt() {
             var prop = history_.init();
+            if(!_.contains(RCloud.language.available_languages(), prop.lang)) {
+              var default_lang = RCloud.language.available_languages()[0];
+              console.error("Language " + prop.lang + " is not available. Using " + default_lang + " to restore prompt widget.");
+              prop = {cmd: '', lang: default_lang};
+            }
             change_prompt(prop.cmd);
             result.language(prop.lang);
             var r = last_row(widget);
@@ -6121,8 +6251,8 @@ RCloud.UI.command_prompt = (function() {
         }
 
         function set_language(language) {
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            session.setMode(new LangMode(false, session.doc, session));
+            var LangMode = RCloud.language.ace_mode(language);
+            session.setMode(new LangMode({ suppressHighlighting : false, doc : session.doc, session : session, language : language }));
         }
 
         ui_utils.install_common_ace_key_bindings(widget, result.language.bind(result));
@@ -9424,8 +9554,9 @@ RCloud.UI.init = function() {
             }
         }
     }, {
+        category: 'Cell Management',
         id: 'notebook_run_all',
-        description: 'Run all',
+        description: 'Run all cells',
         keys: {
             win_mac: [
                 ['ctrl', 'shift', 'enter']
@@ -11499,7 +11630,7 @@ RCloud.UI.scratchpad = (function() {
                     }
                 }]);
 
-                session.setMode(new LangMode(false, doc, session));
+                session.setMode(new LangMode({ suppressHighlighting : false, doc : doc, session : session, language : "R" }));
                 session.setNewLineMode('unix');
                 session.setOption('indentedSoftWrap', false);
                 session.setUseWrapMode(true);
@@ -11718,8 +11849,8 @@ RCloud.UI.scratchpad = (function() {
         }, language_updated: function() {
             if(!binary_mode_) {
                 var lang = this.current_model.language();
-                var LangMode = ace.require(RCloud.language.ace_mode(lang)).Mode;
-                this.session.setMode(new LangMode(false, this.session.doc, this.session));
+                var LangMode = RCloud.language.ace_mode(lang);
+                this.session.setMode(new LangMode({ suppressHighlighting : false, doc : this.session.doc, session : this.session, language : lang }));
             }
         }, set_readonly: function(readonly) {
             if(!shell.is_view_mode()) {
@@ -12313,6 +12444,15 @@ RCloud.UI.settings_frame = (function() {
                         editor.color_recent_notebooks_by_modification_date(val);
                     }
                 }),
+                'show-folder-dates': that.checkbox({
+                    sort: 3750,
+                    default_value: false,
+                    needs_reload: true,
+                    label: "Show folder date for date ordered tree",
+                    set: function(val) {
+                        editor.set_show_folder_dates(val);
+                    }
+                }),
                 'panel-layout-by-size': that.checkbox({
                     sort: 4000,
                     default_value: true,
@@ -12337,7 +12477,7 @@ RCloud.UI.settings_frame = (function() {
                 }),
                 'autoscroll-notebook-output': that.checkbox({
                     sort: 6500,
-                    default_value: false,
+                    default_value: true,
                     label: "Autoscroll notebook",
                     set: function(val) {
                         shell.notebook.controller.autoscroll_notebook_output(val);
@@ -12438,7 +12578,7 @@ RCloud.UI.share_button = (function() {
         });
     }
 
-    function resolve_view_url(gistname, version) {
+    function resolve_view_url(gistname, version, viewtype) {
         var notebook_options = null;
         if(version) {
             notebook_options = rcloud.get_tag_by_version(gistname, version)
@@ -12455,9 +12595,10 @@ RCloud.UI.share_button = (function() {
                 return { notebook: gistname };
             });
         }
-        var join = Promise.join;
 
-        return join(notebook_options, get_view_type(gistname),
+        var viewtype_promise = viewtype ? Promise.resolve(extension_.get(viewtype)) : get_view_type(gistname);
+
+        return Promise.join(notebook_options, viewtype_promise,
                     function(opts, view_type) {
                         var page = view_type.page;
                         opts.do_path = view_type.do_path;
@@ -12482,14 +12623,12 @@ RCloud.UI.share_button = (function() {
                         return {
                             title: that.key,
                             handler: function() {
-                                set_view_type(that.key).then(function() {
-                                    highlight(that.key);
-                                }).then(function() {
-                                    return resolve_view_url(shell.gistname(), shell.version()).then(function(url) {
-                                        var shareable_link = RCloud.UI.navbar.control('shareable_link');
-                                        shareable_link.set_url(url);
-                                        shareable_link.open();
-                                    });
+                                set_view_type(that.key);
+                                highlight(that.key);
+                                return resolve_view_url(shell.gistname(), shell.version(), that.key).then(function(url) {
+                                    var shareable_link = RCloud.UI.navbar.control('shareable_link');
+                                    shareable_link.set_url(url);
+                                    shareable_link.open();
                                 });
                             }
                         };
@@ -13330,6 +13469,7 @@ RCloud.UI.discovery_page = (function() {
     return discovery;
 })();
 
+
 RCloud.UI.notebook_tree_search_service = (function() {
 
     var notebook_tree_search_service = function() {
@@ -13341,7 +13481,7 @@ RCloud.UI.notebook_tree_search_service = (function() {
             // params.notebook
             // params.username
             return new Promise(function(resolve) {
-                return rcloud.search_description(params.notebook, params.username).then(function(res) {                 
+                return rcloud.search_description(params.notebook).then(function(res) {
                     resolve(
                         _.map(res.response.docs, function(item) {
                             return {
@@ -13470,14 +13610,14 @@ RCloud.UI.incremental_search = (function() {
 
 RCloud.UI.date_filter = (function(selector) {
 
-    var date_filter = function(selector) {  
+    var date_filter = function(selector) {
         this.$el_ = $(selector + ' select');
         this.on_change = new RCloud.UI.event(this);
 
         var that = this;
         this.$el_.on('change', function() {
             that.on_change.notify({
-                prop: 'tree-filter-date', 
+                prop: 'tree-filter-date',
                 value: $(this).val()
             });
         });
@@ -13485,16 +13625,16 @@ RCloud.UI.date_filter = (function(selector) {
         this.val = function(value) {
             this.$el_.val(value);
         }
-    }
+    };
 
     return date_filter;
 
 })();
 
-RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
+RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folder_dates) {
 
-    var notebook_tree_model = function(username, show_terse_dates) {
-        
+    var notebook_tree_model = function(username, show_terse_dates, show_folder_dates) {
+
         "use strict";
 
         // major key is adsort_order and minor key is name (label)
@@ -13512,6 +13652,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
         this.username_ = username;
         this.show_terse_dates_ = show_terse_dates;
+        this.show_folder_dates_ = show_folder_dates;
         this.path_tips_ = false; // debugging tool: show path tips on tree
 
         this.tree_data_ = [];
@@ -13530,6 +13671,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         this.sorted_by_ = this.orderType.DEFAULT;
         this.matches_filter_ = [];
         this.empty_folders_ = [];
+        this.folder_last_commits = {};
 
         // functions that filter the tree:
         this.tree_filters_ = {
@@ -13558,7 +13700,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
     };
 
     notebook_tree_model.prototype = {
-            
+
         username: function() {
             return this.username_;
         },
@@ -13566,7 +13708,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         show_terse_dates: function(show_terse_dates) {
             if(arguments.length) {
                 this.show_terse_dates_ = show_terse_dates;
-            } else { 
+            } else {
                 return this.show_terse_dates_;
             }
         },
@@ -13765,20 +13907,89 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             };
         },
 
+        get_folder_last_commit_date: function(node_id) {
+            return this.folder_last_commits[node_id];
+        },
+
+        get_most_recent_child: function(node) {
+
+            var that = this,
+                latest_commit = null,
+                node_chain = [],
+                pluck_node_data = function(child) {
+                    return {
+                        id: child.id,
+                        last_commit: child.last_commit
+                    };
+                }, insert_into_chain = function(parent) {
+
+                    var existing_parent_root_chain = _.findWhere(node_chain, { parent_id : parent.id });
+
+                    if(!existing_parent_root_chain) {
+                        node_chain.push({
+                            parent_id: parent.id,
+                            children: _.map(parent.children, function(child) {
+                                return pluck_node_data(child)
+                            })
+                        });
+                    }
+
+                    _.each(parent.children, function(child) {
+
+                        var matching = _.filter(node_chain, function(parent_children) {
+                            return parent.id != parent_children.parent_id &&
+                                _.pluck(parent_children.children, 'id').indexOf(parent.id) != -1;
+                        });
+
+                        _.each(matching, function(chain) {
+                            chain.children.push(pluck_node_data(child));
+                        });
+                    });
+                }, get_children = function(parent) {
+
+                if (parent && parent.children) {
+
+                    insert_into_chain(parent);
+
+                    _.each(parent.children, function(child) {
+                        if(child.last_commit > latest_commit) {
+                            latest_commit = child.last_commit;
+                        }
+
+                        get_children(child);
+
+                    });
+                }
+            };
+
+            get_children(node);
+
+            _.each(node_chain, function(chain) {
+                that.folder_last_commits[chain.parent_id] = _.max(_.pluck(chain.children, 'last_commit'));
+            });
+
+            return latest_commit;
+        },
+
+        is_date_sorted: function() {
+            return this.sorted_by_ === this.orderType.DATE_DESC;
+        },
+
         compare_nodes: function(a, b) {
 
-            var so = a.sort_order - b.sort_order;
+            var so = a.sort_order - b.sort_order,
+                that = this;
             if(so) {
                 return so;
             }
             else {
-                var alab = a.name || a.label, 
+                var alab = a.name || a.label,
                     blab = b.name || b.label;
 
                 if(this.sorted_by_ === this.orderType.DEFAULT ||
                 !(a.sort_order === this.order.NOTEBOOK && b.sort_order === this.order.NOTEBOOK)) {
                     // cut trailing numbers and sort separately
-                    var amatch = RCloud.utils.split_number(alab), 
+                    var amatch = RCloud.utils.split_number(alab),
                     bmatch = RCloud.utils.split_number(blab);
 
                     if(amatch && bmatch && amatch[0] == bmatch[0]) {
@@ -13808,12 +14019,12 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                         if(!node.last_commit && !node.children) {
                             return Infinity;
                         } else {
-                            return node.last_commit ? new Date(node.last_commit) : _.max(_.map(node.children, function(child) { return new Date(child.last_commit); }));                        
+                            return node.last_commit ? new Date(node.last_commit) : that.get_most_recent_child(node);
                         }
                     };
 
                     return get_date(b) - get_date(a);
-                }            
+                }
             }
         },
 
@@ -13915,6 +14126,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     full_name: full_name,
                     user: v[0].user,
                     sort_order: that.order.NOTEBOOK,
+
                     id: id,
                     children: that.as_folder_hierarchy(children, id, full_name)
                 };
@@ -13925,7 +14137,10 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             outside_folders.forEach(function(v) {
                 v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
             });
-            return outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
+
+            var result = outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
+
+            return result;
         },
 
         convert_notebook_set: function(root, username, set) {
@@ -13962,8 +14177,8 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                 merge_filter_matches = function(details) {
                     that.matches_filter_ = _.union(that.matches_filter_, details.matching_notebooks);
                     that.empty_folders_ = _.union(that.empty_folders_, details.empty_folders);
-                };    
-                
+                };
+
             if(!that.lazy_load_[username])
                 return Promise.resolve();
 
@@ -14000,7 +14215,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     duplicate_data = ftree.children;
                 }
 
-                that.on_load_by_user.notify({ 
+                that.on_load_by_user.notify({
                     pid: that.node_id('alls', username),
                     data: alls_data,
                     duplicate_data: duplicate_data,
@@ -14021,7 +14236,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
         tag_notebook_version: function(id, version, tag) {
             var history = this.histories_[id];
-            
+
             for(var i=0; i<history.length; ++i) {
                 if (history[i].version === version) {
                     history[i].tag = tag;
@@ -14069,7 +14284,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         },
 
         update_tree_node: function(node, data) {
-            
+
             _.extend(node, data);
 
             this.on_update_node.notify({
@@ -14108,7 +14323,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                 interests_node.children = _.without(interests_node.children, _.findWhere(interests_node.children, {
                     id: parent.id
                 }));
-                
+
                 // remove from tree:
                 this.remove_node_notify({
                     node: parent
@@ -14208,7 +14423,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         find_sort_point: function(data, parent) {
             // this could be a binary search but linear is probably fast enough
             // for a single insert, and it also could be out of order
-            if(parent.children) {        
+            if(parent.children) {
                 for(var i = 0; i < parent.children.length; ++i) {
                     var child = parent.children[i];
 
@@ -14244,7 +14459,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                 // splice children:
                 parent.children.splice(before.position, 0, node_to_insert);
 
-                this.on_add_node_before.notify({ 
+                this.on_add_node_before.notify({
                     node_to_insert: node_to_insert,
                     existing_node: before.child
                 });
@@ -14263,7 +14478,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     node_to_insert: node_to_insert,
                     parent_id: parent.id
                 });
-                
+
                 return node_to_insert;
             }
         },
@@ -14272,7 +14487,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             function traverse(o) {
                 for (var i in o) {
                     if (!!o[i] && typeof(o[i])=="object") {
-                        console.log('traverse output: ', o[i]); 
+                        console.log('traverse output: ', o[i]);
                         traverse(o[i]);
                     }
                 }
@@ -14294,8 +14509,8 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             get_matching_notebooks = function(o) {
                 for(var i in o) {
                     if (!!o[i] && typeof(o[i])=="object") {
-                        if(o[i].hasOwnProperty('children')) {  
-                                            
+                        if(o[i].hasOwnProperty('children')) {
+
                             current_matches = _.filter(o[i].children, function(child) {
                                 return child.gistname && !child.version;
                             });
@@ -14325,7 +14540,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                                 // this is a folder with no matching notebooks:
                                 if(!o[i].gistname) {
                                     empty_folders.push(o[i]);
-                                }                          
+                                }
                             }
                         }
 
@@ -14335,7 +14550,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             };
 
             get_matching_notebooks(notebooks);
-            
+
             return {
                 matching_notebooks: _.pluck(matching_notebooks, 'id'),
                 empty_folders: _.pluck(empty_folders, 'id')
@@ -14345,7 +14560,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         sanitize_tree_setting: function(setting_key, value) {
             var settings = [
                 { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30' ]},
-                { key: 'tree-sort-order', default_value: 'name', valid_values: ['name', 'date_desc' ]}            
+                { key: 'tree-sort-order', default_value: 'name', valid_values: ['name', 'date_desc' ]}
             ];
 
             var setting = _.findWhere(settings, { key: setting_key });
@@ -14367,15 +14582,16 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         update_filter: function(filter_props) {
             if(filter_props.prop == 'tree-filter-date') {
                 switch(filter_props.value) {
-                    case null: 
+                    case null:
                     case 'all':
                         this.tree_filters_[filter_props.prop] = function() { return true; };
                         break;
                     case 'last7':
                     case 'last30':
                         var period = filter_props.value.replace('last', '');
+                        var that = this;
                         this.tree_filters_[filter_props.prop] = function(item) {
-                            return RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
+                            return item.gistname == that.current_.notebook || RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
                         };
                         break;
                     default:
@@ -14386,14 +14602,14 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             var details = this.get_filter_matches(this.tree_data_);
             this.matches_filter_ = details.matching_notebooks;
             this.empty_folders_ = details.empty_folders;
-            
+
             this.on_update_show_nodes.notify({
                 nodes: this.matches_filter_,
                 empty_folders: this.empty_folders_,
                 filter_props: filter_props
             });
 
-            rcloud.config.set_user_option(filter_props.prop, filter_props.value);                        
+            rcloud.config.set_user_option(filter_props.prop, filter_props.value);
         },
 
         does_notebook_match_filter: function(notebook_id) {
@@ -14418,7 +14634,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
                 if(reorder_nodes) {
                     var nodes_and_children = [];
-                    
+
                     var update_children = function(o) {
                         for(var i in o) {
                             if (!!o[i] && typeof(o[i])=="object") {
@@ -14435,7 +14651,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                                         children: o[i].children
                                     });
                                 }
-                                
+
                                 update_children(o[i]);
                             }
                         }
@@ -14467,7 +14683,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                         traverse(o[i] );
                     }
                 }
-            }  
+            }
 
             traverse(this.tree_data_);
             return found;
@@ -14488,14 +14704,14 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                         found_parent = getObject(theObject[i], id);
                         if (found_parent) {
                             break;
-                        }   
+                        }
                     }
                 } else {
                     for(var prop in theObject) {
                         if(prop === 'id' && theObject.hasOwnProperty('children')) {
                             var child = find_child_by_id(theObject);
 
-                            if(child) 
+                            if(child)
                                 return theObject;
                         }
                         if(theObject[prop] instanceof Object || theObject[prop] instanceof Array) {
@@ -14503,7 +14719,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                             if (found_parent) {
                                 break;
                             }
-                        } 
+                        }
                     }
                 }
                 return found_parent;
@@ -14514,7 +14730,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
         load_tree_data: function(data, parent) {
             var parent_node = this.get_node_by_id(parent);
-            
+
             if(parent_node) {
                 parent_node.children = data;
             }
@@ -14556,7 +14772,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             if(!gistname)
                 throw new Error("need gistname");
 
-            var skip_user = this.skip_user_level(root); 
+            var skip_user = this.skip_user_level(root);
 
             // make sure parents exist
             var parid = skip_user ? this.node_id(root) : this.node_id(root, user),
@@ -14585,11 +14801,12 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
             if(parent.delay_children) {
                 delete parent.delay_children;
-                this.on_load_children.notify({ 
+                this.on_load_children.notify({
                     node: parent
                 });
             }
 
+            // create folder path:
             while('children' in path) {
                 node = this.get_node_by_id(path.id); // that.$tree_.tree('getNodeById', path.id);
                 if(!node) {
@@ -14614,6 +14831,26 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             data.root = root;
             data.user = user;
 
+            // update parents' position according to date:
+            var update_node_position = function(parent, node, data) {
+
+                // remove from model:
+                parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                    id: node.id
+                }));
+
+                that.remove_node_notify({
+                    node: node
+                });
+
+                if(data) {
+                    // assign:
+                    node = that.insert_in_order(data, parent);
+                } else {
+                    that.insert_in_order(node, parent);
+                }
+            };
+
             if(node) {
                 children = node.children;
 
@@ -14621,12 +14858,12 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     last_chance(node); // hacky
                 }
 
-                //var dp = node.parent;
                 var dp = this.get_parent(node.id);
 
-                if(dp === parent && node./*name*/label === data.label) {
+                if(dp === parent && node.label === data.label && this.sorted_by_ !== this.orderType.DATE_DESC) {
                     this.update_tree_node(node, data);
                 } else {
+
                     // remove from model:
                     dp.children = _.without(dp.children, _.findWhere(dp.children, {
                         id: node.id
@@ -14639,10 +14876,51 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     node = this.insert_in_order(data, parent);
 
                     this.remove_empty_parents(dp);
+
+                    if(this.sorted_by_ === this.orderType.DATE_DESC) {
+
+                        var current_node = node;
+
+                        do {
+                            parent = this.get_parent(current_node.id);
+
+                            if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                                parent = null;
+                            } else {
+                                update_node_position(parent, current_node,
+                                    current_node.id === data.id ? data : undefined);
+                            }
+
+                            current_node = parent;
+
+                        } while(parent);
+                    }
                 }
 
             } else {
                 node = that.insert_in_order(data, parent);
+
+                if(this.sorted_by_ === this.orderType.DATE_DESC) {
+                    var current_node = node;
+
+                    do {
+                        parent = this.get_parent(current_node.id);
+
+                        if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                            parent = null;
+                        } else {
+                            update_node_position(parent, current_node,
+                                current_node.id === data.id ? data : undefined);
+
+                            if(node.id === current_node.id) {
+                                node = current_node;
+                            }
+                        }
+
+                        current_node = parent;
+
+                    } while(parent);
+                }
             }
 
             return node;
@@ -14681,9 +14959,9 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
 
             // always show the same number of history nodes as before
             var whither = 'hide', where = null;
-            var inter_path = that.as_folder_hierarchy([data], 
+            var inter_path = that.as_folder_hierarchy([data],
                 that.skip_user_level(root) ? that.node_id(root) : that.node_id(root, user))[0];
-            
+
             var node = that.update_tree(root, user, gistname, inter_path,
                                 function(node) {
                                     if(node.children && node.children.length) {
@@ -14693,7 +14971,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                                             --where;
                                     }
                                 }, create);
-            
+
             if(!node){
                 return Promise.resolve(null); // !create
             }
@@ -14757,7 +15035,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             var that = this;
             return this.load_user_notebooks(username)
                 .then(function() {
-                    
+
                     // get folder parent or user trunk
                     var pid = description.indexOf('/') === -1 ?
                             that.node_id("alls", username) :
@@ -14769,8 +15047,8 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                         return description;
                     }
 
-                    var map = _.object(_.map(parent.children, function(c) { 
-                        return [c.full_name, true]; 
+                    var map = _.object(_.map(parent.children, function(c) {
+                        return [c.full_name, true];
                     }));
 
                     if(!map[description]) {
@@ -14797,9 +15075,9 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         },
 
         // add_history_nodes
-        // whither is 'hide' - erase all, 
-        // 'index' - show thru index, 
-        // 'sha' - show thru sha, 
+        // whither is 'hide' - erase all,
+        // 'index' - show thru index,
+        // 'sha' - show thru sha,
         // 'more' - show INCR more
         update_history_nodes: function(node, whither, where) {
             var INCR = 5;
@@ -14813,10 +15091,10 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             }
 
             var show_sha = function(history, sha) {
-                var sha_ind = that.find_index(history, function(hist) { 
-                    return hist.version===sha; 
+                var sha_ind = that.find_index(history, function(hist) {
+                    return hist.version===sha;
                 });
-                
+
                 if(sha_ind < 0) {
                     throw new Error("didn't find sha " + where + " in history");
                 }
@@ -14921,8 +15199,8 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                 }
 
                 // insert at top
-                var nins, 
-                    insf = null, 
+                var nins,
+                    insf = null,
                     history_node,
                     starting = node.children.length === 0;
 
@@ -14974,7 +15252,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                             node.children.splice(node.children.length - 1, 0, dat);
 
                             this.on_add_node_before.notify({
-                                node_to_insert: dat, 
+                                node_to_insert: dat,
                                 existing_node: ellipsis
                             });
                         };
@@ -15047,7 +15325,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                 // reset:
                 node.children = [];
                 this.remove_history_nodes.notify({
-                node: node 
+                node: node
                 });
                 return Promise.resolve(node);
             } else if(whither==='index') {
@@ -15156,14 +15434,14 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     return Promise.resolve(undefined);
                 }
 
-                if(opts.toggle) { 
+                if(opts.toggle) {
                 whither = 'hide';
                 }
             }
 
             return that.update_history_nodes(node, whither, null)
                 .then(function(node) {
-                    
+
                     var history_len = 0;
                     if(that.histories_[node.gistname]) {
                         history_len = that.histories_[node.gistname].length;
@@ -15179,7 +15457,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
         },
 
         load_everything: function() {
-        
+
             var that = this,
                 opts;
             return Promise.all([
@@ -15192,7 +15470,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                 opts = user_options;
 
                 that.path_tips_ = user_options['notebook-path-tips'];
-                
+
                 that.gist_sources_ = gist_sources;
                 _.extend(that.notebook_info_, starred_info.notebooks);
                 for(var r in recent_info.notebooks) {
@@ -15232,11 +15510,11 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
             })
             .then(function(data) {
 
-                // initial assignment: 
+                // initial assignment:
                 this.tree_data_ = data;
 
                 // sanitize tree options:
-                _.each(['tree-sort-order', 'tree-filter-date'], function(setting_key) { 
+                _.each(['tree-sort-order', 'tree-filter-date'], function(setting_key) {
                     opts[setting_key] = that.sanitize_tree_setting(setting_key, opts[setting_key]);
                 });
 
@@ -15245,12 +15523,13 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates) {
                     value: opts['tree-filter-date']
                 });
 
-                this.update_sort_type(opts['tree-sort-order'], true);   
+                this.update_sort_type('name', true);
+                //this.update_sort_type(opts['tree-sort-order'], true);
 
-                this.on_initialise_tree.notify({ 
+                this.on_initialise_tree.notify({
                     data: data
-                });         
-                
+                });
+
                 this.on_settings_complete.notify(opts);
 
             }.bind(that))
@@ -15282,13 +15561,22 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.tree_controls_root_selector = '#tree-controls';
         this.$sort_order_select_ = $('#tree_sort_order');
         this.date_filter_ = new RCloud.UI.date_filter('#tree-filter-by');
-        
+
         this.on_notebook_open = new RCloud.UI.event(this);
 
         var view_obj = this;
 
+        var append_node = function(parent) {
+            if (parent && parent.children) {
+                _.each(parent.children, function(child) {
+                    view_obj.$tree_.tree('appendNode', child, view_obj.$tree_.tree('getNodeById', parent.id));
+                    append_node(child);
+                });
+            }
+        };
+
         // attach view component listeners:
-        this.date_filter_.on_change.attach(function(sender, args) { 
+        this.date_filter_.on_change.attach(function(sender, args) {
             view_obj.model_.update_filter(args);
         });
 
@@ -15305,7 +15593,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 var settingValue = args[settingKey];
 
                 if(settingValue != null) {
-                    $(this).val(settingValue);                 
+                    $(this).val(settingValue);
                 }
             });
         });
@@ -15315,7 +15603,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             var start_widget_time = window.performance ? window.performance.now() : 0;
             view_obj.$tree_ = $("#editor-book-tree");
 
-            console.info('loading tree data: ', args.data);
+            //console.info('loading tree data: ', args.data);
 
             view_obj.$sort_order_select_.on('change', view_obj.change_sort_order.bind(view_obj));
 
@@ -15379,12 +15667,12 @@ RCloud.UI.notebook_tree_view = (function(model) {
         });
 
         this.model_.on_load_by_user.attach(function(sender, args) {
-            
-            var root = view_obj.$tree_.tree('getNodeById', args.pid);  
+
+            var root = view_obj.$tree_.tree('getNodeById', args.pid);
             view_obj.$tree_.tree('loadData', args.data, root);
 
             if(args.duplicate_data) {
-                view_obj.$tree_.tree('loadData', args.duplicate_data, 
+                view_obj.$tree_.tree('loadData', args.duplicate_data,
                 view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
             }
         });
@@ -15393,7 +15681,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             var node = args.node;
 
             if(args.isHistorical) {
-                view_obj.$tree_.tree('openNode', 
+                view_obj.$tree_.tree('openNode',
                     view_obj.$tree_.tree('getNodeById', args.node.id));
 
                 node = view_obj.$tree_.tree('getNodeById', args.id);
@@ -15410,11 +15698,12 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.model_.on_select_node.attach(function(sender, args) {
             var node = view_obj.$tree_.tree('getNodeById', args.node.id);
             view_obj.$tree_.tree('selectNode', node);
-            view_obj.scroll_into_view(node);
-            if(node.user === sender.username_)
-                RCloud.UI.notebook_title.make_editable(node, node.element, true);
-            else
-                RCloud.UI.notebook_title.make_editable(null);
+            view_obj.scroll_into_view(node).then(function() {
+                if(node.user === sender.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
         });
 
         this.model_.on_load_children.attach(function(sender, args) {
@@ -15425,21 +15714,25 @@ RCloud.UI.notebook_tree_view = (function(model) {
         this.model_.on_add_node_before.attach(function(sender, args) {
             view_obj.$tree_.tree('addNodeBefore',
                 args.node_to_insert,
-                view_obj.$tree_.tree('getNodeById', args.existing_node.id)); 
+                view_obj.$tree_.tree('getNodeById', args.existing_node.id));
+
+            append_node(args.node_to_insert);
         });
 
         this.model_.on_append_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('appendNode', args.node_to_insert, 
-                view_obj.$tree_.tree('getNodeById', args.parent_id));
+
+            view_obj.$tree_.tree('appendNode', args.node_to_insert, view_obj.$tree_.tree('getNodeById', args.parent_id));
+
+            append_node(args.node_to_insert);
         });
 
         this.model_.on_load_data.attach(function(sender, args) {
-            view_obj.$tree_.tree('loadData', args.children, 
-                view_obj.$tree_.tree('getNodeById', args.node.id));        
+            view_obj.$tree_.tree('loadData', args.children,
+                view_obj.$tree_.tree('getNodeById', args.node.id));
         });
 
         this.model_.on_update_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('updateNode', 
+            view_obj.$tree_.tree('updateNode',
                 view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
         });
 
@@ -15449,7 +15742,6 @@ RCloud.UI.notebook_tree_view = (function(model) {
             if(args.fake_hover) {
                 ui_utils.fake_hover(node);
             }
-            
             view_obj.$tree_.tree('removeNode', node);
         });
 
@@ -15466,7 +15758,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 $(".history i", $(view_obj.$tree_.tree('getNodeById', args.node.id).element)).addClass("button-disabled");
             }
 
-            view_obj.$tree_.tree('openNode', 
+            view_obj.$tree_.tree('openNode',
                 view_obj.$tree_.tree('getNodeById', args.node.id));
         });
 
@@ -15494,6 +15786,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
         change_sort_order: function(event) {
             var val = $(event.target).val();
             this.model_.update_sort_type(val, true);
+            this.scroll_into_view(this.$tree_.tree('getSelectedNode'));
         },
 
         tree_click: function(event) {
@@ -15503,10 +15796,10 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 this.model_.update_history(event.node.parent, false);
             } else if(event.node.gistname) {
                 if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                    this.on_notebook_open.notify({ 
-                        gistname: event.node.gistname, 
+                    this.on_notebook_open.notify({
+                        gistname: event.node.gistname,
                         version: event.node.version,
-                        source: event.node.source, 
+                        source: event.node.source,
                         selroot: true,
                         new_window: true
                     });
@@ -15518,11 +15811,11 @@ RCloud.UI.notebook_tree_view = (function(model) {
                         event.node.version == this.model_.get_current().version && event.node.version == null) { // deliberately null-vague here
                         this.select_node(event.node);
                     } else {
-                        this.on_notebook_open.notify({ 
+                        this.on_notebook_open.notify({
                             // gistname, version, source, selroot, new_window
-                            gistname: event.node.gistname, 
+                            gistname: event.node.gistname,
                             version: event.node.version || null,
-                            source: event.node.source, 
+                            source: event.node.source,
                             selroot: event.node.root,
                             new_window: false
                         });
@@ -15542,21 +15835,27 @@ RCloud.UI.notebook_tree_view = (function(model) {
         },
 
         select_node: function(node) {
-            this.$tree_.tree('selectNode', node);
-            this.scroll_into_view(node);
-            if(node.user === this.model_.username_)
-                RCloud.UI.notebook_title.make_editable(node, node.element, true);
-            else
-                RCloud.UI.notebook_title.make_editable(null);
+            this.scroll_into_view(node).then(function() {
+                this.$tree_.tree('selectNode', node);
+                if(node.user === this.model_.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
         },
 
         scroll_into_view: function(node) {
-            var p = node.parent;
-            while(p.sort_order === this.model_.order.NOTEBOOK) {
-                this.$tree_.tree('openNode', p);
-                p = p.parent;
-            }
-            ui_utils.scroll_into_view(this.$tree_, 50, 100, null, $(node.element));
+            var that = this;
+            return new Promise(function(resolve) {
+                var p = node.parent;
+                while(p) {
+                    that.$tree_.tree('openNode', p);
+                    p = p.parent;
+                }
+                ui_utils.scroll_into_view(that.$tree_, 50, 100, function() {
+                    resolve();
+                }, $(node.element));
+            });
         },
 
         remove_node: function(node) {
@@ -15624,7 +15923,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
             var now = new Date();
             var diff = now - date;
             return RCloud.utils.format_date_time_stamp(date, diff, true, false, this.model_.show_terse_dates());
-        }, 
+        },
 
         highlight_node: function(node) {
             var that = this;
@@ -15642,7 +15941,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                     }, $(node.element));
                 });
             };
-        }, 
+        },
 
         highlight_notebooks: function(notebooks) {
 
@@ -15658,8 +15957,8 @@ RCloud.UI.notebook_tree_view = (function(model) {
             }).reduce(function(cur, next) {
                 return cur.then(next);
             }, Promise.resolve()).then(function() {});
-        }, 
-        
+        },
+
         on_create_tree_li: function(node, $li) {
 
             var element = $li.find('.jqtree-element'),
@@ -15683,18 +15982,30 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 title.addClass('history');
             }
 
-            var date;
+            var date, date_element, is_folder;
 
             if(node.last_commit) {
-                date = $.el.span({'class': 'notebook-date'}, this.display_date(node.last_commit));
+                date = node.last_commit;
+            } else if(this.model_.show_folder_dates_ && this.model_.is_date_sorted()) {
+                var folder_commit = this.model_.get_folder_last_commit_date(node.id);
+
+                if(folder_commit) {
+                    date = folder_commit;
+                    is_folder = true;
+                }
             }
 
-            var right = $.el.span({'class': 'notebook-right'}, date);
+            if(date) {
+                date_element = $.el.span({'class': is_folder ? 'notebook-date folder' : 'notebook-date'},
+                    this.display_date(date));
+            }
+
+            var right = $.el.span({'class': 'notebook-right'}, date_element);
             // if it was editable before, we need to restore that - either selected or open folder tree node
             if(node.user === this.model_.username_ && (this.$tree_.tree('isNodeSelected', node) ||
                                         !node.gistname && node.full_name && node.is_open)) {
                 RCloud.UI.notebook_title.make_editable(node, $li, true);
-            }   
+            }
 
             RCloud.UI.notebook_commands.decorate($li, node, right);
 
@@ -15713,7 +16024,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
                 if(node.version) {
                     element.show();
                 } else {
-                    element.parent()[display ? 'show' : 'hide']();     
+                    element.parent()[display ? 'show' : 'hide']();
                 }
             }
         }
@@ -15724,6 +16035,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
 })();
 
 RCloud.UI.notebook_tree_controller = (function(model, view) {
+
     var notebook_tree_controller = function(model, view) {
 
         "use strict";
@@ -15741,7 +16053,7 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
     };
 
     notebook_tree_controller.prototype = {
-        
+
         get_tree_data: function() {
             return this.model_.tree_data_;
         },
@@ -15784,7 +16096,7 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
 
         has_notebook_info: function(gistname) {
             return this.model_.has_notebook_info(gistname);
-        },
+o        },
 
         get_notebook_info: function(gistname) {
             return this.model_.get_notebook_info(gistname);
@@ -15812,8 +16124,8 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
 
         show_terse_dates: function(show_terse_dates) {
             this.model_.show_terse_dates(show_terse_dates);
-        },   
-        
+        },
+
         set_visibility: function(gistname, visible) {
             return this.model_.set_visibility(gistname, visible);
         },
@@ -15830,7 +16142,7 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
             this.select_node(node);
             $(node.element).find('.jqtree-element:eq(0)').trigger('click');
         },
-        
+
         update_notebook_view: function(user, gistname, entry, selroot) {
             return this.model_.update_notebook_view(user, gistname, entry, selroot);
         },
