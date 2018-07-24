@@ -1,6 +1,7 @@
 module.exports = function (grunt) {
     'use strict';
 
+    const sass = require('node-sass');
     require('load-grunt-tasks')(grunt, {
         pattern: 'grunt-*'
     });
@@ -126,6 +127,7 @@ module.exports = function (grunt) {
         sass: {
             all: {
                 options: {
+		    implementation: sass,
                     style: 'compressed',
                     sourceMap: true
                 },
