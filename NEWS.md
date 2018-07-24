@@ -1,3 +1,10 @@
+## RCloud 2.0.1
+
+### Bugfixes
+ * `Content-disposition` field is passed through `proxy.R`, allowing Shiny's `downloadHandler` to
+   specify the filename. (rcloud.shiny#28)
+
+
 ## RCloud 2.0
 RCloud 2.0 is compatible with R 3.5. (Due to unknown reasons, R 3.4 was not compatible.)
 
