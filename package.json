@@ -17,6 +17,6 @@
     "grunt-contrib-uglify": "~3.3.0",
     "grunt-sass": "3.x",
     "load-grunt-tasks": "~4.0.0",
-    "node-sass": "^4.9.2"
+    "node-sass": "^4.9.3"
   }
 }
