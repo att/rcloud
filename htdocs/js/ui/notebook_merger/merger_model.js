@@ -1,6 +1,19 @@
 RCloud.UI.merger_model = (function() {
 
+  // Key holding last used selection of 'theirs' notebook in Merge Dialog.
+  // TODO: Was this actual requirement?
+  const MERGE_CHANGES_BY = 'merge-changes-by';
+  
+  const MESSAGES = Object.freeze({
+        same_notebook_error : 'You cannot merge from your current notebook; the source must be a different notebook.',
+        invalid_notebook_id_error : 'Invalid notebook ID.',
+        not_found_notebook_error : 'The notebook could not be found.',
+        no_file_to_upload_error : 'No file to upload',
+        invalid_url_error : 'Invalid URL'
+      });
+    
   const merger_model = class {
+    
     constructor() {
 
       this.DialogStage = Object.freeze({
@@ -21,32 +34,22 @@ RCloud.UI.merger_model = (function() {
       this.on_set_merge_source = new RCloud.UI.event(this);
       this.on_merge_start = new RCloud.UI.event(this);
       this.on_merge_complete = new RCloud.UI.event(this);
-
-      this._dialog_stage = this.DialogStage.INIT;
-      this._merge_source;
-      this._notebook_from_file = undefined;
-
-      this._same_notebook_error = 'You cannot merge from your current notebook; the source must be a different notebook.';
-      this._invalid_notebook_id_error = 'Invalid notebook ID.';
-      this._not_found_notebook_error = 'The notebook could not be found.';
-      this._no_file_to_upload = 'No file to upload';
-      this._invalid_url = 'Invalid URL';
-
+      
       this._diff_engine = new RCloud.UI.merging.diff_engine();
 
+      this._dialog_stage = this.DialogStage.INIT;
+      this._merge_source = 'url';
+      this._notebook_from_file = undefined;
       this._delta_decorations = [];
       this._diff_info = [];
-
+      this._diff_list = [];
       this._other_notebook_description = undefined;
-
       this._currentFile = undefined;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //
     get_notebook_merge_property() {
-      rcloud.get_notebook_property(shell.gistname(), 'merge-changes-by').then(val => {
+      // Use previous selection used.
+      rcloud.get_notebook_property(shell.gistname(), MERGE_CHANGES_BY).then(val => {
         if(val && val.indexOf(':') !== -1) {
           // split and set:
           var separatorIndex = val.indexOf(':');
@@ -74,6 +77,14 @@ RCloud.UI.merger_model = (function() {
       this._merge_source = 'url';
       this._notebook_from_file = undefined;
       this._dialog_stage = this.DialogStage.INIT;
+      this._diff_engine = new RCloud.UI.merging.diff_engine();
+
+      this._delta_decorations = [];
+      this._diff_info = [];
+      this._diff_list = [];
+      this._other_notebook_description = undefined;
+
+      this._currentFile = undefined;
       this.on_reset_complete.notify();
     }
 
@@ -104,10 +115,10 @@ RCloud.UI.merger_model = (function() {
     prepare_notebook_for_comparison(notebook) {
       notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
       notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename)).sort((p1, p2) => { 
-        return p1.filename.localeCompare(p2.filename, undefined, { sensitivity: 'base' })
+        return p1.filename.localeCompare(p2.filename, undefined, { sensitivity: 'base' });
       });
       notebook.assets = notebook.files.filter(f => !Notebook.is_part_name(f.filename)).sort((a1, a2) => { 
-        return a1.filename.localeCompare(a2.filename, undefined, { sensitivity: 'base' })
+        return a1.filename.localeCompare(a2.filename, undefined, { sensitivity: 'base' });
       });
       return notebook;
     }
@@ -134,7 +145,7 @@ RCloud.UI.merger_model = (function() {
           }}).value();
       });
 
-      info.union.files = _.uniq(_.union(info.owned.files, info.other.files), false, (item) => { return item.type && item.filename; });
+      info.union.files = _.uniq(_.union(info.other.files, info.owned.files), false, (item) => { return item.type && item.filename; });
 
       return info;
     }
@@ -161,9 +172,9 @@ RCloud.UI.merger_model = (function() {
 
       var get_notebook_by_id = (id) => {
         if(!Notebook.valid_gist_id(id)) {
-          return Promise.reject(new Error(this._invalid_notebook_id_error));
+          return Promise.reject(new Error(MESSAGES.invalid_notebook_id_error));
         } else if(id.toLowerCase() === shell.gistname().toLowerCase()) {
-          return Promise.reject(new Error(this._same_notebook_error));
+          return Promise.reject(new Error(MESSAGES.same_notebook_error));
         }
         return rcloud.get_notebook(id);
       };
@@ -179,14 +190,14 @@ RCloud.UI.merger_model = (function() {
             if(this._notebook_from_file) {
               return Promise.resolve(this._notebook_from_file);
             } else {
-              return Promise.reject(new Error(this._no_file_to_upload));
+              return Promise.reject(new Error(MESSAGES.no_file_to_upload_error));
             }
           };
       } else if(this._merge_source === 'url') {
         get_notebook_func = (url) => {
           var id = RCloud.utils.get_notebook_from_url(url);
           if(!id) {
-            return Promise.reject(new Error(this._invalid_url));
+            return Promise.reject(new Error(MESSAGES.invalid_url_error));
           } else {
             return get_notebook_by_id(id);
           }
@@ -197,8 +208,8 @@ RCloud.UI.merger_model = (function() {
 
         this._other_notebook_description = notebook.description;
 
-        // current notebook:
-        rcloud.set_notebook_property(shell.gistname(), 'merge-changes-by', `${this._merge_source}:${from_notebook}`);
+        // Persist selection with current notebook
+        rcloud.set_notebook_property(shell.gistname(), MERGE_CHANGES_BY, `${this._merge_source}:${from_notebook}`);
 
         const binarySuffix = '.b64';
 
@@ -221,7 +232,7 @@ RCloud.UI.merger_model = (function() {
         let message;
 
         if(e.message.indexOf('Not Found (404)') !== -1) {
-          message = this._not_found_notebook_error;
+          message = MESSAGES.not_found_notebook_error;
         } else {
           message = e.message;
         }
@@ -328,8 +339,8 @@ RCloud.UI.merger_model = (function() {
       this.on_set_stage.notify({
         stage
       });
-    }
-  };
+    };
+  }
 
   return new merger_model();
 });
