@@ -45,24 +45,12 @@ RCloud.UI.merging = (function() {
               }
             });
       
-            return resolved.join('\n');
+            return resolved.join('');
           }
         }
       }
     }
     get_diff_info(owned, other) {
-
-      let fileChangeType;
-
-      if(!owned && other) {
-        fileChangeType = ChangeType.NEWFILE;
-      } else if(owned && !other) {
-        fileChangeType =  ChangeType.DELETEDFILE;
-      } else if(owned.isBinary) {
-        fileChangeType = ChangeType.BINARY;
-      } else {
-        fileChangeType = owned.content == other.content ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
-      }
 
       const getContent = (file) => {
         if(!file || file.isBinary) {
@@ -73,6 +61,18 @@ RCloud.UI.merging = (function() {
           } 
           return file.content;
         }
+      }
+      
+      let fileChangeType;
+
+      if(!owned && other) {
+        fileChangeType = ChangeType.NEWFILE;
+      } else if(owned && !other) {
+        fileChangeType =  ChangeType.DELETEDFILE;
+      } else if(owned.isBinary) {
+        fileChangeType = ChangeType.BINARY;
+      } else {
+        fileChangeType = getContent(owned) == getContent(other) ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
       }
 
       const diffs = this.engine_.diffLines(getContent(owned), getContent(other)),
