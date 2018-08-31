@@ -5,6 +5,8 @@ RCloud.UI.merger_model = (function() {
   const MERGE_CHANGES_BY = 'merge-changes-by';
   
   const DEFAULT_SOURCE = 'id';
+
+  const BINARY_SUFFIX = '.b64';
   
   const MESSAGES = Object.freeze({
         same_notebook_error : 'You cannot merge from your current notebook; the source must be a different notebook.',
@@ -143,7 +145,7 @@ RCloud.UI.merger_model = (function() {
       _.each(Object.keys(notebooks_for_compare), (source) => {
         info[source].files = _.chain(RCloud.utils.clean_r(notebooks_for_compare[source].files))
           .values().map(f => { return { 
-            isBinary: f.content.hasOwnProperty('r_type'),
+            isBinary: f.content.hasOwnProperty('r_type') || f.isBinary,
             type: Notebook.is_part_name(f.filename) ? 'part' : 'asset',
             filename: f.filename,
             content: f.content,
@@ -217,13 +219,12 @@ RCloud.UI.merger_model = (function() {
         // Persist selection with current notebook
         rcloud.set_notebook_property(shell.gistname(), MERGE_CHANGES_BY, `${this._merge_source}:${from_notebook}`);
 
-        const binarySuffix = '.b64';
-
         // file-based merges don't have filename property, set, for later:
         if(!notebook.files[Object.keys(notebook.files)[0]].hasOwnProperty('filename')) {
           Object.keys(notebook.files).forEach(f => {
-            if(f.endsWith(binarySuffix)) {
-              notebook.files[f].filename = f.substring(0, f.length - binarySuffix.length);
+            if(f.endsWith(BINARY_SUFFIX)) {
+              notebook.files[f].filename = f.substring(0, f.length - BINARY_SUFFIX.length);
+              notebook.files[f].isBinary = true;
             } else {
               notebook.files[f].filename = f;
             }
@@ -327,11 +328,14 @@ RCloud.UI.merger_model = (function() {
 
       let changes = _.chain(this._comparison.union.files)
               .filter(f => includeFile(f))
-              .map(f => ({
-                filename: f.filename,
-                language: f.isBinary ? null : f.language,
-                content: this._diff_engine.getResolvedContent(f),
-              }))
+              .map(f => {
+                // Backend uses .b64 suffix hint to handle Base64 encoded content.
+                let filename = f.content.hasOwnProperty('r_type') || !f.isBinary ? f.filename : f.filename + BINARY_SUFFIX; 
+                return {
+                  filename: filename,
+                  language: f.isBinary ? null : f.language,
+                  content: this._diff_engine.getResolvedContent(f),
+              }})
               .value();
 
       editor.merge_notebook(changes).then(() => {
