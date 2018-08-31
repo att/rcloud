@@ -1,8 +1,10 @@
 window.RCloud.UI.merger_view = (function(model) {
 
+  const DEFAULT_LANGUAGE = 'rcloud';
+
   (function( $ ){
     $.fn.setMergerDialogStage = function(stage) {
-      this.removeClass(Object.keys(model.DialogStage).map(key => `stage-${key.toLowerCase()}`).join(' '))
+      this.removeClass(Object.keys(model.DialogStage).map(key => `stage-${key.toLowerCase()}`).join(' '));
       this.addClass(`stage-${stage}`);
       return this;
     }; 
@@ -22,7 +24,7 @@ window.RCloud.UI.merger_view = (function(model) {
 
       this.setTransitionTimeout = (func) => {
         setTimeout(func, (this.transitionTimeout * 1000) + 200);
-      }
+      };
 
       $("body").append(template({
         transitionTimeSeconds: this.transitionTimeSeconds
@@ -132,15 +134,15 @@ window.RCloud.UI.merger_view = (function(model) {
               fontSize: 11
             });
             this._compare_diff_editor.setModel({
-              original: monaco.editor.createModel($(this._compare_diff_selector).data('original')),
-              modified: monaco.editor.createModel($(this._compare_diff_selector).data('modified'))
+              original: monaco.editor.createModel($(this._compare_diff_selector).data('original'), DEFAULT_LANGUAGE),
+              modified: monaco.editor.createModel($(this._compare_diff_selector).data('modified'), DEFAULT_LANGUAGE)
             });
           }); 
         } else {
           if(this._compare_diff_editor) {
             this._compare_diff_editor.setModel({
-              original: monaco.editor.createModel($(this._compare_diff_selector).data('original')),
-              modified: monaco.editor.createModel($(this._compare_diff_selector).data('modified'))
+              original: monaco.editor.createModel($(this._compare_diff_selector).data('original'), DEFAULT_LANGUAGE),
+              modified: monaco.editor.createModel($(this._compare_diff_selector).data('modified'), DEFAULT_LANGUAGE)
             });
           }
         }
@@ -251,7 +253,7 @@ window.RCloud.UI.merger_view = (function(model) {
           let init = () => {
             
             this._compare_editor.setModel(
-                monaco.editor.createModel(args.diff.content, 'rcloud')
+                monaco.editor.createModel(args.diff.content, DEFAULT_LANGUAGE)
             );
 
             this.updateReviewDecorations(args.diff.modifiedLineInfo);
@@ -265,13 +267,13 @@ window.RCloud.UI.merger_view = (function(model) {
           if(!this._compare_editor) {    
             require(["vs/editor/editor.main"], () => {  
               monaco.languages.register({
-                id: 'rcloud'
+                id: DEFAULT_LANGUAGE
               });
             
               this._compare_editor = monaco.editor.create(
                 $(this._compare_editor_selector)[0],  
                 {
-                  language: 'rcloud',
+                  language: DEFAULT_LANGUAGE,
                   fontSize: 11,
                   scrollBeyondLastLine: false,
                   readOnly: true,
@@ -301,20 +303,20 @@ window.RCloud.UI.merger_view = (function(model) {
           let init = () => {
             this._single_editor.setModel(
               monaco.editor.createModel(args.diff.owned ? args.diff.owned.content :
-                args.diff.other.content)
+                args.diff.other.content, DEFAULT_LANGUAGE)
             );
-          }
+          };
 
           if(!this._single_editor) {
             require(["vs/editor/editor.main"], () => {  
               monaco.languages.register({
-                id: 'rcloud'
+                id: DEFAULT_LANGUAGE
               });
             
               this._single_editor = monaco.editor.create(
                 $(this._single_editor_selector)[0],  
                 {
-                  language: 'rcloud',
+                  language: DEFAULT_LANGUAGE,
                   fontSize: 11,
                   scrollBeyondLastLine: false,
                   minimap: {
@@ -418,7 +420,7 @@ window.RCloud.UI.merger_view = (function(model) {
         }
       };
 
-      this._codelens_provider = monaco.languages.registerCodeLensProvider('rcloud', {
+      this._codelens_provider = monaco.languages.registerCodeLensProvider(DEFAULT_LANGUAGE, {
         provideCodeLenses: () => {
             return _.map(reviewList, (reviewItem, key) => {
               return {
@@ -455,7 +457,7 @@ window.RCloud.UI.merger_view = (function(model) {
             className: reviewItem.isRejected ? '' : reviewItem.diffType,
             glyphMarginClassName: reviewItem.diffType
           }
-        } 
+        };
       }).value();
 
       this._model.update_decorations(this._compare_editor.deltaDecorations(this._model.get_decorations(), decorations));
