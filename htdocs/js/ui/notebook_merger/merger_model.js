@@ -4,12 +4,14 @@ RCloud.UI.merger_model = (function() {
   // TODO: Was this actual requirement?
   const MERGE_CHANGES_BY = 'merge-changes-by';
   
+  const DEFAULT_SOURCE = 'url';
+  
   const MESSAGES = Object.freeze({
         same_notebook_error : 'You cannot merge from your current notebook; the source must be a different notebook.',
         invalid_notebook_id_error : 'Invalid notebook ID.',
         not_found_notebook_error : 'The notebook could not be found.',
-        no_file_to_upload_error : 'No file to upload',
-        invalid_url_error : 'Invalid URL'
+        no_file_to_upload_error : 'No file to upload.',
+        invalid_url_error : 'Invalid RCloud Notebook URL.'
       });
     
   const merger_model = class {
@@ -38,7 +40,7 @@ RCloud.UI.merger_model = (function() {
       this._diff_engine = new RCloud.UI.merging.diff_engine();
 
       this._dialog_stage = this.DialogStage.INIT;
-      this._merge_source = 'url';
+      this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
       this._delta_decorations = [];
       this._diff_info = [];
@@ -49,9 +51,15 @@ RCloud.UI.merger_model = (function() {
 
     get_notebook_merge_property() {
       // Use previous selection used.
-      rcloud.get_notebook_property(shell.gistname(), MERGE_CHANGES_BY).then(val => {
+      rcloud.get_notebook_property(shell.gistname(), MERGE_CHANGES_BY).catch((e) => {
+          console.error(e);
+          this.on_set_merge_source.notify({
+            type: DEFAULT_SOURCE 
+          });  
+        
+      }).then(val => {
+        // value has format '<source-type>:<source-value>''
         if(val && val.indexOf(':') !== -1) {
-          // split and set:
           var separatorIndex = val.indexOf(':');
           var type = val.substring(0, separatorIndex);
           var value = val.substring(separatorIndex + 1);
@@ -63,18 +71,16 @@ RCloud.UI.merger_model = (function() {
             type, 
             value
           });
-        }
-        else {
-          // default:
+        } else {
           this.on_set_merge_source.notify({
-            type: 'url' 
+            type: DEFAULT_SOURCE 
           });        
         }
       });
     }
 
     reset() {
-      this._merge_source = 'url';
+      this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
       this._dialog_stage = this.DialogStage.INIT;
       this._diff_engine = new RCloud.UI.merging.diff_engine();
