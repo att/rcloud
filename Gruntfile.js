@@ -1,6 +1,7 @@
 module.exports = function (grunt) {
     'use strict';
 
+    const sass = require('node-sass');
     require('load-grunt-tasks')(grunt, {
         pattern: 'grunt-*'
     });
@@ -108,13 +109,19 @@ module.exports = function (grunt) {
             "htdocs/lib/js/ace/r_matching_brace_outdent.js",
             "htdocs/lib/js/ace/r_code_model.js",
             "htdocs/lib/js/ace/r_scope_tree.js",
+            "htdocs/lib/js/ace/jupyter_completions.js",
             "htdocs/lib/js/ace/tex_highlight_rules.js",
             "htdocs/lib/js/ace/mode-markdown.js",
             "htdocs/lib/js/ace/sweave_background_highlighter.js",
             "htdocs/lib/js/ace/ext-language_tools.js",
             "htdocs/lib/js/ace/ext-searchbox.js",
-            "htdocs/lib/js/ace/mode-javascript.js",
+            "htdocs/lib/js/ace/mode-javascript-jup.js",
             "htdocs/lib/js/ace/mode-python.js",
+            "htdocs/lib/js/ace/mode-perl.js",
+            "htdocs/lib/js/ace/mode-julia.js",
+            "htdocs/lib/js/ace/mode-java.js",
+            "htdocs/lib/js/ace/mode-golang.js",
+            "htdocs/lib/js/ace/mode-scala.js",
             "htdocs/lib/js/ace/mode-sh.js",
             "htdocs/lib/js/ace/_end.js"
         ]
@@ -125,6 +132,7 @@ module.exports = function (grunt) {
         sass: {
             all: {
                 options: {
+		    implementation: sass,
                     style: 'compressed',
                     sourceMap: true
                 },

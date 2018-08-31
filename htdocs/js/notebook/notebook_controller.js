@@ -250,8 +250,8 @@ Notebook.create_controller = function(model)
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
         },
-        append_asset: function(content, filename) {
-            var cch = append_asset_helper(content, filename);
+        append_asset: function(content, filename, user_appended) {
+            var cch = append_asset_helper(content, filename, user_appended);
             return update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback())
                 .then(function(notebook) {

@@ -617,23 +617,21 @@ ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
 
-ui_utils.scroll_to_after = function($sel, duration, $scroller, $offset_elements, scroll_top_offset) {
+ui_utils.scroll_to_after = function($sel, scroll_opts, $scroller, $offset_elements, scroll_top_offset) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
+    var opts = $.extend($.scrollTo.defaults, {'axis':'y'}, scroll_opts);
     if ($sel.length === 0)
         return;
-    var opts;
     if(!scroll_top_offset) {
       scroll_top_offset = 0;
     }
-    if(duration !== undefined)
-        opts = {animation: {duration: duration}};
     if(!$scroller) {
       $scroller = $sel.parent();
     }
     var elemtoppos = ui_utils.get_top_offset($offset_elements);
     var y = $scroller.scrollTop() + elemtoppos + $sel.position().top + $sel.outerHeight() - scroll_top_offset;
-    $scroller.scrollTo(null, y, opts);
+    $scroller.scrollTo(y, opts);
 };
 
 ui_utils.get_top_offset = function($offset_elements) {
@@ -662,16 +660,21 @@ ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_co
         console.warn('scroll_into_view needs offset elements');
         return;
     }
+    var opts = $.extend($.scrollTo.defaults, { 'axis':'y', 'duration':600 });
     var height = +$scroller.css("height").replace("px","");
-    var scrolltop = $scroller.scrollTop(),
-        options = on_complete ? { animation: { complete : on_complete }} : {};
+    var scrolltop = $scroller.scrollTop();
+    if(on_complete) {
+      opts.onAfter = function(target, settings) {
+        on_complete();
+      }
+    }
 
     var elemtop = ui_utils.get_top_offset(Array.prototype.slice.call(arguments, 4));
 
     if(elemtop > height)
-        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
+        $scroller.scrollTo( scrolltop + elemtop - height + top_buffer, opts);
     else if(elemtop < 0)
-        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer, options);
+        $scroller.scrollTo( scrolltop + elemtop - bottom_buffer, opts);
     else {
         // no scrolling, so automatically call on_complete if it's defined:
         if(on_complete) {

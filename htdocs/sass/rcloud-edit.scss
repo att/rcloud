@@ -555,6 +555,9 @@ ul.jqtree-tree .jqtree-title.jqtree_common.history {
 }
 
 .notebook-date {
+    &.folder {
+        margin-right: 30px;
+    }
 }
 
 .notebook-time {

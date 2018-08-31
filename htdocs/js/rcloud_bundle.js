@@ -1,5 +1,5 @@
 RCloud = {
-    version: '1.9'
+    version: '2.0'
 };
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
@@ -1391,17 +1391,42 @@ ui_utils.on_next_tick = function(f) {
     window.setTimeout(f, 0);
 };
 
-ui_utils.scroll_to_after = function($sel, duration) {
+ui_utils.scroll_to_after = function($sel, scroll_opts, $scroller, $offset_elements, scroll_top_offset) {
     // no idea why the plugin doesn't take current scroll into account when using
     // the element parameter version
+    var opts = $.extend($.scrollTo.defaults, {'axis':'y'}, scroll_opts);
     if ($sel.length === 0)
         return;
-    var opts;
-    if(duration !== undefined)
-        opts = {animation: {duration: duration}};
-    var $parent = $sel.parent();
-    var y = $parent.scrollTop() + $sel.position().top +  $sel.outerHeight();
-    $parent.scrollTo(null, y, opts);
+    if(!scroll_top_offset) {
+      scroll_top_offset = 0;
+    }
+    if(!$scroller) {
+      $scroller = $sel.parent();
+    }
+    var elemtoppos = ui_utils.get_top_offset($offset_elements);
+    var y = $scroller.scrollTop() + elemtoppos + $sel.position().top + $sel.outerHeight() - scroll_top_offset;
+    $scroller.scrollTo(y, opts);
+};
+
+ui_utils.get_top_offset = function($offset_elements) {
+    var elemtoppos = 0;
+    if($offset_elements) {
+      $offset_elements.forEach(function(x) {
+          elemtoppos += x.position().top;
+      });
+    }
+    return elemtoppos;
+};
+
+ui_utils.is_visible_in_scrollable = function($scroller, $offset_elements) {
+  
+    var height = +$scroller.css("height").replace("px","");
+    var elemtoppos = ui_utils.get_top_offset($offset_elements);
+    if($($offset_elements[$offset_elements.length-1]).is(":visible")) {
+      elemtoppos += $offset_elements[$offset_elements.length-1].outerHeight();
+    }
+    elemtoppos -= $scroller.get(0).offsetTop;
+    return (elemtoppos <= height)
 };
 
 ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_complete /* , $elem-offset, $elem-offset ... */) {
@@ -1409,18 +1434,21 @@ ui_utils.scroll_into_view = function($scroller, top_buffer, bottom_buffer, on_co
         console.warn('scroll_into_view needs offset elements');
         return;
     }
+    var opts = $.extend($.scrollTo.defaults, { 'axis':'y', 'duration':600 });
     var height = +$scroller.css("height").replace("px","");
-    var scrolltop = $scroller.scrollTop(),
-        elemtop = 0,
-        options = on_complete ? { animation: { complete : on_complete }} : {};
+    var scrolltop = $scroller.scrollTop();
+    if(on_complete) {
+      opts.onAfter = function(target, settings) {
+        on_complete();
+      }
+    }
 
-    for(var i = 4; i < arguments.length; ++i)
-        elemtop += arguments[i].position().top;
+    var elemtop = ui_utils.get_top_offset(Array.prototype.slice.call(arguments, 4));
 
     if(elemtop > height)
-        $scroller.scrollTo(null, scrolltop + elemtop - height + top_buffer, options);
+        $scroller.scrollTo( scrolltop + elemtop - height + top_buffer, opts);
     else if(elemtop < 0)
-        $scroller.scrollTo(null, scrolltop + elemtop - bottom_buffer, options);
+        $scroller.scrollTo( scrolltop + elemtop - bottom_buffer, opts);
     else {
         // no scrolling, so automatically call on_complete if it's defined:
         if(on_complete) {
@@ -2112,6 +2140,17 @@ function create_cell_html_view(language, cell_model) {
     var highlights_;
     var code_preprocessors_ = []; // will be an extension point, someday
     var running_state_;  // running state
+    var autoscroll_notebook_output_;
+    var results_processing_context_ = {
+      options : {
+        no_of_results_in_batch: 20,
+        notebook_update_delay : 20,
+      },
+      results : [],
+      stop : false,
+      prev_scroll : null,
+      scrolled : false
+    };
 
     // input1
     var prompt_text_;
@@ -2204,8 +2243,8 @@ function create_cell_html_view(language, cell_model) {
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
             set_background_class(ace_div);
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            ace_session_.setMode(new LangMode(false, ace_document_, ace_session_));
+            var LangMode = RCloud.language.ace_mode(language);
+            ace_session_.setMode(new LangMode({ suppressHighlighting : false, doc : ace_document_, session : ace_session_, language : language }));
         }
     }
 
@@ -2283,12 +2322,11 @@ function create_cell_html_view(language, cell_model) {
         else div.off('mousedown.rcloud-cell mouseup.rcloud-cell');
     }
 
-    // postprocessing the dom is slow, so only do this when we have a break
-    var result_updated = _.debounce(function() {
+    function result_updated() {
         Notebook.Cell.postprocessors.entries('all').forEach(function(post) {
             post.process(result_div_, result);
         });
-    }, 100);
+    }
 
     function clear_result() {
         result_div_.empty();
@@ -2296,7 +2334,147 @@ function create_cell_html_view(language, cell_model) {
         if(cell_controls_)
             results_button_border(false);
     }
+    
+    
+    function is_in_document() {
+      return $.contains(document, notebook_cell_div.get(0));
+    }
+    
+    function is_result_div_visible_in_cellarea() {
+        return ui_utils.is_visible_in_scrollable($('#rcloud-cellarea'), [notebook_cell_div, result_div_]);
+    }
+    
+    function scroll() {
+        if(!autoscroll_notebook_output_) {
+          return;
+        }
+        var cellarea = $('#rcloud-cellarea');
+        
+        if(result_div_) {
+          var opts = {
+            'axis' : 'y',
+            'duration' : 0,
+            'interrupt' : true,
+            'offset' : {top: 10},
+          };
+          ui_utils.scroll_to_after(result_div_, opts, cellarea, [notebook_cell_div], cellarea.height());
+        }
+    }
+    function consume_result(type, r)  {
+          switch(type) {
+            case 'selection':
+            case 'deferred_result':
+                break;
+            default:
+                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
+                    r = pre.process(r);
+                });
+            }
 
+            if(type!='code')
+                current_result_ = null;
+            if(type!='error')
+                current_error_ = null;
+            var pre;
+            switch(type) {
+            case 'code':
+                if(!current_result_) {
+                    pre = $('<pre></pre>');
+                    current_result_ = $('<code></code>');
+                    pre.append(current_result_);
+                    result_div_.append(pre);
+                }
+                current_result_.append(_.escape(r));
+                break;
+            case 'error':
+                // sorry about this!
+                if(!current_error_) {
+                    pre = $('<pre></pre>');
+                    current_error_ = $('<code style="color: crimson"></code>');
+                    pre.append(current_error_);
+                    result_div_.append(pre);
+                }
+                current_error_.append(_.escape(r));
+                break;
+            case 'selection':
+            case 'html':
+                result_div_.append(r);
+                break;
+            case 'deferred_result':
+                result_div_.append('<span class="deferred-result">' + r + '</span>');
+                break;
+            default:
+                throw new Error('unknown result type ' + type);
+            }
+    }
+    
+    function should_scroll(initial_condition) {
+      return initial_condition && !is_result_div_visible_in_cellarea() && !results_processing_context_.scrolled;
+    }
+      
+    function schedule_results_consumer(delay) {
+        results_processing_context_.stop = false;
+        results_processing_context_.results.length = 0;
+        var result_consumer = function() {
+            var counter = 0;
+            var scroll_after = is_result_div_visible_in_cellarea();
+            results_processing_context_.scrolled = false;
+            while(counter < results_processing_context_.options.no_of_results_in_batch) {
+              var result = results_processing_context_.results.shift();
+              if(!result) {
+                break;
+              }
+              consume_result(result.type, result.result);
+              counter++;
+              if (should_scroll(scroll_after)) {
+                scroll();
+              }
+            }
+            result_updated();
+            
+            var wait_for_content = function(attempt, callback) {
+              var WAIT_DELAY = 3;
+              var MAX_WAIT_STEPS = 7;
+              var MAX_WAIT_DELAY = 300;
+              if(attempt <= MAX_WAIT_STEPS) {
+                if((result_div_.find('.rcloud-htmlwidget').length > 0 && result_div_.find('.rcloud-htmlwidget').find('div').is(':empty')) 
+                   || result_div_.find('.deferred-result').length > 0) {
+                  var next_attempt = attempt+1;
+                  setTimeout(wait_for_content, Math.max(WAIT_DELAY^(next_attempt), MAX_WAIT_DELAY), next_attempt, callback);
+                  return;
+                }
+              }
+              callback();
+            };
+            
+            setTimeout(wait_for_content, 0, 1, function() {
+              if (should_scroll(scroll_after)) {
+                scroll();
+              }
+              if (is_in_document() && (!results_processing_context_.stop || results_processing_context_.results.length > 0)) {
+                window.setTimeout(result_consumer, results_processing_context_.options.notebook_update_delay);
+              }
+            });
+            
+            
+        };
+        window.setTimeout(result_consumer, delay);
+    }
+    
+    function stop_results_consumer(callback) {
+      results_processing_context_.stop = true;
+      var wait = function() {
+        if(is_in_document()) {
+          if(results_processing_context_.results.length > 0) {
+            setTimeout(wait, results_processing_context_.options.notebook_update_delay);
+          } else {
+            callback();
+          }
+        }
+      };
+      wait();
+    }
+    
     // start trying to refactor out this repetitive nonsense
     function ace_stuff(div, content) {
         ace.require("ace/ext/language_tools");
@@ -2760,8 +2938,10 @@ function create_cell_html_view(language, cell_model) {
         },
         state_changed: function(state) {
             var control = left_controls_.controls['run_state'];
-            if(running_state_==="unknown" && state==="running")
+            if(running_state_==="unknown" && state==="running") {
                 state = "unknown-running";
+                has_result_ = false;
+            }
             switch(state) {
             case 'ready':
                 control.icon('icon-circle-blank').color('#777').title('content has not been run');
@@ -2774,7 +2954,6 @@ function create_cell_html_view(language, cell_model) {
                 break;
             case 'unknown-running':
                 control.icon('icon-question icon-spin').color('blue').title('cell is currently running');
-                has_result_ = false;
                 break;
             case 'running':
                 control.icon('icon-spinner icon-spin').color('blue').title('cell is currently running');
@@ -2799,54 +2978,15 @@ function create_cell_html_view(language, cell_model) {
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
+                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
             this.toggle_results(true); // always show when updating
-            switch(type) {
-            case 'selection':
-            case 'deferred_result':
-                break;
-            default:
-                Notebook.Cell.preprocessors.entries('all').forEach(function(pre) {
-                    r = pre.process(r);
-                });
-            }
+            
+            results_processing_context_.results.push({
+              type : type,
+              result : r
+            });
 
-            if(type!='code')
-                current_result_ = null;
-            if(type!='error')
-                current_error_ = null;
-            var pre;
-            switch(type) {
-            case 'code':
-                if(!current_result_) {
-                    pre = $('<pre></pre>');
-                    current_result_ = $('<code></code>');
-                    pre.append(current_result_);
-                    result_div_.append(pre);
-                }
-                current_result_.append(_.escape(r));
-                break;
-            case 'error':
-                // sorry about this!
-                if(!current_error_) {
-                    pre = $('<pre></pre>');
-                    current_error_ = $('<code style="color: crimson"></code>');
-                    pre.append(current_error_);
-                    result_div_.append(pre);
-                }
-                current_error_.append(_.escape(r));
-                break;
-            case 'selection':
-            case 'html':
-                result_div_.append(r);
-                break;
-            case 'deferred_result':
-                result_div_.append('<span class="deferred-result">' + r + '</span>');
-                break;
-            default:
-                throw new Error('unknown result type ' + type);
-            }
-            result_updated();
         },
         end_output: function(error) {
             if(!has_result_) {
@@ -2854,8 +2994,12 @@ function create_cell_html_view(language, cell_model) {
                 result_div_.empty();
                 has_result_ = true;
             }
-            this.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'ready' : 'complete');
-            current_result_ = current_error_ = null;
+            var that = this;
+            stop_results_consumer(function() {
+              that.state_changed(error ? 'error' : running_state_==='unknown-running' ? 'unknown' : 'complete');
+              current_result_ = current_error_ = null;
+            });
+            
         },
         clear_result: clear_result,
         set_readonly: function(readonly) {
@@ -2873,6 +3017,15 @@ function create_cell_html_view(language, cell_model) {
         },
         set_show_cell_numbers: function(whether) {
             left_controls_.set_flag('cell-numbers', whether);
+        },
+        set_autoscroll_notebook_output: function(whether) {
+            autoscroll_notebook_output_ = whether;
+        },
+        on_scroll : function(event) {
+          if(results_processing_context_.prev_scroll) {
+            results_processing_context_.scrolled = (results_processing_context_.prev_scroll > event.currentTarget.scrollTop);
+          }
+          results_processing_context_.prev_scroll = event.currentTarget.scrollTop;
         },
         click_to_edit: click_to_edit,
 
@@ -3261,7 +3414,7 @@ Notebook.Cell.create_controller = function(cell_model)
             that.set_run_state("waiting");
             that.edit_source(false);
             var snapshot = cell_model.get_execution_snapshot(updatePromise.then(update_version));
-            RCloud.UI.run_button.enqueue(
+            RCloud.UI.processing_queue.enqueue(
                 function() {
                     that.set_run_state("running");
                     return cell_model.parent_model.controller.execute_cell_version(context_id, snapshot);
@@ -3443,6 +3596,7 @@ Notebook.Cell.preprocessors.add({
 Notebook.create_html_view = function(model, root_div)
 {
     var show_cell_numbers_;
+    var autoscroll_notebook_output_;
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -3452,6 +3606,7 @@ Notebook.create_html_view = function(model, root_div)
     function init_cell_view(cell_view) {
         cell_view.set_readonly(model.read_only() || shell.is_view_mode());
         cell_view.set_show_cell_numbers(show_cell_numbers_);
+        cell_view.set_autoscroll_notebook_output(autoscroll_notebook_output_);
     }
 
     var result = {
@@ -3467,11 +3622,16 @@ Notebook.create_html_view = function(model, root_div)
             on_rearrange();
             return cell_view;
         },
-        asset_appended: function(asset_model) {
+        asset_appended: function(asset_model, new_asset_index) {
             var asset_view = Notebook.Asset.create_html_view(asset_model);
             asset_model.views.push(asset_view);
-            $("#asset-list").append(asset_view.div());
-            this.asset_sub_views.push(asset_view);
+            if(new_asset_index === undefined){
+              $("#asset-list").append(asset_view.div());
+              this.asset_sub_views.push(asset_view);
+            } else {
+              this.asset_sub_views.splice(new_asset_index, 0, asset_view);
+              $('#asset-list').find('li:eq(' + new_asset_index + ')').after(asset_view.div());
+            }
             on_rearrange();
             return asset_view;
         },
@@ -3517,6 +3677,13 @@ Notebook.create_html_view = function(model, root_div)
                 view.set_show_cell_numbers(whether);
             });
         },
+        set_autoscroll_notebook_output: function(whether) {
+            autoscroll_notebook_output_ = whether;
+            _.each(this.sub_views, function(view) {
+                view.set_autoscroll_notebook_output(whether);
+            });
+            
+        },
         update_urls: function() {
             RCloud.UI.scratchpad.update_asset_url();
         },
@@ -3529,9 +3696,18 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.reformat();
             });
+        },
+        on_scroll: function(event) {
+          if(autoscroll_notebook_output_) {
+              _.each(this.sub_views, function(view) {
+                view.on_scroll(event);
+              });
+          }
         }
     };
     model.views.push(result);
+    
+    $('#rcloud-cellarea').on('scroll', function(event) { result.on_scroll(event); });
     return result;
 };
 
@@ -3576,10 +3752,19 @@ Notebook.create_model = function()
             asset_model.parent_model = this;
             var changes = [];
             changes.push(asset_model.change_object());
-            this.assets.push(asset_model);
+
+            var new_asset_index = this.assets.findIndex(function(a2) {
+                return asset_model.change_object().filename.localeCompare(
+                    a2.change_object().filename, undefined, {sensitivity: 'base'}) <= 0;
+            });
+            if(new_asset_index < 0)
+                this.assets.push(asset_model);
+            else
+                this.assets.splice(new_asset_index, 0, asset_model);
+
             if(!skip_event)
                 _.each(this.views, function(view) {
-                    view.asset_appended(asset_model);
+                    view.asset_appended(asset_model, new_asset_index);
                 });
             return changes;
         },
@@ -4012,7 +4197,7 @@ Notebook.create_controller = function(model)
                 version !== null ||
                 (notebook.user.login !== rcloud.username() && !is_collaborator(notebook, rcloud.username())) ||
                 shell.is_view_mode();
-    
+
         current_gist_ = notebook;
         current_update_ = Promise.resolve(notebook);
         model.read_only(is_read_only);
@@ -4197,8 +4382,8 @@ Notebook.create_controller = function(model)
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
         },
-        append_asset: function(content, filename) {
-            var cch = append_asset_helper(content, filename);
+        append_asset: function(content, filename, user_appended) {
+            var cch = append_asset_helper(content, filename, user_appended);
             return update_notebook(refresh_buffers().concat(cch.changes))
                 .then(default_callback())
                 .then(function(notebook) {
@@ -4291,44 +4476,65 @@ Notebook.create_controller = function(model)
                     return text + '\n';
                 return text;
             }
-            function crunch_quotes(left, right) {
-                var end = /```\n$/, begin = /^```{r}/;
+            function crunch_quotes(left, right, language) {
+                var begin = new RegExp("^```{" + language.toLowerCase() + "}");
+                var end = /```\n$/;
                 if(end.test(left) && begin.test(right))
                     return left.replace(end, '') + right.replace(begin, '');
                 else return left + right;
             }
-
+            function create_code_block(language, content) {
+              return '```{' + language.toLowerCase()+ '}\n' + opt_cr(content) + '```\n';
+            }
             // note we have to refresh everything and then concat these changes onto
             // that.  which won't work in general but looks like it is okay to
             // concatenate a bunch of change content objects with a move or change
             // to one of the same objects, and an erase of one
             var new_content, changes = refresh_buffers();
 
+            var RMARKDOWN = "RMarkdown";
+            var MARKDOWN = "Markdown";
+
+            function isMarkdown(language) {
+              var MARKDOWN_CELLS = [MARKDOWN.toLowerCase(), RMARKDOWN.toLowerCase()];
+              return MARKDOWN_CELLS.indexOf(language.toLowerCase()) >= 0;
+            }
+
             // this may have to be multiple dispatch when there are more than two languages
-            if(prior.language()==cell_model.language()) {
+            if(prior.language() === cell_model.language()) {
                 new_content = crunch_quotes(opt_cr(prior.content()),
-                                            cell_model.content());
+                                            cell_model.content(), prior.language());
+                prior.content(new_content);
+                changes = changes.concat(model.update_cell(prior));
+            } else {
+                if(!isMarkdown(prior.language()) && !isMarkdown(cell_model.language())) {
+                    // Different languages are combined, none of them is markdown
+                    new_content = create_code_block(prior.language(), prior.content()) +
+                                                create_code_block(cell_model.language(), cell_model.content());
+                    changes = changes.concat(model.change_cell_language(prior, MARKDOWN));
+                    changes[changes.length-1].content = new_content;
+                } else {
+                    if(isMarkdown(prior.language()) && isMarkdown(cell_model.language())) {
+                      // Rmarkdown and markdown cells get joined - RMarkdown wins
+                      new_content = crunch_quotes(opt_cr(prior.content()),
+                                                  cell_model.content(),
+                                                  RMARKDOWN);
+                      changes = changes.concat(model.change_cell_language(prior, RMARKDOWN));
+                    } else if(isMarkdown(prior.language())) {
+                      new_content = opt_cr(prior.content()) +
+                                    create_code_block(cell_model.language(), cell_model.content());
+                    } else {
+                      new_content = create_code_block(prior.language(), prior.content()) +
+                                    opt_cr(cell_model.content());
+                      changes = changes.concat(model.change_cell_language(prior, cell_model.language()));
+                    }
+                }
                 prior.content(new_content);
                 changes = changes.concat(model.update_cell(prior));
             }
-            else {
-                if(prior.language()==="R") {
-                    new_content = crunch_quotes('```{r}\n' + opt_cr(prior.content()) + '```\n',
-                                                cell_model.content());
-                    prior.content(new_content);
-                    changes = changes.concat(model.change_cell_language(prior, "Markdown"));
-                    changes[changes.length-1].content = new_content; //  NOOOOOO!!!!
-                }
-                else {
-                    new_content = crunch_quotes(opt_cr(prior.content()) + '```{r}\n',
-                                                opt_cr(cell_model.content()) + '```\n');
-                    new_content = new_content.replace(/```\n```{r}\n/, '');
-                    prior.content(new_content);
-                    changes = changes.concat(model.update_cell(prior));
-                }
-            }
-            _.each(prior.views, function(v) { v.clear_result(); });
-            return update_notebook(changes.concat(model.remove_cell(cell_model)))
+            _.each(prior.views, function(v) { v.clear_result(); v.hide_source(false); });
+            changes = changes.concat(model.remove_cell(cell_model));
+            return update_notebook(changes)
                 .then(default_callback());
         },
         split_cell: function(cell_model, point1, point2) {
@@ -4515,7 +4721,12 @@ Notebook.create_controller = function(model)
             });
             return this;
         },
-
+        autoscroll_notebook_output: function(whether) {
+            _.each(model.views, function(view) {
+                view.set_autoscroll_notebook_output(whether);
+            });
+            return this;
+        },
         //////////////////////////////////////////////////////////////////////
 
         is_mine: function() {
@@ -4539,24 +4750,6 @@ Notebook.create_controller = function(model)
     };
     model.controller = result;
     return result;
-};
-
-function event(sender) {
-    this._sender = sender;
-    this._listeners = [];
-}
-
-event.prototype = {
-    attach : function (listener) {
-        this._listeners.push(listener);
-    },
-    notify : function (args) {
-        var index;
-
-        for (index = 0; index < this._listeners.length; index += 1) {
-            this._listeners[index](this._sender, args);
-        }
-    }
 };
 
 Notebook.hide_r_source = function(selection)
@@ -5000,7 +5193,8 @@ RCloud.language = (function() {
             return languages_[language] ? languages_[language].is_a_markdown : false;
         },
         ace_mode: function(language) {
-            return (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
+            var mode = (languages_[language] && languages_[language].ace_mode) || languages_.Text.ace_mode;
+            return (ace.require(mode) || ace.require(languages_.Text.ace_mode)).Mode; 
         },
         extension: function(language) {
             var ext = (languages_[language] && languages_[language].extension) || '';
@@ -5024,7 +5218,7 @@ RCloud.language = (function() {
             }
         },
         available_languages: function() {
-            return langs_;
+            return langs_.slice(); // protect internal state
         }
     };
 
@@ -5190,6 +5384,30 @@ RCloud.language = (function() {
 
 RCloud.UI = {};
 RCloud.UI.tree = {};
+
+RCloud.UI.event = (function(sender) {
+
+    var event = function(sender) {
+        this._sender = sender;
+        this._listeners = [];
+    }
+
+    event.prototype = {
+        attach : function (listener) {
+            this._listeners.push(listener);
+        },
+        notify : function (args) {
+            var index;
+
+            for (index = 0; index < this._listeners.length; index += 1) {
+                this._listeners[index](this._sender, args);
+            }
+        }
+    };
+
+    return event;
+
+})();
 
 RCloud.UI.advanced_menu = (function() {
     var menu_;
@@ -6021,6 +6239,11 @@ RCloud.UI.command_prompt = (function() {
 
         function restore_prompt() {
             var prop = history_.init();
+            if(!_.contains(RCloud.language.available_languages(), prop.lang)) {
+              var default_lang = RCloud.language.available_languages()[0];
+              console.error("Language " + prop.lang + " is not available. Using " + default_lang + " to restore prompt widget.");
+              prop = {cmd: '', lang: default_lang};
+            }
             change_prompt(prop.cmd);
             result.language(prop.lang);
             var r = last_row(widget);
@@ -6028,8 +6251,8 @@ RCloud.UI.command_prompt = (function() {
         }
 
         function set_language(language) {
-            var LangMode = ace.require(RCloud.language.ace_mode(language)).Mode;
-            session.setMode(new LangMode(false, session.doc, session));
+            var LangMode = RCloud.language.ace_mode(language);
+            session.setMode(new LangMode({ suppressHighlighting : false, doc : session.doc, session : session, language : language }));
         }
 
         ui_utils.install_common_ace_key_bindings(widget, result.language.bind(result));
@@ -9140,7 +9363,9 @@ RCloud.UI.pull_and_replace = (function() {
 
 RCloud.UI.init = function() {
 
+    RCloud.UI.processing_queue.init();
     RCloud.UI.run_button.init();
+    RCloud.UI.stop_button.init();
 
     //////////////////////////////////////////////////////////////////////////
     // allow reordering cells by dragging them
@@ -9205,11 +9430,6 @@ RCloud.UI.init = function() {
     // adds to advanced menu
     RCloud.UI.import_export.init();
     RCloud.UI.pull_and_replace.init();
-
-    // incremental search
-    if(!shell.is_view_mode()) {
-        RCloud.UI.incremental_search.init();
-    }
     
     //////////////////////////////////////////////////////////////////////////
     // view mode things
@@ -9334,8 +9554,9 @@ RCloud.UI.init = function() {
             }
         }
     }, {
+        category: 'Cell Management',
         id: 'notebook_run_all',
-        description: 'Run all',
+        description: 'Run all cells',
         keys: {
             win_mac: [
                 ['ctrl', 'shift', 'enter']
@@ -9605,6 +9826,10 @@ RCloud.UI.load_options = function() {
             RCloud.UI.left_panel.init();
             RCloud.UI.middle_column.init();
             RCloud.UI.right_panel.init();
+
+            if(!shell.is_view_mode()) {
+                RCloud.UI.incremental_search.init();
+            }
 
             RCloud.UI.command_prompt.init();
 
@@ -9944,13 +10169,33 @@ RCloud.UI.navbar = (function() {
         },
         create_highlight_button: function(id, title, icon) {
             var result = this.create_button(id, title, icon);
-            result.control = $.el.span($.el.span({
-                class: 'button-highlight'
-            }), result.control);
+            result.highlight_color = "#ffff4d";
+            result.icon_class = icon;
+            result.original_color = null;
+            result.highlighted = false;
             result.highlight = function(whether) {
-                $(result.control)
-                    .find('.button-highlight')
-                    .animate({opacity: whether ? 1 : 0}, {duration: 250, queue: false});
+                var that = this;
+                var duration = 500;
+                that.highlighted = whether;
+                if(!that.original_color) {
+                  that.original_color = $($(result.control).find('.' + result.icon_class)).css('color');
+                }
+                function animation_loop() {
+                  var el = $(that.control).find('.' + that.icon_class);
+                  if(that.highlighted) {
+                      if(!el.is(':animated')) {
+                        el.animate({color: that.highlight_color}, { duration: duration})
+                          .delay(duration)
+                          .animate({color: that.original_color}, { duration: duration, complete: animation_loop});
+                      }
+                  } else {
+                    el.stop(true, true);
+                    el.removeAttr('style');
+                  }
+                }
+                if(that.highlighted) {
+                  animation_loop();
+                }
                 return this;
             };
             return result;
@@ -10150,6 +10395,19 @@ RCloud.UI.navbar = (function() {
                             RCloud.UI.run_button.run();
                           }
                         });
+                        return control;
+                    }
+                },
+                stop_notebook: {
+                    area: 'commands',
+                    sort: 7000,
+                    modes: ['edit', 'view'],
+                    create: function() {
+                        var control = RCloud.UI.navbar.create_button('stop-notebook', 'Stop', 'icon-stop');
+                        $(control.control).click(function(e) {
+                            RCloud.UI.stop_button.stop();
+                        });
+                        control.disable();
                         return control;
                     }
                 }
@@ -11127,44 +11385,16 @@ RCloud.UI.right_panel =
     RCloud.UI.collapsible_column("#right-column",
                                  "#accordion-right", "#right-pane-collapser");
 
-RCloud.UI.run_button = (function() {
+RCloud.UI.processing_queue = (function() {
     var running_ = false,
         stopping_ = false,
-        do_reset_ = false,
         queue_ = [],
-        cancels_ = [];
+        cancels_ = [],
+        runningPromise = null;
+        onStartCallbacks = [];
+        finallyCallbacks = [];
 
-    function display(title, icon) {
-        RCloud.UI.navbar.control('run_notebook').display(title, icon);
-    }
-    function highlight(whether) {
-        RCloud.UI.navbar.control('run_notebook').highlight(whether);
-    }
-
-    function start_queue() {
-        if(queue_.length === 0) {
-            stopping_ = false;
-            running_ = false;
-            display('Run All', 'icon-play');
-            highlight(false);
-            return Promise.resolve(undefined);
-        }
-        else {
-            running_ = true;
-            var first = queue_.shift();
-            display('Stop', 'icon-stop');
-            highlight(true);
-            return first().then(function() {
-                if(stopping_) {
-                    stopping_ = false;
-                    throw 'stop';
-                }
-                cancels_.shift();
-                return start_queue();
-            });
-        }
-    }
-    return {
+  return {
         init: function() {
             var that = this;
             RCloud.session.listeners.push({
@@ -11173,43 +11403,64 @@ RCloud.UI.run_button = (function() {
                 }
             });
         },
-        run: function() {
-            if(running_)
-                this.stop();
-            else {
-                (do_reset_ ? RCloud.session.reset().then(function() {
-                    return rcloud.load_notebook(shell.gistname(), shell.version()); }) : Promise.resolve(undefined))
-                    .then(function() {
-                        shell.run_notebook();
-                    });
+        is_running: function() {
+          return running_;
+        },
+        is_stopping: function() {
+          return stopping_;
+        },
+        start_queue: function() {
+            var that = this;
+            if(queue_.length === 0) {
+                stopping_ = false;
+                running_ = false;
+                return Promise.resolve(undefined);
+            } else {
+                running_ = true;
+                var processingChain = Promise.resolve(undefined).then(function(x) {
+                  onStartCallbacks.forEach(function(callback) {
+                    callback(x);
+                  });
+                  return x;
+                });
+                var first = queue_.shift();
+                return processingChain.then(first).then(function() {
+                    if(stopping_) {
+                        stopping_ = false;
+                        throw 'stop';
+                    }
+                    cancels_.shift();
+                    return that.start_queue();
+                });
             }
         },
         stop: function() {
-            if(rcloud.has_compute_separation)
-                rcloud.signal_to_compute(2); // SIGINT
-            else
-                stopping_ = true;
+            if(running_) {
+              if(rcloud.has_compute_separation)
+                  rcloud.signal_to_compute(2); // SIGINT
+              else
+                  stopping_ = true;
+            }
         },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
             queue_ = [];
             cancels_ = [];
             running_ = false;
-            display('Run All', 'icon-play');
-            highlight(false);
+            runningPromise = null;
         },
-        reset_on_run: function(v) {
-            if(!arguments.length)
-                return do_reset_;
-            do_reset_ = v;
-            return this;
+        addFinallyCallback: function(callback) {
+          finallyCallbacks.push(callback);
+        },
+        addOnStartCallback: function(callback) {
+          onStartCallbacks.push(callback);
         },
         enqueue: function(f, cancel) {
             var that = this;
             queue_.push(f);
             cancels_.push(cancel || function() {});
             if(!running_) {
-                start_queue()
+                runningPromise = that.start_queue()
                     .catch(function(xep) {
                         if(xep === 'stop') {
                             cancels_.shift(); // this one was not a cancel
@@ -11224,8 +11475,110 @@ RCloud.UI.run_button = (function() {
                             if(!/^ERROR FROM R SERVER: 127/.test(xep))
                                 throw xep;
                         }
+                    }).finally(function(x) {
+                      finallyCallbacks.forEach(function(callback) { callback(x)});
+                      return x;
                     });
             }
+            return runningPromise;
+        }
+    };
+})();
+
+RCloud.UI.run_button = (function() {
+    
+    var do_reset_ = false;
+    var is_scheduling_ = false;
+
+    function highlight(whether) {
+        RCloud.UI.navbar.control('run_notebook').highlight(whether);
+    }
+    
+    function enable(whether) {
+      if(whether) {
+        RCloud.UI.navbar.control('run_notebook').enable();
+      } else {
+        RCloud.UI.navbar.control('run_notebook').disable();
+      }
+    }
+    function schedule(ignored) {
+        return (do_reset_ ? 
+              RCloud.session.reset().then(function() {
+                return rcloud.load_notebook(shell.gistname(), shell.version()); 
+              }) : Promise.resolve(undefined)
+            ).then(function() {
+                    return shell.run_notebook();
+                }); 
+    }
+    return {
+        init: function() {
+            var that = this;
+            RCloud.session.listeners.push({
+                on_reset: function() {
+                    that.on_stopped();
+                }
+            });
+            RCloud.UI.processing_queue.addOnStartCallback(function(x) {
+              enable(false);
+              highlight(true);
+            });
+            RCloud.UI.processing_queue.addFinallyCallback(function(x) {
+              that.on_stopped();
+            });
+        },
+        
+        run: function() {
+            var runNotebook = Promise.resolve(undefined);
+            if(!RCloud.UI.processing_queue.is_running() && !is_scheduling_) {
+              is_scheduling_ = true;
+              runNotebook = runNotebook.then(schedule).finally(function(x) {
+                      is_scheduling_ = false;
+                    });
+            }
+            return runNotebook;
+        },
+        on_stopped: function() {
+          highlight(false);
+          enable(true);
+        },
+        reset_on_run: function(v) {
+            if(!arguments.length)
+                return do_reset_;
+            do_reset_ = v;
+            return this;
+        }
+    };
+})();
+
+RCloud.UI.stop_button = (function() {
+
+    function enable(whether) {
+      if(whether) {
+        RCloud.UI.navbar.control('stop_notebook').enable();
+      } else {
+        RCloud.UI.navbar.control('stop_notebook').disable();
+      }
+    }
+    return {
+        init: function() {
+            var that = this;
+            RCloud.session.listeners.push({
+                on_reset: function() {
+                    that.on_stopped();
+                }
+            });
+            RCloud.UI.processing_queue.addOnStartCallback(function(x) {
+              enable(true);
+            });
+            RCloud.UI.processing_queue.addFinallyCallback(function(x) {
+              that.on_stopped();
+            });
+        },
+        on_stopped: function() {
+          enable(false);
+        },
+        stop: function() {
+            RCloud.UI.processing_queue.stop();
         }
     };
 })();
@@ -11277,7 +11630,7 @@ RCloud.UI.scratchpad = (function() {
                     }
                 }]);
 
-                session.setMode(new LangMode(false, doc, session));
+                session.setMode(new LangMode({ suppressHighlighting : false, doc : doc, session : session, language : "R" }));
                 session.setNewLineMode('unix');
                 session.setOption('indentedSoftWrap', false);
                 session.setUseWrapMode(true);
@@ -11496,8 +11849,8 @@ RCloud.UI.scratchpad = (function() {
         }, language_updated: function() {
             if(!binary_mode_) {
                 var lang = this.current_model.language();
-                var LangMode = ace.require(RCloud.language.ace_mode(lang)).Mode;
-                this.session.setMode(new LangMode(false, this.session.doc, this.session));
+                var LangMode = RCloud.language.ace_mode(lang);
+                this.session.setMode(new LangMode({ suppressHighlighting : false, doc : this.session.doc, session : this.session, language : lang }));
             }
         }, set_readonly: function(readonly) {
             if(!shell.is_view_mode()) {
@@ -12082,6 +12435,24 @@ RCloud.UI.settings_frame = (function() {
                         shell.notebook.controller.show_cell_numbers(val);
                     }
                 }),
+                'color-recent-notebooks-by-modification-date': that.checkbox({
+                    sort: 3500,
+                    default_value: false,
+                    needs_reload: true,
+                    label: "Color recent notebooks by modification date",
+                    set: function(val) {
+                        editor.color_recent_notebooks_by_modification_date(val);
+                    }
+                }),
+                'show-folder-dates': that.checkbox({
+                    sort: 3750,
+                    default_value: false,
+                    needs_reload: true,
+                    label: "Show folder date for date ordered tree",
+                    set: function(val) {
+                        editor.set_show_folder_dates(val);
+                    }
+                }),
                 'panel-layout-by-size': that.checkbox({
                     sort: 4000,
                     default_value: true,
@@ -12102,6 +12473,14 @@ RCloud.UI.settings_frame = (function() {
                     label: "Export only selected cells",
                     set: function(val) {
                         RCloud.UI.import_export.export_only_selected_files(val);
+                    }
+                }),
+                'autoscroll-notebook-output': that.checkbox({
+                    sort: 6500,
+                    default_value: true,
+                    label: "Autoscroll notebook",
+                    set: function(val) {
+                        shell.notebook.controller.autoscroll_notebook_output(val);
                     }
                 }),
                 'addons': that.text_input_vector({
@@ -12199,7 +12578,7 @@ RCloud.UI.share_button = (function() {
         });
     }
 
-    function resolve_view_url(gistname, version) {
+    function resolve_view_url(gistname, version, viewtype) {
         var notebook_options = null;
         if(version) {
             notebook_options = rcloud.get_tag_by_version(gistname, version)
@@ -12216,9 +12595,10 @@ RCloud.UI.share_button = (function() {
                 return { notebook: gistname };
             });
         }
-        var join = Promise.join;
 
-        return join(notebook_options, get_view_type(gistname),
+        var viewtype_promise = viewtype ? Promise.resolve(extension_.get(viewtype)) : get_view_type(gistname);
+
+        return Promise.join(notebook_options, viewtype_promise,
                     function(opts, view_type) {
                         var page = view_type.page;
                         opts.do_path = view_type.do_path;
@@ -12243,14 +12623,12 @@ RCloud.UI.share_button = (function() {
                         return {
                             title: that.key,
                             handler: function() {
-                                set_view_type(that.key).then(function() {
-                                    highlight(that.key);
-                                }).then(function() {
-                                    return resolve_view_url(shell.gistname(), shell.version()).then(function(url) {
-                                        var shareable_link = RCloud.UI.navbar.control('shareable_link');
-                                        shareable_link.set_url(url);
-                                        shareable_link.open();
-                                    });
+                                set_view_type(that.key);
+                                highlight(that.key);
+                                return resolve_view_url(shell.gistname(), shell.version(), that.key).then(function(url) {
+                                    var shareable_link = RCloud.UI.navbar.control('shareable_link');
+                                    shareable_link.set_url(url);
+                                    shareable_link.open();
                                 });
                             }
                         };
@@ -13091,30 +13469,37 @@ RCloud.UI.discovery_page = (function() {
     return discovery;
 })();
 
-var notebook_tree_search_service = function() {
-    "use strict";
-};
 
-notebook_tree_search_service.prototype = {
-    get_results: function(params) {
-        // params.notebook
-        // params.username
-        return new Promise(function(resolve) {
-            return rcloud.search_description(params.notebook).then(function(res) {                 
-                resolve(
-                    _.map(res.response.docs, function(item) {
-                        return {
-                            id: item.id,
-                            author: item.user,
-                            name: item.description,
-                            star_count: item.starcount,
-                            updated_at: item.updated_at
-                        }
-                    }));
+RCloud.UI.notebook_tree_search_service = (function() {
+
+    var notebook_tree_search_service = function() {
+        "use strict";
+    };
+
+    notebook_tree_search_service.prototype = {
+        get_results: function(params) {
+            // params.notebook
+            // params.username
+            return new Promise(function(resolve) {
+                return rcloud.search_description(params.notebook).then(function(res) {
+                    resolve(
+                        _.map(res.response.docs, function(item) {
+                            return {
+                                id: item.id,
+                                author: item.user,
+                                name: item.description,
+                                star_count: item.starcount,
+                                updated_at: item.updated_at
+                            }
+                        }));
+                });
             });
-        });
-    }
-};
+        }
+    };
+
+    return notebook_tree_search_service;
+
+})();
 
 RCloud.UI.incremental_search = (function() { 
     
@@ -13126,7 +13511,7 @@ RCloud.UI.incremental_search = (function() {
         _resultItemSelector,
         _dialogVisible = false,
         _dialog = undefined,
-        _search_service = new notebook_tree_search_service();
+        _search_service = new RCloud.UI.notebook_tree_search_service();
 
     function toggle_incremental_search() {
         if(!_dialogVisible) {
@@ -13145,9 +13530,9 @@ RCloud.UI.incremental_search = (function() {
             _inputsSelector = _elementSelector + ' input',
             _resultsSelector = _elementSelector + ' .results',
             _resultItemSelector = _resultsSelector + '> p';
-            _search_service = new notebook_tree_search_service();
+            _search_service = new RCloud.UI.notebook_tree_search_service();
 
-            if(RCloud.search) {
+            if(rcloud.search) {
                 RCloud.UI.shortcut_manager.add([{
                     category: 'Incremental Search',
                     id: 'incremental_search',
@@ -13222,1513 +13607,1617 @@ RCloud.UI.incremental_search = (function() {
 
     return result;
 })();
-    
-var date_filter = function(selector) {  
-    this.$el_ = $(selector + ' select');
-    this.on_change = new event(this);
 
-    var that = this;
-    this.$el_.on('change', function() {
-        that.on_change.notify({
-            prop: 'tree-filter-date', 
-            value: $(this).val()
+RCloud.UI.date_filter = (function(selector) {
+
+    var date_filter = function(selector) {
+        this.$el_ = $(selector + ' select');
+        this.on_change = new RCloud.UI.event(this);
+
+        var that = this;
+        this.$el_.on('change', function() {
+            that.on_change.notify({
+                prop: 'tree-filter-date',
+                value: $(this).val()
+            });
         });
-    });
 
-    this.val = function(value) {
-        this.$el_.val(value);
-    }
-};
-
-date_filter.protoype = {
-    
-};
-var notebook_tree_model = function(username, show_terse_dates) {
-    
-    "use strict";
-
-    // major key is adsort_order and minor key is name (label)
-    this.order = {
-        HEADER: 0, // at top (unused)
-        NOTEBOOK: 1,
-        MYFOLDER: 2,
-        SUBFOLDER: 4
+        this.val = function(value) {
+            this.$el_.val(value);
+        }
     };
 
-    this.orderType = {
-        DEFAULT: 0,
-        DATE_DESC: 1
+    return date_filter;
+
+})();
+
+RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folder_dates) {
+
+    var notebook_tree_model = function(username, show_terse_dates, show_folder_dates) {
+
+        "use strict";
+
+        // major key is adsort_order and minor key is name (label)
+        this.order = {
+            HEADER: 0, // at top (unused)
+            NOTEBOOK: 1,
+            MYFOLDER: 2,
+            SUBFOLDER: 4
+        };
+
+        this.orderType = {
+            DEFAULT: 0,
+            DATE_DESC: 1
+        };
+
+        this.username_ = username;
+        this.show_terse_dates_ = show_terse_dates;
+        this.show_folder_dates_ = show_folder_dates;
+        this.path_tips_ = false; // debugging tool: show path tips on tree
+
+        this.tree_data_ = [];
+        this.histories_ = {}; // cached notebook histories
+        this.notebook_info_ = {}; // all notebooks we are aware of
+        this.num_stars_ = {}; // number of stars for all known notebooks
+        this.fork_count_ = {};
+        this.my_stars_ = {}; // set of notebooks starred by me
+        this.my_friends_ = {}; // people whose notebooks i've starred
+        this.featured_ = []; // featured users - samples, intros, etc
+        this.invalid_notebooks_ = {};
+        this.current_ = null; // current notebook and version
+        this.gist_sources_ = null; // valid gist sources on server
+        this.lazy_load_ = {}; // which users need loading
+
+        this.sorted_by_ = this.orderType.DEFAULT;
+        this.matches_filter_ = [];
+        this.empty_folders_ = [];
+        this.folder_last_commits = {};
+
+        // functions that filter the tree:
+        this.tree_filters_ = {
+            tree_filter_date: function() { return true; }
+        };
+
+        this.CONFIG_VERSION = 1;
+
+        this.on_initialise_tree = new RCloud.UI.event(this);
+        this.on_load_by_user = new RCloud.UI.event(this);
+        this.on_open_and_select = new RCloud.UI.event(this);
+        this.on_load_children = new RCloud.UI.event(this);
+        this.on_add_node_before = new RCloud.UI.event(this);
+        this.on_append_node = new RCloud.UI.event(this);
+        this.on_update_node = new RCloud.UI.event(this);
+        this.on_remove_node = new RCloud.UI.event(this);
+        this.on_fake_hover = new RCloud.UI.event(this);
+        this.on_select_node = new RCloud.UI.event(this);
+        this.on_load_data = new RCloud.UI.event(this);
+        this.on_show_history = new RCloud.UI.event(this);
+        this.on_open_node = new RCloud.UI.event(this);
+        this.remove_history_nodes = new RCloud.UI.event(this);
+        this.on_update_sort_order = new RCloud.UI.event(this);
+        this.on_update_show_nodes = new RCloud.UI.event(this);
+        this.on_settings_complete = new RCloud.UI.event(this);
     };
 
-    this.username_ = username;
-    this.show_terse_dates_ = show_terse_dates;
-    this.path_tips_ = false; // debugging tool: show path tips on tree
+    notebook_tree_model.prototype = {
 
-    this.tree_data_ = [];
-    this.histories_ = {}; // cached notebook histories
-    this.notebook_info_ = {}; // all notebooks we are aware of
-    this.num_stars_ = {}; // number of stars for all known notebooks
-    this.fork_count_ = {};
-    this.my_stars_ = {}; // set of notebooks starred by me
-    this.my_friends_ = {}; // people whose notebooks i've starred
-    this.featured_ = []; // featured users - samples, intros, etc
-    this.invalid_notebooks_ = {};
-    this.current_ = null; // current notebook and version
-    this.gist_sources_ = null; // valid gist sources on server
-    this.lazy_load_ = {}; // which users need loading
-
-    this.sorted_by_ = this.orderType.DEFAULT;
-    this.matches_filter_ = [];
-    this.empty_folders_ = [];
-
-    // functions that filter the tree:
-    this.tree_filters_ = {
-        tree_filter_date: function() { return true; }
-    };
-
-    this.CONFIG_VERSION = 1;
-
-    this.on_initialise_tree = new event(this);
-    this.on_load_by_user = new event(this);
-    this.on_open_and_select = new event(this);
-    this.on_load_children = new event(this);
-    this.on_add_node_before = new event(this);
-    this.on_append_node = new event(this);
-    this.on_update_node = new event(this);
-    this.on_remove_node = new event(this);
-    this.on_fake_hover = new event(this);
-    this.on_select_node = new event(this);
-    this.on_load_data = new event(this);
-    this.on_show_history = new event(this);
-    this.on_open_node = new event(this);
-    this.remove_history_nodes = new event(this);
-    this.on_update_sort_order = new event(this);
-    this.on_update_show_nodes = new event(this);
-    this.on_settings_complete = new event(this);
-};
-
-notebook_tree_model.prototype = {
-        
-    username: function() {
-        return this.username_;
-    },
-
-    show_terse_dates: function(show_terse_dates) {
-        if(arguments.length) {
-            this.show_terse_dates_ = show_terse_dates;
-        } else { 
-            return this.show_terse_dates_;
-        }
-    },
-
-    path_tips: function() {
-        return this.path_tips_;
-    },
-
-    set_current: function(current) {
-        this.current_ = current;
-    },
-
-    get_current: function() {
-        return this.current_;
-    },
-
-    get_current_notebook_histories: function() {
-        return this.histories_[this.current_.notebook];
-    },
-
-    get_current_notebook_history_index: function() {
-        return this.current_.version === null ?
-            0 :
-            this.find_index(this.get_current_notebook_histories(), function(h) {
-                return h.version === this.current_.version;
-            });
-    },
-
-    get_history_by_index: function(index) {
-        return this.histories_[this.current_.notebook][index];
-    },
-
-    get_previous: function() {
-        // no version at latest:
-        var current_index = this.current_.version === null ? 0 : this.get_current_notebook_history_index.call(this);
-
-        if(current_index === this.get_current_notebook_histories().length - 1) {
-            return undefined;   // already at first
-        } else {
-            return this.get_history_by_index(current_index + 1).version;
-        }
-    },
-
-    get_next: function(){
-        var current_index = this.get_current_notebook_history_index();
-
-        if(current_index === 0) {
-            return undefined;
-        } else {
-            return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
-        }
-    },
-
-    get_gist_sources: function() {
-        return this.gist_sources_;
-    },
-
-    // work around oddities of rserve.js
-    each_r_list: function(list, f) {
-        for(var key in list)
-            if(key!=='r_attributes' && key!=='r_type')
-                f(key);
-    },
-
-    r_vector: function(value) {
-        return _.isArray(value) ? value : [value];
-    },
-
-    //  Model functions
-    someone_elses: function(name) {
-        return name + "'s Notebooks";
-    },
-
-    get_notebook_star_count: function(gistname) {
-        return this.num_stars_[gistname] || 0;
-    },
-
-    set_notebook_star_count: function(gistname, count) {
-        this.num_stars_[gistname] = count;
-    },
-
-    notebook_star_count_exists: function(notebook_id) {
-        return _.has(this.num_stars_, notebook_id);
-    },
-
-    is_notebook_starred_by_current_user: function(gistname) {
-        return this.my_stars_[gistname] || false;
-    },
-
-    has_notebook_info: function(gistname) {
-        return this.notebook_info_[gistname];
-    },
-
-    get_notebook_info: function(gistname) {
-        return this.notebook_info_[gistname] || {};
-    },
-
-    set_notebook_info: function(gistname, value) {
-        this.notebook_info_[gistname] = value;
-    },
-
-    set_visibility: function(gistname, visible) {
-        var entry = this.notebook_info_[gistname] || {};
-        entry.visible = visible;
-        this.notebook_info_[gistname] = entry;
-        return rcloud.set_notebook_visibility(gistname, visible);
-    },
-
-    add_interest: function(user, gistname) {
-        if(!this.my_stars_[gistname]) {
-            this.my_stars_[gistname] = true;
-            this.my_friends_[user] = (this.my_friends_[user] || 0) + 1;
-        }
-    },
-
-    remove_interest: function(user, gistname) {
-        if(this.my_stars_[gistname]) {
-            delete this.my_stars_[gistname];
-            if(--this.my_friends_[user] === 0)
-                delete this.my_friends_[user];
-        }
-    },
-
-    get_my_star_count_by_friend:function(user) {
-        return this.my_friends_[user];
-    },
-
-    user_is_friend: function(user) {
-        return this.my_friends_[user];
-    },
-
-    get_notebooks_by_user: function(username) {
-        var that = this;
-        var already_know = _.pick(that.notebook_info_, _.filter(Object.keys(that.notebook_info_), function(id) {
-                return that.notebook_info_[id].username === username && !that.notebook_info_[id].recent_only;
-            }));
-
-        return rcloud.config.all_user_notebooks(username)
-            .then(that.get_infos_and_counts)
-            .then(function(notebooks_stars) {
-                // merge these notebooks and stars
-                _.extend(that.notebook_info_, notebooks_stars.notebooks);
-                _.extend(that.num_stars_, notebooks_stars.num_stars);
-                // additionally, merge any notebooks we already knew about back into the list
-                _.extend(notebooks_stars.notebooks, already_know);
-                return notebooks_stars.notebooks;
-            });
-    },
-
-    remove_notebook_view: function(user, gistname) {
-
-        var that = this;
-
-        function do_remove(id) {
-            var node = that.get_node_by_id(id);
-            if(node) {
-                that.remove_node(node);
-            } else {
-                console.log("tried to remove node that doesn't exist: " + id);
-            }
-        }
-
-        if(this.my_friends_[user]) {
-            do_remove(this.node_id('friends', user, gistname));
-        }
-
-        do_remove(this.node_id('alls', user, gistname));
-    },
-
-    populate_users: function(all_the_users) {
-        var that = this;
-        if(_.isString(all_the_users))
-            all_the_users = [all_the_users];
-        all_the_users.forEach(function(u) {
-            that.lazy_load_[u] = true;
-        });
-        return {
-            label: 'All Notebooks',
-            id: '/alls',
-            children: _.map(all_the_users, function(u) {
-                return that.lazy_node('alls', u);
-            }).sort(this.compare_nodes.bind(this))
-        };
-    },
-
-    populate_friends: function(all_the_users) {
-        var that = this;
-        return {
-            label: 'People I Starred',
-            id: '/friends',
-            children: all_the_users.filter(function(u) {
-                return that.my_friends_[u]>0;
-            }).map(function(u) {
-                return that.lazy_node('friends', u);
-            }).sort(this.compare_nodes.bind(this))
-        };
-    },
-
-    compare_nodes: function(a, b) {
-
-        var so = a.sort_order - b.sort_order;
-        if(so) {
-            return so;
-        }
-        else {
-            var alab = a.name || a.label, 
-                blab = b.name || b.label;
-
-            if(this.sorted_by_ === this.orderType.DEFAULT ||
-               !(a.sort_order === this.order.NOTEBOOK && b.sort_order === this.order.NOTEBOOK)) {
-                // cut trailing numbers and sort separately
-                var amatch = RCloud.utils.split_number(alab), 
-                bmatch = RCloud.utils.split_number(blab);
-
-                if(amatch && bmatch && amatch[0] == bmatch[0]) {
-                    var an = +amatch[1], bn = +bmatch[1];
-                    return an - bn;
-                }
-
-                var lc = alab.localeCompare(blab);
-                if(lc === 0) {
-                    // put a folder with the same name as a notebook first
-                    if(a.children) {
-                        if(b.children)
-                            throw new Error("uh oh, parallel folders");
-                        return -1;
-                    }
-                    else if(b.children)
-                        return 1;
-                    // make sort stable on gist id (creation time would be better)
-                    lc = a.gistname.localeCompare(b.gistname);
-                }
-
-                return lc;
-
-            } else {
-
-                var get_date = function(node) {
-                    if(!node.last_commit && !node.children) {
-                        return Infinity;
-                    } else {
-                        return node.last_commit ? new Date(node.last_commit) : _.max(_.map(node.children, function(child) { return new Date(child.last_commit); }));                        
-                    }
-                };
-
-                return get_date(b) - get_date(a);
-            }            
-        }
-    },
-
-    lazy_node: function(root, user) {
-        var mine = user === this.username_;
-        var id = this.node_id(root, user);
-        return {
-            label: mine ? "My Notebooks" : this.someone_elses(user),
-            id: id,
-            sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER,
-            children: [{ label : 'loading...' }],
-            user: user,
-            root: root
-        };
-    },
-
-    populate_interests: function(my_stars_array) {
-
-        var that = this;
-
-        function create_user_book_entry_map(books) {
-            var users = {};
-            _.each(books,
-                   function(book){
-                       var entry = that.notebook_info_[book];
-                       if(!entry) {
-                           that.invalid_notebooks_[book] = null;
-                           return users;
-                       }
-                       if(!entry.username || entry.username === "undefined" ||
-                          !entry.description || !entry.last_commit) {
-                           that.invalid_notebooks_[book] = entry;
-                           return users;
-                       }
-                       var user = users[entry.username] = users[entry.username] || {};
-                       user[book] = entry;
-                       return users;
-                   });
-            return users;
-        }
-
-        var interests = create_user_book_entry_map(Object.keys(my_stars_array));
-        var user_nodes = [];
-        for (var username in interests) {
-            var user_notebooks = interests[username];
-            for(var gistname in user_notebooks) {
-                this.add_interest(username, gistname);
-                // sanitize... this shouldn't really happen...
-                if(!user_notebooks[gistname].description)
-                    user_notebooks[gistname].description = "(no description)";
-            }
-
-            var notebook_nodes = this.convert_notebook_set('interests', username, user_notebooks);
-            var id = this.node_id('interests', username);
-            var mine = username === this.username_;
-            var node = {
-                label: mine ? "My Notebooks" : this.someone_elses(username),
-                id: id,
-                sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER,
-                children: this.as_folder_hierarchy(notebook_nodes, id).sort(this.compare_nodes.bind(this))
-            };
-            user_nodes.push(node);
-        }
-        return {
-            label: 'Notebooks I Starred',
-            id: '/interests',
-            children: user_nodes.sort(this.compare_nodes.bind(this))
-        };
-    },
-
-    as_folder_hierarchy: function(nodes, prefix, name_prefix) {
-        var that = this;
-        function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
-        var in_folders = nodes;
-        // tired of seeing the "method 'match' of undefined" error
-        if(_.some(in_folders, function(entry) {
-            return entry.label === undefined || entry.label === null;
-        }))
-           throw new Error("incomplete notebook entry (has it been shown yet?)");
-        in_folders = _.filter(in_folders, is_in_folder);
-        in_folders = _.map(in_folders, function(v) {
-            var m = v.label.match(/([^/]+)\/(.+)/);
-            var r = _.clone(v);
-            r.folder_name = m[1];
-            r.label = m[2];
-            return r;
-        });
-        in_folders = _.groupBy(in_folders, function(v) {
-            return v.folder_name;
-        });
-        in_folders = _.map(in_folders, function(v, k) {
-            var children = _.map(v, function(o) {
-                return _.omit(o, "folder_name");
-            });
-            var id = prefix + '/' + k,
-                full_name = (name_prefix ? name_prefix + '/' : '')  + k;
-            return {
-                label: k,
-                full_name: full_name,
-                user: v[0].user,
-                sort_order: that.order.NOTEBOOK,
-                id: id,
-                children: that.as_folder_hierarchy(children, id, full_name)
-            };
-        });
-        var outside_folders = _.filter(nodes, function(v) {
-            return !is_in_folder(v);
-        });
-        outside_folders.forEach(function(v) {
-            v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
-        });
-        return outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
-    },
-
-    convert_notebook_set: function(root, username, set) {
-        var notebook_nodes = [];
-        var that = this;
-        for(var name in set) {
-            var attrs = set[name];
-            var result = {
-                label: attrs.description,
-                gistname: name,
-                user: username,
-                root: root,
-                visible: attrs.visible,
-                source: attrs.source,
-                last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
-                id: that.node_id(root, username, name),
-                sort_order: that.order.NOTEBOOK,
-                fork_desc:attrs.fork_desc
-            };
-            notebook_nodes.push(result);
-        }
-        return notebook_nodes;
-    },
-
-    node_id: function(root, username, gistname, version) {
-        var ret = '';
-        for(var i=0; i < arguments.length; ++i)
-            ret = ret + '/' + arguments[i];
-        return ret;
-    },
-
-    load_user_notebooks: function(username) {
-        var that = this,
-            merge_filter_matches = function(details) {
-                that.matches_filter_ = _.union(that.matches_filter_, details.matching_notebooks);
-                that.empty_folders_ = _.union(that.empty_folders_, details.empty_folders);
-            };    
-            
-        if(!that.lazy_load_[username])
-            return Promise.resolve();
-
-        return that.get_notebooks_by_user(username).then(function(notebooks) {
-            // load "alls" tree for username, and duplicate to friends tree if needed
-            var pid = that.node_id("alls", username);
-            var root = that.get_node_by_id(pid);
-
-            var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
-            var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes.bind(that));
-
-            merge_filter_matches(that.get_filter_matches([{
-                children: alls_data
-            }]));
-
-            delete that.lazy_load_[username];
-
-            // add nodes to the model:
-            that.load_tree_data(alls_data, pid);
-
-            var duplicate_data;
-            if(that.my_friends_[username]) {
-                // update model for friend's notebooks:
-                var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
-
-                merge_filter_matches(that.get_filter_matches([{
-                    children: ftree
-                }]));
-
-                // add nodes to the model:
-                that.load_tree_data(ftree.children, that.node_id('friends', username));
-
-                // for the view:
-                duplicate_data = ftree.children;
-            }
-
-            that.on_load_by_user.notify({ 
-                pid: that.node_id('alls', username),
-                data: alls_data,
-                duplicate_data: duplicate_data,
-                duplicate_parent_id: that.node_id('friends', username)
-            });
-        });
-    },
-
-    add_notebook_info: function(user, gistname, entry) {
-        if(!this.notebook_info_[gistname])
-            this.notebook_info_[gistname] = {};
-        _.extend(this.notebook_info_[gistname], entry);
-        var p = rcloud.set_notebook_info(gistname, entry);
-        if(user === this.username())
-            p = p.then(function() { rcloud.config.add_notebook(gistname); });
-        return p;
-    },
-
-    tag_notebook_version: function(id, version, tag) {
-        var history = this.histories_[id];
-        
-        for(var i=0; i<history.length; ++i) {
-            if (history[i].version === version) {
-                history[i].tag = tag;
-            }
-            if(history[i].tag === tag && history[i].version != version) {
-                history[i].tag = undefined;
-            }
-        }
-    },
-
-    update_notebook/*_model*/: function(user, gistname, description, time) {
-        var that = this;
-        return that.load_user_notebooks(user).then(function() {
-            var entry = that.notebook_info_[gistname] || {};
-
-            entry.username = user;
-            entry.description = description;
-            entry.last_commit = time;
-
-            that.add_notebook_info(user, gistname, entry);
-            return entry; // note: let go of promise
-        });
-    },
-
-    update_notebook_from_gist: function(result, history, selroot) {
-        var user = result.user.login, gistname = result.id;
-        var that = this;
-        // we only receive history here if we're at HEAD, so use that if we get
-        // it.  otherwise use the remembered history if any.  otherwise
-        // update_history_nodes will do an async call to get the history.
-        if(history)
-            that.histories_[gistname] = history;
-
-        return that.update_notebook/*_model*/(user, gistname,
-                                     result.description,
-                                     result.updated_at || result.history[0].committed_at)
-            .then(function(entry) {
-                return that.update_notebook_view(user, gistname, entry, selroot);
-            });
-    },
-
-    // special case for #1867: skip user level of tree for featured users
-    skip_user_level: function(root) {
-        return root === 'featured' && this.featured_.length === 1;
-    },
-
-    update_tree_node: function(node, data) {
-        
-        _.extend(node, data);
-
-        this.on_update_node.notify({
-            node: node,
-            data: data
-        });
-    },
-
-    set_node_open_status: function(node, is_open) {
-        var tree_node = this.get_node_by_id(node.id);
-        tree_node.is_open = is_open;
-    },
-
-    remove_node: function(node) {
-
-        var parent = this.get_parent(node.id);
-
-        this.on_fake_hover.notify({
-            node: node
-        });
-
-        // remove node from model:
-        parent.children = _.without(parent.children, _.findWhere(parent.children, {
-            id: node.id
-        }));
-
-        this.remove_node_notify({
-            node: node
-        });
-
-        this.remove_empty_parents(parent);
-
-        if(node.root === 'interests' && node.user !== this.username_ && parent.children.length === 0){
-            // remove node from model:
-            var interests_node = this.get_node_by_id('/interests');
-            interests_node.children = _.without(interests_node.children, _.findWhere(interests_node.children, {
-                id: parent.id
-            }));
-            
-            // remove from tree:
-            this.remove_node_notify({
-                node: parent
-            });
-
-        }
-    },
-
-    remove_node_notify: function(args) {
-
-        // might be a noop, but no side-effects if not found:
-        this.matches_filter_ = _.without(this.matches_filter_, args.node.id);
-
-        this.on_remove_node.notify(args);
-    },
-
-    unstar_notebook_view: function(user, gistname, selroot) {
-        var inter_id = this.node_id('interests', user, gistname);
-        var node = this.get_node_by_id(inter_id); // that.$tree_.tree('getNodeById', inter_id);
-        if(!node) {
-            console.log("attempt to unstar notebook we didn't know was starred", inter_id);
-            return;
-        }
-        //this.remove_tree_node(node);
-        this.remove_node(node);
-        return this.update_notebook_view(user, gistname, this.get_notebook_info(gistname), selroot);
-    },
-
-    update_notebook_view: function(user, gistname, entry, selroot) {
-
-        var that = this;
-
-        function open_and_select(node) {
-            if(that.current_.version) {
-                //$tree_.tree('openNode', node);
-                var id = that.skip_user_level(node.root) ?
-                        that.node_id(node.root, gistname, that.current_.version) :
-                        that.node_id(node.root, user, gistname, that.current_.version);
-                //var n2 = $tree_.tree('getNodeById', id);
-
-                var n2 = that.get_node_by_id(id);
-
-                if(!n2)
-                    throw new Error('tree node was not created for current history');
-                node = n2;
-            }
-            that.on_select_node.notify({
-                node: node
-            });
-        }
-
-        var p, i_starred = that.my_stars_[gistname] || false;
-        var promises = [];
-
-        if(selroot === true)
-            selroot = that.featured_.indexOf(user) >=0 ? 'featured' :
-                i_starred ? 'interests' :
-                that.my_friends_[user] ? 'friends': 'alls';
-
-        if(i_starred) {
-            p = that.update_tree_entry('interests', user, gistname, entry, true);
-            if(selroot==='interests')
-                p = p.then(open_and_select);
-            promises.push(p);
-        }
-
-        if(gistname === that.current_.notebook) {
-            var starn = RCloud.UI.navbar.control('star_notebook');
-            if(starn) {
-                starn.set_fill(i_starred);
-                starn.set_count(that.num_stars_[gistname]);
-            }
-        }
-
-        if(that.my_friends_[user]) {
-            p = that.update_tree_entry('friends', user, gistname, entry, true);
-            if(selroot==='friends')
-                p = p.then(open_and_select);
-            promises.push(p);
-        }
-
-        if(that.featured_.indexOf(user)>=0) {
-            p = that.update_tree_entry('featured', user, gistname, entry, true);
-            if(selroot==='featured')
-                p = p.then(open_and_select);
-            promises.push(p);
-        }
-
-        p = that.update_tree_entry('alls', user, gistname, entry, true);
-        if(selroot==='alls')
-            p = p.then(open_and_select);
-        promises.push(p);
-
-        return Promise.all(promises);
-    },
-
-    find_sort_point: function(data, parent) {
-        // this could be a binary search but linear is probably fast enough
-        // for a single insert, and it also could be out of order
-        if(parent.children) {        
-            for(var i = 0; i < parent.children.length; ++i) {
-                var child = parent.children[i];
-
-                var so = this.compare_nodes.call(this, data, child);
-                if(so < 0) {
-                    return {
-                        child: child,
-                        position: i
-                    };
-                }
-            }
-        }
-
-        return undefined;
-    },
-
-    insert_in_order: function(node_to_insert, parent) {
-
-        // verify whether this node matches the current filter:
-        if(node_to_insert.gistname) {
-            if(RCloud.utils.filter(node_to_insert, _.values(this.tree_filters_)).length == 1) {
-                this.matches_filter_.push(node_to_insert.id);
-            }
-        }
-
-        if(typeof parent === 'string') {
-            parent = this.get_node_by_id(parent);
-        }
-
-        var before = this.find_sort_point(node_to_insert, parent);
-
-        if(before) {
-            // splice children:
-            parent.children.splice(before.position, 0, node_to_insert);
-
-            this.on_add_node_before.notify({ 
-                node_to_insert: node_to_insert,
-                existing_node: before.child
-            });
-
-            return node_to_insert;
-
-        } else {
-            // add node to model:
-            if(!parent.children) {
-                parent.children = [];
-            }
-
-            parent.children.push(node_to_insert);
-
-            this.on_append_node.notify({
-                node_to_insert: node_to_insert,
-                parent_id: parent.id
-            });
-            
-            return node_to_insert;
-        }
-    },
-
-    traverse: function() {
-        function traverse(o) {
-            for (var i in o) {
-                if (!!o[i] && typeof(o[i])=="object") {
-                    console.log('traverse output: ', o[i]); 
-                    traverse(o[i]);
-                }
-            }
-        }
-        traverse(this.tree_data_);
-    },
-
-    get_filter_matches: function(notebooks) {
-        // do the filtering:
-        var matching_notebooks = [],
-        that = this,
-        empty_folders = [],
-        current_matches = [],
-        set_status = function(notebooks, matches_filter) {
-            _.each(notebooks, function(n) {
-                n.matches_filter = matches_filter;
-            });
+        username: function() {
+            return this.username_;
         },
-        get_matching_notebooks = function(o) {
-            for(var i in o) {
-                if (!!o[i] && typeof(o[i])=="object") {
-                    if(o[i].hasOwnProperty('children')) {  
-                                        
-                        current_matches = _.filter(o[i].children, function(child) {
-                            return child.gistname && !child.version;
+
+        show_terse_dates: function(show_terse_dates) {
+            if(arguments.length) {
+                this.show_terse_dates_ = show_terse_dates;
+            } else {
+                return this.show_terse_dates_;
+            }
+        },
+
+        path_tips: function() {
+            return this.path_tips_;
+        },
+
+        set_current: function(current) {
+            this.current_ = current;
+        },
+
+        get_current: function() {
+            return this.current_;
+        },
+
+        get_current_notebook_histories: function() {
+            return this.histories_[this.current_.notebook];
+        },
+
+        get_current_notebook_history_index: function() {
+            return this.current_.version === null ?
+                0 :
+                this.find_index(this.get_current_notebook_histories(), function(h) {
+                    return h.version === this.current_.version;
+                });
+        },
+
+        get_history_by_index: function(index) {
+            return this.histories_[this.current_.notebook][index];
+        },
+
+        get_previous: function() {
+            // no version at latest:
+            var current_index = this.current_.version === null ? 0 : this.get_current_notebook_history_index.call(this);
+
+            if(current_index === this.get_current_notebook_histories().length - 1) {
+                return undefined;   // already at first
+            } else {
+                return this.get_history_by_index(current_index + 1).version;
+            }
+        },
+
+        get_next: function(){
+            var current_index = this.get_current_notebook_history_index();
+
+            if(current_index === 0) {
+                return undefined;
+            } else {
+                return current_index - 1 === 0 ? null : this.get_history_by_index(current_index - 1).version;
+            }
+        },
+
+        get_gist_sources: function() {
+            return this.gist_sources_;
+        },
+
+        // work around oddities of rserve.js
+        each_r_list: function(list, f) {
+            for(var key in list)
+                if(key!=='r_attributes' && key!=='r_type')
+                    f(key);
+        },
+
+        r_vector: function(value) {
+            return _.isArray(value) ? value : [value];
+        },
+
+        //  Model functions
+        someone_elses: function(name) {
+            return name + "'s Notebooks";
+        },
+
+        get_notebook_star_count: function(gistname) {
+            return this.num_stars_[gistname] || 0;
+        },
+
+        set_notebook_star_count: function(gistname, count) {
+            this.num_stars_[gistname] = count;
+        },
+
+        notebook_star_count_exists: function(notebook_id) {
+            return _.has(this.num_stars_, notebook_id);
+        },
+
+        is_notebook_starred_by_current_user: function(gistname) {
+            return this.my_stars_[gistname] || false;
+        },
+
+        has_notebook_info: function(gistname) {
+            return this.notebook_info_[gistname];
+        },
+
+        get_notebook_info: function(gistname) {
+            return this.notebook_info_[gistname] || {};
+        },
+
+        set_notebook_info: function(gistname, value) {
+            this.notebook_info_[gistname] = value;
+        },
+
+        set_visibility: function(gistname, visible) {
+            var entry = this.notebook_info_[gistname] || {};
+            entry.visible = visible;
+            this.notebook_info_[gistname] = entry;
+            return rcloud.set_notebook_visibility(gistname, visible);
+        },
+
+        add_interest: function(user, gistname) {
+            if(!this.my_stars_[gistname]) {
+                this.my_stars_[gistname] = true;
+                this.my_friends_[user] = (this.my_friends_[user] || 0) + 1;
+            }
+        },
+
+        remove_interest: function(user, gistname) {
+            if(this.my_stars_[gistname]) {
+                delete this.my_stars_[gistname];
+                if(--this.my_friends_[user] === 0)
+                    delete this.my_friends_[user];
+            }
+        },
+
+        get_my_star_count_by_friend:function(user) {
+            return this.my_friends_[user];
+        },
+
+        user_is_friend: function(user) {
+            return this.my_friends_[user];
+        },
+
+        get_notebooks_by_user: function(username) {
+            var that = this;
+            var already_know = _.pick(that.notebook_info_, _.filter(Object.keys(that.notebook_info_), function(id) {
+                    return that.notebook_info_[id].username === username && !that.notebook_info_[id].recent_only;
+                }));
+
+            return rcloud.config.all_user_notebooks(username)
+                .then(that.get_infos_and_counts)
+                .then(function(notebooks_stars) {
+                    // merge these notebooks and stars
+                    _.extend(that.notebook_info_, notebooks_stars.notebooks);
+                    _.extend(that.num_stars_, notebooks_stars.num_stars);
+                    // additionally, merge any notebooks we already knew about back into the list
+                    _.extend(notebooks_stars.notebooks, already_know);
+                    return notebooks_stars.notebooks;
+                });
+        },
+
+        remove_notebook_view: function(user, gistname) {
+
+            var that = this;
+
+            function do_remove(id) {
+                var node = that.get_node_by_id(id);
+                if(node) {
+                    that.remove_node(node);
+                } else {
+                    console.log("tried to remove node that doesn't exist: " + id);
+                }
+            }
+
+            if(this.my_friends_[user]) {
+                do_remove(this.node_id('friends', user, gistname));
+            }
+
+            do_remove(this.node_id('alls', user, gistname));
+        },
+
+        populate_users: function(all_the_users) {
+            var that = this;
+            if(_.isString(all_the_users))
+                all_the_users = [all_the_users];
+            all_the_users.forEach(function(u) {
+                that.lazy_load_[u] = true;
+            });
+            return {
+                label: 'All Notebooks',
+                id: '/alls',
+                children: _.map(all_the_users, function(u) {
+                    return that.lazy_node('alls', u);
+                }).sort(this.compare_nodes.bind(this))
+            };
+        },
+
+        populate_friends: function(all_the_users) {
+            var that = this;
+            return {
+                label: 'People I Starred',
+                id: '/friends',
+                children: all_the_users.filter(function(u) {
+                    return that.my_friends_[u]>0;
+                }).map(function(u) {
+                    return that.lazy_node('friends', u);
+                }).sort(this.compare_nodes.bind(this))
+            };
+        },
+
+        get_folder_last_commit_date: function(node_id) {
+            return this.folder_last_commits[node_id];
+        },
+
+        get_most_recent_child: function(node) {
+
+            var that = this,
+                latest_commit = null,
+                node_chain = [],
+                pluck_node_data = function(child) {
+                    return {
+                        id: child.id,
+                        last_commit: child.last_commit
+                    };
+                }, insert_into_chain = function(parent) {
+
+                    var existing_parent_root_chain = _.findWhere(node_chain, { parent_id : parent.id });
+
+                    if(!existing_parent_root_chain) {
+                        node_chain.push({
+                            parent_id: parent.id,
+                            children: _.map(parent.children, function(child) {
+                                return pluck_node_data(child)
+                            })
+                        });
+                    }
+
+                    _.each(parent.children, function(child) {
+
+                        var matching = _.filter(node_chain, function(parent_children) {
+                            return parent.id != parent_children.parent_id &&
+                                _.pluck(parent_children.children, 'id').indexOf(parent.id) != -1;
                         });
 
-                        set_status(current_matches, false);
+                        _.each(matching, function(chain) {
+                            chain.children.push(pluck_node_data(child));
+                        });
+                    });
+                }, get_children = function(parent) {
 
-                        current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
+                if (parent && parent.children) {
 
-                        if(current_matches && current_matches.length) {
-                            matching_notebooks.push.apply(matching_notebooks, current_matches);
-                            // these match:
-                            set_status(current_matches, true);
+                    insert_into_chain(parent);
 
-                            // this is a folder with children; ensure that any parent folders
-                            // that were previously marked as hidden are removed:
-                            if(!o[i].gistname) {
-                                var ancestors = [];
-                                _.each(empty_folders, function(folder) {
-                                    if(o[i].id.startsWith(folder.id)) {
-                                        ancestors.push(folder);
-                                    }
-                                });
-
-                                empty_folders = _.difference(empty_folders, ancestors);
-                            }
-                        } else {
-                            // this is a folder with no matching notebooks:
-                            if(!o[i].gistname) {
-                                empty_folders.push(o[i]);
-                            }                          
+                    _.each(parent.children, function(child) {
+                        if(child.last_commit > latest_commit) {
+                            latest_commit = child.last_commit;
                         }
+
+                        get_children(child);
+
+                    });
+                }
+            };
+
+            get_children(node);
+
+            _.each(node_chain, function(chain) {
+                that.folder_last_commits[chain.parent_id] = _.max(_.pluck(chain.children, 'last_commit'));
+            });
+
+            return latest_commit;
+        },
+
+        is_date_sorted: function() {
+            return this.sorted_by_ === this.orderType.DATE_DESC;
+        },
+
+        compare_nodes: function(a, b) {
+
+            var so = a.sort_order - b.sort_order,
+                that = this;
+            if(so) {
+                return so;
+            }
+            else {
+                var alab = a.name || a.label,
+                    blab = b.name || b.label;
+
+                if(this.sorted_by_ === this.orderType.DEFAULT ||
+                !(a.sort_order === this.order.NOTEBOOK && b.sort_order === this.order.NOTEBOOK)) {
+                    // cut trailing numbers and sort separately
+                    var amatch = RCloud.utils.split_number(alab),
+                    bmatch = RCloud.utils.split_number(blab);
+
+                    if(amatch && bmatch && amatch[0] == bmatch[0]) {
+                        var an = +amatch[1], bn = +bmatch[1];
+                        return an - bn;
                     }
 
-                    get_matching_notebooks(o[i]);
+                    var lc = alab.localeCompare(blab);
+                    if(lc === 0) {
+                        // put a folder with the same name as a notebook first
+                        if(a.children) {
+                            if(b.children)
+                                throw new Error("uh oh, parallel folders");
+                            return -1;
+                        }
+                        else if(b.children)
+                            return 1;
+                        // make sort stable on gist id (creation time would be better)
+                        lc = a.gistname.localeCompare(b.gistname);
+                    }
+
+                    return lc;
+
+                } else {
+
+                    var get_date = function(node) {
+                        if(!node.last_commit && !node.children) {
+                            return Infinity;
+                        } else {
+                            return node.last_commit ? new Date(node.last_commit) : that.get_most_recent_child(node);
+                        }
+                    };
+
+                    return get_date(b) - get_date(a);
                 }
             }
-        };
+        },
 
-        get_matching_notebooks(notebooks);
-        
-        return {
-            matching_notebooks: _.pluck(matching_notebooks, 'id'),
-            empty_folders: _.pluck(empty_folders, 'id')
-        };
-    },
+        lazy_node: function(root, user) {
+            var mine = user === this.username_;
+            var id = this.node_id(root, user);
+            return {
+                label: mine ? "My Notebooks" : this.someone_elses(user),
+                id: id,
+                sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER,
+                children: [{ label : 'loading...' }],
+                user: user,
+                root: root
+            };
+        },
 
-    sanitize_tree_setting: function(setting_key, value) {
-        var settings = [
-            { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30' ]},
-            { key: 'tree-sort-order', default_value: 'name', valid_values: ['name', 'date_desc' ]}            
-        ];
+        populate_interests: function(my_stars_array) {
 
-        var setting = _.findWhere(settings, { key: setting_key });
+            var that = this;
 
-        if(!setting) {
-            console.warn('Unknown setting_key "', setting_key, '"');
-            return value;
-        } else {
-
-            if(value == null) {
-                value = '';
-            }
-
-            return setting.valid_values.indexOf(value.toLocaleLowerCase()) >= 0 ?
-                value.toLocaleLowerCase() : setting.default_value;
-        }
-    },
-
-    update_filter: function(filter_props) {
-        if(filter_props.prop == 'tree-filter-date') {
-            switch(filter_props.value) {
-                case null: 
-                case 'all':
-                    this.tree_filters_[filter_props.prop] = function() { return true; };
-                    break;
-                case 'last7':
-                case 'last30':
-                    var period = filter_props.value.replace('last', '');
-                    this.tree_filters_[filter_props.prop] = function(item) {
-                        return RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
-                    };
-                    break;
-                default:
-                    console.warn('Unknown value for date filter type passed to notebook_tree_model.update_filter(...)');
-            }
-        }
-
-        var details = this.get_filter_matches(this.tree_data_);
-        this.matches_filter_ = details.matching_notebooks;
-        this.empty_folders_ = details.empty_folders;
-         
-        this.on_update_show_nodes.notify({
-            nodes: this.matches_filter_,
-            empty_folders: this.empty_folders_,
-            filter_props: filter_props
-        });
-
-        rcloud.config.set_user_option(filter_props.prop, filter_props.value);                        
-    },
-
-    does_notebook_match_filter: function(notebook_id) {
-        return this.matches_filter_.indexOf(notebook_id) != -1;
-    },
-
-    does_folder_have_matching_descendants: function(folder_id) {
-        return this.empty_folders_.indexOf(folder_id) == -1;
-    },
-
-    update_sort_type: function(sort_type, reorder_nodes) {
-        var to_sort_by, that = this;
-        if(sort_type.toLocaleLowerCase() == 'date_desc') {
-            to_sort_by = this.orderType.DATE_DESC;
-        } else {
-            to_sort_by = this.orderType.DEFAULT;
-        }
-
-        if(this.sorted_by_ != to_sort_by) {
-            // update sort
-            this.sorted_by_ = to_sort_by;
-
-            if(reorder_nodes) {
-                var nodes_and_children = [];
-                
-                var update_children = function(o) {
-                    for(var i in o) {
-                        if (!!o[i] && typeof(o[i])=="object") {
-
-                            if(o[i].hasOwnProperty('children')) {
-
-                                // don't reorder history nodes:
-                                if(o[i].children.length && !o[i].children[0].version) {
-                                    o[i].children.sort(that.compare_nodes.bind(that));
-                                }
-
-                                nodes_and_children.push({
-                                    node_id: o[i].id,
-                                    children: o[i].children
-                                });
-                            }
-                            
-                            update_children(o[i]);
+            function create_user_book_entry_map(books) {
+                var users = {};
+                _.each(books,
+                    function(book){
+                        var entry = that.notebook_info_[book];
+                        if(!entry) {
+                            that.invalid_notebooks_[book] = null;
+                            return users;
                         }
-                    }
+                        if(!entry.username || entry.username === "undefined" ||
+                            !entry.description || !entry.last_commit) {
+                            that.invalid_notebooks_[book] = entry;
+                            return users;
+                        }
+                        var user = users[entry.username] = users[entry.username] || {};
+                        user[book] = entry;
+                        return users;
+                    });
+                return users;
+            }
+
+            var interests = create_user_book_entry_map(Object.keys(my_stars_array));
+            var user_nodes = [];
+            for (var username in interests) {
+                var user_notebooks = interests[username];
+                for(var gistname in user_notebooks) {
+                    this.add_interest(username, gistname);
+                    // sanitize... this shouldn't really happen...
+                    if(!user_notebooks[gistname].description)
+                        user_notebooks[gistname].description = "(no description)";
+                }
+
+                var notebook_nodes = this.convert_notebook_set('interests', username, user_notebooks);
+                var id = this.node_id('interests', username);
+                var mine = username === this.username_;
+                var node = {
+                    label: mine ? "My Notebooks" : this.someone_elses(username),
+                    id: id,
+                    sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER,
+                    children: this.as_folder_hierarchy(notebook_nodes, id).sort(this.compare_nodes.bind(this))
+                };
+                user_nodes.push(node);
+            }
+            return {
+                label: 'Notebooks I Starred',
+                id: '/interests',
+                children: user_nodes.sort(this.compare_nodes.bind(this))
+            };
+        },
+
+        as_folder_hierarchy: function(nodes, prefix, name_prefix) {
+            var that = this;
+            function is_in_folder(v) { return v.label.match(/([^/]+)\/(.+)/); }
+            var in_folders = nodes;
+            // tired of seeing the "method 'match' of undefined" error
+            if(_.some(in_folders, function(entry) {
+                return entry.label === undefined || entry.label === null;
+            }))
+            throw new Error("incomplete notebook entry (has it been shown yet?)");
+            in_folders = _.filter(in_folders, is_in_folder);
+            in_folders = _.map(in_folders, function(v) {
+                var m = v.label.match(/([^/]+)\/(.+)/);
+                var r = _.clone(v);
+                r.folder_name = m[1];
+                r.label = m[2];
+                return r;
+            });
+            in_folders = _.groupBy(in_folders, function(v) {
+                return v.folder_name;
+            });
+            in_folders = _.map(in_folders, function(v, k) {
+                var children = _.map(v, function(o) {
+                    return _.omit(o, "folder_name");
+                });
+                var id = prefix + '/' + k,
+                    full_name = (name_prefix ? name_prefix + '/' : '')  + k;
+                return {
+                    label: k,
+                    full_name: full_name,
+                    user: v[0].user,
+                    sort_order: that.order.NOTEBOOK,
+
+                    id: id,
+                    children: that.as_folder_hierarchy(children, id, full_name)
+                };
+            });
+            var outside_folders = _.filter(nodes, function(v) {
+                return !is_in_folder(v);
+            });
+            outside_folders.forEach(function(v) {
+                v.full_name = (name_prefix ? name_prefix + '/' : '')  + v.label;
+            });
+
+            var result = outside_folders.concat(in_folders).sort(this.compare_nodes.bind(this));
+
+            return result;
+        },
+
+        convert_notebook_set: function(root, username, set) {
+            var notebook_nodes = [];
+            var that = this;
+            for(var name in set) {
+                var attrs = set[name];
+                var result = {
+                    label: attrs.description,
+                    gistname: name,
+                    user: username,
+                    root: root,
+                    visible: attrs.visible,
+                    source: attrs.source,
+                    last_commit: attrs.last_commit ? new Date(attrs.last_commit) : 'none',
+                    id: that.node_id(root, username, name),
+                    sort_order: that.order.NOTEBOOK,
+                    fork_desc:attrs.fork_desc
+                };
+                notebook_nodes.push(result);
+            }
+            return notebook_nodes;
+        },
+
+        node_id: function(root, username, gistname, version) {
+            var ret = '';
+            for(var i=0; i < arguments.length; ++i)
+                ret = ret + '/' + arguments[i];
+            return ret;
+        },
+
+        load_user_notebooks: function(username) {
+            var that = this,
+                merge_filter_matches = function(details) {
+                    that.matches_filter_ = _.union(that.matches_filter_, details.matching_notebooks);
+                    that.empty_folders_ = _.union(that.empty_folders_, details.empty_folders);
                 };
 
-                update_children(this.tree_data_);
+            if(!that.lazy_load_[username])
+                return Promise.resolve();
 
-                this.on_update_sort_order.notify({
-                    tree_data: this.tree_data_,
-                    sort_type: sort_type
+            return that.get_notebooks_by_user(username).then(function(notebooks) {
+                // load "alls" tree for username, and duplicate to friends tree if needed
+                var pid = that.node_id("alls", username);
+                var root = that.get_node_by_id(pid);
+
+                var notebook_nodes = that.convert_notebook_set("alls", username, notebooks);
+                var alls_data = that.as_folder_hierarchy(notebook_nodes, pid).sort(that.compare_nodes.bind(that));
+
+                merge_filter_matches(that.get_filter_matches([{
+                    children: alls_data
+                }]));
+
+                delete that.lazy_load_[username];
+
+                // add nodes to the model:
+                that.load_tree_data(alls_data, pid);
+
+                var duplicate_data;
+                if(that.my_friends_[username]) {
+                    // update model for friend's notebooks:
+                    var ftree = that.duplicate_tree_data(root, that.transpose_notebook('friends'));
+
+                    merge_filter_matches(that.get_filter_matches([{
+                        children: ftree
+                    }]));
+
+                    // add nodes to the model:
+                    that.load_tree_data(ftree.children, that.node_id('friends', username));
+
+                    // for the view:
+                    duplicate_data = ftree.children;
+                }
+
+                that.on_load_by_user.notify({
+                    pid: that.node_id('alls', username),
+                    data: alls_data,
+                    duplicate_data: duplicate_data,
+                    duplicate_parent_id: that.node_id('friends', username)
+                });
+            });
+        },
+
+        add_notebook_info: function(user, gistname, entry) {
+            if(!this.notebook_info_[gistname])
+                this.notebook_info_[gistname] = {};
+            _.extend(this.notebook_info_[gistname], entry);
+            var p = rcloud.set_notebook_info(gistname, entry);
+            if(user === this.username())
+                p = p.then(function() { rcloud.config.add_notebook(gistname); });
+            return p;
+        },
+
+        tag_notebook_version: function(id, version, tag) {
+            var history = this.histories_[id];
+
+            for(var i=0; i<history.length; ++i) {
+                if (history[i].version === version) {
+                    history[i].tag = tag;
+                }
+                if(history[i].tag === tag && history[i].version != version) {
+                    history[i].tag = undefined;
+                }
+            }
+        },
+
+        update_notebook/*_model*/: function(user, gistname, description, time) {
+            var that = this;
+            return that.load_user_notebooks(user).then(function() {
+                var entry = that.notebook_info_[gistname] || {};
+
+                entry.username = user;
+                entry.description = description;
+                entry.last_commit = time;
+
+                that.add_notebook_info(user, gistname, entry);
+                return entry; // note: let go of promise
+            });
+        },
+
+        update_notebook_from_gist: function(result, history, selroot) {
+            var user = result.user.login, gistname = result.id;
+            var that = this;
+            // we only receive history here if we're at HEAD, so use that if we get
+            // it.  otherwise use the remembered history if any.  otherwise
+            // update_history_nodes will do an async call to get the history.
+            if(history)
+                that.histories_[gistname] = history;
+
+            return that.update_notebook/*_model*/(user, gistname,
+                                        result.description,
+                                        result.updated_at || result.history[0].committed_at)
+                .then(function(entry) {
+                    return that.update_notebook_view(user, gistname, entry, selroot);
+                });
+        },
+
+        // special case for #1867: skip user level of tree for featured users
+        skip_user_level: function(root) {
+            return root === 'featured' && this.featured_.length === 1;
+        },
+
+        update_tree_node: function(node, data) {
+
+            _.extend(node, data);
+
+            this.on_update_node.notify({
+                node: node,
+                data: data
+            });
+        },
+
+        set_node_open_status: function(node, is_open) {
+            var tree_node = this.get_node_by_id(node.id);
+            tree_node.is_open = is_open;
+        },
+
+        remove_node: function(node) {
+
+            var parent = this.get_parent(node.id);
+
+            this.on_fake_hover.notify({
+                node: node
+            });
+
+            // remove node from model:
+            parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                id: node.id
+            }));
+
+            this.remove_node_notify({
+                node: node
+            });
+
+            this.remove_empty_parents(parent);
+
+            if(node.root === 'interests' && node.user !== this.username_ && parent.children.length === 0){
+                // remove node from model:
+                var interests_node = this.get_node_by_id('/interests');
+                interests_node.children = _.without(interests_node.children, _.findWhere(interests_node.children, {
+                    id: parent.id
+                }));
+
+                // remove from tree:
+                this.remove_node_notify({
+                    node: parent
+                });
+
+            }
+        },
+
+        remove_node_notify: function(args) {
+
+            // might be a noop, but no side-effects if not found:
+            this.matches_filter_ = _.without(this.matches_filter_, args.node.id);
+
+            this.on_remove_node.notify(args);
+        },
+
+        unstar_notebook_view: function(user, gistname, selroot) {
+            var inter_id = this.node_id('interests', user, gistname);
+            var node = this.get_node_by_id(inter_id); // that.$tree_.tree('getNodeById', inter_id);
+            if(!node) {
+                console.log("attempt to unstar notebook we didn't know was starred", inter_id);
+                return;
+            }
+            //this.remove_tree_node(node);
+            this.remove_node(node);
+            return this.update_notebook_view(user, gistname, this.get_notebook_info(gistname), selroot);
+        },
+
+        update_notebook_view: function(user, gistname, entry, selroot) {
+
+            var that = this;
+
+            function open_and_select(node) {
+                if(that.current_.version) {
+                    //$tree_.tree('openNode', node);
+                    var id = that.skip_user_level(node.root) ?
+                            that.node_id(node.root, gistname, that.current_.version) :
+                            that.node_id(node.root, user, gistname, that.current_.version);
+                    //var n2 = $tree_.tree('getNodeById', id);
+
+                    var n2 = that.get_node_by_id(id);
+
+                    if(!n2)
+                        throw new Error('tree node was not created for current history');
+                    node = n2;
+                }
+                that.on_select_node.notify({
+                    node: node
                 });
             }
 
-            rcloud.config.set_user_option("tree-sort-order", sort_type);
-        }
-    },
+            var p, i_starred = that.my_stars_[gistname] || false;
+            var promises = [];
 
-    get_node_by_id: function(id) {
+            if(selroot === true)
+                selroot = that.featured_.indexOf(user) >=0 ? 'featured' :
+                    i_starred ? 'interests' :
+                    that.my_friends_[user] ? 'friends': 'alls';
 
-        var found;
+            if(i_starred) {
+                p = that.update_tree_entry('interests', user, gistname, entry, true);
+                if(selroot==='interests')
+                    p = p.then(open_and_select);
+                promises.push(p);
+            }
 
-        function traverse(o) {
-            for (var i in o) {
-                if (!!o[i] && typeof(o[i])=="object") {
-                    if(o[i].id === id) {
-                        found = o[i];
-                        break;
-                    }
-                    traverse(o[i] );
+            if(gistname === that.current_.notebook) {
+                var starn = RCloud.UI.navbar.control('star_notebook');
+                if(starn) {
+                    starn.set_fill(i_starred);
+                    starn.set_count(that.num_stars_[gistname]);
                 }
             }
-        }  
 
-        traverse(this.tree_data_);
-        return found;
-    },
+            if(that.my_friends_[user]) {
+                p = that.update_tree_entry('friends', user, gistname, entry, true);
+                if(selroot==='friends')
+                    p = p.then(open_and_select);
+                promises.push(p);
+            }
 
-    get_parent: function(id) {
+            if(that.featured_.indexOf(user)>=0) {
+                p = that.update_tree_entry('featured', user, gistname, entry, true);
+                if(selroot==='featured')
+                    p = p.then(open_and_select);
+                promises.push(p);
+            }
 
-        function find_child_by_id(node) {
-            return _.find(node.children, function(c) {
-                return c.id === id;
-            });
-        }
+            p = that.update_tree_entry('alls', user, gistname, entry, true);
+            if(selroot==='alls')
+                p = p.then(open_and_select);
+            promises.push(p);
 
-        function getObject(theObject, id) {
-            var found_parent = null;
-            if(theObject instanceof Array) {
-                for(var i = 0; i < theObject.length; i++) {
-                    found_parent = getObject(theObject[i], id);
-                    if (found_parent) {
-                        break;
-                    }   
-                }
-            } else {
-                for(var prop in theObject) {
-                    if(prop === 'id' && theObject.hasOwnProperty('children')) {
-                        var child = find_child_by_id(theObject);
+            return Promise.all(promises);
+        },
 
-                        if(child) 
-                            return theObject;
+        find_sort_point: function(data, parent) {
+            // this could be a binary search but linear is probably fast enough
+            // for a single insert, and it also could be out of order
+            if(parent.children) {
+                for(var i = 0; i < parent.children.length; ++i) {
+                    var child = parent.children[i];
+
+                    var so = this.compare_nodes.call(this, data, child);
+                    if(so < 0) {
+                        return {
+                            child: child,
+                            position: i
+                        };
                     }
-                    if(theObject[prop] instanceof Object || theObject[prop] instanceof Array) {
-                        found_parent = getObject(theObject[prop], id);
+                }
+            }
+
+            return undefined;
+        },
+
+        insert_in_order: function(node_to_insert, parent) {
+
+            // verify whether this node matches the current filter:
+            if(node_to_insert.gistname) {
+                if(RCloud.utils.filter(node_to_insert, _.values(this.tree_filters_)).length == 1) {
+                    this.matches_filter_.push(node_to_insert.id);
+                }
+            }
+
+            if(typeof parent === 'string') {
+                parent = this.get_node_by_id(parent);
+            }
+
+            var before = this.find_sort_point(node_to_insert, parent);
+
+            if(before) {
+                // splice children:
+                parent.children.splice(before.position, 0, node_to_insert);
+
+                this.on_add_node_before.notify({
+                    node_to_insert: node_to_insert,
+                    existing_node: before.child
+                });
+
+                return node_to_insert;
+
+            } else {
+                // add node to model:
+                if(!parent.children) {
+                    parent.children = [];
+                }
+
+                parent.children.push(node_to_insert);
+
+                this.on_append_node.notify({
+                    node_to_insert: node_to_insert,
+                    parent_id: parent.id
+                });
+
+                return node_to_insert;
+            }
+        },
+
+        traverse: function() {
+            function traverse(o) {
+                for (var i in o) {
+                    if (!!o[i] && typeof(o[i])=="object") {
+                        console.log('traverse output: ', o[i]);
+                        traverse(o[i]);
+                    }
+                }
+            }
+            traverse(this.tree_data_);
+        },
+
+        get_filter_matches: function(notebooks) {
+            // do the filtering:
+            var matching_notebooks = [],
+            that = this,
+            empty_folders = [],
+            current_matches = [],
+            set_status = function(notebooks, matches_filter) {
+                _.each(notebooks, function(n) {
+                    n.matches_filter = matches_filter;
+                });
+            },
+            get_matching_notebooks = function(o) {
+                for(var i in o) {
+                    if (!!o[i] && typeof(o[i])=="object") {
+                        if(o[i].hasOwnProperty('children')) {
+
+                            current_matches = _.filter(o[i].children, function(child) {
+                                return child.gistname && !child.version;
+                            });
+
+                            set_status(current_matches, false);
+
+                            current_matches = RCloud.utils.filter(current_matches, _.values(that.tree_filters_));
+
+                            if(current_matches && current_matches.length) {
+                                matching_notebooks.push.apply(matching_notebooks, current_matches);
+                                // these match:
+                                set_status(current_matches, true);
+
+                                // this is a folder with children; ensure that any parent folders
+                                // that were previously marked as hidden are removed:
+                                if(!o[i].gistname) {
+                                    var ancestors = [];
+                                    _.each(empty_folders, function(folder) {
+                                        if(o[i].id.startsWith(folder.id)) {
+                                            ancestors.push(folder);
+                                        }
+                                    });
+
+                                    empty_folders = _.difference(empty_folders, ancestors);
+                                }
+                            } else {
+                                // this is a folder with no matching notebooks:
+                                if(!o[i].gistname) {
+                                    empty_folders.push(o[i]);
+                                }
+                            }
+                        }
+
+                        get_matching_notebooks(o[i]);
+                    }
+                }
+            };
+
+            get_matching_notebooks(notebooks);
+
+            return {
+                matching_notebooks: _.pluck(matching_notebooks, 'id'),
+                empty_folders: _.pluck(empty_folders, 'id')
+            };
+        },
+
+        sanitize_tree_setting: function(setting_key, value) {
+            var settings = [
+                { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30' ]},
+                { key: 'tree-sort-order', default_value: 'name', valid_values: ['name', 'date_desc' ]}
+            ];
+
+            var setting = _.findWhere(settings, { key: setting_key });
+
+            if(!setting) {
+                console.warn('Unknown setting_key "', setting_key, '"');
+                return value;
+            } else {
+
+                if(value == null) {
+                    value = '';
+                }
+
+                return setting.valid_values.indexOf(value.toLocaleLowerCase()) >= 0 ?
+                    value.toLocaleLowerCase() : setting.default_value;
+            }
+        },
+
+        update_filter: function(filter_props) {
+            if(filter_props.prop == 'tree-filter-date') {
+                switch(filter_props.value) {
+                    case null:
+                    case 'all':
+                        this.tree_filters_[filter_props.prop] = function() { return true; };
+                        break;
+                    case 'last7':
+                    case 'last30':
+                        var period = filter_props.value.replace('last', '');
+                        var that = this;
+                        this.tree_filters_[filter_props.prop] = function(item) {
+                            return item.gistname == that.current_.notebook || RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
+                        };
+                        break;
+                    default:
+                        console.warn('Unknown value for date filter type passed to notebook_tree_model.update_filter(...)');
+                }
+            }
+
+            var details = this.get_filter_matches(this.tree_data_);
+            this.matches_filter_ = details.matching_notebooks;
+            this.empty_folders_ = details.empty_folders;
+
+            this.on_update_show_nodes.notify({
+                nodes: this.matches_filter_,
+                empty_folders: this.empty_folders_,
+                filter_props: filter_props
+            });
+
+            rcloud.config.set_user_option(filter_props.prop, filter_props.value);
+        },
+
+        does_notebook_match_filter: function(notebook_id) {
+            return this.matches_filter_.indexOf(notebook_id) != -1;
+        },
+
+        does_folder_have_matching_descendants: function(folder_id) {
+            return this.empty_folders_.indexOf(folder_id) == -1;
+        },
+
+        update_sort_type: function(sort_type, reorder_nodes) {
+            var to_sort_by, that = this;
+            if(sort_type.toLocaleLowerCase() == 'date_desc') {
+                to_sort_by = this.orderType.DATE_DESC;
+            } else {
+                to_sort_by = this.orderType.DEFAULT;
+            }
+
+            if(this.sorted_by_ != to_sort_by) {
+                // update sort
+                this.sorted_by_ = to_sort_by;
+
+                if(reorder_nodes) {
+                    var nodes_and_children = [];
+
+                    var update_children = function(o) {
+                        for(var i in o) {
+                            if (!!o[i] && typeof(o[i])=="object") {
+
+                                if(o[i].hasOwnProperty('children')) {
+
+                                    // don't reorder history nodes:
+                                    if(o[i].children.length && !o[i].children[0].version) {
+                                        o[i].children.sort(that.compare_nodes.bind(that));
+                                    }
+
+                                    nodes_and_children.push({
+                                        node_id: o[i].id,
+                                        children: o[i].children
+                                    });
+                                }
+
+                                update_children(o[i]);
+                            }
+                        }
+                    };
+
+                    update_children(this.tree_data_);
+
+                    this.on_update_sort_order.notify({
+                        tree_data: this.tree_data_,
+                        sort_type: sort_type
+                    });
+                }
+
+                rcloud.config.set_user_option("tree-sort-order", sort_type);
+            }
+        },
+
+        get_node_by_id: function(id) {
+
+            var found;
+
+            function traverse(o) {
+                for (var i in o) {
+                    if (!!o[i] && typeof(o[i])=="object") {
+                        if(o[i].id === id) {
+                            found = o[i];
+                            break;
+                        }
+                        traverse(o[i] );
+                    }
+                }
+            }
+
+            traverse(this.tree_data_);
+            return found;
+        },
+
+        get_parent: function(id) {
+
+            function find_child_by_id(node) {
+                return _.find(node.children, function(c) {
+                    return c.id === id;
+                });
+            }
+
+            function getObject(theObject, id) {
+                var found_parent = null;
+                if(theObject instanceof Array) {
+                    for(var i = 0; i < theObject.length; i++) {
+                        found_parent = getObject(theObject[i], id);
                         if (found_parent) {
                             break;
                         }
-                    } 
+                    }
+                } else {
+                    for(var prop in theObject) {
+                        if(prop === 'id' && theObject.hasOwnProperty('children')) {
+                            var child = find_child_by_id(theObject);
+
+                            if(child)
+                                return theObject;
+                        }
+                        if(theObject[prop] instanceof Object || theObject[prop] instanceof Array) {
+                            found_parent = getObject(theObject[prop], id);
+                            if (found_parent) {
+                                break;
+                            }
+                        }
+                    }
                 }
+                return found_parent;
             }
-            return found_parent;
-        }
 
-        return getObject(this.tree_data_, id);
-    },
+            return getObject(this.tree_data_, id);
+        },
 
-    load_tree_data: function(data, parent) {
-        var parent_node = this.get_node_by_id(parent);
-        
-        if(parent_node) {
-            parent_node.children = data;
-        }
-    },
+        load_tree_data: function(data, parent) {
+            var parent_node = this.get_node_by_id(parent);
 
-    duplicate_tree_data: function(tree, f) {
-        console.assert(!tree.user || !this.lazy_load_[tree.user]);
-        var t2 = f(tree);
-        if(tree.children) {
-            var ch2 = [];
-            for(var i=0; i<tree.children.length; ++i)
-                ch2.push(this.duplicate_tree_data(tree.children[i], f));
-            t2.children = ch2;
-        }
-        return t2;
-    },
+            if(parent_node) {
+                parent_node.children = data;
+            }
+        },
 
-    transpose_notebook: function(destroot, splice_user) {
-        var srcroot = '/alls/';
-        if(splice_user)
-            srcroot += splice_user + '/';
-        return function(datum) {
-            //if(datum.delay_children)
-            //   load_children(datum);
-            var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order", "version");
-            d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
-            d2.root = destroot;
-            return d2;
-        };
-    },
+        duplicate_tree_data: function(tree, f) {
+            console.assert(!tree.user || !this.lazy_load_[tree.user]);
+            var t2 = f(tree);
+            if(tree.children) {
+                var ch2 = [];
+                for(var i=0; i<tree.children.length; ++i)
+                    ch2.push(this.duplicate_tree_data(tree.children[i], f));
+                t2.children = ch2;
+            }
+            return t2;
+        },
 
-    update_tree: function(root, user, gistname, path, last_chance, create) {
+        transpose_notebook: function(destroot, splice_user) {
+            var srcroot = '/alls/';
+            if(splice_user)
+                srcroot += splice_user + '/';
+            return function(datum) {
+                //if(datum.delay_children)
+                //   load_children(datum);
+                var d2 = _.pick(datum, "label", "name", "full_name", "gistname", "user", "visible", "source", "last_commit", "sort_order", "version");
+                d2.id = datum.id.replace(srcroot, '/'+destroot+'/');
+                d2.root = destroot;
+                return d2;
+            };
+        },
 
-        var that = this;
-        if(!root)
-            throw new Error("need root");
-        if(!user)
-            throw new Error("need user");
-        if(!gistname)
-            throw new Error("need gistname");
+        update_tree: function(root, user, gistname, path, last_chance, create) {
 
-        var skip_user = this.skip_user_level(root); 
+            var that = this;
+            if(!root)
+                throw new Error("need root");
+            if(!user)
+                throw new Error("need user");
+            if(!gistname)
+                throw new Error("need gistname");
 
-        // make sure parents exist
-        var parid = skip_user ? this.node_id(root) : this.node_id(root, user),
-            parent = this.get_node_by_id(parid), //that.$tree_.tree('getNodeById', parid),
-            pdat = null,
-            node = null;
+            var skip_user = this.skip_user_level(root);
 
-        if(!parent) {
-
-            var mine = user === this.username_; // yes it is possible I'm not my own friend
-            parent = this.get_node_by_id(this.node_id(root)); // that.$tree_.tree('getNodeById', node_id(root));
+            // make sure parents exist
+            var parid = skip_user ? this.node_id(root) : this.node_id(root, user),
+                parent = this.get_node_by_id(parid), //that.$tree_.tree('getNodeById', parid),
+                pdat = null,
+                node = null;
 
             if(!parent) {
-                throw new Error("root '" + root + "' of notebook tree not found!");
+
+                var mine = user === this.username_; // yes it is possible I'm not my own friend
+                parent = this.get_node_by_id(this.node_id(root)); // that.$tree_.tree('getNodeById', node_id(root));
+
+                if(!parent) {
+                    throw new Error("root '" + root + "' of notebook tree not found!");
+                }
+
+                if(!skip_user) {
+                    pdat = {
+                        label: mine ? "My Notebooks" : this.someone_elses(user),
+                        id: this.node_id(root, user),
+                        sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
+                    };
+                    parent = this.insert_in_order(pdat, parent);
+                }
             }
 
-            if(!skip_user) {
-                pdat = {
-                    label: mine ? "My Notebooks" : this.someone_elses(user),
-                    id: this.node_id(root, user),
-                    sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
-                };
-                parent = this.insert_in_order(pdat, parent);
-            }
-        }
-
-        if(parent.delay_children) {
-            delete parent.delay_children;
-            this.on_load_children.notify({ 
-                node: parent
-            });
-        }
-
-        while('children' in path) {
-            node = this.get_node_by_id(path.id); // that.$tree_.tree('getNodeById', path.id);
-            if(!node) {
-                pdat = _.omit(path, 'children');
-                node = this.insert_in_order(pdat, parent);
-            }
-            parent = node;
-            path = path.children[0];
-        }
-
-        var data = path;
-        var id = skip_user ? that.node_id(root, gistname) : that.node_id(root, user, gistname);
-        node = that.get_node_by_id(id); // that.$tree_.tree('getNodeById', id);
-
-        if(!node && !create) {
-            return null;
-        }
-
-        var children;
-        data.gistname = gistname;
-        data.id = id;
-        data.root = root;
-        data.user = user;
-
-        if(node) {
-            children = node.children;
-
-            if(last_chance) {
-                last_chance(node); // hacky
+            if(parent.delay_children) {
+                delete parent.delay_children;
+                this.on_load_children.notify({
+                    node: parent
+                });
             }
 
-            //var dp = node.parent;
-            var dp = this.get_parent(node.id);
+            // create folder path:
+            while('children' in path) {
+                node = this.get_node_by_id(path.id); // that.$tree_.tree('getNodeById', path.id);
+                if(!node) {
+                    pdat = _.omit(path, 'children');
+                    node = this.insert_in_order(pdat, parent);
+                }
+                parent = node;
+                path = path.children[0];
+            }
 
-            if(dp === parent && node./*name*/label === data.label) {
-                this.update_tree_node(node, data);
-            } else {
+            var data = path;
+            var id = skip_user ? that.node_id(root, gistname) : that.node_id(root, user, gistname);
+            node = that.get_node_by_id(id); // that.$tree_.tree('getNodeById', id);
+
+            if(!node && !create) {
+                return null;
+            }
+
+            var children;
+            data.gistname = gistname;
+            data.id = id;
+            data.root = root;
+            data.user = user;
+
+            // update parents' position according to date:
+            var update_node_position = function(parent, node, data) {
+
                 // remove from model:
-                dp.children = _.without(dp.children, _.findWhere(dp.children, {
+                parent.children = _.without(parent.children, _.findWhere(parent.children, {
                     id: node.id
                 }));
 
-                this.remove_node_notify({
+                that.remove_node_notify({
                     node: node
                 });
 
-                node = this.insert_in_order(data, parent);
+                if(data) {
+                    // assign:
+                    node = that.insert_in_order(data, parent);
+                } else {
+                    that.insert_in_order(node, parent);
+                }
+            };
 
-                this.remove_empty_parents(dp);
+            if(node) {
+                children = node.children;
+
+                if(last_chance) {
+                    last_chance(node); // hacky
+                }
+
+                var dp = this.get_parent(node.id);
+
+                if(dp === parent && node.label === data.label && this.sorted_by_ !== this.orderType.DATE_DESC) {
+                    this.update_tree_node(node, data);
+                } else {
+
+                    // remove from model:
+                    dp.children = _.without(dp.children, _.findWhere(dp.children, {
+                        id: node.id
+                    }));
+
+                    this.remove_node_notify({
+                        node: node
+                    });
+
+                    node = this.insert_in_order(data, parent);
+
+                    this.remove_empty_parents(dp);
+
+                    if(this.sorted_by_ === this.orderType.DATE_DESC) {
+
+                        var current_node = node;
+
+                        do {
+                            parent = this.get_parent(current_node.id);
+
+                            if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                                parent = null;
+                            } else {
+                                update_node_position(parent, current_node,
+                                    current_node.id === data.id ? data : undefined);
+                            }
+
+                            current_node = parent;
+
+                        } while(parent);
+                    }
+                }
+
+            } else {
+                node = that.insert_in_order(data, parent);
+
+                if(this.sorted_by_ === this.orderType.DATE_DESC) {
+                    var current_node = node;
+
+                    do {
+                        parent = this.get_parent(current_node.id);
+
+                        if([that.order.NOTEBOOK, that.order.MYFOLDER].indexOf(parent.sort_order) == -1) {
+                            parent = null;
+                        } else {
+                            update_node_position(parent, current_node,
+                                current_node.id === data.id ? data : undefined);
+
+                            if(node.id === current_node.id) {
+                                node = current_node;
+                            }
+                        }
+
+                        current_node = parent;
+
+                    } while(parent);
+                }
             }
 
-        } else {
-            node = that.insert_in_order(data, parent);
-        }
+            return node;
+        },
 
-        return node;
-    },
+        remove_empty_parents: function(dp) {
 
-    remove_empty_parents: function(dp) {
+            if(dp) {
+                // remove any empty notebook hierarchy
+                while(!dp.children.length && dp.sort_order === this.order.NOTEBOOK) {
+                    var dp2 = this.get_parent(dp.id);
 
-        if(dp) {
-            // remove any empty notebook hierarchy
-            while(!dp.children.length && dp.sort_order === this.order.NOTEBOOK) {
-                var dp2 = this.get_parent(dp.id);
+                    // remove from model:
+                    dp2.children = _.without(dp2.children, _.findWhere(dp2.children, {
+                        id: dp.id
+                    }));
 
-                // remove from model:
-                dp2.children = _.without(dp2.children, _.findWhere(dp2.children, {
-                    id: dp.id
+                    this.remove_node_notify({
+                        node: dp,
+                        fake_hover: false
+                    });
+
+                    dp = dp2;
+                }
+            }
+        },
+
+        update_tree_entry: function(root, user, gistname, entry, create) {
+            var that = this;
+            var data = {user: user,
+                        label: entry.description,
+                        last_commit: new Date(entry.last_commit),
+                        sort_order: this.order.NOTEBOOK,
+                        source: entry.source,
+                        visible: entry.visible};
+
+            // always show the same number of history nodes as before
+            var whither = 'hide', where = null;
+            var inter_path = that.as_folder_hierarchy([data],
+                that.skip_user_level(root) ? that.node_id(root) : that.node_id(root, user))[0];
+
+            var node = that.update_tree(root, user, gistname, inter_path,
+                                function(node) {
+                                    if(node.children && node.children.length) {
+                                        whither = 'index';
+                                        where = node.children.length;
+                                        if(node.children[where-1].id.startsWith('showmore'))
+                                            --where;
+                                    }
+                                }, create);
+
+            if(!node){
+                return Promise.resolve(null); // !create
+            }
+
+            // if we're looking at an old version, make sure it's shown
+            if(gistname === this.current_.notebook && this.current_.version) {
+                whither = 'sha';
+                where = this.current_.version;
+            }
+
+            return this.update_history_nodes(node, whither, where);
+        },
+
+        toggle_folder_friendness: function(user) {
+            var parent;
+            if(this.my_friends_[user]) {
+                var anode = this.get_node_by_id(this.node_id('alls', user));
+                var ftree;
+                if(anode)
+                    ftree = this.duplicate_tree_data(anode, this.transpose_notebook('friends'));
+                else { // this is a first-time load case
+                    var mine = user === this.username_;
+                    ftree = {
+                        label: mine ? "My Notebooks" : this.someone_elses(user),
+                        id: this.node_id('friends', user),
+                        sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
+                    };
+                }
+                parent = this.get_node_by_id(this.node_id('friends'));
+                var node = this.insert_in_order(ftree, parent);
+
+                this.on_load_data.notify({
+                    children: ftree.children,
+                    node: node
+                });
+            }
+            else {
+                var n2 = this.get_node_by_id(this.node_id('friends', user));
+
+                // remove this node from the model:
+                parent = this.get_parent(n2.id);
+                parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                    id: n2.id
                 }));
 
                 this.remove_node_notify({
-                    node: dp,
-                    fake_hover: false
-                });
-
-                dp = dp2;
-            }
-        }
-    },
-
-    update_tree_entry: function(root, user, gistname, entry, create) {
-        var that = this;
-        var data = {user: user,
-                    label: entry.description,
-                    last_commit: new Date(entry.last_commit),
-                    sort_order: this.order.NOTEBOOK,
-                    source: entry.source,
-                    visible: entry.visible};
-
-        // always show the same number of history nodes as before
-        var whither = 'hide', where = null;
-        var inter_path = that.as_folder_hierarchy([data], 
-            that.skip_user_level(root) ? that.node_id(root) : that.node_id(root, user))[0];
-        
-        var node = that.update_tree(root, user, gistname, inter_path,
-                               function(node) {
-                                   if(node.children && node.children.length) {
-                                       whither = 'index';
-                                       where = node.children.length;
-                                       if(node.children[where-1].id.startsWith('showmore'))
-                                           --where;
-                                   }
-                               }, create);
-        
-        if(!node){
-            return Promise.resolve(null); // !create
-        }
-
-        // if we're looking at an old version, make sure it's shown
-        if(gistname === this.current_.notebook && this.current_.version) {
-            whither = 'sha';
-            where = this.current_.version;
-        }
-
-        return this.update_history_nodes(node, whither, where);
-    },
-
-     toggle_folder_friendness: function(user) {
-         var parent;
-        if(this.my_friends_[user]) {
-            var anode = this.get_node_by_id(this.node_id('alls', user));
-            var ftree;
-            if(anode)
-                ftree = this.duplicate_tree_data(anode, this.transpose_notebook('friends'));
-            else { // this is a first-time load case
-                var mine = user === this.username_;
-                ftree = {
-                    label: mine ? "My Notebooks" : this.someone_elses(user),
-                    id: this.node_id('friends', user),
-                    sort_order: mine ? this.order.MYFOLDER : this.order.SUBFOLDER
-                };
-            }
-            parent = this.get_node_by_id(this.node_id('friends'));
-            var node = this.insert_in_order(ftree, parent);
-
-            this.on_load_data.notify({
-                children: ftree.children,
-                node: node
-            });
-        }
-        else {
-            var n2 = this.get_node_by_id(this.node_id('friends', user));
-
-            // remove this node from the model:
-            parent = this.get_parent(n2.id);
-            parent.children = _.without(parent.children, _.findWhere(parent.children, {
-                id: n2.id
-            }));
-
-            this.remove_node_notify({
-                node: n2
-            });
-        }
-    },
-
-    find_index: function(collection, filter) {
-        for (var i = 0; i < collection.length; i++) {
-            if(filter(collection[i], i, collection))
-                return i;
-        }
-        return -1;
-    },
-
-    find_next_copy_name: function (username, description) {
-        var that = this;
-        return this.load_user_notebooks(username)
-            .then(function() {
-                
-                // get folder parent or user trunk
-                var pid = description.indexOf('/') === -1 ?
-                        that.node_id("alls", username) :
-                        that.node_id("alls", username, description.replace(/\/[^\/]*$/,''));
-
-                var parent = that.get_node_by_id(pid);// $tree_.tree('getNodeById', pid);
-
-                if(parent === undefined) {
-                    return description;
-                }
-
-                var map = _.object(_.map(parent.children, function(c) { 
-                    return [c.full_name, true]; 
-                }));
-
-                if(!map[description]) {
-                    return description;
-                }
-
-                var match, base, n;
-
-                if((match = RCloud.utils.split_number(description))) {
-                    base = match[0];
-                    n = +match[1];
-                } else {
-                    base = description + ' ';
-                    n = 1;
-                }
-
-                var copy_name;
-                do
-                    copy_name = base + (++n);
-                while(map[copy_name]);
-
-                return copy_name;
-            });
-    },
-
-    // add_history_nodes
-    // whither is 'hide' - erase all, 
-    // 'index' - show thru index, 
-    // 'sha' - show thru sha, 
-    // 'more' - show INCR more
-    update_history_nodes: function(node, whither, where) {
-        var INCR = 5;
-        var debug_colors = false;
-        var ellipsis = null;
-        var that = this;
-
-        function curr_count() {
-            var n = node.children.length;
-            return ellipsis ? n-1 : n;
-        }
-
-        var show_sha = function(history, sha) {
-            var sha_ind = that.find_index(history, function(hist) { 
-                return hist.version===sha; 
-            });
-            
-            if(sha_ind < 0) {
-                throw new Error("didn't find sha " + where + " in history");
-            }
-
-            return sha_ind + INCR - 1; // show this many including curr (?)
-        };
-
-        if(!node.children) {
-            node.children = [];
-        }
-
-        if(node.children && node.children.length && node.children[node.children.length-1].id.startsWith('showmore')) {
-            ellipsis = node.children[node.children.length-1];
-        }
-
-        function process_history(nshow) {
-
-            function do_color(dat, color) {
-                if(debug_colors)
-                    dat.color = color;
-            }
-
-            function get_date_diff(d1,d2) {
-                d1 = new Date(d1);
-                d2 = new Date(d2);
-                var diff = d1 - d2;
-                var min_same = d1.getMinutes() === d2.getMinutes();
-                var hour_same = d1.getHours() === d2.getHours();
-                var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
-                if(diff <= 60*1000 && hour_same && min_same && this.show_terse_dates_)
-                    return null;
-                else
-                    return RCloud.utils.format_date_time_stamp(d1, diff, isDateSame, true, this.show_terse_dates_);
-            }
-
-            function display_date_for_entry(i) {
-                var hist = history[i];
-                var d;
-                if(i+1 < history.length) {
-                    d = get_date_diff.call(this, hist.committed_at, history[i + 1].committed_at);
-                }
-                else
-                    d = new Date(hist.committed_at);
-                return d || 'none';
-            }
-
-            function make_hist_node(color, i, force_date) {
-                var hist = history[i];
-                var hdat = {};
-                _.extend(hdat, node);
-                delete hdat.children;
-                var sha = hist.version.substring(0, 10);
-                hdat.committed_at = new Date(hist.committed_at);
-                hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry.call(this, i);
-                hdat.label = hist.tag ? hist.tag : sha;
-                hdat.version = hist.version;
-                hdat.id = node.id + '/' + hdat.version;
-                do_color(hdat, color);
-                return hdat;
-            }
-
-            function update_hist_node(node, i) {
-                var hist = history[i];
-                var sha = hist.version.substring(0, 10);
-                var attrs = {
-                    label: hist.tag ? hist.tag : sha
-                };
-
-                this.on_update_node.notify({
-                    node: node,
-                    data: attrs
+                    node: n2
                 });
             }
+        },
 
-            var history = that.histories_[node.gistname].slice(1); // first item is current version
+        find_index: function(collection, filter) {
+            for (var i = 0; i < collection.length; i++) {
+                if(filter(collection[i], i, collection))
+                    return i;
+            }
+            return -1;
+        },
 
-            if(!history) {
-                return;
+        find_next_copy_name: function (username, description) {
+            var that = this;
+            return this.load_user_notebooks(username)
+                .then(function() {
+
+                    // get folder parent or user trunk
+                    var pid = description.indexOf('/') === -1 ?
+                            that.node_id("alls", username) :
+                            that.node_id("alls", username, description.replace(/\/[^\/]*$/,''));
+
+                    var parent = that.get_node_by_id(pid);// $tree_.tree('getNodeById', pid);
+
+                    if(parent === undefined) {
+                        return description;
+                    }
+
+                    var map = _.object(_.map(parent.children, function(c) {
+                        return [c.full_name, true];
+                    }));
+
+                    if(!map[description]) {
+                        return description;
+                    }
+
+                    var match, base, n;
+
+                    if((match = RCloud.utils.split_number(description))) {
+                        base = match[0];
+                        n = +match[1];
+                    } else {
+                        base = description + ' ';
+                        n = 1;
+                    }
+
+                    var copy_name;
+                    do
+                        copy_name = base + (++n);
+                    while(map[copy_name]);
+
+                    return copy_name;
+                });
+        },
+
+        // add_history_nodes
+        // whither is 'hide' - erase all,
+        // 'index' - show thru index,
+        // 'sha' - show thru sha,
+        // 'more' - show INCR more
+        update_history_nodes: function(node, whither, where) {
+            var INCR = 5;
+            var debug_colors = false;
+            var ellipsis = null;
+            var that = this;
+
+            function curr_count() {
+                var n = node.children.length;
+                return ellipsis ? n-1 : n;
             }
 
-            nshow = Math.min(nshow, history.length);
+            var show_sha = function(history, sha) {
+                var sha_ind = that.find_index(history, function(hist) {
+                    return hist.version===sha;
+                });
 
-            if(debug_colors) {
-                for(var ii = 0, ee = curr_count(); ii<ee; ++ii) {
+                if(sha_ind < 0) {
+                    throw new Error("didn't find sha " + where + " in history");
+                }
+
+                return sha_ind + INCR - 1; // show this many including curr (?)
+            };
+
+            if(!node.children) {
+                node.children = [];
+            }
+
+            if(node.children && node.children.length && node.children[node.children.length-1].id.startsWith('showmore')) {
+                ellipsis = node.children[node.children.length-1];
+            }
+
+            function process_history(nshow) {
+
+                function do_color(dat, color) {
+                    if(debug_colors)
+                        dat.color = color;
+                }
+
+                function get_date_diff(d1,d2) {
+                    d1 = new Date(d1);
+                    d2 = new Date(d2);
+                    var diff = d1 - d2;
+                    var min_same = d1.getMinutes() === d2.getMinutes();
+                    var hour_same = d1.getHours() === d2.getHours();
+                    var isDateSame = d1.toLocaleDateString() === d2.toLocaleDateString();
+                    if(diff <= 60*1000 && hour_same && min_same && this.show_terse_dates_)
+                        return null;
+                    else
+                        return RCloud.utils.format_date_time_stamp(d1, diff, isDateSame, true, this.show_terse_dates_);
+                }
+
+                function display_date_for_entry(i) {
+                    var hist = history[i];
+                    var d;
+                    if(i+1 < history.length) {
+                        d = get_date_diff.call(this, hist.committed_at, history[i + 1].committed_at);
+                    }
+                    else
+                        d = new Date(hist.committed_at);
+                    return d || 'none';
+                }
+
+                function make_hist_node(color, i, force_date) {
+                    var hist = history[i];
+                    var hdat = {};
+                    _.extend(hdat, node);
+                    delete hdat.children;
+                    var sha = hist.version.substring(0, 10);
+                    hdat.committed_at = new Date(hist.committed_at);
+                    hdat.last_commit = force_date ? hdat.committed_at : display_date_for_entry.call(this, i);
+                    hdat.label = hist.tag ? hist.tag : sha;
+                    hdat.version = hist.version;
+                    hdat.id = node.id + '/' + hdat.version;
+                    do_color(hdat, color);
+                    return hdat;
+                }
+
+                function update_hist_node(node, i) {
+                    var hist = history[i];
+                    var sha = hist.version.substring(0, 10);
+                    var attrs = {
+                        label: hist.tag ? hist.tag : sha
+                    };
+
                     this.on_update_node.notify({
-                        node: node.children[i],
+                        node: node,
+                        data: attrs
+                    });
+                }
+
+                var history = that.histories_[node.gistname].slice(1); // first item is current version
+
+                if(!history) {
+                    return;
+                }
+
+                nshow = Math.min(nshow, history.length);
+
+                if(debug_colors) {
+                    for(var ii = 0, ee = curr_count(); ii<ee; ++ii) {
+                        this.on_update_node.notify({
+                            node: node.children[i],
+                            data: {
+                                color: ''
+                            }
+                        });
+                    }
+                }
+
+                // remove forced date on version above ellipsis, if any
+                if(ellipsis) {
+                    this.on_update_node.notify({
+                        node: node.children[node.children.length - 2],
                         data: {
-                            color: ''
+                            last_commit: display_date_for_entry(node.children.length-2)
                         }
                     });
                 }
-            }
 
-            // remove forced date on version above ellipsis, if any
-            if(ellipsis) {
-                this.on_update_node.notify({
-                    node: node.children[node.children.length - 2],
-                    data: {
-                        last_commit: display_date_for_entry(node.children.length-2)
-                    }
-                });
-            }
+                // insert at top
+                var nins,
+                    insf = null,
+                    history_node,
+                    starting = node.children.length === 0;
 
-            // insert at top
-            var nins, 
-                insf = null, 
-                history_node,
-                starting = node.children.length === 0;
-
-            if(!starting) {
-                var first = node.children[0];
-                nins = that.find_index(history, function(h) { return h.version==first.version; });
-                insf = function(dat) {
-
-                    node.children.splice(nins - 1 /* children */, 0, dat);
-
-                    this.on_add_node_before.notify({
-                        node_to_insert: dat,
-                        existing_node: first
-                    });
-                };
-            } else {
-                nins = nshow;
-                insf = function(dat) {
-
-                    if(!node.children) {
-                        node.children = [];
-                    }
-
-                    node.children.push(dat);
-
-                    this.on_append_node.notify({
-                        node_to_insert: dat,
-                        parent_id: node.id
-                    });
-                };
-            }
-
-            for(var i=0; i<nins; ++i){
-                history_node = make_hist_node.call(this, 'green', i, starting && i==nins-1);
-                insf.call(that, history_node);
-            }
-
-            var count = curr_count();
-
-            // updates
-            for(i = nins; i<count; ++i){
-                update_hist_node.call(that, node.children[i], i);
-            }
-
-            // add or trim bottom
-            if(count < nshow) { // top up
-                if(ellipsis) {
+                if(!starting) {
+                    var first = node.children[0];
+                    nins = that.find_index(history, function(h) { return h.version==first.version; });
                     insf = function(dat) {
-                        node.children.splice(node.children.length - 1, 0, dat);
+
+                        node.children.splice(nins - 1 /* children */, 0, dat);
 
                         this.on_add_node_before.notify({
-                            node_to_insert: dat, 
-                            existing_node: ellipsis
+                            node_to_insert: dat,
+                            existing_node: first
                         });
                     };
                 } else {
+                    nins = nshow;
                     insf = function(dat) {
 
                         if(!node.children) {
@@ -14744,872 +15233,960 @@ notebook_tree_model.prototype = {
                     };
                 }
 
-                for(i=count; i<nshow; ++i) {
-                    history_node = make_hist_node('mediumpurple', i, i==nshow-1);
+                for(var i=0; i<nins; ++i){
+                    history_node = make_hist_node.call(this, 'green', i, starting && i==nins-1);
                     insf.call(that, history_node);
                 }
-            } else if(count > nshow) { // trim any excess
-                node.children = node.children.splice(0, nshow);
 
+                var count = curr_count();
+
+                // updates
+                for(i = nins; i<count; ++i){
+                    update_hist_node.call(that, node.children[i], i);
+                }
+
+                // add or trim bottom
+                if(count < nshow) { // top up
+                    if(ellipsis) {
+                        insf = function(dat) {
+                            node.children.splice(node.children.length - 1, 0, dat);
+
+                            this.on_add_node_before.notify({
+                                node_to_insert: dat,
+                                existing_node: ellipsis
+                            });
+                        };
+                    } else {
+                        insf = function(dat) {
+
+                            if(!node.children) {
+                                node.children = [];
+                            }
+
+                            node.children.push(dat);
+
+                            this.on_append_node.notify({
+                                node_to_insert: dat,
+                                parent_id: node.id
+                            });
+                        };
+                    }
+
+                    for(i=count; i<nshow; ++i) {
+                        history_node = make_hist_node('mediumpurple', i, i==nshow-1);
+                        insf.call(that, history_node);
+                    }
+                } else if(count > nshow) { // trim any excess
+                    node.children = node.children.splice(0, nshow);
+
+                    this.remove_history_nodes.notify({
+                        node: node,
+                        from_index: nshow
+                    });
+                }
+
+                // hide or show ellipsis
+                if(ellipsis) {
+                    if(nshow === history.length) {
+                        //that.$tree_.tree('removeNode', ellipsis);
+
+                        var parent = this.get_parent(ellipsis.id);
+
+                        parent.children = _.without(parent.children, _.findWhere(parent.children, {
+                            id: ellipsis.id
+                        }));
+
+                        this.remove_node_notify({
+                            node: ellipsis
+                        });
+
+                        ellipsis = null;
+                    }
+                } else {
+                    if(nshow < history.length) {
+                        var data = {
+                            label: '...',
+                            id: 'showmore-' + node.id    // unique name
+                        };
+                        //ellipsis = that.$tree_.tree('appendNode', data, node);
+
+                        node.children.push(data);
+
+                        this.on_append_node.notify({
+                            node_to_insert: data,
+                            parent_id: node.id
+                        });
+                    }
+                }
+            }
+
+            var nshow;
+            if(whither==='hide') {
+                // reset:
+                node.children = [];
                 this.remove_history_nodes.notify({
-                    node: node,
-                    from_index: nshow
+                node: node
                 });
-            }
-
-            // hide or show ellipsis
-            if(ellipsis) {
-                if(nshow === history.length) {
-                    //that.$tree_.tree('removeNode', ellipsis);
-
-                    var parent = this.get_parent(ellipsis.id);
-
-                    parent.children = _.without(parent.children, _.findWhere(parent.children, {
-                        id: ellipsis.id
-                    }));
-
-                    this.remove_node_notify({
-                        node: ellipsis
-                    });
-
-                    ellipsis = null;
-                }
-            } else {
-                if(nshow < history.length) {
-                    var data = {
-                        label: '...',
-                        id: 'showmore-' + node.id    // unique name
-                    };
-                    //ellipsis = that.$tree_.tree('appendNode', data, node);
-
-                    node.children.push(data);
-
-                    this.on_append_node.notify({
-                        node_to_insert: data,
-                        parent_id: node.id
-                    });
-                }
-            }
-        }
-
-        var nshow;
-        if(whither==='hide') {
-            // reset:
-            node.children = [];
-            this.remove_history_nodes.notify({
-               node: node 
-            });
-            return Promise.resolve(node);
-        } else if(whither==='index') {
-            nshow = Math.max(where, INCR);
-        } else if(whither==='same') {
-            nshow = curr_count();
-        } else if(whither==='more') {
-            nshow = curr_count() + INCR;
-        } else if(whither==='sha') {
-            if(that.histories_[node.gistname]) {
-                nshow = show_sha(that.histories_[node.gistname], where);
-            }
-        } else {
-            throw new Error("update_history_nodes don't understand how to seek '" + whither + "'");
-        }
-
-        if(that.histories_[node.gistname]) {
-            process_history.call(that, nshow);
-            return Promise.resolve(node);
-        } else {
-            return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
-                that.histories_[node.gistname] = notebook.history;
-
-                if(whither === 'sha') {
+                return Promise.resolve(node);
+            } else if(whither==='index') {
+                nshow = Math.max(where, INCR);
+            } else if(whither==='same') {
+                nshow = curr_count();
+            } else if(whither==='more') {
+                nshow = curr_count() + INCR;
+            } else if(whither==='sha') {
+                if(that.histories_[node.gistname]) {
                     nshow = show_sha(that.histories_[node.gistname], where);
                 }
+            } else {
+                throw new Error("update_history_nodes don't understand how to seek '" + whither + "'");
+            }
 
+            if(that.histories_[node.gistname]) {
                 process_history.call(that, nshow);
-                return node;
-            }.bind(that));
-        }
-    },
+                return Promise.resolve(node);
+            } else {
+                return rcloud.load_notebook(node.gistname, null).then(function(notebook) {
+                    that.histories_[node.gistname] = notebook.history;
 
-    get_infos_and_counts: function(ids) {
-        return Promise.all([
-            rcloud.stars.get_multiple_notebook_star_counts(ids),
-            rcloud.get_multiple_notebook_infos(ids)
-        ]).spread(function(counts, infos) {
-            return {
-                notebooks: RCloud.utils.clean_r(infos),
-                num_stars: RCloud.utils.clean_r(counts)
-            };
-        });
-    },
+                    if(whither === 'sha') {
+                        nshow = show_sha(that.histories_[node.gistname], where);
+                    }
 
-    get_starred_info: function() {
-        var that = this;
-        return rcloud.stars.get_my_starred_notebooks()
-            .then(that.get_infos_and_counts);
-    },
+                    process_history.call(that, nshow);
+                    return node;
+                }.bind(that));
+            }
+        },
 
-    get_recent_info: function() {
-        var that = this;
-        return rcloud.config.get_recent_notebooks()
-            .then(function(recents) {
-                return that.get_infos_and_counts(Object.keys(recents));
-            });
-    },
-
-    get_featured: function() {
-        var that = this;
-        return rcloud.config.get_alluser_option('featured_users').then(function(featured) {
-            that.featured_ = featured || [];
-
-            if(_.isString(that.featured_))
-                that.featured_ = [that.featured_];
-
-            if(!that.featured_.length)
-                return null;
-
-            return that.get_notebooks_by_user(that.featured_[0]).then(function(notebooks) {
-                var notebook_nodes = that.convert_notebook_set('featured', that.featured_[0], notebooks).map(function(notebook) {
-                    notebook.id = '/featured/' + notebook.gistname;
-                    return notebook;
-                });
-
+        get_infos_and_counts: function(ids) {
+            return Promise.all([
+                rcloud.stars.get_multiple_notebook_star_counts(ids),
+                rcloud.get_multiple_notebook_infos(ids)
+            ]).spread(function(counts, infos) {
                 return {
-                    label: 'RCloud Sample Notebooks',
-                    id: '/featured',
-                    children: that.as_folder_hierarchy(notebook_nodes, that.node_id('featured')).sort(that.compare_nodes.bind(that))
+                    notebooks: RCloud.utils.clean_r(infos),
+                    num_stars: RCloud.utils.clean_r(counts)
                 };
             });
+        },
 
-        });
-    },
+        get_starred_info: function() {
+            var that = this;
+            return rcloud.stars.get_my_starred_notebooks()
+                .then(that.get_infos_and_counts);
+        },
 
-    update_history: function(tree_node, opts) {
+        get_recent_info: function() {
+            var that = this;
+            return rcloud.config.get_recent_notebooks()
+                .then(function(recents) {
+                    return that.get_infos_and_counts(Object.keys(recents));
+                });
+        },
 
-        var that = this;
+        get_featured: function() {
+            var that = this;
+            return rcloud.config.get_alluser_option('featured_users').then(function(featured) {
+                that.featured_ = featured || [];
 
-        if(_.isBoolean(opts)) {
-            opts = {
-                toggle: opts
-            };
-        }
+                if(_.isString(that.featured_))
+                    that.featured_ = [that.featured_];
 
-        var whither = opts.update ? 'same' : 'more',
-            node = that.get_node_by_id(tree_node.id);
+                if(!that.featured_.length)
+                    return null;
 
-        if(node.children && node.children.length) {
-            if(!node.is_open) {
-                that.on_open_node.notify({
-                    node: node
+                return that.get_notebooks_by_user(that.featured_[0]).then(function(notebooks) {
+                    var notebook_nodes = that.convert_notebook_set('featured', that.featured_[0], notebooks).map(function(notebook) {
+                        notebook.id = '/featured/' + notebook.gistname;
+                        return notebook;
+                    });
+
+                    return {
+                        label: 'RCloud Sample Notebooks',
+                        id: '/featured',
+                        children: that.as_folder_hierarchy(notebook_nodes, that.node_id('featured')).sort(that.compare_nodes.bind(that))
+                    };
                 });
 
-                return Promise.resolve(undefined);
+            });
+        },
+
+        update_history: function(tree_node, opts) {
+
+            var that = this;
+
+            if(_.isBoolean(opts)) {
+                opts = {
+                    toggle: opts
+                };
             }
 
-            if(opts.toggle) { 
-               whither = 'hide';
-            }
-        }
+            var whither = opts.update ? 'same' : 'more',
+                node = that.get_node_by_id(tree_node.id);
 
-        return that.update_history_nodes(node, whither, null)
-            .then(function(node) {
-                
-                var history_len = 0;
-                if(that.histories_[node.gistname]) {
-                    history_len = that.histories_[node.gistname].length;
+            if(node.children && node.children.length) {
+                if(!node.is_open) {
+                    that.on_open_node.notify({
+                        node: node
+                    });
+
+                    return Promise.resolve(undefined);
                 }
 
-                that.on_show_history.notify({
-                    node: node,
-                    history_len: history_len
-                });
-
-                node.is_open = true;
-            });
-    },
-
-    load_everything: function() {
-    
-        var that = this,
-            opts;
-        return Promise.all([
-            rcloud.get_users(),
-            that.get_starred_info(),
-            that.get_recent_info(),
-            rcloud.get_gist_sources(),
-            rcloud.config.get_user_option(['notebook-path-tips', 'tree-sort-order', 'tree-filter-date'])
-        ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, user_options) {
-            opts = user_options;
-
-            that.path_tips_ = user_options['notebook-path-tips'];
-            
-            that.gist_sources_ = gist_sources;
-            _.extend(that.notebook_info_, starred_info.notebooks);
-            for(var r in recent_info.notebooks) {
-                // add a special flag for notebooks that we only know about from recent list
-                // we won't show them in the tree until they're opened
-                if(!that.notebook_info_[r]) {
-                    that.notebook_info_[r] = recent_info.notebooks[r];
-                    that.notebook_info_[r].recent_only = true;
+                if(opts.toggle) {
+                whither = 'hide';
                 }
             }
-            _.extend(that.num_stars_, recent_info.num_stars); // (not currently needed)
-            all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
 
-            var featured_tree;
+            return that.update_history_nodes(node, whither, null)
+                .then(function(node) {
 
-            return Promise.all([rcloud.config.get_current_notebook(),
-                                that.get_featured()
-                                ])
-                .spread(function(current, featured_notebooks) {
-                    that.current_ = current;
-                    that.num_stars_ = starred_info.num_stars;
-                    featured_tree = featured_notebooks;
-
-                })
-                .then(function() {
-
-                    var alls_root = that.populate_users(all_the_users);
-
-                    return [
-                        featured_tree,
-                        that.populate_interests(starred_info.notebooks),
-                        that.populate_friends(all_the_users),
-                        alls_root
-                    ].filter(function(t) { return !!t; });
-
-                });
-        })
-        .then(function(data) {
-
-            // initial assignment: 
-            this.tree_data_ = data;
-
-            // sanitize tree options:
-            _.each(['tree-sort-order', 'tree-filter-date'], function(setting_key) { 
-                opts[setting_key] = that.sanitize_tree_setting(setting_key, opts[setting_key]);
-            });
-
-            this.update_filter({
-                prop: 'tree-filter-date',
-                value: opts['tree-filter-date']
-            });
-
-            this.update_sort_type(opts['tree-sort-order'], true);   
-
-            this.on_initialise_tree.notify({ 
-                data: data
-            });         
-            
-            this.on_settings_complete.notify(opts);
-
-        }.bind(that))
-        .then(function() {
-            for(var book in this.invalid_notebooks_) {
-                var entry = this.invalid_notebooks_[book];
-                if(!entry)
-                    console.log("notebook metadata for " + book + " is missing.");
-                else
-                    console.log("notebook metadata for " + book + " has invalid entries: " + JSON.stringify(_.pick(entry, "username","description","last_commit","visible","source")));
-            }
-        }.bind(that))
-        .catch(rclient.post_rejection);
-    }
-};
-
-var notebook_tree_view = function(model) {
-
-    "use strict";
-
-    this.model_ = model;
-    this.$tree_ = null;
-    this.tree_controls_root_selector = '#tree-controls';
-    this.$sort_order_select_ = $('#tree_sort_order');
-    this.date_filter_ = new date_filter('#tree-filter-by');
-    
-    this.on_notebook_open = new event(this);
-
-    var view_obj = this;
-
-    // attach view component listeners:
-    this.date_filter_.on_change.attach(function(sender, args) { 
-        view_obj.model_.update_filter(args);
-    });
-
-    // future listeners conform to args = { prop, value }
-    //
-    // this.another_filter_.on_change.attach(function(sender, args) {
-    //     view_obj.model_.update_filter(args);
-    // });
-
-    // attach model listeners
-    this.model_.on_settings_complete.attach(function(sender, args) {
-        $(view_obj.tree_controls_root_selector).find('[data-settingkey]').each(function() {
-            var settingKey = $(this).data('settingkey');
-            var settingValue = args[settingKey];
-
-            if(settingValue != null) {
-                $(this).val(settingValue);                 
-            }
-        });
-    });
-
-    this.model_.on_initialise_tree.attach(function(sender, args) {
-
-        var start_widget_time = window.performance ? window.performance.now() : 0;
-        view_obj.$tree_ = $("#editor-book-tree");
-
-        console.info('loading tree data: ', args.data);
-
-        view_obj.$sort_order_select_.on('change', view_obj.change_sort_order.bind(view_obj));
-
-        view_obj.$tree_.tree({
-            data: args.data,
-            onCreateLi: view_obj.on_create_tree_li.bind(view_obj),
-            selectable: true,
-            useContextMenu: false,
-            keyboardSupport: false
-        });
-
-        view_obj.$tree_.bind('tree.click', view_obj.tree_click.bind(view_obj));
-        view_obj.$tree_.bind('tree.open', view_obj.tree_open.bind(view_obj));
-        view_obj.$tree_.bind('tree.close', view_obj.tree_close.bind(view_obj));
-
-        if(start_widget_time)
-            console.log('load tree took ' + (window.performance.now() - start_widget_time));
-
-        var interests = view_obj.$tree_.tree('getNodeById', "/interests");
-        view_obj.$tree_.tree('openNode', interests);
-    });
-
-    this.model_.on_update_sort_order.attach(function(sender, args) {
-        if(view_obj.$tree_) {
-            var state = view_obj.$tree_.tree('getState');
-            view_obj.$tree_.tree('loadData', args.tree_data);
-            view_obj.$tree_.tree('setState', state);
-        }
-
-        view_obj.$sort_order_select_.val(args.sort_type);
-    });
-
-    this.model_.on_update_show_nodes.attach(function(sender, args) {
-        if(view_obj.$tree_) {
-            view_obj.$tree_.tree('getTree').iterate(function(node) {
-                if(node.gistname) {
-                    if(_.find(args.nodes, function(node_id) {
-                        return node.id.startsWith(node_id);
-                    })) {
-                        $(node.element).show();
-                    } else {
-                        $(node.element).hide();
+                    var history_len = 0;
+                    if(that.histories_[node.gistname]) {
+                        history_len = that.histories_[node.gistname].length;
                     }
-                } else {
-                    if(node.sort_order === 1) {
-                        if(args.empty_folders.indexOf(node.id) != -1) {
-                            $(node.element).hide();
-                        } else {
+
+                    that.on_show_history.notify({
+                        node: node,
+                        history_len: history_len
+                    });
+
+                    node.is_open = true;
+                });
+        },
+
+        load_everything: function() {
+
+            var that = this,
+                opts;
+            return Promise.all([
+                rcloud.get_users(),
+                that.get_starred_info(),
+                that.get_recent_info(),
+                rcloud.get_gist_sources(),
+                rcloud.config.get_user_option(['notebook-path-tips', 'tree-sort-order', 'tree-filter-date'])
+            ]).spread(function(all_the_users, starred_info, recent_info, gist_sources, user_options) {
+                opts = user_options;
+
+                that.path_tips_ = user_options['notebook-path-tips'];
+
+                that.gist_sources_ = gist_sources;
+                _.extend(that.notebook_info_, starred_info.notebooks);
+                for(var r in recent_info.notebooks) {
+                    // add a special flag for notebooks that we only know about from recent list
+                    // we won't show them in the tree until they're opened
+                    if(!that.notebook_info_[r]) {
+                        that.notebook_info_[r] = recent_info.notebooks[r];
+                        that.notebook_info_[r].recent_only = true;
+                    }
+                }
+                _.extend(that.num_stars_, recent_info.num_stars); // (not currently needed)
+                all_the_users = _.union(all_the_users, _.compact(_.pluck(starred_info.notebooks, 'username')));
+
+                var featured_tree;
+
+                return Promise.all([rcloud.config.get_current_notebook(),
+                                    that.get_featured()
+                                    ])
+                    .spread(function(current, featured_notebooks) {
+                        that.current_ = current;
+                        that.num_stars_ = starred_info.num_stars;
+                        featured_tree = featured_notebooks;
+
+                    })
+                    .then(function() {
+
+                        var alls_root = that.populate_users(all_the_users);
+
+                        return [
+                            featured_tree,
+                            that.populate_interests(starred_info.notebooks),
+                            that.populate_friends(all_the_users),
+                            alls_root
+                        ].filter(function(t) { return !!t; });
+
+                    });
+            })
+            .then(function(data) {
+
+                // initial assignment:
+                this.tree_data_ = data;
+
+                // sanitize tree options:
+                _.each(['tree-sort-order', 'tree-filter-date'], function(setting_key) {
+                    opts[setting_key] = that.sanitize_tree_setting(setting_key, opts[setting_key]);
+                });
+
+                this.update_filter({
+                    prop: 'tree-filter-date',
+                    value: opts['tree-filter-date']
+                });
+
+                this.update_sort_type('name', true);
+                //this.update_sort_type(opts['tree-sort-order'], true);
+
+                this.on_initialise_tree.notify({
+                    data: data
+                });
+
+                this.on_settings_complete.notify(opts);
+
+            }.bind(that))
+            .then(function() {
+                for(var book in this.invalid_notebooks_) {
+                    var entry = this.invalid_notebooks_[book];
+                    if(!entry)
+                        console.log("notebook metadata for " + book + " is missing.");
+                    else
+                        console.log("notebook metadata for " + book + " has invalid entries: " + JSON.stringify(_.pick(entry, "username","description","last_commit","visible","source")));
+                }
+            }.bind(that))
+            .catch(rclient.post_rejection);
+        }
+    };
+
+    return notebook_tree_model;
+
+})();
+
+RCloud.UI.notebook_tree_view = (function(model) {
+
+    var notebook_tree_view = function(model) {
+
+        "use strict";
+
+        this.model_ = model;
+        this.$tree_ = null;
+        this.tree_controls_root_selector = '#tree-controls';
+        this.$sort_order_select_ = $('#tree_sort_order');
+        this.date_filter_ = new RCloud.UI.date_filter('#tree-filter-by');
+
+        this.on_notebook_open = new RCloud.UI.event(this);
+
+        var view_obj = this;
+
+        var append_node = function(parent) {
+            if (parent && parent.children) {
+                _.each(parent.children, function(child) {
+                    view_obj.$tree_.tree('appendNode', child, view_obj.$tree_.tree('getNodeById', parent.id));
+                    append_node(child);
+                });
+            }
+        };
+
+        // attach view component listeners:
+        this.date_filter_.on_change.attach(function(sender, args) {
+            view_obj.model_.update_filter(args);
+        });
+
+        // future listeners conform to args = { prop, value }
+        //
+        // this.another_filter_.on_change.attach(function(sender, args) {
+        //     view_obj.model_.update_filter(args);
+        // });
+
+        // attach model listeners
+        this.model_.on_settings_complete.attach(function(sender, args) {
+            $(view_obj.tree_controls_root_selector).find('[data-settingkey]').each(function() {
+                var settingKey = $(this).data('settingkey');
+                var settingValue = args[settingKey];
+
+                if(settingValue != null) {
+                    $(this).val(settingValue);
+                }
+            });
+        });
+
+        this.model_.on_initialise_tree.attach(function(sender, args) {
+
+            var start_widget_time = window.performance ? window.performance.now() : 0;
+            view_obj.$tree_ = $("#editor-book-tree");
+
+            //console.info('loading tree data: ', args.data);
+
+            view_obj.$sort_order_select_.on('change', view_obj.change_sort_order.bind(view_obj));
+
+            view_obj.$tree_.tree({
+                data: args.data,
+                onCreateLi: view_obj.on_create_tree_li.bind(view_obj),
+                selectable: true,
+                useContextMenu: false,
+                keyboardSupport: false
+            });
+
+            view_obj.$tree_.bind('tree.click', view_obj.tree_click.bind(view_obj));
+            view_obj.$tree_.bind('tree.open', view_obj.tree_open.bind(view_obj));
+            view_obj.$tree_.bind('tree.close', view_obj.tree_close.bind(view_obj));
+
+            if(start_widget_time)
+                console.log('load tree took ' + (window.performance.now() - start_widget_time));
+
+            var interests = view_obj.$tree_.tree('getNodeById', "/interests");
+            view_obj.$tree_.tree('openNode', interests);
+        });
+
+        this.model_.on_update_sort_order.attach(function(sender, args) {
+            if(view_obj.$tree_) {
+                var state = view_obj.$tree_.tree('getState');
+                view_obj.$tree_.tree('loadData', args.tree_data);
+                view_obj.$tree_.tree('setState', state);
+            }
+
+            view_obj.$sort_order_select_.val(args.sort_type);
+        });
+
+        this.model_.on_update_show_nodes.attach(function(sender, args) {
+            if(view_obj.$tree_) {
+                view_obj.$tree_.tree('getTree').iterate(function(node) {
+                    if(node.gistname) {
+                        if(_.find(args.nodes, function(node_id) {
+                            return node.id.startsWith(node_id);
+                        })) {
                             $(node.element).show();
+                        } else {
+                            $(node.element).hide();
+                        }
+                    } else {
+                        if(node.sort_order === 1) {
+                            if(args.empty_folders.indexOf(node.id) != -1) {
+                                $(node.element).hide();
+                            } else {
+                                $(node.element).show();
+                            }
                         }
                     }
-                }
 
-                return true;
-            });
-        }
-
-        if(args.filter_props.prop == 'tree-filter-date') {
-            view_obj.date_filter_.val(args.filter_props.value);
-        }
-    });
-
-    this.model_.on_load_by_user.attach(function(sender, args) {
-        
-        var root = view_obj.$tree_.tree('getNodeById', args.pid);  
-        view_obj.$tree_.tree('loadData', args.data, root);
-
-        if(args.duplicate_data) {
-            view_obj.$tree_.tree('loadData', args.duplicate_data, 
-            view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
-        }
-    });
-
-    this.model_.on_open_and_select.attach(function(sender, args) {
-        var node = args.node;
-
-        if(args.isHistorical) {
-            view_obj.$tree_.tree('openNode', 
-                view_obj.$tree_.tree('getNodeById', args.node.id));
-
-            node = view_obj.$tree_.tree('getNodeById', args.id);
-
-            if(!node)
-                throw new Error('tree node was not created for current history');
-        } else {
-            node = view_obj.$tree_.tree('getNodeById', args.id);
-        }
-
-        view_obj.select_node(node);
-    });
-
-    this.model_.on_select_node.attach(function(sender, args) {
-        var node = view_obj.$tree_.tree('getNodeById', args.node.id);
-        view_obj.$tree_.tree('selectNode', node);
-        view_obj.scroll_into_view(node);
-        if(node.user === sender.username_)
-            RCloud.UI.notebook_title.make_editable(node, node.element, true);
-        else
-            RCloud.UI.notebook_title.make_editable(null);
-    });
-
-    this.model_.on_load_children.attach(function(sender, args) {
-        console.warn('redundant code?');
-        view_obj.$tree_.tree('loadData', args.node.delay_children, args.node);
-    });
-
-    this.model_.on_add_node_before.attach(function(sender, args) {
-        view_obj.$tree_.tree('addNodeBefore',
-            args.node_to_insert,
-            view_obj.$tree_.tree('getNodeById', args.existing_node.id)); 
-    });
-
-    this.model_.on_append_node.attach(function(sender, args) {
-        view_obj.$tree_.tree('appendNode', args.node_to_insert, 
-            view_obj.$tree_.tree('getNodeById', args.parent_id));
-    });
-
-    this.model_.on_load_data.attach(function(sender, args) {
-        view_obj.$tree_.tree('loadData', args.children, 
-            view_obj.$tree_.tree('getNodeById', args.node.id));        
-    });
-
-    this.model_.on_update_node.attach(function(sender, args) {
-        view_obj.$tree_.tree('updateNode', 
-            view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
-    });
-
-    this.model_.on_remove_node.attach(function(sender, args) {
-        var node = view_obj.$tree_.tree('getNodeById', args.node.id);
-
-        if(args.fake_hover) {
-            ui_utils.fake_hover(node);
-        }
-        
-        view_obj.$tree_.tree('removeNode', node);
-    });
-
-    this.model_.on_fake_hover.attach(function(sender, args) {
-        ui_utils.fake_hover(view_obj.$tree_.tree('getNodeById', args.node.id));
-    });
-
-    this.model_.on_open_node.attach(function(sender, args) {
-        view_obj.$tree_.tree('removeNode', view_obj.$tree_.tree('getNodeById', args.node.id));
-    });
-
-    this.model_.on_show_history.attach(function(sender, args) {
-        if(args.history_len === 1) { // FIXME: should be via UI.notebook_commands
-            $(".history i", $(view_obj.$tree_.tree('getNodeById', args.node.id).element)).addClass("button-disabled");
-        }
-
-        view_obj.$tree_.tree('openNode', 
-            view_obj.$tree_.tree('getNodeById', args.node.id));
-    });
-
-    this.model_.remove_history_nodes.attach(function(sender, args) {
-        var i, node = view_obj.$tree_.tree('getNodeById', args.node.id);
-
-        if (node.children) {
-            if(args.from_index) {
-                // remove everything from:
-                for(i = node.children.length - 1; i >= args.from_index; --i) {
-                    view_obj.$tree_.tree('removeNode', node.children[i]);
-                }
-            } else {
-                // get rid of everything:
-                for (i = node.children.length-1; i >= 0; i--) {
-                    view_obj.$tree_.tree('removeNode', node.children[i]);
-                }
-            }
-        }
-    });
-};
-
-notebook_tree_view.prototype = {
-
-    change_sort_order: function(event) {
-        var val = $(event.target).val();
-        this.model_.update_sort_type(val, true);
-    },
-
-    tree_click: function(event) {
-
-        if(event.node.id.startsWith('showmore')){
-            //show_history(event.node.parent, false);
-            this.model_.update_history(event.node.parent, false);
-        } else if(event.node.gistname) {
-            if(event.click_event.metaKey || event.click_event.ctrlKey) {
-                this.on_notebook_open.notify({ 
-                    gistname: event.node.gistname, 
-                    version: event.node.version,
-                    source: event.node.source, 
-                    selroot: true,
-                    new_window: true
+                    return true;
                 });
-            } else {
-                // it's weird that a notebook exists in two trees but only one is selected (#220)
-                // just select - and this enables editability
-                /*jshint eqnull:true */
-                if(event.node.gistname === this.model_.get_current().notebook &&
-                    event.node.version == this.model_.get_current().version && event.node.version == null) { // deliberately null-vague here
-                    this.select_node(event.node);
-                } else {
-                    this.on_notebook_open.notify({ 
-                        // gistname, version, source, selroot, new_window
-                        gistname: event.node.gistname, 
-                        version: event.node.version || null,
-                        source: event.node.source, 
-                        selroot: event.node.root,
-                        new_window: false
-                    });
-                }
-                /*jshint eqnull:false */
-            }
-        } else {
-            if(!event.node.is_open) {
-                this.$tree_.tree('openNode', event.node);
-                ui_utils.fake_hover(event.node);
             }
 
-            this.model_.set_node_open_status(event.node, event.node.is_open);
-        }
-
-        return false;
-    },
-
-    select_node: function(node) {
-        this.$tree_.tree('selectNode', node);
-        this.scroll_into_view(node);
-        if(node.user === this.model_.username_)
-            RCloud.UI.notebook_title.make_editable(node, node.element, true);
-        else
-            RCloud.UI.notebook_title.make_editable(null);
-    },
-
-    scroll_into_view: function(node) {
-        var p = node.parent;
-        while(p.sort_order === this.model_.order.NOTEBOOK) {
-            this.$tree_.tree('openNode', p);
-            p = p.parent;
-        }
-        ui_utils.scroll_into_view(this.$tree_, 50, 100, null, $(node.element));
-    },
-
-    remove_node: function(node) {
-        var parent = node.parent;
-        ui_utils.fake_hover(node);
-        $tree_.tree('removeNode', node);
-        this.remove_empty_parents(parent);
-        if(node.root === 'interests' && node.user !== this.model_.username_ && parent.children.length === 0)
-            $tree_.tree('removeNode', parent);
-    },
-
-    remove_empty_parents: function(dp) {
-        // remove any empty notebook hierarchy
-        while(dp.children.length===0 && dp.sort_order === this.model_.order.NOTEBOOK) {
-            var dp2 = dp.parent;
-            $tree_.tree('removeNode', dp);
-            dp = dp2;
-        }
-    },
-
-    reselect_node: function(f) {
-        var selected_node = $tree_.tree('getSelectedNode');
-        return f().then(function() {
-            var node_to_select = $tree_.tree('getNodeById', selected_node.id);
-
-            if(node_to_select)
-                this.select_node(node_to_select);
-            else console.log('sorry, neglected to highlight ' + selected_node.id);
+            if(args.filter_props.prop == 'tree-filter-date') {
+                view_obj.date_filter_.val(args.filter_props.value);
+            }
         });
-    },
 
-    tree_open: function(event) {
-        var n = event.node;
+        this.model_.on_load_by_user.attach(function(sender, args) {
 
-        // notebook folder name only editable when open
-        if(n.full_name && n.user === this.model_.username() && !n.gistname) {
-            RCloud.UI.notebook_title.make_editable(n, n.element, true);
-        }
+            var root = view_obj.$tree_.tree('getNodeById', args.pid);
+            view_obj.$tree_.tree('loadData', args.data, root);
 
-        $('#collapse-notebook-tree').trigger('size-changed');
+            if(args.duplicate_data) {
+                view_obj.$tree_.tree('loadData', args.duplicate_data,
+                view_obj.$tree_.tree('getNodeById', args.duplicate_parent_id));
+            }
+        });
 
-        if(n.user && this.model_.lazy_load_[n.user])
-            this.model_.load_user_notebooks(n.user);
-    },
+        this.model_.on_open_and_select.attach(function(sender, args) {
+            var node = args.node;
 
-    tree_close: function(event) {
-        var n = event.node;
-        // notebook folder name only editable when open
-        if(n.full_name && !n.gistname) {
-            RCloud.UI.notebook_title.make_editable(n, n.element, false);
-        }
-    },
+            if(args.isHistorical) {
+                view_obj.$tree_.tree('openNode',
+                    view_obj.$tree_.tree('getNodeById', args.node.id));
 
-    display_date: function(ds) {
-        // return an element
-        return $(this.display_date_html(ds))[0];
-    },
+                node = view_obj.$tree_.tree('getNodeById', args.id);
 
-    display_date_html: function(ds) {
-        if(ds==='none')
-            return '';
-        if(typeof ds==='string')
-            return ds;
-        var date = new Date(ds);
-        var now = new Date();
-        var diff = now - date;
-        return RCloud.utils.format_date_time_stamp(date, diff, true, false, this.model_.show_terse_dates());
-    }, 
+                if(!node)
+                    throw new Error('tree node was not created for current history');
+            } else {
+                node = view_obj.$tree_.tree('getNodeById', args.id);
+            }
 
-    highlight_node: function(node) {
-        var that = this;
-        return function() {
+            view_obj.select_node(node);
+        });
+
+        this.model_.on_select_node.attach(function(sender, args) {
+            var node = view_obj.$tree_.tree('getNodeById', args.node.id);
+            view_obj.$tree_.tree('selectNode', node);
+            view_obj.scroll_into_view(node).then(function() {
+                if(node.user === sender.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
+        });
+
+        this.model_.on_load_children.attach(function(sender, args) {
+            console.warn('redundant code?');
+            view_obj.$tree_.tree('loadData', args.node.delay_children, args.node);
+        });
+
+        this.model_.on_add_node_before.attach(function(sender, args) {
+            view_obj.$tree_.tree('addNodeBefore',
+                args.node_to_insert,
+                view_obj.$tree_.tree('getNodeById', args.existing_node.id));
+
+            append_node(args.node_to_insert);
+        });
+
+        this.model_.on_append_node.attach(function(sender, args) {
+
+            view_obj.$tree_.tree('appendNode', args.node_to_insert, view_obj.$tree_.tree('getNodeById', args.parent_id));
+
+            append_node(args.node_to_insert);
+        });
+
+        this.model_.on_load_data.attach(function(sender, args) {
+            view_obj.$tree_.tree('loadData', args.children,
+                view_obj.$tree_.tree('getNodeById', args.node.id));
+        });
+
+        this.model_.on_update_node.attach(function(sender, args) {
+            view_obj.$tree_.tree('updateNode',
+                view_obj.$tree_.tree('getNodeById', args.node.id), args.data);
+        });
+
+        this.model_.on_remove_node.attach(function(sender, args) {
+            var node = view_obj.$tree_.tree('getNodeById', args.node.id);
+
+            if(args.fake_hover) {
+                ui_utils.fake_hover(node);
+            }
+            view_obj.$tree_.tree('removeNode', node);
+        });
+
+        this.model_.on_fake_hover.attach(function(sender, args) {
+            ui_utils.fake_hover(view_obj.$tree_.tree('getNodeById', args.node.id));
+        });
+
+        this.model_.on_open_node.attach(function(sender, args) {
+            view_obj.$tree_.tree('removeNode', view_obj.$tree_.tree('getNodeById', args.node.id));
+        });
+
+        this.model_.on_show_history.attach(function(sender, args) {
+            if(args.history_len === 1) { // FIXME: should be via UI.notebook_commands
+                $(".history i", $(view_obj.$tree_.tree('getNodeById', args.node.id).element)).addClass("button-disabled");
+            }
+
+            view_obj.$tree_.tree('openNode',
+                view_obj.$tree_.tree('getNodeById', args.node.id));
+        });
+
+        this.model_.remove_history_nodes.attach(function(sender, args) {
+            var i, node = view_obj.$tree_.tree('getNodeById', args.node.id);
+
+            if (node.children) {
+                if(args.from_index) {
+                    // remove everything from:
+                    for(i = node.children.length - 1; i >= args.from_index; --i) {
+                        view_obj.$tree_.tree('removeNode', node.children[i]);
+                    }
+                } else {
+                    // get rid of everything:
+                    for (i = node.children.length-1; i >= 0; i--) {
+                        view_obj.$tree_.tree('removeNode', node.children[i]);
+                    }
+                }
+            }
+        });
+    };
+
+    notebook_tree_view.prototype = {
+
+        change_sort_order: function(event) {
+            var val = $(event.target).val();
+            this.model_.update_sort_type(val, true);
+            this.scroll_into_view(this.$tree_.tree('getSelectedNode'));
+        },
+
+        tree_click: function(event) {
+
+            if(event.node.id.startsWith('showmore')){
+                //show_history(event.node.parent, false);
+                this.model_.update_history(event.node.parent, false);
+            } else if(event.node.gistname) {
+                if(event.click_event.metaKey || event.click_event.ctrlKey) {
+                    this.on_notebook_open.notify({
+                        gistname: event.node.gistname,
+                        version: event.node.version,
+                        source: event.node.source,
+                        selroot: true,
+                        new_window: true
+                    });
+                } else {
+                    // it's weird that a notebook exists in two trees but only one is selected (#220)
+                    // just select - and this enables editability
+                    /*jshint eqnull:true */
+                    if(event.node.gistname === this.model_.get_current().notebook &&
+                        event.node.version == this.model_.get_current().version && event.node.version == null) { // deliberately null-vague here
+                        this.select_node(event.node);
+                    } else {
+                        this.on_notebook_open.notify({
+                            // gistname, version, source, selroot, new_window
+                            gistname: event.node.gistname,
+                            version: event.node.version || null,
+                            source: event.node.source,
+                            selroot: event.node.root,
+                            new_window: false
+                        });
+                    }
+                    /*jshint eqnull:false */
+                }
+            } else {
+                if(!event.node.is_open) {
+                    this.$tree_.tree('openNode', event.node);
+                    ui_utils.fake_hover(event.node);
+                }
+
+                this.model_.set_node_open_status(event.node, event.node.is_open);
+            }
+
+            return false;
+        },
+
+        select_node: function(node) {
+            this.scroll_into_view(node).then(function() {
+                this.$tree_.tree('selectNode', node);
+                if(node.user === this.model_.username_)
+                    RCloud.UI.notebook_title.make_editable(node, node.element, true);
+                else
+                    RCloud.UI.notebook_title.make_editable(null);
+            });
+        },
+
+        scroll_into_view: function(node) {
+            var that = this;
             return new Promise(function(resolve) {
                 var p = node.parent;
-                while(p.sort_order === that.model_.order.NOTEBOOK) {
+                while(p) {
                     that.$tree_.tree('openNode', p);
                     p = p.parent;
                 }
-                ui_utils.scroll_into_view(that.$tree_, 150, 150, function() {
-                    $(node.element).closest('.jqtree_common').effect('highlight', { color: '#fd0' }, 1500, function() {
-                        resolve();
-                    });
+                ui_utils.scroll_into_view(that.$tree_, 50, 100, function() {
+                    resolve();
                 }, $(node.element));
             });
-        };
-    }, 
+        },
 
-    highlight_notebooks: function(notebooks) {
+        remove_node: function(node) {
+            var parent = node.parent;
+            ui_utils.fake_hover(node);
+            $tree_.tree('removeNode', node);
+            this.remove_empty_parents(parent);
+            if(node.root === 'interests' && node.user !== this.model_.username_ && parent.children.length === 0)
+                $tree_.tree('removeNode', parent);
+        },
 
-        var that = this,
-            nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
-            // HACKY: the view shouldn't need to know how to generate an ID (model's repsonsibility):
-            return that.$tree_.tree('getNodeById', '/' + ['interests', that.model_.username_, notebook.id].join('/'));
-        });
-
-        // get promises:
-        nodes.map(function(node) {
-            return that.highlight_node(node);
-        }).reduce(function(cur, next) {
-            return cur.then(next);
-        }, Promise.resolve()).then(function() {});
-    }, 
-    
-    on_create_tree_li: function(node, $li) {
-
-        var element = $li.find('.jqtree-element'),
-            title = element.find('.jqtree-title');
-
-        title.css('color', node.color);
-
-        if(this.model_.path_tips()) {
-            element.attr('title', node.id);
-        }
-
-        if(node.gistname) {
-            if(node.source) {
-                title.addClass('foreign-notebook');
-            } else if(!node.visible) {
-                title.addClass('hidden-notebook');
+        remove_empty_parents: function(dp) {
+            // remove any empty notebook hierarchy
+            while(dp.children.length===0 && dp.sort_order === this.model_.order.NOTEBOOK) {
+                var dp2 = dp.parent;
+                $tree_.tree('removeNode', dp);
+                dp = dp2;
             }
-        }
+        },
 
-        if(node.version || node.id === 'showmore') {
-            title.addClass('history');
-        }
+        reselect_node: function(f) {
+            var selected_node = $tree_.tree('getSelectedNode');
+            return f().then(function() {
+                var node_to_select = $tree_.tree('getNodeById', selected_node.id);
 
-        var date;
+                if(node_to_select)
+                    this.select_node(node_to_select);
+                else console.log('sorry, neglected to highlight ' + selected_node.id);
+            });
+        },
 
-        if(node.last_commit) {
-            date = $.el.span({'class': 'notebook-date'}, this.display_date(node.last_commit));
-        }
+        tree_open: function(event) {
+            var n = event.node;
 
-        var right = $.el.span({'class': 'notebook-right'}, date);
-        // if it was editable before, we need to restore that - either selected or open folder tree node
-        if(node.user === this.model_.username_ && (this.$tree_.tree('isNodeSelected', node) ||
-                                       !node.gistname && node.full_name && node.is_open)) {
-            RCloud.UI.notebook_title.make_editable(node, $li, true);
-        }   
+            // notebook folder name only editable when open
+            if(n.full_name && n.user === this.model_.username() && !n.gistname) {
+                RCloud.UI.notebook_title.make_editable(n, n.element, true);
+            }
 
-        RCloud.UI.notebook_commands.decorate($li, node, right);
+            $('#collapse-notebook-tree').trigger('size-changed');
 
-        element.append(right);
+            if(n.user && this.model_.lazy_load_[n.user])
+                this.model_.load_user_notebooks(n.user);
+        },
 
-        if(node.gistname || (!node.gistname && node.sort_order == 1)) {
-            var display;
+        tree_close: function(event) {
+            var n = event.node;
+            // notebook folder name only editable when open
+            if(n.full_name && !n.gistname) {
+                RCloud.UI.notebook_title.make_editable(n, n.element, false);
+            }
+        },
+
+        display_date: function(ds) {
+            // return an element
+            return $(this.display_date_html(ds))[0];
+        },
+
+        display_date_html: function(ds) {
+            if(ds==='none')
+                return '';
+            if(typeof ds==='string')
+                return ds;
+            var date = new Date(ds);
+            var now = new Date();
+            var diff = now - date;
+            return RCloud.utils.format_date_time_stamp(date, diff, true, false, this.model_.show_terse_dates());
+        },
+
+        highlight_node: function(node) {
+            var that = this;
+            return function() {
+                return new Promise(function(resolve) {
+                    var p = node.parent;
+                    while(p.sort_order === that.model_.order.NOTEBOOK) {
+                        that.$tree_.tree('openNode', p);
+                        p = p.parent;
+                    }
+                    ui_utils.scroll_into_view(that.$tree_, 150, 150, function() {
+                        $(node.element).closest('.jqtree_common').effect('highlight', { color: '#fd0' }, 1500, function() {
+                            resolve();
+                        });
+                    }, $(node.element));
+                });
+            };
+        },
+
+        highlight_notebooks: function(notebooks) {
+
+            var that = this,
+                nodes = _.map(_.isArray(notebooks) ? notebooks : [notebooks], function(notebook) {
+                // HACKY: the view shouldn't need to know how to generate an ID (model's repsonsibility):
+                return that.$tree_.tree('getNodeById', '/' + ['interests', that.model_.username_, notebook.id].join('/'));
+            });
+
+            // get promises:
+            nodes.map(function(node) {
+                return that.highlight_node(node);
+            }).reduce(function(cur, next) {
+                return cur.then(next);
+            }, Promise.resolve()).then(function() {});
+        },
+
+        on_create_tree_li: function(node, $li) {
+
+            var element = $li.find('.jqtree-element'),
+                title = element.find('.jqtree-title');
+
+            title.css('color', node.color);
+
+            if(this.model_.path_tips()) {
+                element.attr('title', node.id);
+            }
+
             if(node.gistname) {
-                display = this.model_.does_notebook_match_filter(node.id);
-            } else if(node.version) {
-                display = true;
-            } else {
-                display = this.model_.does_folder_have_matching_descendants(node.id);
+                if(node.source) {
+                    title.addClass('foreign-notebook');
+                } else if(!node.visible) {
+                    title.addClass('hidden-notebook');
+                }
             }
 
-            if(node.version) {
-                element.show();
-            } else {
-                element.parent()[display ? 'show' : 'hide']();     
+            if(node.version || node.id === 'showmore') {
+                title.addClass('history');
+            }
+
+            var date, date_element, is_folder;
+
+            if(node.last_commit) {
+                date = node.last_commit;
+            } else if(this.model_.show_folder_dates_ && this.model_.is_date_sorted()) {
+                var folder_commit = this.model_.get_folder_last_commit_date(node.id);
+
+                if(folder_commit) {
+                    date = folder_commit;
+                    is_folder = true;
+                }
+            }
+
+            if(date) {
+                date_element = $.el.span({'class': is_folder ? 'notebook-date folder' : 'notebook-date'},
+                    this.display_date(date));
+            }
+
+            var right = $.el.span({'class': 'notebook-right'}, date_element);
+            // if it was editable before, we need to restore that - either selected or open folder tree node
+            if(node.user === this.model_.username_ && (this.$tree_.tree('isNodeSelected', node) ||
+                                        !node.gistname && node.full_name && node.is_open)) {
+                RCloud.UI.notebook_title.make_editable(node, $li, true);
+            }
+
+            RCloud.UI.notebook_commands.decorate($li, node, right);
+
+            element.append(right);
+
+            if(node.gistname || (!node.gistname && node.sort_order == 1)) {
+                var display;
+                if(node.gistname) {
+                    display = this.model_.does_notebook_match_filter(node.id);
+                } else if(node.version) {
+                    display = true;
+                } else {
+                    display = this.model_.does_folder_have_matching_descendants(node.id);
+                }
+
+                if(node.version) {
+                    element.show();
+                } else {
+                    element.parent()[display ? 'show' : 'hide']();
+                }
             }
         }
-    }
-};
+    };
 
-var notebook_tree_controller = function(model, view) {
+    return notebook_tree_view;
 
-    "use strict";
+})();
 
-    this.model_ = model;
-    this.view_ = view;
-    this.show_terse_dates_ = false;
-    this.on_notebook_open = new event(this);
+RCloud.UI.notebook_tree_controller = (function(model, view) {
 
-    var controller_obj = this;
+    var notebook_tree_controller = function(model, view) {
 
-    this.view_.on_notebook_open.attach(function(sender, args) {
-        controller_obj.on_notebook_open.notify(args);
-    });
-};
+        "use strict";
 
-notebook_tree_controller.prototype = {
-    
-    get_tree_data: function() {
-        return this.model_.tree_data_;
-    },
+        this.model_ = model;
+        this.view_ = view;
+        this.show_terse_dates_ = false;
+        this.on_notebook_open = new RCloud.UI.event(this);
 
-    set_current: function(current) {
-        this.model_.set_current(current);
-    },
+        var controller_obj = this;
 
-    get_current: function() {
-        return this.model_.get_current();
-    },
+        this.view_.on_notebook_open.attach(function(sender, args) {
+            controller_obj.on_notebook_open.notify(args);
+        });
+    };
 
-    get_previous: function() {
-        return this.model_.get_previous();
-    },
+    notebook_tree_controller.prototype = {
 
-    get_next: function() {
-        return this.model_.get_next();
-    },
+        get_tree_data: function() {
+            return this.model_.tree_data_;
+        },
 
-    get_gist_sources: function() {
-        return this.model_.get_gist_sources();
-    },
+        set_current: function(current) {
+            this.model_.set_current(current);
+        },
 
-    get_notebook_star_count: function(gistname) {
-        return this.model_.get_notebook_star_count(gistname);
-    },
+        get_current: function() {
+            return this.model_.get_current();
+        },
 
-    set_notebook_star_count: function(gistname, count) {
-        this.model_.set_notebook_star_count(gistname, count);
-    },
+        get_previous: function() {
+            return this.model_.get_previous();
+        },
 
-    notebook_star_count_exists: function(notebook_id) {
-        return this.model_.notebook_star_count_exists(notebook_id);
-    },
+        get_next: function() {
+            return this.model_.get_next();
+        },
 
-    is_notebook_starred_by_current_user: function(gistname) {
-        return this.model_.is_notebook_starred_by_current_user(gistname);
-    },
+        get_gist_sources: function() {
+            return this.model_.get_gist_sources();
+        },
 
-    has_notebook_info: function(gistname) {
-        return this.model_.has_notebook_info(gistname);
-    },
+        get_notebook_star_count: function(gistname) {
+            return this.model_.get_notebook_star_count(gistname);
+        },
 
-    get_notebook_info: function(gistname) {
-        return this.model_.get_notebook_info(gistname);
-    },
+        set_notebook_star_count: function(gistname, count) {
+            this.model_.set_notebook_star_count(gistname, count);
+        },
 
-    set_notebook_info: function(gistname, value) {
-        this.model_.set_notebook_info(gistname, value);
-    },
+        notebook_star_count_exists: function(notebook_id) {
+            return this.model_.notebook_star_count_exists(notebook_id);
+        },
 
-    add_interest: function(user, gistname) {
-        this.model_.add_interest(user, gistname);
-    },
+        is_notebook_starred_by_current_user: function(gistname) {
+            return this.model_.is_notebook_starred_by_current_user(gistname);
+        },
 
-    get_my_star_count_by_friend: function(user) {
-        return this.model_.get_my_star_count_by_friend(user);
-    },
+        has_notebook_info: function(gistname) {
+            return this.model_.has_notebook_info(gistname);
+o        },
 
-    user_is_friend: function(user) {
-        return this.model_.user_is_friend(user);
-    },
+        get_notebook_info: function(gistname) {
+            return this.model_.get_notebook_info(gistname);
+        },
 
-    remove_interest: function(user, gistname) {
-        this.model_.remove_interest(user, gistname);
-    },
+        set_notebook_info: function(gistname, value) {
+            this.model_.set_notebook_info(gistname, value);
+        },
 
-    show_terse_dates: function(show_terse_dates) {
-        this.model_.show_terse_dates(show_terse_dates);
-    },   
-    
-    set_visibility: function(gistname, visible) {
-        return this.model_.set_visibility(gistname, visible);
-    },
+        add_interest: function(user, gistname) {
+            this.model_.add_interest(user, gistname);
+        },
 
-    load_everything: function() {
-        return this.model_.load_everything();
-    },
+        get_my_star_count_by_friend: function(user) {
+            return this.model_.get_my_star_count_by_friend(user);
+        },
 
-    highlight_notebooks: function(notebooks) {
-        this.view_.highlight_notebooks(notebooks);
-    },
+        user_is_friend: function(user) {
+            return this.model_.user_is_friend(user);
+        },
 
-    select_history_node: function(node) {
-        this.select_node(node);
-        $(node.element).find('.jqtree-element:eq(0)').trigger('click');
-    },
-    
-    update_notebook_view: function(user, gistname, entry, selroot) {
-        return this.model_.update_notebook_view(user, gistname, entry, selroot);
-    },
+        remove_interest: function(user, gistname) {
+            this.model_.remove_interest(user, gistname);
+        },
 
-    unstar_notebook_view: function(user, gistname, selroot) {
-        this.model_.unstar_notebook_view(user, gistname, selroot);
-    },
+        show_terse_dates: function(show_terse_dates) {
+            this.model_.show_terse_dates(show_terse_dates);
+        },
 
-    update_notebook_from_gist: function(result, history, selroot) {
-        return this.model_.update_notebook_from_gist(result, history, selroot);
-    },
+        set_visibility: function(gistname, visible) {
+            return this.model_.set_visibility(gistname, visible);
+        },
 
-    tag_notebook_version: function(id, version, tag) {
-        this.model_.tag_notebook_version(id, version, tag);
-    },
+        load_everything: function() {
+            return this.model_.load_everything();
+        },
 
-    toggle_folder_friendness: function(user) {
-        this.model_.toggle_folder_friendness(user);
-    },
+        highlight_notebooks: function(notebooks) {
+            this.view_.highlight_notebooks(notebooks);
+        },
 
-    show_history: function(node, opts) {
-        this.model_.update_history(node, opts);
-    },
+        select_history_node: function(node) {
+            this.select_node(node);
+            $(node.element).find('.jqtree-element:eq(0)').trigger('click');
+        },
 
-    // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
-    find_next_copy_name: function (username, description) {
-        return this.model_.find_next_copy_name(username, description);
-    },
+        update_notebook_view: function(user, gistname, entry, selroot) {
+            return this.model_.update_notebook_view(user, gistname, entry, selroot);
+        },
 
-    remove_notebook_view: function(user, gistname) {
-        this.model_.remove_notebook_view(user, gistname);
-    },
+        unstar_notebook_view: function(user, gistname, selroot) {
+            this.model_.unstar_notebook_view(user, gistname, selroot);
+        },
 
-    traverse: function() {
-        this.model_.traverse();
-    },
+        update_notebook_from_gist: function(result, history, selroot) {
+            return this.model_.update_notebook_from_gist(result, history, selroot);
+        },
 
-    update_sort_type: function(sort_type) {
-        this.model_.update_sort_type(sort_type);
-    }
-};
+        tag_notebook_version: function(id, version, tag) {
+            this.model_.tag_notebook_version(id, version, tag);
+        },
+
+        toggle_folder_friendness: function(user) {
+            this.model_.toggle_folder_friendness(user);
+        },
+
+        show_history: function(node, opts) {
+            this.model_.update_history(node, opts);
+        },
+
+        // way too subtle. shamelessly copying OSX Finder behavior here (because they're right).
+        find_next_copy_name: function (username, description) {
+            return this.model_.find_next_copy_name(username, description);
+        },
+
+        remove_notebook_view: function(user, gistname) {
+            this.model_.remove_notebook_view(user, gistname);
+        },
+
+        traverse: function() {
+            this.model_.traverse();
+        },
+
+        update_sort_type: function(sort_type) {
+            this.model_.update_sort_type(sort_type);
+        }
+    };
+
+    return notebook_tree_controller;
+
+})();
 
 //# sourceMappingURL=rcloud_bundle.js.map

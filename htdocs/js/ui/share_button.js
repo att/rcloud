@@ -25,7 +25,7 @@ RCloud.UI.share_button = (function() {
         });
     }
 
-    function resolve_view_url(gistname, version) {
+    function resolve_view_url(gistname, version, viewtype) {
         var notebook_options = null;
         if(version) {
             notebook_options = rcloud.get_tag_by_version(gistname, version)
@@ -42,9 +42,10 @@ RCloud.UI.share_button = (function() {
                 return { notebook: gistname };
             });
         }
-        var join = Promise.join;
 
-        return join(notebook_options, get_view_type(gistname),
+        var viewtype_promise = viewtype ? Promise.resolve(extension_.get(viewtype)) : get_view_type(gistname);
+
+        return Promise.join(notebook_options, viewtype_promise,
                     function(opts, view_type) {
                         var page = view_type.page;
                         opts.do_path = view_type.do_path;
@@ -69,14 +70,12 @@ RCloud.UI.share_button = (function() {
                         return {
                             title: that.key,
                             handler: function() {
-                                set_view_type(that.key).then(function() {
-                                    highlight(that.key);
-                                }).then(function() {
-                                    return resolve_view_url(shell.gistname(), shell.version()).then(function(url) {
-                                        var shareable_link = RCloud.UI.navbar.control('shareable_link');
-                                        shareable_link.set_url(url);
-                                        shareable_link.open();
-                                    });
+                                set_view_type(that.key);
+                                highlight(that.key);
+                                return resolve_view_url(shell.gistname(), shell.version(), that.key).then(function(url) {
+                                    var shareable_link = RCloud.UI.navbar.control('shareable_link');
+                                    shareable_link.set_url(url);
+                                    shareable_link.open();
                                 });
                             }
                         };

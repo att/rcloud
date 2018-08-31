@@ -30,7 +30,7 @@ rcloud.session.cell.eval <- function(context.id, partname, language, version, si
       Rserve.context(context.id)
       command <- rcloud.get.gist.part(partname, version)
       res <- if (!is.null(.session$languages[[language]]))
-          .session$languages[[language]]$run.cell(command, silent, .session)
+          .session$languages[[language]]$run.cell(command, silent, .session, partname)
       else if (language == "Markdown") {
           session.markdown.eval(command, language, FALSE)
       } else if (language == "Text") {

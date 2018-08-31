@@ -14,6 +14,21 @@
 ## so we have to parse them
 parse.headers <- function(o) .Call(rcloud.support:::parse_headers, o)
 
+get.passthru.headers <- function() {
+  OPT <- "rcloud.proxy.headers.passthru"
+  if(nzConf(OPT)) {
+    headerNames <- getConf(OPT);
+  } else {
+    headerNames <- 'Content-Disposition'
+  }
+  lapply(unlist(strsplit(headerNames,"\\s*[,]\\s*")),tolower)
+}
+
+process.headers <- function(headers) {
+  passthru<-headers[names(headers) %in% unlist(get.passthru.headers())]
+  paste(lapply(names(passthru), function(key, values) { paste0(key, ": ", values[key])}, passthru), collapse="\n")
+}
+
 run <- function(url, query, body, headers) {
     tryCatch({
 #   saveRDS(list(url=url, query=query, body=body, headers=headers), file=paste0("/tmp/proxy-",as.numeric(Sys.time()),"-",rnorm(1)))
@@ -52,7 +67,7 @@ run <- function(url, query, body, headers) {
     ## thus may need to be passed through.
     ct <- res$headers$`content-type`
     if (is.null(ct)) ct <- 'text/plain'
-    list(res$content, ct, character(), res$status_code)
+    list(res$content, ct, process.headers(res$headers), res$status_code)
     }, error=function(e) {
         list(paste0("ERROR: ",paste(e$message, collapse="\n"),"\n",
                     paste(capture.output({print(url); str(list(url=url,body=body,headers=headers))}),collapse="\n")),

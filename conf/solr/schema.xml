@@ -34,7 +34,7 @@
 <field name="raw_url" type="text_general" indexed="true" stored="true"/>
 <field name="size" type="int" indexed="false" stored="true"/>
 <field name="content" type="text_general" indexed="true" stored="true" multiValued="true"/>
-<field name="code" type="string" indexed="true" stored="true" multiValued="false" />    
+<field name="code" type="text_general" indexed="true" stored="true" multiValued="false" />    
 </fields>
 
 <uniqueKey>id</uniqueKey>

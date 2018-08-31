@@ -192,8 +192,9 @@ RCloud.UI.init = function() {
             }
         }
     }, {
+        category: 'Cell Management',
         id: 'notebook_run_all',
-        description: 'Run all',
+        description: 'Run all cells',
         keys: {
             win_mac: [
                 ['ctrl', 'shift', 'enter']
