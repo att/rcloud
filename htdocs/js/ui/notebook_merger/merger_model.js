@@ -4,7 +4,7 @@ RCloud.UI.merger_model = (function() {
   // TODO: Was this actual requirement?
   const MERGE_CHANGES_BY = 'merge-changes-by';
   
-  const DEFAULT_SOURCE = 'url';
+  const DEFAULT_SOURCE = 'id';
   
   const MESSAGES = Object.freeze({
         same_notebook_error : 'You cannot merge from your current notebook; the source must be a different notebook.',
