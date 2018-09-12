@@ -39,6 +39,7 @@ function create_cell_html_view(language, cell_model) {
       results : [],
       stop : false,
       prev_scroll : null,
+      result_consumer : null,
       scrolled : false
     };
 
@@ -303,9 +304,14 @@ function create_cell_html_view(language, cell_model) {
     }
       
     function schedule_results_consumer(delay) {
+      
+        if(!results_processing_context_.stop && results_processing_context_.result_consumer) {
+          return;
+        }
+      
         results_processing_context_.stop = false;
         results_processing_context_.results.length = 0;
-        var result_consumer = function() {
+        results_processing_context_.result_consumer = function() {
             var counter = 0;
             var scroll_after = is_result_div_visible_in_cellarea();
             results_processing_context_.scrolled = false;
@@ -342,13 +348,13 @@ function create_cell_html_view(language, cell_model) {
                 scroll();
               }
               if (is_in_document() && (!results_processing_context_.stop || results_processing_context_.results.length > 0)) {
-                window.setTimeout(result_consumer, results_processing_context_.options.notebook_update_delay);
+                window.setTimeout(results_processing_context_.result_consumer, results_processing_context_.options.notebook_update_delay);
               }
             });
             
             
         };
-        window.setTimeout(result_consumer, delay);
+        window.setTimeout(results_processing_context_.result_consumer, delay);
     }
     
     function stop_results_consumer(callback) {
@@ -1065,6 +1071,7 @@ function create_cell_html_view(language, cell_model) {
             if(!has_result_) {
                 result_div_.empty();
                 has_result_ = true;
+                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
             prompt_text_ = _.escape(prompt).replace(/\n/g,'');
             create_input_widget();
