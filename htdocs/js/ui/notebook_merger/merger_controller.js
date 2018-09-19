@@ -1,4 +1,4 @@
-RCloud.UI.merger_controller = (function(model, view) {
+RCloudNotebookMerger.controller = (function(model, view) {
 
   const merger_controller = class {
     constructor(model, view) {

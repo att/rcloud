@@ -1,4 +1,4 @@
-RCloud.UI.merging = (function() {
+RCloudNotebookMerger.diff_engine = (function() {
 
   const DiffType = Object.freeze({
     NOCHANGE: 'nochange',
@@ -112,8 +112,6 @@ RCloud.UI.merging = (function() {
     }
   }
 
-  return {
-    diff_engine
-  };
+  return diff_engine;
 
 })();

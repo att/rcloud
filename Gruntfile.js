@@ -39,12 +39,7 @@ module.exports = function (grunt) {
             "htdocs/js/language.js",
             "htdocs/js/upload_utils.js",
             "htdocs/js/ui/_begin.js",
-            "htdocs/js/event.js",  
-            "htdocs/js/ui/notebook_merger/diff_engine.js",
-            "htdocs/js/ui/notebook_merger/merger_model.js",
-            "htdocs/js/ui/notebook_merger/merger_view.js",
-            "htdocs/js/ui/notebook_merger/merger_controller.js",
-            "htdocs/js/ui/notebook_merger/notebook_merge.js",    
+            "htdocs/js/event.js", 
             "htdocs/js/ui/advanced_menu.js",
             "htdocs/js/ui/cell_commands.js",
             "htdocs/js/ui/column.js",
@@ -124,6 +119,13 @@ module.exports = function (grunt) {
             "htdocs/lib/js/ace/mode-scala.js",
             "htdocs/lib/js/ace/mode-sh.js",
             "htdocs/lib/js/ace/_end.js"
+        ],
+        mergerFiles: [
+            "htdocs/js/ui/notebook_merger/notebook_merge.js",
+            "htdocs/js/ui/notebook_merger/diff_engine.js",
+            "htdocs/js/ui/notebook_merger/merger_model.js",
+            "htdocs/js/ui/notebook_merger/merger_view.js",
+            "htdocs/js/ui/notebook_merger/merger_controller.js"
         ]
     };
 
@@ -158,6 +160,10 @@ module.exports = function (grunt) {
             ace: {
                 src: '<%= conf.aceFiles %>',
                 dest: 'htdocs/lib/ace_bundle.js'
+            },
+            merger: {
+                src: '<%= conf.mergerFiles %>',
+                dest: 'htdocs/js/merger_bundle.js'
             }
         },
         uglify: {
@@ -174,6 +180,10 @@ module.exports = function (grunt) {
             ace: {
                 src: 'htdocs/lib/ace_bundle.js',
                 dest: 'htdocs/lib/ace_bundle.min.js'
+            },
+            merger: {
+                src: 'htdocs/js/merger_bundle.js',
+                dest: 'htdocs/js/merger_bundle.min.js'
             }
         },
         compress: {
@@ -185,6 +195,10 @@ module.exports = function (grunt) {
                 src: 'htdocs/lib/ace_bundle.js',
                 dest: 'htdocs/lib/ace_bundle.js.gz'
             },
+            merger: {
+                src: 'htdocs/js/merger_bundle.js',
+                dest: 'htdocs/js/merger_bundle.js.gz'
+            },
             bundle_min: {
                 src: 'htdocs/js/rcloud_bundle.min.js',
                 dest: 'htdocs/js/rcloud_bundle.min.js.gz'
@@ -192,6 +206,10 @@ module.exports = function (grunt) {
             ace_min: {
                 src: 'htdocs/lib/ace_bundle.min.js',
                 dest: 'htdocs/lib/ace_bundle.min.js.gz'
+            },
+            merger_min: {
+                src: 'htdocs/js/merger_bundle.min.js',
+                dest: 'htdocs/js/merger_bundle.min.js.gz'
             }
         }
     });

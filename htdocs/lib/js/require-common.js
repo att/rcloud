@@ -4,6 +4,7 @@ requirejs_config_obj = {
     paths: {
         "jquery": "jquery-2.1.1",
         "rcloud_bundle": "../../js/rcloud_bundle",
+        "merger_bundle": "../../js/merger_bundle",
         "ace": "../ace_bundle",
         "vs": "monaco/vs",
         editor_tab: "../../editor_tab",
@@ -67,7 +68,10 @@ function start_require(deps) {
             throw err;
         }
     };
-
+    
+    window.RCloud = {};
+    window.RCloud.UI = {};
+    window.RCloud.UI.addons = {};
     require(deps,
             function(Promise, _, d3, sha256) {
                 window.Promise = Promise;
