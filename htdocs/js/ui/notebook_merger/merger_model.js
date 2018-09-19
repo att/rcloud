@@ -1,4 +1,4 @@
-RCloud.UI.merger_model = (function() {
+RCloudNotebookMerger.model = (function() {
 
   // Key holding last used selection of 'theirs' notebook in Merge Dialog.
   // TODO: Was this actual requirement?
@@ -39,7 +39,7 @@ RCloud.UI.merger_model = (function() {
       this.on_merge_start = new RCloud.UI.event(this);
       this.on_merge_complete = new RCloud.UI.event(this);
       
-      this._diff_engine = new RCloud.UI.merging.diff_engine();
+      this._diff_engine = new RCloudNotebookMerger.diff_engine();
 
       this._dialog_stage = this.DialogStage.INIT;
       this._merge_source = DEFAULT_SOURCE;
@@ -85,7 +85,7 @@ RCloud.UI.merger_model = (function() {
       this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
       this._dialog_stage = this.DialogStage.INIT;
-      this._diff_engine = new RCloud.UI.merging.diff_engine();
+      this._diff_engine = new RCloudNotebookMerger.diff_engine();
 
       this._delta_decorations = [];
       this._diff_info = [];

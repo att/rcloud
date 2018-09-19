@@ -1,4 +1,4 @@
-window.RCloud.UI.merger_view = (function(model) {
+RCloudNotebookMerger.view = (function(model) {
 
   const DEFAULT_LANGUAGE = 'rcloud';
 
