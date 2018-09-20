@@ -107,7 +107,9 @@ RCloudNotebookMerger.diff_engine = (function() {
         get isChanged() { return this.fileChangeType == ChangeType.MODIFIED; },
         owned,
         other,
-        get isNewOrDeleted() { return [ChangeType.NEWFILE, ChangeType.DELETEDFILE].indexOf(this.fileChangeType) != -1; },
+        get isNewOrDeleted() { return this.isDeleted || this.isNew;  },
+        get isDeleted() { return [ChangeType.DELETEDFILE].indexOf(this.fileChangeType) != -1; },
+        get isNew() { return [ChangeType.NEWFILE].indexOf(this.fileChangeType) != -1; }
       }
     }
   }

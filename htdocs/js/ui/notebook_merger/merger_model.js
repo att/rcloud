@@ -331,10 +331,13 @@ RCloudNotebookMerger.model = (function() {
               .map(f => {
                 // Backend uses .b64 suffix hint to handle Base64 encoded content.
                 let filename = f.content.hasOwnProperty('r_type') || !f.isBinary ? f.filename : f.filename + BINARY_SUFFIX; 
+                let erase = f.changeDetails.isDeleted;
+                
                 return {
                   filename: filename,
                   language: f.isBinary ? null : f.language,
                   content: this._diff_engine.getResolvedContent(f),
+                  erase
               }})
               .value();
 

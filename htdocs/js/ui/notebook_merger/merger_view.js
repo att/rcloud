@@ -125,6 +125,21 @@ RCloudNotebookMerger.view = (function(model) {
         $(event.currentTarget).attr('title', isIncluded ? 
           'This file will be added. Click to cancel.' : 'This file will not be added. Click to add.');
       });
+      
+      $(this._dialog).on('click', 'tbody .remove', (event) => {
+        const row = $(event.currentTarget).closest('tr');
+        row.toggleClass('excluded');
+
+        let isIncluded = !row.hasClass('excluded');
+
+        this._model.setFileInclusion({
+          type: row.data('filetype'),
+          filename: row.data('filename')
+        }, isIncluded);
+
+        $(event.currentTarget).attr('title', isIncluded ? 
+          'This file will be removed. Click to cancel.' : 'This file will not be removed. Click to remove.');
+      });
 
       $(this._dialog).on('shown.bs.tab', 'a[data-toggle="tab"]', (e) => {
         if($(e.target).attr("href") === this._compareDiffTabSelector && !this._compare_diff_editor) {
@@ -340,16 +355,18 @@ RCloudNotebookMerger.view = (function(model) {
             isToSpan,
             diffLoader,
             changesCell,
-            changeCountSpan,
+            modifySpan,
             equalSpan,
-            addSpan;
+            addSpan,
+            removeSpan;
 
         sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
         isToSpan = sourceRow.find('.isTo span');
         changesCell = sourceRow.find('.changes');
-        changeCountSpan = changesCell.find('.changeCount');
+        modifySpan = changesCell.find('.modify');
         equalSpan = changesCell.find('.equal');
         addSpan = changesCell.find('.add');
+        removeSpan = changesCell.find('.remove');
         diffLoader = changesCell.find('.diffLoader');
 
         diffLoader.remove();
@@ -362,15 +379,19 @@ RCloudNotebookMerger.view = (function(model) {
           if(!owned) {
             sourceRow.addClass('addition'); 
             addSpan.attr('title', 'This file will be added. Click to cancel.');
-            addSpan.show();       
+            addSpan.show();
+          } else if (!other) {
+            sourceRow.addClass('deletion'); 
+            removeSpan.attr('title', 'This file will be deleted. Click to cancel.');
+            removeSpan.show();
           }
         }
 
         // changed, so show changed details:
         if(isChanged) {
-          changeCountSpan.find('span').html(changeCount);
-          changeCountSpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
-          changeCountSpan.show();
+          modifySpan.find('span').html(changeCount);
+          modifySpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
+          modifySpan.show();
         }
 
         if(other) {
@@ -397,11 +418,11 @@ RCloudNotebookMerger.view = (function(model) {
 
         let changeCount = args.reviewList.length - _.filter(args.reviewList, item => item.isRejected).length, 
             sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"]`),
-            changeCountSpan = sourceRow.find('.changeCount');
+            modifySpan = sourceRow.find('.modify');
 
-        changeCountSpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
+        modifySpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
         sourceRow[changeCount ? 'removeClass' : 'addClass']('excluded');
-        changeCountSpan.find('span').html(changeCount);
+        modifySpan.find('span').html(changeCount);
       });
     }
 
