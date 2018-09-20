@@ -1014,21 +1014,37 @@ body .modal-dialog.full {
                 text-transform: uppercase;
 
                 span:not(.count) {
-                    background: #DBE6C1;
                     font-weight: bold;
                     border-radius: 13px;
                     width: 60px;
                     display: inline-block;
                     text-align: center;
                     border: 1px solid white;
-
+                }
+                
+                span.add {
+                    background: #DBE6C1;
                     &:hover {
                         background: darken(#DBE6C1, 10%);
                     }
                 }
-
+                
+                span.remove {
+                    background: #ffa3a3;
+                    &:hover {
+                        background: darken(#ffa3a3, 10%);
+                    }
+                }
+                
                 span.count {
                     margin-left: 5px;
+                }
+
+                span.modify {
+                    background: #ffd1a3;
+                    &:hover {
+                        background: darken(#ffd1a3, 10%);
+                    }
                 }   
 
                 span.equal {
@@ -1049,21 +1065,27 @@ body .modal-dialog.full {
                 }
             }
 
-            .isto span, .isfrom span, .add, .changeCount {
+            .isto span, .isfrom span, .add, .modify, .remove {
                 padding: 5px;
                 display: inline-block;
             }
 
             tr.excluded {
-                td.isto /*, td.changes*/ {
+                td.isto, td.changes {
                     opacity: 0.1;
                 }
                 td.changes {
-                    .add, .changeCount {
-                        background: #FFA3A3;
+                    .add, .modify {
+                        background: #dbe6c1;
 
                         &:hover {
-                            background: darken(#FFA3A3, 10%);
+                            background: darken(#dbe6c1, 10%);
+                        }
+                    }
+                    .remove {
+                        background: #ffa3a3;
+                        &:hover {
+                            background: darken(#ffa3a3, 10%);
                         }
                     }
                 }

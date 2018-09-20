@@ -63,8 +63,7 @@ function start_require(deps) {
                 var main = document.getElementById('main-div');
                 main.innerHTML = '<pre>' + lines.join('\n') + '</pre>';
             }
-        }
-        else {
+        } else {
             throw err;
         }
     };
