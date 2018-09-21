@@ -305,7 +305,24 @@ RCloudNotebookMerger.model = (function() {
     }
 
     setFileInclusion(file, include) {
-      _.findWhere(this._comparison.union.files, file).include = include;
+      let fileChange = _.findWhere(this._comparison.union.files, file);
+      fileChange.include = include;
+      if(fileChange.changeDetails.isChanged) {
+          fileChange.changeDetails.modifiedLineInfo.forEach((el) => {
+            el.isRejected = !include;
+          });
+      } 
+    }
+    
+    getModifiedLinesCount(file) {
+      let fileChange = _.findWhere(this._comparison.union.files, file);
+      
+      if(fileChange.changeDetails.isChanged) {
+          return _.filter(fileChange.changeDetails.modifiedLineInfo, (el) => {
+            return !el.isRejected;
+          }).length;
+      }
+      return 0;
     }
 
     applyMerge() {

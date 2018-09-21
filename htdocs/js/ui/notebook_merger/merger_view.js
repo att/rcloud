@@ -140,6 +140,23 @@ RCloudNotebookMerger.view = (function(model) {
         $(event.currentTarget).attr('title', isIncluded ? 
           'This file will be removed. Click to cancel.' : 'This file will not be removed. Click to remove.');
       });
+      
+      $(this._dialog).on('click', 'tbody .modify', (event) => {
+        const row = $(event.currentTarget).closest('tr');
+        row.toggleClass('excluded');
+
+        let isIncluded = !row.hasClass('excluded');
+        
+        let file = {
+          type: row.data('filetype'),
+          filename: row.data('filename')
+        };
+
+        this._model.setFileInclusion(file, isIncluded);
+        
+        this.updateModifySpanTitle(row, this._model.getModifiedLinesCount(file));
+
+      });
 
       $(this._dialog).on('shown.bs.tab', 'a[data-toggle="tab"]', (e) => {
         if($(e.target).attr("href") === this._compareDiffTabSelector && !this._compare_diff_editor) {
@@ -389,8 +406,7 @@ RCloudNotebookMerger.view = (function(model) {
 
         // changed, so show changed details:
         if(isChanged) {
-          modifySpan.find('span').html(changeCount);
-          modifySpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
+          this.updateModifySpanTitle(sourceRow, changeCount);
           modifySpan.show();
         }
 
@@ -413,17 +429,23 @@ RCloudNotebookMerger.view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
+      
       this._model.on_review_change.attach(({}, args) => {
         this.updateReviewDecorations(args.reviewList);
-
+        
         let changeCount = args.reviewList.length - _.filter(args.reviewList, item => item.isRejected).length, 
-            sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"]`),
-            modifySpan = sourceRow.find('.modify');
+            sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"]`);
+            
+        this.updateModifySpanTitle(sourceRow, changeCount);
+      });
+    }
+    
+    updateModifySpanTitle(sourceRow, changeCount) {
+        let modifySpan = sourceRow.find('.modify');
 
-        modifySpan.attr('title', `This file has ${changeCount} change${changeCount != 1 ? 's': ''}`);
+        modifySpan.attr('title', changeCount ? `This file has ${changeCount} change${changeCount != 1 ? 's': ''}. Click to reject all changes.` : `This file will not be modified. Click to apply all incomming changes.`);
         sourceRow[changeCount ? 'removeClass' : 'addClass']('excluded');
         modifySpan.find('span').html(changeCount);
-      });
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
