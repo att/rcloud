@@ -34,6 +34,7 @@ RCloudNotebookMerger.model = (function() {
       this.on_getting_changes = new RCloud.UI.event(this);
       this.on_reset_complete = new RCloud.UI.event(this);
       this.on_review_change = new RCloud.UI.event(this);
+      this.on_changeset_change = new RCloud.UI.event(this);
       this.on_set_stage = new RCloud.UI.event(this);
       this.on_set_merge_source = new RCloud.UI.event(this);
       this.on_merge_start = new RCloud.UI.event(this);
@@ -265,6 +266,7 @@ RCloudNotebookMerger.model = (function() {
         change: change,
         file: this._currentFile
       });
+      this.on_changeset_change.notify(this._comparison.union.files);
     }
 
     update_decorations(decorations) {
@@ -302,6 +304,7 @@ RCloudNotebookMerger.model = (function() {
           changeDetails: file.changeDetails
         });
       });
+      this.on_changeset_change.notify(this._comparison.union.files);
     }
 
     setFileInclusion(file, include) {
@@ -311,39 +314,43 @@ RCloudNotebookMerger.model = (function() {
           fileChange.changeDetails.modifiedLineInfo.forEach((el) => {
             el.isRejected = !include;
           });
-      } 
+      }
+      this.on_changeset_change.notify(this._comparison.union.files);
     }
     
-    getModifiedLinesCount(file) {
+    getFileChangesCount(file) {
       let fileChange = _.findWhere(this._comparison.union.files, file);
       
-      if(fileChange.changeDetails.isChanged) {
+      if(!fileChange.isBinary && fileChange.changeDetails.isChanged) {
           return _.filter(fileChange.changeDetails.modifiedLineInfo, (el) => {
             return !el.isRejected;
           }).length;
       }
+      if(fileChange.isBinary) {
+        if(!fileChange.hasOwnProperty('include') || fileChange.include) {
+          return 1;
+        }
+      }
       return 0;
     }
-
-    applyMerge() {
-
-      this.on_merge_start.notify();
-
+    
+    getChangesToApply() {
+      
       let includeFile = (f) => {
         let { modifiedLineInfo } = f.changeDetails;
 
         if(f.hasOwnProperty('include')) {
           return f.include;
-        } else if(!f.hasOwnProperty('include') && f.isBinary) {
+        } else if(!f.hasOwnProperty('include') && f.isBinary) { // we don't compare binary files, they are only treated as modified
           return true;
         } else if(modifiedLineInfo.length !== _.where(modifiedLineInfo, { isRejected: true }).length) {
           return true;
         } else {
           return false;
         }
-      }
-
-      let changes = _.chain(this._comparison.union.files)
+      };
+      
+      return _.chain(this._comparison.union.files)
               .filter(f => includeFile(f))
               .map(f => {
                 // Backend uses .b64 suffix hint to handle Base64 encoded content.
@@ -357,6 +364,12 @@ RCloudNotebookMerger.model = (function() {
                   erase
               }})
               .value();
+    }
+
+    applyMerge() {
+      this.on_merge_start.notify();
+
+      let changes = this.getChangesToApply();
 
       editor.merge_notebook(changes).then(() => {
         this.on_merge_complete.notify();
