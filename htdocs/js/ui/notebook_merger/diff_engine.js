@@ -61,7 +61,7 @@ RCloudNotebookMerger.diff_engine = (function() {
           } 
           return file.content;
         }
-      }
+      };
       
       let fileChangeType;
 
@@ -104,14 +104,14 @@ RCloudNotebookMerger.diff_engine = (function() {
         lineInfo,
         modifiedLineInfo: _.filter(lineInfo, li => li.diffType !== DiffType.NOCHANGE),
         get changeCount() { return this.modifiedLineInfo.length; },
-        get isChanged() { return this.fileChangeType == ChangeType.MODIFIED; },
+        get isChanged() { return [ChangeType.MODIFIED, ChangeType.BINARY].indexOf(this.fileChangeType) != -1; },
         owned,
         other,
         get isNewOrDeleted() { return this.isDeleted || this.isNew;  },
         get isDeleted() { return [ChangeType.DELETEDFILE].indexOf(this.fileChangeType) != -1; },
         get isNew() { return [ChangeType.NEWFILE].indexOf(this.fileChangeType) != -1; }
       }
-    }
+    };
   }
 
   return diff_engine;

@@ -154,7 +154,7 @@ RCloudNotebookMerger.view = (function(model) {
 
         this._model.setFileInclusion(file, isIncluded);
         
-        this.updateModifySpanTitle(row, this._model.getModifiedLinesCount(file));
+        this.updateModifySpanTitle(row, this._model.getFileChangesCount(file));
 
       });
 
@@ -230,6 +230,15 @@ RCloudNotebookMerger.view = (function(model) {
         this._dialog.setMergerDialogStage(this._model.DialogStage.INIT);
         this._button_show_changes.text('Show changes');
         this.show_error(args.message);
+      });
+      
+      this._model.on_changeset_change.attach(({}, filesList) => {
+          let changes = this._model.getChangesToApply();
+          if(changes.length) {
+            this._button_merge.removeClass('disabled');
+          } else {
+            this._button_merge.addClass('disabled');
+          }
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -389,6 +398,8 @@ RCloudNotebookMerger.view = (function(model) {
         diffLoader.remove();
 
         let { owned, other, isChanged, changeCount } = args.changeDetails;
+        
+        let isBinary = args.isBinary;
 
         // set the changes type
         if(owned || !owned && other) {
@@ -406,7 +417,7 @@ RCloudNotebookMerger.view = (function(model) {
 
         // changed, so show changed details:
         if(isChanged) {
-          this.updateModifySpanTitle(sourceRow, changeCount);
+          this.updateModifySpanTitle(sourceRow, (!isBinary)? changeCount : 1);
           modifySpan.show();
         }
 
