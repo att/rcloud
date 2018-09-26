@@ -223,9 +223,9 @@ RCloudNotebookMerger.view = (function(model) {
       this._model.on_changeset_change.attach(({}, filesList) => {
           let changes = this._model.getChangesToApply();
           if(changes.length) {
-            this._button_merge.removeClass('disabled');
+            this._button_merge.text('Merge');
           } else {
-            this._button_merge.addClass('disabled');
+            this._button_merge.text('Nothing to do');
           }
       });
 
@@ -249,6 +249,7 @@ RCloudNotebookMerger.view = (function(model) {
         this._merge_notebook_details.html('');
         this._compare_tabs.hide();
         this.update_stage(DialogStage.INIT);
+        this._button_merge.text('Merge');
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
