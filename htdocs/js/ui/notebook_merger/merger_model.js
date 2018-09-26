@@ -20,13 +20,6 @@ RCloudNotebookMerger.model = (function() {
     
     constructor() {
 
-      this.DialogStage = Object.freeze({
-        INIT: 'init',
-        GETTINGCHANGES: 'gettingchanges',
-        COMPARE: 'compare',
-        APPLYINGCHANGES: 'applyingchanges'
-      });
-
       this.on_diff_complete = new RCloud.UI.event(this);
       this.on_file_diff_complete = new RCloud.UI.event(this);
       this.on_file_list_complete = new RCloud.UI.event(this);
@@ -35,14 +28,12 @@ RCloudNotebookMerger.model = (function() {
       this.on_reset_complete = new RCloud.UI.event(this);
       this.on_review_change = new RCloud.UI.event(this);
       this.on_changeset_change = new RCloud.UI.event(this);
-      this.on_set_stage = new RCloud.UI.event(this);
       this.on_set_merge_source = new RCloud.UI.event(this);
       this.on_merge_start = new RCloud.UI.event(this);
       this.on_merge_complete = new RCloud.UI.event(this);
       
       this._diff_engine = new RCloudNotebookMerger.diff_engine();
 
-      this._dialog_stage = this.DialogStage.INIT;
       this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
       this._delta_decorations = [];
@@ -85,7 +76,6 @@ RCloudNotebookMerger.model = (function() {
     reset() {
       this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
-      this._dialog_stage = this.DialogStage.INIT;
       this._diff_engine = new RCloudNotebookMerger.diff_engine();
 
       this._delta_decorations = [];
@@ -108,15 +98,20 @@ RCloudNotebookMerger.model = (function() {
       });
     }
 
-    upload_file(file) {
+    upload_file(file, on_error, on_success) {
       Notebook.read_from_file(file, {
           on_load_end: () => {},
           on_error: (message) => {
               this._notebook_from_file = undefined;
-              show_error(message);
+              if(on_error) {
+                on_error(message);
+              }
           },
           on_notebook_parsed: (read_notebook) => {
               this._notebook_from_file = read_notebook;
+              if(on_success) {
+                on_success(read_notebook);
+              }
           }
       });
     }
@@ -286,8 +281,6 @@ RCloudNotebookMerger.model = (function() {
         return this._diff_engine.get_diff_info(owned, other);
       };
 
-      this._dialog_stage = this.DialogStage.COMPARE;
-
       this.on_file_list_complete.notify({
         files: this._comparison.union.files
           .sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true}))
@@ -374,15 +367,8 @@ RCloudNotebookMerger.model = (function() {
       editor.merge_notebook(changes).then(() => {
         this.on_merge_complete.notify();
       });
-    }
-
-    update_stage(stage) {
-      this._dialog_stage_ = stage;
-
-      this.on_set_stage.notify({
-        stage
-      });
     };
+
   }
 
   return new merger_model();

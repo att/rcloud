@@ -1,10 +1,16 @@
 RCloudNotebookMerger.view = (function(model) {
 
   const DEFAULT_LANGUAGE = 'rcloud';
+  const DialogStage = Object.freeze({
+        INIT: 'init',
+        GETTINGCHANGES: 'gettingchanges',
+        COMPARE: 'compare',
+        APPLYINGCHANGES: 'applyingchanges'
+      });
 
   (function( $ ){
     $.fn.setMergerDialogStage = function(stage) {
-      this.removeClass(Object.keys(model.DialogStage).map(key => `stage-${key.toLowerCase()}`).join(' '));
+      this.removeClass(Object.keys(DialogStage).map(key => `stage-${key.toLowerCase()}`).join(' '));
       this.addClass(`stage-${stage}`);
       return this;
     }; 
@@ -12,6 +18,7 @@ RCloudNotebookMerger.view = (function(model) {
 
   const merger_view = class {
     constructor(model) {
+      
       this._model = model;
 
       let template = _.template($("#merger-template").html());
@@ -50,13 +57,12 @@ RCloudNotebookMerger.view = (function(model) {
       this._next_diff_button = $("#next-diff");
       this._error_selector = '#merge-error';
 
+      this._merge_notebook_title = $('#merge-notebook-title');
       this._merge_notebook_details = $('#merge-notebook-details');
 
       this._compare_file_list = $('#compare-file-list');
       this._compare_stage = $('#compare-stage');
       this._compare_tabs = $('#compare-tabs');
-
-      this._button_init = this._dialog.find('.btn-init');
 
       this._stageCssPrefix = 'stage-';
 
@@ -74,16 +80,13 @@ RCloudNotebookMerger.view = (function(model) {
       //
       //
       //
+      
       this._button_show_changes.click(() => {
         this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
       });
 
       this._button_merge.click(() => {
         this._model.applyMerge();
-      });
-
-      this._button_init.click(() => {
-        this._model.update_stage(this._model.DialogStage.INIT);
       });
 
       this._merge_source.change(() => {
@@ -94,7 +97,11 @@ RCloudNotebookMerger.view = (function(model) {
         this.clear_error();
         this._merge_notebook_file.val(null);
       }).change(() => {
-        this._model.upload_file(this._merge_notebook_file[0].files[0]);
+        let that = this;
+        let on_error = (message) => {
+          that.show_error(message);
+        };
+        this._model.upload_file(this._merge_notebook_file[0].files[0], on_error);
       });
 
       $(this._dialog).on('hidden.bs.modal', () => {
@@ -201,33 +208,14 @@ RCloudNotebookMerger.view = (function(model) {
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
-      this._model.on_set_stage.attach(({}, args) => {
-        if(args.stage == this._modealogStage.INIT) {
-          this.reset_getting_changes_state();
-          this._merge_notebook_details.html('');
-          this._button_init.hide();
-        }
-        
-        if(args.stage == this._model.DialogStage.COMPARE) {
-          this._merge_notebook_details.html(`from ${this._model._other_notebook_description}`);
-          this._button_init.show();
-        } else {
-          this._merge_notebook_details.html('');
-        }
-
-        this._dialog.setMergerDialogStage(args.stage.toLowerCase());
-      });
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_getting_changes.attach(() => {
+        this.update_stage(DialogStage.GETTINGCHANGES);
         this.clear_error();
-        this._button_show_changes.text('Getting changes');
-        this._dialog.setMergerDialogStage(this._model.DialogStage.GETTINGCHANGES);
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_get_changes_error.attach(({}, args) => {
-        this._dialog.setMergerDialogStage(this._model.DialogStage.INIT);
+        this.update_stage(DialogStage.INIT);
         this._button_show_changes.text('Show changes');
         this.show_error(args.message);
       });
@@ -259,15 +247,13 @@ RCloudNotebookMerger.view = (function(model) {
         });
 
         this._merge_notebook_details.html('');
-        this._button_init.hide();
         this._compare_tabs.hide();
-        this._dialog.setMergerDialogStage(this._model._dialog_stage);
+        this.update_stage(DialogStage.INIT);
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_file_list_complete.attach(({}, args) => {
-
-        this._dialog.setMergerDialogStage(this._model._dialog_stage);
+        this.update_stage(DialogStage.COMPARE);
 
         this._compare_file_list.html(this._templates.file_list({
           files: args.files
@@ -431,14 +417,12 @@ RCloudNotebookMerger.view = (function(model) {
       });
 
       this._model.on_merge_start.attach(() => {
-        this._button_show_changes.text('Applying changes');
-        this._dialog.setMergerDialogStage(this._model.DialogStage.APPLYINGCHANGES);
+        this.update_stage(DialogStage.APPLYINGCHANGES);
       });
 
       this._model.on_merge_complete.attach(() => {
         this._dialog.modal('hide');
       });
-
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       
       this._model.on_review_change.attach(({}, args) => {
@@ -541,6 +525,35 @@ RCloudNotebookMerger.view = (function(model) {
     clear() {
       this._model.reset();
       this._editorTab.tab('show');
+    }
+    
+    update_stage(stage) {
+      this._dialog_stage = stage;
+
+        switch(stage) {
+          case DialogStage.INIT:
+            this.reset_getting_changes_state();
+            this._merge_notebook_details.html('');
+            this._merge_notebook_title.html('Merge Changes');
+            break;
+          case DialogStage.COMPARE: 
+            this._merge_notebook_title.html('Apply Changes');
+            this._merge_notebook_details.html(`from ${this._model._other_notebook_description}`);
+            break;
+          case DialogStage.APPLYINGCHANGES:
+            this._merge_notebook_title.html('Applying changes');
+            this._button_show_changes.text('Applying changes');
+            break;
+          case DialogStage.GETTINGCHANGES:
+            this._merge_notebook_title.html('Getting changes');
+            this._button_show_changes.text('Getting changes');
+            break;
+          default:
+            this._merge_notebook_title.html('Merge Changes');
+            this._merge_notebook_details.html('');
+        }
+
+        this._dialog.setMergerDialogStage(stage.toLowerCase());
     }
   };
 
