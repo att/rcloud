@@ -364,9 +364,13 @@ RCloudNotebookMerger.model = (function() {
 
       let changes = this.getChangesToApply();
 
-      editor.merge_notebook(changes).then(() => {
+      if(changes.length > 0) {
+        editor.merge_notebook(changes).then(() => {
+          this.on_merge_complete.notify();
+        });
+      } else {
         this.on_merge_complete.notify();
-      });
+      }
     };
 
   }
