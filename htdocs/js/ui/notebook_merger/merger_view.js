@@ -20,6 +20,7 @@ RCloudNotebookMerger.view = (function(model) {
     constructor(model) {
       
       this._model = model;
+      this._dialog_stage = DialogStage.INIT;
 
       let template = _.template($("#merger-template").html());
 
@@ -88,7 +89,7 @@ RCloudNotebookMerger.view = (function(model) {
       this._button_merge.click(() => {
         this._model.applyMerge();
       });
-
+      
       this._merge_source.change(() => {
         this._model.update_merge_source(this._merge_source.val());
       });
@@ -528,6 +529,19 @@ RCloudNotebookMerger.view = (function(model) {
       this._editorTab.tab('show');
     }
     
+    submit() {
+      switch(this._dialog_stage) {
+        case DialogStage.INIT:
+          this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
+          break;
+        case DialogStage.COMPARE:
+          this._model.applyMerge();
+          break;
+        default:
+          // no-op
+      }
+    }
+    
     update_stage(stage) {
       this._dialog_stage = stage;
 
@@ -555,6 +569,10 @@ RCloudNotebookMerger.view = (function(model) {
         }
 
         this._dialog.setMergerDialogStage(stage.toLowerCase());
+    }
+    
+    is_open() {
+      return this._dialog.is(':visible');
     }
   };
 
