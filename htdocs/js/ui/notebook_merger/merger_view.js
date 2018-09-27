@@ -47,6 +47,7 @@ RCloudNotebookMerger.view = (function(model) {
       this._compare_editor_selector = '#compare-editor';
       this._compare_diff_selector = '#compare-diff';
       this._single_editor_selector = '#single-editor';
+      this._no_changes_panel_selector = '#no-changes-panel';
       this._compare_result_selector = '#compare-result';
 
       this._compare_editor = null;
@@ -249,6 +250,7 @@ RCloudNotebookMerger.view = (function(model) {
 
         this._merge_notebook_details.html('');
         this._compare_tabs.hide();
+        $(this._no_changes_panel_selector).hide();
         this.update_stage(DialogStage.INIT);
         this._button_merge.text('Merge');
       });
@@ -275,6 +277,7 @@ RCloudNotebookMerger.view = (function(model) {
         if(args.diff.isChanged) {
 
           $(this._single_editor_selector).hide();
+          $(this._no_changes_panel_selector).hide();
           this._compare_tabs.show();
           this._editorTab.tab('show');
           $(this._compare_editor_selector).show();
@@ -324,9 +327,10 @@ RCloudNotebookMerger.view = (function(model) {
           }
 
 
-        } else {
+        } else if (args.diff.isNewOrDeleted) {
           // show just the file that's either owned or other:
           this._compare_tabs.hide();
+          $(this._no_changes_panel_selector).hide();
           $(this._single_editor_selector).show();
 
           let init = () => {
@@ -360,6 +364,10 @@ RCloudNotebookMerger.view = (function(model) {
           } else {
             this.setTransitionTimeout(init);
           }
+        } else {
+          this._compare_tabs.hide();
+          $(this._single_editor_selector).hide();
+          $(this._no_changes_panel_selector).show();
         }
       });
 

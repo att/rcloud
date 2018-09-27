@@ -898,7 +898,7 @@ body .modal-dialog.full {
     .btn-merge {
         display: none;
     }
-
+    
     &.stage-compare {
         .modal-dialog {
             width: 98%;
@@ -932,10 +932,9 @@ body .modal-dialog.full {
                 width: 0;
             }
 
-            // #compare-file-list, #compare-stage {
-            //     -webkit-transition: width 0.4s;
-            //     transition: width 0.4s;
-            // }
+            #compare-file-list, #compare-stage {
+                height: 100%;
+            }
 
             &.active-comparison {
                 #compare-file-list {
@@ -945,6 +944,27 @@ body .modal-dialog.full {
                 #compare-stage {
                     width: 78%;
                 }
+            }
+        }
+        #no-changes-panel {
+            max-height: calc(100% - 55px);
+            height: calc(100% - 55px);
+            display: none;
+            
+            .content {
+              display: inline-block;
+              position: relative;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              
+              .well {
+                  background-color: transparent;
+                  font-style: italic;
+                  color: #7f7f7f;
+                  font-weight: bold;
+                  font-size: larger;
+              }
             }
         }
 
