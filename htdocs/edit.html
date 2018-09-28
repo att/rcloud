@@ -292,7 +292,7 @@
             <p class="getting">Getting changes</p>
             <p class="applying">Applying changes</p>
           </div>
-          <div id="merge-init-section" class="merge-section">
+          <div id="merge-init-section">
             <p>Merge changes from another notebook into your current notebook.</p>
             <label for="merge-changes-by">Notebook source:</label>
             <select id="merge-changes-by">
@@ -313,15 +313,19 @@
             </div>
           </div>
 
-          <div id="merge-compare-section" class="merge-section">
-            <div id="compare-file-list" style="-webkit-transition: width <%=transitionTimeSeconds%>s;transition: width <%=transitionTimeSeconds%>s;"></div>
-            <div id="compare-stage" style="-webkit-transition: width <%=transitionTimeSeconds%>s;transition: width <%=transitionTimeSeconds%>s;">
+          <div id="merge-compare-section">
+            <div id="compare-file-list"></div>
+            <div id="compare-stage">
               <div id="no-changes-panel" style="display:none">
                 <div class="content">
                    <div class="well well-lg">no changes</div>
                 </div>
               </div>
-              <div id="single-editor" style="display:none">
+              <div id="single-editor-panel" style="display:none">
+                <div class="container">
+                  <div id="single-editor">
+                  </div>
+                </div>
               </div>
               <div id="compare-tabs" style="display:none">
                 <ul class="nav nav-tabs">
@@ -331,7 +335,7 @@
                 <div class="tab-content">
                   <div id="compare-editor-tab" class="tab-pane in active">
                     <div class="container">
-                      <div id="compare-editor" style=""></div>
+                      <div id="compare-editor"></div>
                     </div>
                   </div>
                   <div id="compare-diff-tab" class="tab-pane">
@@ -343,18 +347,12 @@
               </div>
             </div>
           </div>
-
-          <div class="modal-footer">
-            <div class="row">
-              <div class="col-sm-12 text-right">
-                <span class="btn btn-primary btn-merge">Merge</span>
-                <span class="btn btn-cancel" data-dismiss="modal">Cancel</span>
-                <span class="btn btn-primary show-changes">Show changes</span>
-              </div>
-            </div>
-          </div>
-
         </div>
+          <div class="modal-footer">
+              <span class="btn btn-primary btn-merge">Merge</span>
+              <span class="btn btn-cancel" data-dismiss="modal">Cancel</span>
+              <span class="btn btn-primary show-changes">Show changes</span>
+          </div>
       </div>
     </div>
   </div>

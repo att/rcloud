@@ -804,11 +804,6 @@ body .modal-dialog.full {
 }
 
 #merger-dialog {
-/*
-    .modal-dialog {
-        width: 95%;
-    }
-*/
 
     .modal-header {
         padding-left:20px!important;
@@ -816,6 +811,7 @@ body .modal-dialog.full {
     }
 
     .modal-body {
+        display: block;
         .overlay {
             width: 100%;
             height: 100%;
@@ -838,10 +834,17 @@ body .modal-dialog.full {
             }
         }
     }
+    
+    .modal-footer {
+
+    }
 
     &.stage-gettingchanges, &.stage-applyingchanges {
         .overlay {
             display: block;
+        }
+        .modal-footer {
+            visibility: hidden;
         }
     }
 
@@ -855,10 +858,6 @@ body .modal-dialog.full {
         .applying { display: block; }
     }
 
-    #merge-container {
-        height: calc(100% - 420px);
-    }
-
     pointer-events: auto;
 
     .btn-cancel, .close {
@@ -868,13 +867,16 @@ body .modal-dialog.full {
     label {
         width: 150px;
         margin-top: 10px;
-    }   
+    }
+
     input {
         margin-top: 10px;
-    } 
+    }
+
     input[type="file"] {
         margin-left: 153px;
     }
+
     div[data-by] {
         min-height: 70px;
     }
@@ -907,12 +909,16 @@ body .modal-dialog.full {
             padding: 0;
         }
 
+        .modal-body {
+            max-height: calc(100vh - 212px);
+            min-height: calc(100vh - 212px);
+        }
+        
         .modal-content {
-            min-height: 98%;
+            min-height: 95%;
         }
 
-        .show-changes,
-        #merge-init-section {
+        .show-changes, #merge-init-section {
             display: none;
         }
 
@@ -922,34 +928,24 @@ body .modal-dialog.full {
 
         #merge-compare-section {
             display: block;
-            height: calc(100% - 212px);
+            height: calc(100vh - 212px);
 
             #compare-file-list {
-                width: 98%;
+                width: 20%;
             }
 
             #compare-stage {
-                width: 0;
+                width: 78%;
             }
 
             #compare-file-list, #compare-stage {
-                height: 100%;
-            }
-
-            &.active-comparison {
-                #compare-file-list {
-                    width: 20%;
-                }
-    
-                #compare-stage {
-                    width: 78%;
-                }
+              max-height: 100%;
+              height: 100%;
             }
         }
         #no-changes-panel {
-            max-height: calc(100% - 55px);
-            height: calc(100% - 55px);
             display: none;
+            height: 100%;
             
             .content {
               display: inline-block;
@@ -970,7 +966,6 @@ body .modal-dialog.full {
 
         #compare-file-list {
             float: left;
-            max-height: calc(100% - 55px);
             overflow-y: auto;
 
             table {
@@ -1114,14 +1109,14 @@ body .modal-dialog.full {
 
         #compare-stage {
             float: left;
-            width: 78%;
             padding-left: 10px;
 
             .container { padding: 10 0; }
         }
 
-        #single-editor, #compare-editor {
-            height: calc(100% - 55px);
+        #single-editor-panel > .container, #compare-diff-tab > .container, #compare-editor-tab > .container {
+            max-height: 95%;
+            height: 90%;
         }
 
         .removed {
@@ -1142,30 +1137,6 @@ body .modal-dialog.full {
                     color: white!important;
                 }
             }
-        }
-
-        
-
-        // #compare-result {
-        //     margin-top: 40px;
-        //     height: 400px;
-        // }
-    }
-
-    .modal-footer {
-
-        padding-left: 0;
-        padding-right: 5px;
-
-        .row div {
-            padding-left: 0;
-            padding-right: 0;
-        }
-    }
-
-    &.stage-applyingchanges {
-        .modal-footer {
-            visibility: hidden;
         }
     }
 
