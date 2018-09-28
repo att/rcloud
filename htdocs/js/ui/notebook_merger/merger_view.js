@@ -45,8 +45,12 @@ RCloudNotebookMerger.view = (function(model) {
       this._merge_notebook_id = $('#merge-notebook-id');
 
       this._compare_editor_selector = '#compare-editor';
+      this._compare_editor_container_selector = '#compare-editor-tab > .container';
       this._compare_diff_selector = '#compare-diff';
+      this._compare_diff_container_selector = '#compare-diff-tab > .container';
+      this._single_editor_panel_selector = '#single-editor-panel';
       this._single_editor_selector = '#single-editor';
+      this._single_editor_container_selector = '#single-editor-panel > .container';
       this._no_changes_panel_selector = '#no-changes-panel';
       this._compare_result_selector = '#compare-result';
 
@@ -178,6 +182,7 @@ RCloudNotebookMerger.view = (function(model) {
               original: monaco.editor.createModel($(this._compare_diff_selector).data('original'), DEFAULT_LANGUAGE),
               modified: monaco.editor.createModel($(this._compare_diff_selector).data('modified'), DEFAULT_LANGUAGE)
             });
+            this._compare_diff_editor.layout();
           }); 
         } else {
           if(this._compare_diff_editor) {
@@ -185,6 +190,7 @@ RCloudNotebookMerger.view = (function(model) {
               original: monaco.editor.createModel($(this._compare_diff_selector).data('original'), DEFAULT_LANGUAGE),
               modified: monaco.editor.createModel($(this._compare_diff_selector).data('modified'), DEFAULT_LANGUAGE)
             });
+            this._compare_diff_editor.layout();
           }
         }
       });
@@ -238,8 +244,6 @@ RCloudNotebookMerger.view = (function(model) {
         this._compare_diff_editor && this._compare_diff_editor.setModel(null);
         this._single_editor && this._single_editor.setModel(null);
   
-        $(this._merge_compare_section_selector).removeClass('active-comparison');
-
         this._compare_file_list.html('');
     
         this.reset_getting_changes_state();
@@ -272,18 +276,18 @@ RCloudNotebookMerger.view = (function(model) {
           this._codelens_provider = null;
         }
 
-        $(this._merge_compare_section_selector).addClass('active-comparison');
-
         if(args.diff.isChanged) {
 
-          $(this._single_editor_selector).hide();
+          $(this._single_editor_panel_selector).hide();
           $(this._no_changes_panel_selector).hide();
           this._compare_tabs.show();
           this._editorTab.tab('show');
           $(this._compare_editor_selector).show();
 
           let init = () => {
-            
+            var computedHeight = $(this._compare_editor_container_selector).height();
+            $(this._compare_editor_selector).css('height', computedHeight + 'px');
+            $(this._compare_diff_selector).css('height', computedHeight + 'px');
             this._compare_editor.setModel(
                 monaco.editor.createModel(args.diff.content, DEFAULT_LANGUAGE)
             );
@@ -294,6 +298,7 @@ RCloudNotebookMerger.view = (function(model) {
               original: args.owned,
               modified: args.other
             });
+            this._compare_editor.layout();
           };
 
           if(!this._compare_editor) {    
@@ -331,13 +336,16 @@ RCloudNotebookMerger.view = (function(model) {
           // show just the file that's either owned or other:
           this._compare_tabs.hide();
           $(this._no_changes_panel_selector).hide();
-          $(this._single_editor_selector).show();
+          $(this._single_editor_panel_selector).show();
 
           let init = () => {
+            var computedHeight = $(this._single_editor_container_selector).height();
+            $(this._single_editor_selector).css('height', computedHeight + 'px');
             this._single_editor.setModel(
               monaco.editor.createModel(args.diff.owned ? args.diff.owned.content :
                 args.diff.other.content, DEFAULT_LANGUAGE)
             );
+            this._single_editor.layout();
           };
 
           if(!this._single_editor) {
@@ -366,7 +374,7 @@ RCloudNotebookMerger.view = (function(model) {
           }
         } else {
           this._compare_tabs.hide();
-          $(this._single_editor_selector).hide();
+          $(this._single_editor_panel_selector).hide();
           $(this._no_changes_panel_selector).show();
         }
       });
