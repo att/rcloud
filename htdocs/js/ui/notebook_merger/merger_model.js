@@ -327,6 +327,18 @@ RCloudNotebookMerger.model = (function() {
       return 0;
     }
     
+    getNumberOfChanges(file) {
+      let fileChange = _.findWhere(this._comparison.union.files, file);
+      
+      if(!fileChange.isBinary && fileChange.changeDetails.isChanged) {
+          return fileChange.changeDetails.modifiedLineInfo.length;
+      }
+      if(fileChange.isBinary) {
+          return 1;
+      }
+      return 0;
+    }
+    
     getChangesToApply() {
       
       let includeFile = (f) => {

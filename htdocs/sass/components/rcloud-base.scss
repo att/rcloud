@@ -1028,8 +1028,8 @@ body .modal-dialog.full {
                 text-align: center;
                 text-transform: uppercase;
 
-                span:not(.count) {
-                    font-weight: bold;
+                span:not(.total):not(.count)  {
+                    font-weight: normal;
                     border-radius: 13px;
                     width: 60px;
                     display: inline-block;
@@ -1051,8 +1051,22 @@ body .modal-dialog.full {
                     }
                 }
                 
+                span.total {
+                    margin-left: 0.3em;
+                    font-size: smaller;
+                    
+                    &:before {
+                       content: '(';
+                    }
+                    &:after {
+                       content: ')';
+                    }
+                }
+                
                 span.count {
-                    margin-left: 5px;
+                    font-weight: bold;
+                    font-style: italic;
+                    margin-left: 0.3em;
                 }
 
                 span.modify {
