@@ -167,7 +167,7 @@ RCloudNotebookMerger.view = (function(model) {
 
         this._model.setFileInclusion(file, isIncluded);
         
-        this.updateModifySpanTitle(row, this._model.getFileChangesCount(file));
+        this.updateModifySpanTitle(row, this._model.getFileChangesCount(file), this._model.getNumberOfChanges(file));
 
       });
 
@@ -419,9 +419,10 @@ RCloudNotebookMerger.view = (function(model) {
           }
         }
 
-        // changed, so show changed details:
+        // changed, so show changed details: 
         if(isChanged) {
-          this.updateModifySpanTitle(sourceRow, (!isBinary)? changeCount : 1);
+          let tmpChangesCount = (!isBinary)? changeCount : 1;
+          this.updateModifySpanTitle(sourceRow, tmpChangesCount, tmpChangesCount);
           modifySpan.show();
         }
 
@@ -449,16 +450,21 @@ RCloudNotebookMerger.view = (function(model) {
         let changeCount = args.reviewList.length - _.filter(args.reviewList, item => item.isRejected).length, 
             sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.file.type}"][data-filename="${args.file.filename}"]`);
             
-        this.updateModifySpanTitle(sourceRow, changeCount);
+        this.updateModifySpanTitle(sourceRow, changeCount, args.reviewList.length);
       });
     }
     
-    updateModifySpanTitle(sourceRow, changeCount) {
+    updateModifySpanTitle(sourceRow, changeCount, totalNoOfChanges) {
         let modifySpan = sourceRow.find('.modify');
 
-        modifySpan.attr('title', changeCount ? `This file has ${changeCount} change${changeCount != 1 ? 's': ''}. Click to reject all changes.` : `This file will not be modified. Click to apply all incomming changes.`);
+        modifySpan.attr('title', changeCount ? `${changeCount} change${changeCount != 1 ? 's': ''} will be applied to this file. Click to reject all changes.` : `This file will not be modified. Click to apply all incomming changes.`);
         sourceRow[changeCount ? 'removeClass' : 'addClass']('excluded');
-        modifySpan.find('span').html(changeCount);
+        modifySpan.find('.count').html(changeCount);
+        if(changeCount < totalNoOfChanges) {
+           modifySpan.find('.total').html(totalNoOfChanges).show();
+        } else {
+           modifySpan.find('.total').html(totalNoOfChanges).hide();
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
