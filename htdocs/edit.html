@@ -331,36 +331,36 @@
 </script>
 
 <script type="text/template" id="compare-file-list-snippet">
-      <ul class="nav nav-pills nav-stacked">
+      <table>
+      <tbody>
       <% _.each(files, function(file) { %>
-      <li data-filetype="<%=file.type%>" data-filename="<%=file.filename%>" class="<%= file.isBinary ? 'binary' : 'nonbinary' %>" 
+      <tr data-filetype="<%=file.type%>" data-filename="<%=file.filename%>" data-section="<%=file.filename%>-section" class="<%= file.isBinary ? 'binary' : 'nonbinary' %>" 
         <%= file.isBinary ? 'title="This is a binary asset and cannot be compared"' : '' %>>
-        <a href="#<%=file.filename%>-section">
-        <span class="type">
+        <td class="type">
           <% if(file.type === 'asset') { %>
             <i class="icon-file" title="Asset"></i>
           <% } else if(file.type === 'part') { %>
             <i class="icon-file-text" title="Notebook part"></i>
           <% } %>
-        </span>
-        <span class="isto"><span></span></span>
-        <span class="changes">
+        </td>
+        <td class="isto"><span></span></td>
+        <td class="changes">
           <img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" class="diffLoader" />
           <span class="modify" style="display:none"><i class="icon-edit"></i><span class="count"></span><span class="total"></span></span>
           <span class="add" style="display:none"><i class="icon-plus"></i></span>
           <span class="remove" style="display:none"><i class="icon-remove"></i></span>
           <span class="equal" style="display:none" title="This file has no changes"><i class="icon-pause"></i></span>
-        </span>
-        </a>
-      </li>
+        </td>
+      </tr>
       <% }); %>
-    </ul>
+      </tbody>
+    </table>
 </script>
 
 <script type="text/template" id="compare-stage-snippet">
       <div class="panel-group">
       <% _.each(files, function(file) { %>
-          <div id="<%=file.filename%>-section" class="panel diff-panel">
+          <div data-section="<%=file.filename%>-section" class="panel diff-panel">
               <div class="panel-heading"><img src="/img/spinner16.gif" alt="Getting changes" width="16" height="16" class="diffLoader" /><%=file.filename%></div>
               <div class="panel-body" data-filetype="<%=file.type%>" data-filename="<%=file.filename%>"></div>
           </div>

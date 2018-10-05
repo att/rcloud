@@ -97,19 +97,18 @@ RCloudNotebookMerger.view = (function(model) {
       $(this._dialog).on('hidden.bs.modal', () => {
         this.clear();
       });
-/*
-      $(this._dialog).on('click', 'ul li:not(.binary)', (event) => {
-        $(event.currentTarget).closest('ul').find('li').removeClass('selected');  
-        $(event.currentTarget).addClass('selected');
 
-        // for now, only comparison for 'common' files makes sense:
-        this._model.set_comparison_as(
-          $(event.currentTarget).data('filetype'),
-          $(event.currentTarget).data('filename'));
+      $(this._dialog).on('click', 'table tr', (event) => {
+        const row = $(event.currentTarget).closest('tr');
+        let section = row.data('section');
+        
+        let diffSection = this._compare_stage.find(`div[data-section="${section}"]`);
+        
+        this._compare_stage.scrollTo(diffSection, 500);
       });
-*/
-      $(this._dialog).on('click', 'li .add', (event) => {
-        const row = $(event.currentTarget).closest('li');
+
+      $(this._dialog).on('click', 'tr .add', (event) => {
+        const row = $(event.currentTarget).closest('tr');
         row.toggleClass('excluded');
 
         let isIncluded = !row.hasClass('excluded');
@@ -132,8 +131,8 @@ RCloudNotebookMerger.view = (function(model) {
         }
       });
       
-      $(this._dialog).on('click', 'li .remove', (event) => {
-        const row = $(event.currentTarget).closest('li');
+      $(this._dialog).on('click', 'tr .remove', (event) => {
+        const row = $(event.currentTarget).closest('tr');
         row.toggleClass('excluded');
 
         let isIncluded = !row.hasClass('excluded');
@@ -156,8 +155,8 @@ RCloudNotebookMerger.view = (function(model) {
         }
       });
       
-      $(this._dialog).on('click', 'li .modify', (event) => {
-        const row = $(event.currentTarget).closest('li');
+      $(this._dialog).on('click', 'tr .modify', (event) => {
+        const row = $(event.currentTarget).closest('tr');
         row.toggleClass('excluded');
 
         let isIncluded = !row.hasClass('excluded');
@@ -225,7 +224,12 @@ RCloudNotebookMerger.view = (function(model) {
       this._model.on_reset_complete.attach(() => {
 
         Object.keys(this._diff_editors).forEach((k) => { 
-          this._diff_editors[k].editor.dispose();
+          if(this._diff_editors[k].codelens_provider) {
+            this._diff_editors[k].codelens_provider.dispose();
+          }
+          if(this._diff_editors[k].editor) {
+            this._diff_editors[k].editor.dispose();
+          }
         });
         this._diff_editors = {};
         
@@ -408,7 +412,7 @@ RCloudNotebookMerger.view = (function(model) {
             addSpan,
             removeSpan;
 
-        sourceRow = this._compare_file_list.find(`li[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
+        sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
         isToSpan = sourceRow.find('.isTo span');
         changesCell = sourceRow.find('.changes');
         modifySpan = changesCell.find('.modify');
@@ -444,10 +448,6 @@ RCloudNotebookMerger.view = (function(model) {
           modifySpan.show();
         }
 
-        if(other) {
-          sourceRow.find('.isFrom').html(args.filename);
-        }
-
         if(owned && other && !isChanged) {
           equalSpan.show();
         }
@@ -468,7 +468,7 @@ RCloudNotebookMerger.view = (function(model) {
         this.updateReviewDecorations(args.filename);
         
         let changeCount = reviewList.length - _.filter(reviewList, item => item.isRejected).length, 
-            sourceRow = this._compare_file_list.find(`li[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
+            sourceRow = this._compare_file_list.find(`tr[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`);
             
         this.updateModifySpanTitle(sourceRow, changeCount, reviewList.length);
         let diff_panel = this._compare_stage.find(`div[data-filetype="${args.fileType}"][data-filename="${args.filename}"]`).closest('.diff-panel');
