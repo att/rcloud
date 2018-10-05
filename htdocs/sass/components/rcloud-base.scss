@@ -41,18 +41,10 @@ code {
     padding: 16px;
 }
 
-.panel {
-    border-radius: 0;
-}
 
 .collapsing {
     -webkit-transition: none;
     transition: none;
-}
-
-.panel-group .panel {
-    border-radius: 0;
-    overflow: initial;
 }
 
 .container.nopad {
@@ -76,27 +68,6 @@ code {
 .row {
     margin-left: 0;
     margin-right: 0;
-}
-
-.panel-group .panel + .panel {
-    margin-top: 0;
-}
-
-.panel-default > .panel-heading {
-    border-style: none;
-}
-
-div.panel-heading:hover {
-    background-color: #888;
-    color: #0f0;
-}
-
-.panel-default {
-    border: 0;
-}
-
-.panel-scrollable-content {
-    overflow-y: auto;
 }
 
 .code-div {
@@ -286,12 +257,48 @@ td {
     background-color: transparent;
 }
 
-.panel:first-child .panel-heading {
+body > .container {
+  .panel:first-child .panel-heading {
     padding-top:10px;
-}
-
-.panel-heading {
+  }
+  
+  .panel-heading {
     padding: 5px 15px;
+  }
+  
+  .panel-group .panel + .panel {
+    margin-top: 0;
+  }
+  
+  .panel-default {
+    .panel-heading {
+        border-style: none;
+    }
+  } 
+  
+  div.panel-heading:hover {
+      background-color: #888;
+      color: #0f0;
+  }
+  
+  .panel-default {
+      border: 0;
+  }
+  
+  .panel-scrollable-content {
+      overflow-y: auto;
+  }
+  
+  .panel {
+      border-radius: 0;
+  }
+  
+  .panel-group {
+    .panel {
+      border-radius: 0;
+      overflow: initial;
+    }
+  }
 }
 
 .popover {
@@ -912,6 +919,8 @@ body .modal-dialog.full {
         .modal-body {
             max-height: calc(100vh - 212px);
             min-height: calc(100vh - 212px);
+            padding: 0px;
+            margin: 20px;
         }
         
         .modal-content {
@@ -936,6 +945,9 @@ body .modal-dialog.full {
 
             #compare-stage {
                 width: 78%;
+                .diffLoader {
+                  margin-right: 7px;
+                }
             }
 
             #compare-file-list, #compare-stage {
@@ -943,44 +955,16 @@ body .modal-dialog.full {
               height: 100%;
             }
         }
-        #no-changes-panel {
-            display: none;
-            height: 100%;
-            
-            .content {
-              display: inline-block;
-              position: relative;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              
-              .well {
-                  background-color: transparent;
-                  font-style: italic;
-                  color: #7f7f7f;
-                  font-weight: bold;
-                  font-size: larger;
-              }
-            }
-        }
 
         #compare-file-list {
             float: left;
-            overflow-y: auto;
+            overflow: auto;
 
-            table {
+            ul {
                 width: 98%;
             }
 
-            thead tr {
-                border-bottom: 1px solid #444;
-
-                th {
-                    padding: 6px;
-                }
-            }
-
-            tbody tr {
+            ul li {
                 border-bottom: 1px solid #ccc;
                 @include no-select();
                 
@@ -1000,22 +984,17 @@ body .modal-dialog.full {
                 }
             }
 
-            th {
-                font-size: 11px;
-                color: #444;
-            }
-
-            td {
+            span {
                 color: #222;
             }
 
-            td.type {
+            span.type {
                 font-size: 20px;
                 padding-left: 4px;
                 color: #3d3d3d;
             }
 
-            td.diff {
+            span.diff {
                 span {
                     background: red;
                     color: white;
@@ -1024,7 +1003,7 @@ body .modal-dialog.full {
                 }
             }
 
-            td.changes {
+            span.changes {
                 text-align: center;
                 text-transform: uppercase;
 
@@ -1038,16 +1017,16 @@ body .modal-dialog.full {
                 }
                 
                 span.add {
-                    background: #DBE6C1;
+                    background: #dff0d8;
                     &:hover {
-                        background: darken(#DBE6C1, 10%);
+                        background: darken(#dff0d8, 10%);
                     }
                 }
                 
                 span.remove {
-                    background: #ffa3a3;
+                    background: #f2dede;
                     &:hover {
-                        background: darken(#ffa3a3, 10%);
+                        background: darken(#f2dede, 10%);
                     }
                 }
                 
@@ -1070,9 +1049,9 @@ body .modal-dialog.full {
                 }
 
                 span.modify {
-                    background: #ffd1a3;
+                    background: #fcf8e3;
                     &:hover {
-                        background: darken(#ffd1a3, 10%);
+                        background: darken(#fcf8e3, 10%);
                     }
                 }   
 
@@ -1099,16 +1078,16 @@ body .modal-dialog.full {
                 display: inline-block;
             }
 
-            tr.excluded {
-                td.isto, td.changes {
+            li.excluded {
+                span.isto, span.changes {
                     opacity: 0.1;
                 }
-                td.changes {
+                span.changes {
                     .add, .modify {
-                        background: #dbe6c1;
+                        background: #dff0d8;
 
                         &:hover {
-                            background: darken(#dbe6c1, 10%);
+                            background: darken(#dff0d8, 10%);
                         }
                     }
                     .remove {
@@ -1124,21 +1103,42 @@ body .modal-dialog.full {
         #compare-stage {
             float: left;
             padding-left: 10px;
+            overflow: auto;
 
-            .container { padding: 10 0; }
-        }
+            .diff-panel {
+                max-height: calc(80vh);
+                margin-top: 15px;
+                
+                .panel-heading {
+                   font-weight: bolder;
+                   font-style: italic;
+                }
+                .compare-editor {
+                   min-height: 120px;
+                }
+            }
 
-        #single-editor-panel > .container, #compare-diff-tab > .container, #compare-editor-tab > .container {
-            max-height: 95%;
-            height: 90%;
+            .diff-no-change, .diff-binary {
+               .panel-body {
+                   font-style: italic;
+                   color: #7f7f7f;
+                   font-weight: bold;
+                   font-size: larger;
+                   text-align: center;
+                }
+             }
+                
+             .excluded {
+                opacity: .5;
+             }
         }
 
         .removed {
-            background: #ffa3a3;
+            background: #eed3d7;
         }
 
         .added {
-            background: #dbe6c1;
+            background: #dff0d8;
         }
 
         .codelens-decoration {
