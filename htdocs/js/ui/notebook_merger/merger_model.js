@@ -36,9 +36,7 @@ RCloudNotebookMerger.model = (function() {
 
       this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
-      this._delta_decorations = [];
-      this._diff_info = [];
-      this._diff_list = [];
+      this._delta_decorations = {};
       this._other_notebook_description = undefined;
       this._currentFile = undefined;
     }
@@ -78,9 +76,7 @@ RCloudNotebookMerger.model = (function() {
       this._notebook_from_file = undefined;
       this._diff_engine = new RCloudNotebookMerger.diff_engine();
 
-      this._delta_decorations = [];
-      this._diff_info = [];
-      this._diff_list = [];
+      this._delta_decorations = {};
       this._other_notebook_description = undefined;
 
       this._currentFile = undefined;
@@ -149,7 +145,7 @@ RCloudNotebookMerger.model = (function() {
           }}).value();
       });
 
-      info.union.files = _.uniq(_.union(info.other.files, info.owned.files), false, (item) => { return item.type && item.filename; });
+      info.union.files = _.uniq(_.union(info.other.files, info.owned.files), false, (item) => { return item.type && item.filename; }).sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true}));
 
       return info;
     }
@@ -162,8 +158,6 @@ RCloudNotebookMerger.model = (function() {
       let owned = _.findWhere(this._comparison.owned.files, this._currentFile);
       let other = _.findWhere(this._comparison.other.files, this._currentFile);
       let diffInfo = _.findWhere(this._comparison.union.files, this._currentFile).changeDetails;
-
-      this._diff_list = diffInfo ? diffInfo.modifiedLineInfo : [];
 
       this.on_diff_complete.notify({
         diff: diffInfo,
@@ -246,9 +240,9 @@ RCloudNotebookMerger.model = (function() {
       });
     }
 
-    apply_review_change(change) {
+    apply_review_change(filename, change) {
 
-      let fileModified = _.findWhere(this._comparison.union.files, this._currentFile),
+      let fileModified = _.findWhere(this._comparison.union.files, {filename: filename}),
           fileChange = _.findWhere(fileModified.changeDetails.modifiedLineInfo, {
             startLineNumber: change.startLineNumber,
             endLineNumber: change.endLineNumber
@@ -257,19 +251,20 @@ RCloudNotebookMerger.model = (function() {
       fileChange.isRejected = !fileChange.isRejected;
         
       this.on_review_change.notify({
-        reviewList: this._diff_list,
         change: change,
-        file: this._currentFile
+        filename: fileModified.filename,
+        fileType: fileModified.type
       });
       this.on_changeset_change.notify(this._comparison.union.files);
     }
 
-    update_decorations(decorations) {
-      this._delta_decorations = decorations;
+    update_decorations(filename, decorations) {
+      this._delta_decorations[filename] = decorations;
     }
 
-    get_decorations() {
-      return this._delta_decorations;
+    get_decorations(filename) {
+      let res = this._delta_decorations[filename];
+      return (res) ? res : [];
     }
 
     update_compare_details() {
@@ -280,10 +275,9 @@ RCloudNotebookMerger.model = (function() {
 
         return this._diff_engine.get_diff_info(owned, other);
       };
-
+      
       this.on_file_list_complete.notify({
         files: this._comparison.union.files
-          .sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true}))
       });
 
       _.each(this._comparison.union.files, (file) => {
@@ -297,6 +291,7 @@ RCloudNotebookMerger.model = (function() {
           changeDetails: file.changeDetails
         });
       });
+      
       this.on_changeset_change.notify(this._comparison.union.files);
     }
 
@@ -306,9 +301,23 @@ RCloudNotebookMerger.model = (function() {
       if(fileChange.changeDetails.isChanged) {
           fileChange.changeDetails.modifiedLineInfo.forEach((el) => {
             el.isRejected = !include;
+            
+            this.on_review_change.notify({
+              change: el,
+              filename: fileChange.filename,
+              fileType: fileChange.type
+            });
           });
       }
       this.on_changeset_change.notify(this._comparison.union.files);
+    }
+    
+    getFileChange(file) {
+      return _.findWhere(this._comparison.union.files, file);
+    }
+    
+    getFileLineChanges(file) {
+      return _.findWhere(this._comparison.union.files, file).changeDetails.modifiedLineInfo;
     }
     
     getFileChangesCount(file) {
