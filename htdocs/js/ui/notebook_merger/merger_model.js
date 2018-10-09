@@ -36,9 +36,8 @@ RCloudNotebookMerger.model = (function() {
 
       this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
-      this._delta_decorations = {};
       this._other_notebook_description = undefined;
-      this._currentFile = undefined;
+      this._comparison = {};
     }
 
     get_notebook_merge_property() {
@@ -74,12 +73,9 @@ RCloudNotebookMerger.model = (function() {
     reset() {
       this._merge_source = DEFAULT_SOURCE;
       this._notebook_from_file = undefined;
-      this._diff_engine = new RCloudNotebookMerger.diff_engine();
-
-      this._delta_decorations = {};
+      this._comparison = {};
       this._other_notebook_description = undefined;
 
-      this._currentFile = undefined;
       this.on_reset_complete.notify();
     }
 
@@ -111,59 +107,33 @@ RCloudNotebookMerger.model = (function() {
           }
       });
     }
-    
-    prepare_notebook_for_comparison(notebook) {
-      notebook.files = _.values(RCloud.utils.clean_r(notebook.files));
-      notebook.parts = notebook.files.filter(f => Notebook.is_part_name(f.filename)).sort((p1, p2) => { 
-        return p1.filename.localeCompare(p2.filename, undefined, { sensitivity: 'base' });
-      });
-      notebook.assets = notebook.files.filter(f => !Notebook.is_part_name(f.filename)).sort((a1, a2) => { 
-        return a1.filename.localeCompare(a2.filename, undefined, { sensitivity: 'base' });
-      });
-      return notebook;
-    }
 
     get_notebooks_info(other_notebook) {
       let info = {
-        'owned': {},
-        'other': {},
-        'union': {}
-      },
-      notebooks_for_compare = {
-        'owned': shell.notebook.model.controller.current_gist(),
-        'other': other_notebook
-      };
+            'owned': {},
+            'other': {},
+            'union': {}
+          },
+          notebooks_for_compare = {
+            'owned': shell.notebook.model.controller.current_gist(),
+            'other': other_notebook
+          };
 
       _.each(Object.keys(notebooks_for_compare), (source) => {
         info[source].files = _.chain(RCloud.utils.clean_r(notebooks_for_compare[source].files))
-          .values().map(f => { return { 
-            isBinary: f.content.hasOwnProperty('r_type') || f.isBinary,
-            type: Notebook.is_part_name(f.filename) ? 'part' : 'asset',
-            filename: f.filename,
-            content: f.content,
-            language: f.language
-          }}).value();
+          .values().map(f => { 
+            return { 
+              isBinary: f.content.hasOwnProperty('r_type') || f.isBinary,
+              type: Notebook.is_part_name(f.filename) ? 'part' : 'asset',
+              filename: f.filename,
+              content: f.content,
+              language: f.language
+            }}).value();
       });
 
       info.union.files = _.uniq(_.union(info.other.files, info.owned.files), false, (item) => { return item.type && item.filename; }).sort((f1, f2) => f1.filename.localeCompare(f2.filename, undefined, {numeric: true}));
 
       return info;
-    }
-
-    set_comparison_as(type, filename) {
-
-      const _ = window._;
-
-      this._currentFile = { type, filename };
-      let owned = _.findWhere(this._comparison.owned.files, this._currentFile);
-      let other = _.findWhere(this._comparison.other.files, this._currentFile);
-      let diffInfo = _.findWhere(this._comparison.union.files, this._currentFile).changeDetails;
-
-      this.on_diff_complete.notify({
-        diff: diffInfo,
-        owned: owned ? owned.content : '',
-        other: other ? other.content : ''
-      });
     }
 
     get_changes(from_notebook) {
@@ -209,8 +179,9 @@ RCloudNotebookMerger.model = (function() {
         // Persist selection with current notebook
         rcloud.set_notebook_property(shell.gistname(), MERGE_CHANGES_BY, `${this._merge_source}:${from_notebook}`);
 
-        // file-based merges don't have filename property, set, for later:
-        if(!notebook.files[Object.keys(notebook.files)[0]].hasOwnProperty('filename')) {
+        // file-based merges don't have filename property, however empty notebooks don't have such property set either. Set it, for later:
+        if(!notebook.files[Object.keys(notebook.files)[0]].hasOwnProperty('filename') &&
+            !notebook.files.hasOwnProperty('r_type')) {
           Object.keys(notebook.files).forEach(f => {
             if(f.endsWith(BINARY_SUFFIX)) {
               notebook.files[f].filename = f.substring(0, f.length - BINARY_SUFFIX.length);
@@ -256,15 +227,6 @@ RCloudNotebookMerger.model = (function() {
         fileType: fileModified.type
       });
       this.on_changeset_change.notify(this._comparison.union.files);
-    }
-
-    update_decorations(filename, decorations) {
-      this._delta_decorations[filename] = decorations;
-    }
-
-    get_decorations(filename) {
-      let res = this._delta_decorations[filename];
-      return (res) ? res : [];
     }
 
     update_compare_details() {
