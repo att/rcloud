@@ -13,6 +13,8 @@ RCloud.UI.addons.notebook_merge = (function() {
         this.model = new RCloudNotebookMerger.model(),
         this.view = new RCloudNotebookMerger.view(this.model),
         this.controller = new RCloudNotebookMerger.controller(this.model, this.view);
+      } else {
+        this.view.clear();
       }
       this.controller.show_dialog();
     }
