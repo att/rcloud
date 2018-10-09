@@ -17,7 +17,7 @@ RCloudNotebookMerger.diff_engine = (function() {
   const diff_engine = class {
     constructor() {
       require(["diff.min"], diff => {
-        this.engine_ = diff;
+        this._engine = diff;
       });
     }
     getResolvedContent(file) {
@@ -75,7 +75,7 @@ RCloudNotebookMerger.diff_engine = (function() {
         fileChangeType = getContent(owned) == getContent(other) ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
       }
 
-      const diffs = this.engine_.diffLines(getContent(owned), getContent(other)),
+      const diffs = this._engine.diffLines(getContent(owned), getContent(other)),
             getDiffType = obj => {
               if(obj.added) {
                 return DiffType.ADDED;

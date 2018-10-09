@@ -19,6 +19,7 @@ RCloudNotebookMerger.view = (function(model) {
   const merger_view = class {
     constructor(model) {
       
+      
       this._model = model;
       this._dialog_stage = DialogStage.INIT;
 
@@ -45,10 +46,7 @@ RCloudNotebookMerger.view = (function(model) {
       this._merge_notebook_url = $('#merge-notebook-url');
       this._merge_notebook_id = $('#merge-notebook-id');
 
-      // new selectors
-      this._diff_panel_selector = '#compare-stage > .panel-group > .diff-panel';
-
-      this._diff_editors = {};
+      this._editors = {};
 
       this._error_selector = '#merge-error';
 
@@ -70,6 +68,14 @@ RCloudNotebookMerger.view = (function(model) {
       //
       //
       //
+      
+      
+      require(["vs/editor/editor.main"], () => {
+          monaco.languages.register({
+            id: DEFAULT_LANGUAGE
+          });
+          this.registerCodeLensProvider();
+      }); 
       
       this._button_show_changes.click(() => {
         this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
@@ -223,18 +229,13 @@ RCloudNotebookMerger.view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_reset_complete.attach(() => {
 
-        Object.keys(this._diff_editors).forEach((k) => { 
-          if(this._diff_editors[k].editor) {
-            this._diff_editors[k].editor.dispose();
+        Object.keys(this._editors).forEach((k) => { 
+          if(this._editors[k].editor) {
+            this._editors[k].editor.dispose();
           }
         });
         
-        this._diff_editors = {};
-        
-        if (this._codelens_provider) {
-          this._codelens_provider.dispose();
-          this._codelens_provider = null;
-        }
+        this._editors = {};
         
         this._compare_file_list.html('');
         this._compare_stage.html('');
@@ -300,54 +301,40 @@ RCloudNotebookMerger.view = (function(model) {
           content_area.closest(".panel").addClass("panel-warning").addClass('diff-changed');
 
           let init = () => {
-            
-            let editor_model = monaco.editor.createModel(diff.content, DEFAULT_LANGUAGE);
-            this._diff_editors[filename].model_id = editor_model.id;
-            this._diff_editors[filename].editor.setModel(editor_model);
-            
-            // Layout
-            sizeDiffPanel(editor_container,  editor_model.getLineCount(), diff.modifiedLineInfo.length, this._diff_editors[filename].editor.getConfiguration());
-            
-            
-            this._diff_editors[filename].editor.layout();
-            
-            this.updateReviewDecorations(filename);
-            panel_loader.remove();
-          };
-
-          if(!this._diff_editors[filename]) {    
-            require(["vs/editor/editor.main"], () => {
-              monaco.languages.register({
-                id: DEFAULT_LANGUAGE
-              });
-              this.registerCodeLensProvider();
+                this._editors[filename] = {
+                  editor: monaco.editor.create(
+                                editor_container[0],  
+                                {
+                                  language: DEFAULT_LANGUAGE,
+                                  fontSize: 11,
+                                  scrollBeyondLastLine: false,
+                                  readOnly: true,
+                                  minimap: {
+                                    enabled: false
+                                  },
+                                  glyphMargin: true
+                                }
+                              )
+                };
               
-              this._diff_editors[filename] = {
-                editor: monaco.editor.create(
-                              editor_container[0],  
-                              {
-                                language: DEFAULT_LANGUAGE,
-                                fontSize: 11,
-                                scrollBeyondLastLine: false,
-                                readOnly: true,
-                                minimap: {
-                                  enabled: false
-                                },
-                                glyphMargin: true
-                              }
-                            )
-              };
-              
-              this._diff_editors[filename].apply_change = this._diff_editors[filename].editor.addCommand(0, (ctx, args) => {
+                this._editors[filename].apply_change = this._editors[filename].editor.addCommand(0, (ctx, args) => {
                                 this._model.apply_review_change(filename, args);
-                              });
-              
+                              });            
+                let editor_model = monaco.editor.createModel(diff.content, DEFAULT_LANGUAGE);
+                this._editors[filename].model_id = editor_model.id;
+                this._editors[filename].editor.setModel(editor_model);
+                
+                // Layout
+                sizeDiffPanel(editor_container,  editor_model.getLineCount(), diff.modifiedLineInfo.length, this._editors[filename].editor.getConfiguration());
+                
+                
+                this._editors[filename].editor.layout();
+                
+                this.updateReviewDecorations(filename);
+                panel_loader.remove();
+              };
 
               this.setTransitionTimeout(init);
-            }); 
-          } else {
-            this.setTransitionTimeout(init);
-          }
         } else {
           if(diff.isChanged) {
             content_area.closest(".panel").addClass("panel-warning").addClass("diff-binary");
@@ -366,20 +353,8 @@ RCloudNotebookMerger.view = (function(model) {
                 let editor_container = $('<div class="compare_editor"></div>');
                 content_area.append(editor_container);
                 let init = () => {
-                  let editor_model = monaco.editor.createModel(diff.owned ? diff.owned.content :
-                      diff.other.content, DEFAULT_LANGUAGE);
-                  this._diff_editors[filename].model_id = editor_model.id;
-                  this._diff_editors[filename].editor.setModel(editor_model);
                   
-                  // Layout
-                  sizeDiffPanel(editor_container,  editor_model.getLineCount(), 0, this._diff_editors[filename].editor.getConfiguration());
-                  
-                  this._diff_editors[filename].editor.layout();
-                  
-                  panel_loader.remove();
-                };
-                require(["vs/editor/editor.main"], () => {  
-                  this._diff_editors[filename] = {
+                  this._editors[filename] = {
                     editor: monaco.editor.create(
                         editor_container[0],  
                         {
@@ -393,8 +368,19 @@ RCloudNotebookMerger.view = (function(model) {
                         }
                       )
                   };
+                  let editor_model = monaco.editor.createModel(diff.owned ? diff.owned.content :
+                      diff.other.content, DEFAULT_LANGUAGE);
+                  this._editors[filename].model_id = editor_model.id;
+                  this._editors[filename].editor.setModel(editor_model);
+                  
+                  // Layout
+                  sizeDiffPanel(editor_container,  editor_model.getLineCount(), 0, this._editors[filename].editor.getConfiguration());
+                  
+                  this._editors[filename].editor.layout();
+                  
+                  panel_loader.remove();
+                };
                 this.setTransitionTimeout(init);
-              }); 
             }
           } else {
             content_area.closest(".panel").addClass("panel-default").addClass("diff-no-change");
@@ -467,7 +453,7 @@ RCloudNotebookMerger.view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       
       this._model.on_review_change.attach(({}, args) => {
-        let editor_descriptor = this._diff_editors[args.filename];
+        let editor_descriptor = this._editors[args.filename];
         let reviewList = this._model.getFileLineChanges({filename: args.filename, type: args.fileType});
         this.updateReviewDecorations(args.filename);
         
@@ -500,7 +486,7 @@ RCloudNotebookMerger.view = (function(model) {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     updateReviewDecorations(filename) {
       
-      let editor_descriptor = this._diff_editors[filename];
+      let editor_descriptor = this._editors[filename];
       
       
       editor_descriptor.editor.getModel().setValue(editor_descriptor.editor.getModel().getValue());
@@ -519,7 +505,7 @@ RCloudNotebookMerger.view = (function(model) {
         };
       }).value();
 
-      this._model.update_decorations(filename, editor_descriptor.editor.deltaDecorations(this._model.get_decorations(filename), decorations));
+      this.update_decorations(filename, editor_descriptor.editor.deltaDecorations(this.get_decorations(filename), decorations));
     }
     
     registerCodeLensProvider() {
@@ -537,10 +523,10 @@ RCloudNotebookMerger.view = (function(model) {
       
       this._codelens_provider = monaco.languages.registerCodeLensProvider(DEFAULT_LANGUAGE, {
         provideCodeLenses: (model) => {
-            let model_filename = _.filter(Object.keys(this._diff_editors), (k) => {
-              return this._diff_editors[k].model_id === model.id; 
+            let model_filename = _.filter(Object.keys(this._editors), (k) => {
+              return this._editors[k].model_id === model.id; 
             })[0];
-            let editor_descriptor = this._diff_editors[model_filename];
+            let editor_descriptor = this._editors[model_filename];
             if(!editor_descriptor) {
               console.error('Editor for file ' + model_filename + ' and model ' + model.id + ' not found!');
               return [];
@@ -574,6 +560,16 @@ RCloudNotebookMerger.view = (function(model) {
           return (model.id === codeLens.command.model_id) ? codeLens: null;
         }
       });
+    }
+    
+    
+    update_decorations(filename, decorations) {
+      this._editors[filename].delta_decorations = (decorations)? decorations: [];
+    }
+
+    get_decorations(filename) {
+      let res = this._editors[filename].delta_decorations;
+      return (res) ? res : [];
     }
 
     clear_error() {
