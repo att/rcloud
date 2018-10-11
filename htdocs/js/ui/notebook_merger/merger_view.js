@@ -638,6 +638,10 @@ RCloudNotebookMerger.view = (function(model) {
         this._dialog.setMergerDialogStage(stage.toLowerCase());
     }
     
+    open() {
+      this._model.get_notebook_merge_property();
+    }
+    
     is_open() {
       return this._dialog.is(':visible');
     }
