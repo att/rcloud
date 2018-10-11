@@ -1,9 +1,16 @@
+## RCloud 2.1
+
+### Features
+ * Notebook merging: view the differences between two notebooks and choose which changes to
+   take. (#127)
+ 
+
 ## RCloud 2.0.1
 
 ### Bugfixes
  * `Content-disposition` field is passed through `proxy.R`, allowing Shiny's `downloadHandler` to
    specify the filename. (rcloud.shiny#28)
-
+ * Keyboard input is enabled in Jupyter cells
 
 ## RCloud 2.0
 RCloud 2.0 is compatible with R 3.5. (Due to unknown reasons, R 3.4 was not compatible.)
