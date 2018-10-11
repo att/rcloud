@@ -1076,42 +1076,45 @@ a.accordion-toggle.right > i {
     line-height: 15px;
 }
 
-.panel-default > .panel-heading {
-    background-color: #777;
-    cursor: pointer;
-}
+body > .container {
 
-.panel-default > .panel-heading > .accordion-toggle {
-    color: #f1f1e5;
-}
-
-.panel-heading {
-    border-radius: 0;
-
-    .heading-controls { 
-        display: inline;
-
-        button {
-            color: white;
-            text-decoration: none;
-            outline: none;
-            border: 1px solid transparent;
-
-            &:hover {
-                border-color: #aaa;
-            }
-        }
-    }
-}
-
-.panel-collapse {
-    padding-top: 5px;
-    padding-bottom: 5px;
-    background-color: #777;
-}
-
-.panel-body {
-    background-color: #fff;
+  .panel-default > .panel-heading {
+      background-color: #777;
+      cursor: pointer;
+  }
+  
+  .panel-default > .panel-heading > .accordion-toggle {
+      color: #f1f1e5;
+  }
+  
+  .panel-heading {
+      border-radius: 0;
+  
+      .heading-controls { 
+          display: inline;
+  
+          button {
+              color: white;
+              text-decoration: none;
+              outline: none;
+              border: 1px solid transparent;
+  
+              &:hover {
+                  border-color: #aaa;
+              }
+          }
+      }
+  }
+  
+  .panel-collapse {
+      padding-top: 5px;
+      padding-bottom: 5px;
+      background-color: #777;
+  }
+  
+  .panel-body {
+      background-color: #fff;
+  }
 }
 
 .panel-shadow.left {

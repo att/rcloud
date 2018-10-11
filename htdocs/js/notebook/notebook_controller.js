@@ -488,6 +488,9 @@ Notebook.create_controller = function(model)
             var changes = find_changes_from(current_gist_, from_notebook);
             return apply_changes_and_load(changes, shell.gistname());
         },
+        merge_notebook: function(changes) {
+            return apply_changes_and_load(changes, shell.gistname());
+        },
         fork_notebook: function(gistname, version) {
             model.read_only(false); // so that update_notebook doesn't throw
             return rcloud.fork_notebook(gistname)
