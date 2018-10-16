@@ -213,7 +213,7 @@ RCloudNotebookMerger.view = (function(model) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_get_changes_error.attach(({}, args) => {
         this.update_stage(DialogStage.INIT);
-        this._button_show_changes.text('Show changes');
+        this._button_show_changes.text('Show Changes');
         this.show_error(args.message);
       });
       
@@ -222,7 +222,7 @@ RCloudNotebookMerger.view = (function(model) {
           if(changes.length) {
             this._button_merge.text('Merge');
           } else {
-            this._button_merge.text('Nothing to do');
+            this._button_merge.text('Nothing to Change');
           }
       });
 
@@ -589,7 +589,7 @@ RCloudNotebookMerger.view = (function(model) {
     }
 
     reset_getting_changes_state() {
-      this._button_show_changes.text('Show changes');
+      this._button_show_changes.text('Show Changes');
     }
 
     clear() {
