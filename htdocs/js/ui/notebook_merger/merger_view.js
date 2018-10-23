@@ -89,6 +89,40 @@ RCloudNotebookMerger.view = (function(model) {
         this._model.update_merge_source(this._merge_source.val());
       });
 
+
+      // Run when Show Changes is clicked. 
+      this._button_show_changes.click(() => {
+        this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
+      });
+        
+        
+      // If the Enter key is pressed then run the function to move to the next page.
+      const enterListen = (e) => {
+        if (e.keyCode == 13) {
+          this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
+           }
+      }
+        
+      // The fields that need to be listened on.
+      this._button_show_changes.keyPress(enterListen);  // Just incase default fails.
+      this._merge_notebook_url.keypress(enterListen);
+      this._merge_source.keypress(enterListen);
+      this._merge_notebook_id.keypress(enterListen);
+      this._merge_notebook_file.keypress(enterListen);
+
+      // Run when Merge is clicked.
+      this._button_merge.click(() => {
+        this._model.applyMerge();
+      })
+
+      // Listen for enter when focused in the compare stage editor.
+      this._compare_stage.keypress((e) => {
+        if (e.keyCode == 13) {
+          this._model.applyMerge();
+        }
+      })
+
+
       this._merge_notebook_file.click(() => {
         this.clear_error();
         this._merge_notebook_file.val(null);
