@@ -256,7 +256,7 @@ RCloudNotebookMerger.view = (function(model) {
           if(changes.length) {
             this._button_merge.text('Merge');
           } else {
-            this._button_merge.text('Nothing to Change');
+            this._button_merge.text('No Changes');
           }
       });
 
