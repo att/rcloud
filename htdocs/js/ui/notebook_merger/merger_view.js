@@ -104,7 +104,7 @@ RCloudNotebookMerger.view = (function(model) {
       }
         
       // The fields that need to be listened on.
-      this._button_show_changes.keyPress(enterListen);  // Just incase default fails.
+      this._button_show_changes.keypress(enterListen);  // Just incase default fails.
       this._merge_notebook_url.keypress(enterListen);
       this._merge_source.keypress(enterListen);
       this._merge_notebook_id.keypress(enterListen);
