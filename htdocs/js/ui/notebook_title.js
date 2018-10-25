@@ -20,7 +20,7 @@ RCloud.UI.notebook_title = (function() {
                 if(node.gistname === shell.gistname())
                     rename_current_notebook(name);
                 else {
-                    rcloud.update_notebook(node.gistname, {description: name}, false)
+                    rcloud.update_notebook(node.gistname, update_notebook_from_gist, {description: name}, false)
                         .then(function(notebook) {
                             editor.update_notebook_from_gist(notebook);
                         });
