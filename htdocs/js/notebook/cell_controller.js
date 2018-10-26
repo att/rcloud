@@ -20,7 +20,7 @@ Notebook.Cell.create_controller = function(cell_model)
                         html_out: appender('html'),
                         deferred_result: appender('deferred_result'),
                         selection_out: appender('selection'),
-                        js_out: appender('js'),
+                        function_call: appender('function_call'),
                         in: this.get_input.bind(this, 'in')
                     };
             }

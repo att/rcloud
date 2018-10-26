@@ -254,7 +254,7 @@ function create_cell_html_view(language, cell_model) {
     function consume_result(type, r)  {
           switch(type) {
             case 'selection':
-            case 'js':
+            case 'function_call':
             case 'deferred_result':
                 break;
             default:
@@ -292,7 +292,7 @@ function create_cell_html_view(language, cell_model) {
             case 'html':
                 result_div_.append(r);
                 break;
-            case 'js':
+            case 'function_call':
                 if(_.isFunction(r)) {
                   r(result_div_);
                 }
