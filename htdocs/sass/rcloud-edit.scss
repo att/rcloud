@@ -1222,7 +1222,7 @@ body > .container {
 /*****************************************************************************/
 /* Fix that awful select from webkit */
 
-.form-control {
+.cell-control-bar > .form-control {
     -webkit-appearance: none;
     height: 16px;
     width: 100px;
