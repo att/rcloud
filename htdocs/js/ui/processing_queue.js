@@ -55,6 +55,11 @@ RCloud.UI.processing_queue = (function() {
                   stopping_ = true;
             }
         },
+        stopGracefully: function() {
+            if(running_) {
+              stopping_ = true;
+            }
+        },
         on_stopped: function() {
             cancels_.forEach(function(cancel) { cancel(); });
             queue_ = [];
