@@ -59,8 +59,8 @@ RCloud.UI.notebook_tree_controller = (function(model, view) {
         },
 
         has_notebook_info: function(gistname) {
-            return this.model_.has_notebook_info(gistname);
-o        },
+            return this.model_.has_notebook_info(gistname);        
+        },
 
         get_notebook_info: function(gistname) {
             return this.model_.get_notebook_info(gistname);
