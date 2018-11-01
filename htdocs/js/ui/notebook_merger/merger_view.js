@@ -290,7 +290,7 @@ RCloudNotebookMerger.view = (function(model) {
                           - panelBody.cssUnit('padding-top')[0] - panelBody.cssUnit('padding-bottom')[0]
                           - panelBody.cssUnit('margin-top')[0] - panelBody.cssUnit('margin-bottom')[0];
             if (height > maxHeight) {
-              height = maxHeight;
+              maxHeight = height;
             }
             panelContent.css('height', height + 'px');
         };
