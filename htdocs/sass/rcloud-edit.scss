@@ -524,6 +524,15 @@ input[type=text].form-control-ext {
     padding: 5px;
 }
 
+
+// Ported fix from BS 3.0.1 to display errors in checkboxes and radio buttons 
+.has-error .radio,
+.has-error .checkbox,
+.has-error .radio-inline,
+.has-error .checkbox-inline {
+  color: #b94a48;
+}
+
 /******************************************************************************/
 
 ul.jqtree-tree .jqtree-toggler {
