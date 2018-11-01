@@ -281,17 +281,6 @@ RCloudNotebookMerger.view = (function(model) {
             let computedWidth = panelContent.innerWidth();
             panelContent.css('width', computedWidth + 'px');
             let height = (lineCount + changesCount) * editorConfiguration.lineHeight;
-            let panel = panelContent.closest('.diff-panel');
-            let panelHeading = panel.find('.panel-heading');
-            let panelBody = panel.find('.panel-body');
-            let maxHeight = this._compare_stage.innerHeight() * 0.9 /* 90% of the viewport */ - panelHeading.outerHeight()
-                          - panel.cssUnit('padding-top')[0] - panel.cssUnit('padding-bottom')[0]
-                          - panel.cssUnit('margin-top')[0] - panel.cssUnit('margin-bottom')[0]
-                          - panelBody.cssUnit('padding-top')[0] - panelBody.cssUnit('padding-bottom')[0]
-                          - panelBody.cssUnit('margin-top')[0] - panelBody.cssUnit('margin-bottom')[0];
-            if (height > maxHeight) {
-              maxHeight = height;
-            }
             panelContent.css('height', height + 'px');
         };
 
