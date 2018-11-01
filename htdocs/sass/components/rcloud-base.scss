@@ -841,10 +841,6 @@ body .modal-dialog.full {
             }
         }
     }
-    
-    .modal-footer {
-
-    }
 
     &.stage-gettingchanges, &.stage-applyingchanges {
         .overlay {
@@ -1093,7 +1089,7 @@ body .modal-dialog.full {
             overflow: auto;
 
             .diff-panel {
-                max-height: calc(80vh);
+                max-height: 100%;
                 margin-top: 15px;
                 
                 .panel-heading {
