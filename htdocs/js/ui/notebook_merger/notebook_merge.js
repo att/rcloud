@@ -20,11 +20,11 @@ RCloud.UI.addons.notebook_merge = (function() {
     }
     
     submit() {
-      this.controller.submit_dialog();
+      this.controller && this.controller.submit_dialog();
     }
     
     is_open() {
-      return this.controller.is_dialog_open();
+      return this.controller && this.controller.is_dialog_open();
     }
   };
   
