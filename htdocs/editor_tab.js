@@ -161,13 +161,15 @@ var editor = function () {
                                               push_history: push_history}));
             })
                 .catch(function(xep) {
-                    // session has been reset, must reload notebook
-                    // also make sure current notebooks menu is populated in case of Ignore
-                    return Promise.all([
+                    // improve the message and make sure current notebooks menu is populated in case of Ignore
+                    var recover_promises = [
                         shell.improve_load_error(xep, gistname, version),
-                        rcloud.load_notebook(last_notebook, last_version),
                         that.update_recent_notebooks()
-                    ]).spread(function(message) {
+                    ];
+                    // if there was a last notebook, we must reload it because session has been reset
+                    if(last_notebook)
+                        recover_promises.push(rcloud.load_notebook(last_notebook, last_version));
+                    return Promise.all(recover_promises).spread(function(message) {
                         RCloud.UI.fatal_dialog(message, "Continue", fail_url);
                         throw xep;
                     });

@@ -376,9 +376,17 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
         }
     }
     res <- rcloud.augment.notebook(res)
-    ulog("INFO: rcloud.create.notebook (", res$content$id, ")")
+    if(res$ok) {
+      ulog("INFO: rcloud.create.notebook (", res$content$id, ")")
+    } else {
+      if('code' %in% names(res)) {
+        ulog("ERROR: rcloud.create.notebook failed (", res$code, ")")
+      } else {
+        ulog("ERROR: rcloud.create.notebook failed")
+      }
+    }
     res
-  }, error = function(e) { list(ok = FALSE) })
+  }, error = function(e) { list(ok = FALSE, content = list (message = as.character(e))) })
 }
 
 rcloud.rename.notebook <- function(id, new.name) {
