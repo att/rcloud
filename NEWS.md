@@ -10,7 +10,8 @@
 ### Bugfixes
  * `Content-disposition` field is passed through `proxy.R`, allowing Shiny's `downloadHandler` to
    specify the filename. (rcloud.shiny#28)
- * Keyboard input is enabled in Jupyter cells
+ * Jupyter stdin was hanging (#2585 / #2587)
+
 
 ## RCloud 2.0
 RCloud 2.0 is compatible with R 3.5. (Due to unknown reasons, R 3.4 was not compatible.)
