@@ -3,6 +3,7 @@
 ### Bugfixes
  * `Content-disposition` field is passed through `proxy.R`, allowing Shiny's `downloadHandler` to
    specify the filename. (rcloud.shiny#28)
+ * Jupyter stdin was hanging (#2585 / #2587)
 
 
 ## RCloud 2.0
