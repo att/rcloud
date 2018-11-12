@@ -356,7 +356,7 @@ RCloudNotebookMerger.view = (function(model) {
                 $('.monaco-scrollable-element').each(function() {
                   this.style.left = '0px';
                   this.style.width = '110%';
-                })
+                });
 
                 this._editors[filename].editor.layout();
 
@@ -407,10 +407,10 @@ RCloudNotebookMerger.view = (function(model) {
                   sizeDiffPanel(editor_container,  editor_model.getLineCount(), 0, this._editors[filename].editor.getConfiguration());
 
                   // Hide the default Monaco decorations.
-                $('.monaco-scrollable-element').each(function() {
-                  this.style.left = '0px';
-                  this.style.width = '110%';
-                })
+                  $('.monaco-scrollable-element').each(function() {
+                    this.style.left = '0px';
+                    this.style.width = '110%';
+                  });
 
                   this._editors[filename].editor.layout();
 
