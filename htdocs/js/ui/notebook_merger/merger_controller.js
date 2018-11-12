@@ -7,13 +7,13 @@ RCloudNotebookMerger.controller = (function(model, view) {
     }
 
     show_dialog() {
-      this._model.get_notebook_merge_property();
+      this._view.open();
     }
-    
+
     submit_dialog() {
       this._view.submit();
     }
-    
+
     is_dialog_open() {
       return this._view.is_open();
     }

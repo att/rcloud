@@ -4,15 +4,17 @@ RCloudNotebookMerger.diff_engine = (function() {
     NOCHANGE: 'nochange',
     REMOVED: 'removed',
     ADDED: 'added'
-  }); 
+  });
 
   const ChangeType = Object.freeze({
-    NEWFILE: 'newfile', 
-    DELETEDFILE: 'deletedfile',
+    NEW: 'new',
+    DELETED: 'deleted',
     BINARY: 'binary',
     IDENTICAL: 'nochange',
     MODIFIED: 'changed'
   });
+
+  const MAX_FILE_LENGTH = 250000; // about 0.25 MB file
 
   const diff_engine = class {
     constructor() {
@@ -26,7 +28,7 @@ RCloudNotebookMerger.diff_engine = (function() {
         return file.content;
       } else {
         // deleted means that this file only exists in your notebook:
-        if([ChangeType.DELETEDFILE, ChangeType.NEWFILE].indexOf(file.changeDetails.fileChangeType) != -1) {
+        if([ChangeType.DELETED, ChangeType.NEW].indexOf(file.changeDetails.fileChangeType) != -1) {
           return file.content;
         } else {
           // diffs:
@@ -38,13 +40,13 @@ RCloudNotebookMerger.diff_engine = (function() {
             return file.content;
           } else {
             _.each(lineInfo, (li, index) => {
-              if(li.diffType == 'removed' && li.isRejected || 
+              if(li.diffType == 'removed' && li.isRejected ||
                  li.diffType == 'added' && !li.isRejected ||
                  li.diffType == 'nochange') {
                 resolved.push(diffs[index].value);
               }
             });
-      
+
             return resolved.join('');
           }
         }
@@ -58,33 +60,85 @@ RCloudNotebookMerger.diff_engine = (function() {
         } else {
           if(file.content.length) {
             return file.content.endsWith('\n') ? file.content : file.content + '\n';
-          } 
+          }
           return file.content;
         }
       };
-      
-      let fileChangeType;
 
-      if(!owned && other) {
-        fileChangeType = ChangeType.NEWFILE;
-      } else if(owned && !other) {
-        fileChangeType =  ChangeType.DELETEDFILE;
-      } else if(owned.isBinary) {
+      const diffLines = (changeType, isTooLarge, owned, other) => {
+        // No need to run full diff if any of the files is empty
+        switch(changeType) {
+          case ChangeType.MODIFIED:
+              if(!isTooLarge) {
+                return this._engine.diffLines(getContent(owned), getContent(other));
+              } else {
+                  return [{
+                            removed: true,
+                            value: getContent(owned),
+                            count: getContent(owned).split('\n').length,
+                          },
+                          {
+                            added: true,
+                            value: getContent(other),
+                            count: getContent(other).split('\n').length,
+
+                          }];
+              }
+              break;
+            case ChangeType.NEW:
+              return [{
+                        added: true,
+                        value: getContent(other),
+                        count: getContent(other).split('\n').length,
+                      }];
+            case ChangeType.DELETED:
+              return [{
+                        removed: true,
+                        value: getContent(owned),
+                        count: getContent(owned).split('\n').length,
+                      }];
+            default:
+                return this._engine.diffLines(getContent(owned), getContent(other));
+
+        }
+      };
+
+      let fileChangeType;
+      let isTooLarge = false;
+
+      if (!owned && other) {
+        fileChangeType = ChangeType.NEW;
+      } else if (owned && !other) {
+        fileChangeType =  ChangeType.DELETED;
+      } else if (owned.isBinary) {
         fileChangeType = ChangeType.BINARY;
       } else {
-        fileChangeType = getContent(owned) == getContent(other) ? ChangeType.IDENTICAL : ChangeType.MODIFIED;
+        if (getContent(owned) == getContent(other)) {
+          fileChangeType = ChangeType.IDENTICAL;
+        } else {
+          fileChangeType = ChangeType.MODIFIED;
+        }
       }
 
-      const diffs = this._engine.diffLines(getContent(owned), getContent(other)),
-            getDiffType = obj => {
-              if(obj.added) {
+      if ([ChangeType.NEW, ChangeType.DELETED, ChangeType.MODIFIED].indexOf(fileChangeType) != -1 ) {
+        if (getContent(owned).length > MAX_FILE_LENGTH || getContent(other).length > MAX_FILE_LENGTH) {
+          console.warn(`File ${owned} or ${other} is too large, skipping diff generation`);
+          isTooLarge = true;
+        }
+      }
+
+      const diffs = diffLines(fileChangeType, isTooLarge, owned, other);
+
+      const getDiffType = obj => {
+              if (obj.added) {
                 return DiffType.ADDED;
-              } else if(obj.removed) {
+              } else if (obj.removed) {
                 return DiffType.REMOVED;
               } else {
                 return DiffType.NOCHANGE;
               }
             };
+
       let currentLineNumber = 1, lineInfo = [];
 
       diffs.forEach(diff => {
@@ -108,8 +162,8 @@ RCloudNotebookMerger.diff_engine = (function() {
         owned,
         other,
         get isNewOrDeleted() { return this.isDeleted || this.isNew;  },
-        get isDeleted() { return [ChangeType.DELETEDFILE].indexOf(this.fileChangeType) != -1; },
-        get isNew() { return [ChangeType.NEWFILE].indexOf(this.fileChangeType) != -1; }
+        get isDeleted() { return [ChangeType.DELETED].indexOf(this.fileChangeType) != -1; },
+        get isNew() { return [ChangeType.NEW].indexOf(this.fileChangeType) != -1; }
       }
     };
   }

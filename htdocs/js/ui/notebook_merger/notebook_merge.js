@@ -51,7 +51,7 @@ RCloud.UI.addons.notebook_merge = (function() {
         RCloud.UI.advanced_menu.add({
           merge_notebook: {
             sort: 1100,
-            text: "Merge notebook",
+            text: "Merge Notebook",
             modes: ["edit"],  
             disabled_reason: "You can't merge into a read only notebook",
             action: function() {
