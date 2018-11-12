@@ -802,6 +802,9 @@ var editor = function () {
         },
         traverse_tree: function() {
             tree_controller_.traverse();
+        },
+        update_notebook_from_gist: function(gistname) {
+            return tree_controller_.update_notebook_from_gist(gistname);
         }
     };
     return result;
