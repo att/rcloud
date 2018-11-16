@@ -9,7 +9,8 @@ var editor = function () {
         tree_controller_,
         username_,
         current_,
-        color_recent_notebooks_by_modification_date_;
+        color_recent_notebooks_by_modification_date_,
+        on_load_callbacks_ = [];
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
     }
@@ -794,7 +795,9 @@ var editor = function () {
                          RCloud.UI.advanced_menu.check('publish_notebook', p);
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
-
+                     _.forEach(on_load_callbacks_, (c) => {
+                       promises.push(Promise.resolve(undefined).then(c));
+                     });
                      return Promise.all(promises).return(result);
                  });
             };
@@ -807,6 +810,19 @@ var editor = function () {
         },
         update_notebook_from_gist: function(gistname) {
             return tree_controller_.update_notebook_from_gist(gistname);
+        },
+        add_on_load_callback: function(callback) {
+          if (callback) {
+            on_load_callbacks_.push(callback);
+          }
+        },
+        remove_on_load_callback: function(callback) {
+          if (callback) {
+            var index = on_load_callbacks_.indexOf(callback);
+            if (index >= 0) {
+              on_load_callbacks_.splice(index, 1);
+            }
+          }
         }
     };
     return result;
