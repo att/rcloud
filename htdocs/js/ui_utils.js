@@ -2,27 +2,41 @@ var ui_utils = {};
 
 ui_utils.make_url = function(page, opts) {
     opts = opts || {};
-    var url = window.location.protocol + '//' + window.location.host + '/' + page;
-    if(opts.do_path) {
-        if(opts.notebook) {
-            url += '/' + opts.notebook;
-            // tags currently not supported for notebook.R & the like
-            if(opts.version)
-                url += '/' + opts.version;
-        }
+    var query_params = url_utils.getQueryParams();
+    let segments = [page];
+
+    var base = url_utils.getBase();
+
+    // notebook is a resource so when it changes, any existing query parameters should be cleared up
+    if (opts.notebook && opts.notebook !== query_params.notebook) {
+      query_params = {};
     }
-    else {
-        if(opts.notebook) {
-            url += '?notebook=' + opts.notebook;
-            if(opts.source)
-                url += '&source=' + opts.source;
-            if(opts.tag)
-                url += '&tag=' + opts.tag;
-            else if(opts.version)
-                url += '&version=' + opts.version;
-        }
-        else if(opts.new_notebook)
-            url += '?new_notebook=true';
+    if (opts.new_notebook) {
+      query_params = {};
+    }
+
+    if (opts.do_path) {
+      if (opts.notebook) {
+        segments.push(opts.notebook);
+        if (opts.version)
+          segments.push(opts.version);
+      }
+      return url_utils.generateUrlString(base, segments, {});
+    } else {
+      let params = {};
+      if (opts.notebook) {
+        params.notebook = opts.notebook;
+        if (opts.source)
+          params.source = opts.source;
+        if (opts.tag)
+          params.tag = opts.tag;
+        else if (opts.version)
+          params.version = opts.version;
+      } else if (opts.new_notebook) {
+        params.new_notebook = true;
+      }
+      let merged_params = Object.assign(params, query_params);
+      return url_utils.generateUrlString(base, segments, merged_params);
     }
     return url;
 };

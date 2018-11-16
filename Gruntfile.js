@@ -13,6 +13,7 @@ module.exports = function (grunt) {
         bundleFiles: [
             "htdocs/js/rcloud.js",
             "htdocs/js/rclient.js",
+            "htdocs/js/url_utils.js",
             "htdocs/js/ui_utils.js",
             "htdocs/js/utils.js",
             "htdocs/js/extension.js",

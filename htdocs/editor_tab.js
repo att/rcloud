@@ -7,7 +7,8 @@ var editor = function () {
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
         tree_controller_,
-        color_recent_notebooks_by_modification_date_;
+        color_recent_notebooks_by_modification_date_,
+        on_load_callbacks_ = [];
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
     }
@@ -792,7 +793,9 @@ var editor = function () {
                          RCloud.UI.advanced_menu.check('publish_notebook', p);
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
-
+                     _.forEach(on_load_callbacks_, (c) => {
+                       promises.push(Promise.resolve(undefined).then(c));
+                     });
                      return Promise.all(promises).return(result);
                  });
             };
@@ -802,6 +805,19 @@ var editor = function () {
         },
         traverse_tree: function() {
             tree_controller_.traverse();
+        },
+        add_on_load_callback: function(callback) {
+          if (callback) {
+            on_load_callbacks_.push(callback);
+          }
+        },
+        remove_on_load_callback: function(callback) {
+          if (callback) {
+            var index = on_load_callbacks_.indexOf(callback);
+            if (index >= 0) {
+              on_load_callbacks_.splice(index, 1);
+            }
+          }
         }
     };
     return result;
