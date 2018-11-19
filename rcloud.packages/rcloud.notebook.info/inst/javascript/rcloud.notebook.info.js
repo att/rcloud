@@ -34,6 +34,12 @@
                                         list = [list];
 
                                     var close_button = '<span class="pop-close" style="cursor: pointer; float:right;">x</span>';
+
+                                    //Display the current Notebook ID
+                                    var getID = node.gistname;
+                                    var displayID = '<div class="info-category"><b>ID: </b><i class="icon-file-text clipboard-tooltip">\
+                                                        <span class="clipboard-tooltip-text">Copy ID to Clipboard</span></i></div>' + getID;
+                                    
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
 
                                     if(cryptogroup && cryptogroup.id === 'private' && cryptogroup.name === null)
@@ -47,7 +53,7 @@
                                     list.forEach(function (v) {
                                         starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
                                     });
-                                    return group_message + info_content + starrer_list;
+                                    return displayID + group_message + info_content + starrer_list;
                                 };
 
                                 function wrapGroupType(name) {
@@ -89,6 +95,16 @@
                                     thisPopover = $(thisPopover);
                                     thisPopover.addClass('popover-offset notebook-info');
                                     popupOpen = true;
+
+                                    // Copy node.gistname to clipboard ready for merge dialogue.
+                                    $('.icon-file-text', thisPopover).click(function () {
+                                        var copy = node.gistname;
+                                        var copyClip = $('<input>').val(copy).appendTo('body').select();
+                                        document.execCommand('copy');
+
+                                        var tooltip = document.querySelector('.clipboard-tooltip-text');
+                                        tooltip.innerHTML = "Copied Notebook ID";
+                                    })
                                 }
                                 else {
                                     $(document).trigger('destroy_all_popovers');
