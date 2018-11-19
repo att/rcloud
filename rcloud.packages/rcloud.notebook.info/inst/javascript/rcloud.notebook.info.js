@@ -37,7 +37,7 @@
 
                                     //Display the current Notebook ID
                                     var getID = node.gistname;
-                                    var displayID = '<div class="info-category"><b>ID: </b><i class="icon-file-text clipboard-tooltip">\
+                                    var displayID = '<div class="info-category"><b>ID: </b><i class="icon-copy clipboard-tooltip">\
                                                         <span class="clipboard-tooltip-text">Copy ID to Clipboard</span></i></div>' + getID;
                                     
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
@@ -97,7 +97,7 @@
                                     popupOpen = true;
 
                                     // Copy node.gistname to clipboard ready for merge dialogue.
-                                    $('.icon-file-text', thisPopover).click(function () {
+                                    $('.icon-copy', thisPopover).click(function () {
                                         var copy = node.gistname;
                                         var copyClip = $('<input>').val(copy).appendTo('body').select();
                                         document.execCommand('copy');
