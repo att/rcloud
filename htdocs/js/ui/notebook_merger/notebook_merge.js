@@ -31,6 +31,22 @@ RCloud.UI.addons.notebook_merge = (function() {
   return {
       init: () => {
           const merger_dialog = new notebook_merger_dialog_widget();
+
+          RCloud.UI.notebook_commands.add({
+            merge: {
+              section: 'appear',
+              sort: 4000,
+              condition1: function(node) {
+                return node.user === editor.username()
+              },
+              create: function(node) {
+                var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge', 'merge', RCloud.UI.notebook_commands.icon_style(), true);
+                merge.click(function(e) {
+                  merger_dialog.show()
+                })
+              }
+            }
+          }),
           RCloud.UI.shortcut_manager.add([{
             category: 'Advanced',
             id: 'merger-dialog-submit',
