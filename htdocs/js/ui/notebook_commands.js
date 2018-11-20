@@ -171,8 +171,10 @@ RCloud.UI.notebook_commands = (function() {
                                 editor.for_each_notebook(node, null, function(node) {
                                     promises.push(editor.remove_notebook(node.user, node.gistname));
                                 });
-                            };
-                            return false;
+                            } else {
+                                notebook_names = [];
+                                return false;
+                            }
                         });
                         return remove_folder;
                     }
