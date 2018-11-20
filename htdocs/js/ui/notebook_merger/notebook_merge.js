@@ -32,18 +32,24 @@ RCloud.UI.addons.notebook_merge = (function() {
       init: () => {
           const merger_dialog = new notebook_merger_dialog_widget();
 
+          /* Create a merge button in the notebook tree and 
+              start a new Merge dialogue with the desired Notebook */
           RCloud.UI.notebook_commands.add({
             merge: {
               section: 'appear',
               sort: 4000,
-              condition1: function(node) {
-                return node.user === editor.username()
+              condition1: function (node) {
+                return node.user === editor.username();
               },
-              create: function(node) {
+              create: function (node) {
                 var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge', 'merge', RCloud.UI.notebook_commands.icon_style(), true);
-                merge.click(function(e) {
-                  merger_dialog.show()
+                merge.click(function (e) {
+                  merger_dialog.show();
+                  var mergeSource = document.getElementById('merge-changes-by');
+                  var mergeID = document.getElementById('merge-notebook-id');
+                  mergeID.value = node.gistname;
                 })
+                return merge;
               }
             }
           }),
