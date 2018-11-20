@@ -7,6 +7,8 @@ var editor = function () {
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
         tree_controller_,
+        username_,
+        current_,
         color_recent_notebooks_by_modification_date_;
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
