@@ -116,7 +116,7 @@ RCloud.UI.notebook_commands = (function() {
                 },
                 remove: {
                     section: 'appear',
-                    sort: 4000,
+                    sort: 5000,
                     condition1: function(node) {
                         return node.user === editor.username();
                     },
