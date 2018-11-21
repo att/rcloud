@@ -10,6 +10,7 @@
     "matter"
   ],
   "devDependencies": {
+    "eslint": "^5.9.0",
     "grunt": "1.x",
     "grunt-cli": "1.x",
     "grunt-contrib-compress": "~1.4.3",
