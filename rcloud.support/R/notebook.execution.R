@@ -2,11 +2,8 @@
   
   f <- function(module.name, module.path) {
     path <- system.file("javascript", module.path, package="rcloud.support")
-    if (!file.exists(path)) {
-      stop(paste0("file ", path, " does not exist."))
-    }
     caps <- rcloud.install.js.module(module.name,
-                                     paste(readLines(path), collapse='\n')) 
+                                     paste(readLines(path), collapse='\n'))
     caps
   }
   
