@@ -42,7 +42,7 @@ RCloud.UI.addons.notebook_merge = (function() {
                 return node.user === editor.username();
               },
               create: function (node) {
-                var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge', 'merge', RCloud.UI.notebook_commands.icon_style(), true);
+                var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
                 merge.click(function (e) {
                   merger_dialog.show();
                   var mergeSource = document.getElementById('merge-changes-by');

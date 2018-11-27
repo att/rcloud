@@ -1,5 +1,6 @@
 RCloud.UI.notebook_commands = (function() {
     var icon_style_ = {'line-height': '90%'};
+    var merge_icon_style_ = {'line-height': '90%', 'padding-right': '3px'};
     var star_style_ = _.extend({'font-size': '80%'}, icon_style_);
     var star_states_ = {true: {'class': 'icon-star', title: 'unstar'},
                         false: {'class': 'icon-star-empty', title: 'star'}};
@@ -205,6 +206,9 @@ RCloud.UI.notebook_commands = (function() {
         },
         icon_style: function() {
             return icon_style_;
+        },
+        merge_icon_style: function() {
+            return merge_icon_style_;
         },
         decorate: function($li, node, right) {
             var appeared;
