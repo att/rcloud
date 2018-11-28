@@ -332,32 +332,24 @@ function create_cell_html_view(language, cell_model) {
                 scroll();
               }
             }
-            result_updated();
             
-            var wait_for_content = function(attempt, callback) {
-              var WAIT_DELAY = 3;
-              var MAX_WAIT_STEPS = 7;
-              var MAX_WAIT_DELAY = 300;
-              if(attempt <= MAX_WAIT_STEPS) {
-                if((result_div_.find('.rcloud-htmlwidget').length > 0 && result_div_.find('.rcloud-htmlwidget').find('div').is(':empty')) 
-                   || result_div_.find('.deferred-result').length > 0) {
-                  var next_attempt = attempt+1;
-                  setTimeout(wait_for_content, Math.max(WAIT_DELAY^(next_attempt), MAX_WAIT_DELAY), next_attempt, callback);
-                  return;
-                }
-              }
-              callback();
-            };
-            
-            setTimeout(wait_for_content, 0, 1, function() {
+            if (counter > 0) {
+              
+              result_updated();
+              
               if (should_scroll(scroll_after)) {
                 scroll();
               }
+
               if (is_in_document() && (!results_processing_context_.stop || results_processing_context_.results.length > 0)) {
                 window.setTimeout(results_processing_context_.result_consumer, results_processing_context_.options.notebook_update_delay);
               }
-            });
-            
+              
+            } else {
+              // no results, let next result re-schedule the consumer
+              results_processing_context_.stop = true;
+              results_processing_context_.result_consumer = null;
+            }
             
         };
         window.setTimeout(results_processing_context_.result_consumer, delay);
@@ -880,8 +872,8 @@ function create_cell_html_view(language, cell_model) {
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
-                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
+            schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             this.toggle_results(true); // always show when updating
             
             results_processing_context_.results.push({
@@ -1077,8 +1069,8 @@ function create_cell_html_view(language, cell_model) {
             if(!has_result_) {
                 result_div_.empty();
                 has_result_ = true;
-                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
+            schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             prompt_text_ = _.escape(prompt).replace(/\n/g,'');
             create_input_widget();
             input_widget_.setValue('');

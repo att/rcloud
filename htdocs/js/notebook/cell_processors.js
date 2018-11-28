@@ -26,7 +26,7 @@ Notebook.Cell.postprocessors.add({
     },
     deferred_results: {
         sort: 2000,
-        process: function(div) {
+        process: function(div, cell) {
             var uuid = rcloud.deferred_knitr_uuid;
             div.find("span.deferred-result")
                 .each(function() {
@@ -39,6 +39,7 @@ Notebook.Cell.postprocessors.add({
                     var f = rclient._rserve.wrap_ocap(ocap);
 
                     f(function(err, future) {
+                      cell.add_result('function_call', function(result_div) {
                         var data;
                         if (err) {
                             $(that).replaceWith(function() {
@@ -50,6 +51,7 @@ Notebook.Cell.postprocessors.add({
                                 return data;
                             });
                         }
+                      });
                     });
                 });
         }
