@@ -44,10 +44,14 @@ RCloud.UI.addons.notebook_merge = (function() {
               create: function (node) {
                 var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
                 merge.click(function (e) {
+                  // Open merge dialogue
                   merger_dialog.show();
-                  var mergeSource = document.getElementById('merge-changes-by');
-                  var mergeID = document.getElementById('merge-notebook-id');
-                  mergeID.value = node.gistname;
+                  // Submit to next dialogue or fail if ID invalid.
+                  setTimeout(function() {
+                    $('#merge-notebook-id').val(node.gistname);
+                    $('.show-changes').click();
+                  }, 100);
+                  return;
                 })
                 return merge;
               }
