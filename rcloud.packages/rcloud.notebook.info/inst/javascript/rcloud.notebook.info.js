@@ -22,8 +22,8 @@
                                  $(info).popover('destroy');
                                  popupOpen = false;
                             });
-                            
-                            Promise.all([window.rcloud.protection.get_notebook_cryptgroup(node.gistname), 
+
+                            Promise.all([window.rcloud.protection.get_notebook_cryptgroup(node.gistname),
                                          window.rcloud.stars.get_notebook_starrer_list(node.gistname),
                                          window.rcloud.protection.has_notebook_protection()])
                             .spread(function(cryptogroup, list, has_prot) {
@@ -39,16 +39,16 @@
                                     var getID = node.gistname;
                                     var displayID = '<div class="info-category"><b>ID: </b><i class="icon-copy clipboard-tooltip">\
                                                         <span class="clipboard-tooltip-text">Copy ID to Clipboard</span></i></div>' + getID;
-                                    
+
                                     var group_message = '<div class="info-category"><b>Group:</b></div>';
 
                                     if(cryptogroup && cryptogroup.id === 'private' && cryptogroup.name === null)
                                         group_message += wrapGroupType('private');
-                                    else if(cryptogroup) 
+                                    else if(cryptogroup)
                                         group_message += wrapGroupType(cryptogroup.name);
                                     else
                                         group_message += wrapGroupType('public');
-                
+
                                     var starrer_list = '<div class="info-category"><b>Starred by:</b></div>';
                                     list.forEach(function (v) {
                                         starrer_list = starrer_list + '<div class="info-item">' + v + '</div>';
@@ -60,7 +60,7 @@
                                     if(node.user === editor.username() && has_prot)
                                         return '<div class="group-link info-item"><a href="#">'+name+'</a></div>';
                                     else
-                                        return '<div class="group-link info-item">'+name+'</div>';    
+                                        return '<div class="group-link info-item">'+name+'</div>';
                                 };
 
                                 $('html').off('mouseup');
@@ -119,7 +119,7 @@
                                         RCloud.UI.notebook_protection.defaultNotebook = node;
                                         RCloud.UI.notebook_protection.defaultCryptogroup = cryptogroup;
                                         RCloud.UI.notebook_protection.init('both-tabs-enabled');
-                                    } 
+                                    }
                                 });
                             })
                         })
