@@ -97,10 +97,11 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
         },
 
         get_current_notebook_history_index: function() {
+            var that = this;
             return this.current_.version === null ?
                 0 :
                 this.find_index(this.get_current_notebook_histories(), function(h) {
-                    return h.version === this.current_.version;
+                    return h.version === that.current_.version;
                 });
         },
 
