@@ -1084,10 +1084,11 @@ function create_cell_html_view(language, cell_model) {
             input_div_.css('border-color', '#eeeeee');
             var dir = false;
             var switch_color = function() {
-                input_div_.animate({borderColor: dir ? '#ffac88' : '#E34234'},
-                                   {duration: 1000,
-                                    easing: 'easeInOutCubic',
-                                    queue: false});
+                d3.select(input_div_[0])
+                    .style('border-color', dir ? '#ffac88' : '#E34234')
+                    .transition()
+                    .duration(1000)
+                    .style('border-color', dir ? '#E34234' : '#ffac88');
                 dir = !dir;
             };
             switch_color();
