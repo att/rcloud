@@ -23,6 +23,7 @@ RCloud.UI.scratchpad = (function() {
                 var widget = ace.edit(ace_div[0]);
                 var LangMode = ace.require("ace/mode/r").Mode;
                 var session = widget.getSession();
+                widget.$blockScrolling = Infinity;
                 that.session = session;
                 that.widget = widget;
                 var doc = session.doc;

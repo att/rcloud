@@ -374,6 +374,7 @@ function create_cell_html_view(language, cell_model) {
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(div[0]);
         var session = widget.getSession();
+        widget.$blockScrolling = Infinity;
         widget.setValue(content);
         ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
         // erase undo state so that undo doesn't erase all
