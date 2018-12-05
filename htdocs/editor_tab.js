@@ -235,14 +235,17 @@ var editor = function () {
         for_each_notebook: function(node, data, leaff, combinef) {
             var that = this;
             if(node.children && node.children.length) {
-                node.children.forEach(function(child) {
-                    that.for_each_notebook(child, combinef ? combinef(child, data) : undefined,
-                                           leaff, combinef);
-                });
+                // we're not interested in historical notebook versions which also appear in the tree
+                // all children will either be versions or not
+                if(!node.children[0].version) {
+                    node.children.forEach(function(child) {
+                        that.for_each_notebook(child, combinef ? combinef(child, data) : undefined,
+                                               leaff, combinef);
+                    });
+                    return;
+                }
             }
-            else {
-                leaff(node, data);
-            }
+            leaff(node, data);
         },
         star_notebook: function(star, opts) {
             var that = this;
