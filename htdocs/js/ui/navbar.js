@@ -53,21 +53,28 @@ RCloud.UI.navbar = (function() {
                 if(!that.original_color) {
                   that.original_color = $($(result.control).find('.' + result.icon_class)).css('color');
                 }
+                var stop = false;
                 function animation_loop() {
-                  var el = $(that.control).find('.' + that.icon_class);
-                  if(that.highlighted) {
-                      if(!el.is(':animated')) {
-                        el.animate({color: that.highlight_color}, { duration: duration})
-                          .delay(duration)
-                          .animate({color: that.original_color}, { duration: duration, complete: animation_loop});
-                      }
-                  } else {
-                    el.stop(true, true);
-                    el.removeAttr('style');
-                  }
+                    var el = $(that.control).find('.' + that.icon_class);
+                    if(that.highlighted) {
+                        if(!el.is(':animated')) {
+                            d3.select(el[0])
+                                .transition().duration(duration)
+                                .style('color', that.highlight_color)
+                                .transition().duration(duration)
+                                .transition().duration(duration)
+                                .style('color', that.original_color)
+                                .each('end', function() {
+                                    if(!stop)
+                                        animation_loop();
+                                });
+                        }
+                    }
+                    else stop = true;
                 }
                 if(that.highlighted) {
-                  animation_loop();
+                    stop = false;
+                    animation_loop();
                 }
                 return this;
             };
