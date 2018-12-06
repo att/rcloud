@@ -1240,7 +1240,7 @@ body > .container {
     font-size: 12px;
     border: inherit;
 
-    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16px' height='16px'><polyline fill='#555' points='8,13 10,9 6,9'/><polyline fill='#555' points='8,4 10,8 6,8'/></svg>") right no-repeat;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16px' height='16px'><polyline fill='rgb(85,85,85)' points='8,13 10,9 6,9'/><polyline fill='rgb(85,85,85)' points='8,4 10,8 6,8'/></svg>") right no-repeat;
 }
 
 .form-control.big {
