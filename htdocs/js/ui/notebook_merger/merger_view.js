@@ -324,6 +324,15 @@ RCloudNotebookMerger.view = (function(model) {
           content_area.closest(".panel").addClass("panel-warning").addClass('diff-changed');
 
           let init = () => {
+                // Get monaco if coming directly from the Notebook tree. Then continue.
+                if (!monaco) {
+                  require(["vs/editor/editor.main"], () => {
+                    monaco.languages.register({
+                    id: DEFAULT_LANGUAGE
+                  });
+                this.registerCodeLensProvider();
+                });
+              }
                 this._editors[filename] = {
                   editor: monaco.editor.create(
                                 editor_container[0],
