@@ -70,13 +70,6 @@ RCloudNotebookMerger.view = (function(model) {
       //
 
 
-      require(["vs/editor/editor.main"], () => {
-          monaco.languages.register({
-            id: DEFAULT_LANGUAGE
-          });
-          this.registerCodeLensProvider();
-      });
-
       this._button_show_changes.click(() => {
         this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
       });
@@ -305,6 +298,7 @@ RCloudNotebookMerger.view = (function(model) {
           monaco.languages.register({
             id: DEFAULT_LANGUAGE
           });
+          this.registerCodeLensProvider();
         let diff = args.changeDetails;
         let filename = args.filename;
 
