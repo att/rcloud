@@ -301,6 +301,10 @@ RCloudNotebookMerger.view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_file_diff_complete.attach(({}, args) => {
+        require(["vs/editor/editor.main"], () => {
+          monaco.languages.register({
+            id: DEFAULT_LANGUAGE
+          });
         let diff = args.changeDetails;
         let filename = args.filename;
 
@@ -416,6 +420,7 @@ RCloudNotebookMerger.view = (function(model) {
 
                   panel_loader.remove();
                 };
+
                 this.setTransitionTimeout(init);
             }
           } else {
@@ -424,7 +429,7 @@ RCloudNotebookMerger.view = (function(model) {
             panel_loader.remove();
           }
         }
-
+        });
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
