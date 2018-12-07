@@ -563,7 +563,7 @@ RCloudNotebookMerger.view = (function(model) {
             })[0];
             let editor_descriptor = this._editors[model_filename];
             if(!editor_descriptor) {
-              //console.error('Editor for file ' + model_filename + ' and model ' + model.id + ' not found!');
+              console.warn('editor for model id ' + model.id + ' not found');
               return [];
             }
             if(editor_descriptor.apply_change) {
