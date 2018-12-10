@@ -9,21 +9,25 @@ RCloud.UI.addons.notebook_merge = (function() {
     }
     
     show() {
-      if (!this.model) {
-        require(["vs/editor/editor.main"], () => {
-          monaco.languages.register({
-            id: 'rcloud'
+      return new Promise(function(resolve, reject) {
+        if (!this.model) {
+          require(["vs/editor/editor.main"], () => {
+            monaco.languages.register({
+              id: 'rcloud'
+            });
+            this.model = new RCloudNotebookMerger.model(),
+            this.view = new RCloudNotebookMerger.view(this.model),
+            this.controller = new RCloudNotebookMerger.controller(this.model, this.view);
+            this.view.registerCodeLensProvider();
+            this.controller.show_dialog();
+            resolve();
           });
-          this.model = new RCloudNotebookMerger.model(),
-          this.view = new RCloudNotebookMerger.view(this.model),
-          this.controller = new RCloudNotebookMerger.controller(this.model, this.view);
-          this.view.registerCodeLensProvider();
+        } else {
+          this.view.clear();
           this.controller.show_dialog();
-        });
-      } else {
-        this.view.clear();
-        this.controller.show_dialog();
-      }
+          resolve();
+        }
+      });
     }
     
     submit() {
@@ -52,12 +56,11 @@ RCloud.UI.addons.notebook_merge = (function() {
                 var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge here', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
                 merge.click(function (e) {
                   // Open merge dialogue
-                  merger_dialog.show();
-                  // Submit to next dialogue or fail if ID invalid.
-                  setTimeout(function() {
+                  merger_dialog.show().then(function() { 
+                    // Submit to next dialogue or fail if ID invalid.
                     $('#merge-notebook-id').val(node.gistname);
                     $('.show-changes').click();
-                  }, 100);
+                  });
                   return;
                 })
                 return merge;
