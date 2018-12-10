@@ -9,22 +9,23 @@ RCloud.UI.addons.notebook_merge = (function() {
     }
     
     show() {
+      var that = this;
       return new Promise(function(resolve, reject) {
-        if (!this.model) {
+        if (!that.model) {
           require(["vs/editor/editor.main"], () => {
             monaco.languages.register({
               id: 'rcloud'
             });
-            this.model = new RCloudNotebookMerger.model(),
-            this.view = new RCloudNotebookMerger.view(this.model),
-            this.controller = new RCloudNotebookMerger.controller(this.model, this.view);
-            this.view.registerCodeLensProvider();
-            this.controller.show_dialog();
+            that.model = new RCloudNotebookMerger.model(),
+            that.view = new RCloudNotebookMerger.view(that.model),
+            that.controller = new RCloudNotebookMerger.controller(that.model, that.view);
+            that.view.registerCodeLensProvider();
+            that.controller.show_dialog();
             resolve();
           });
         } else {
-          this.view.clear();
-          this.controller.show_dialog();
+          that.view.clear();
+          that.controller.show_dialog();
           resolve();
         }
       });
