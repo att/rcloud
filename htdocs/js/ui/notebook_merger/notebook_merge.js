@@ -10,7 +10,7 @@ RCloud.UI.addons.notebook_merge = (function() {
     
     show() {
       if (!this.model) {
-        require(["vs/editor/editor.main"], (monaco) => {
+        require(["vs/editor/editor.main"], () => {
           monaco.languages.register({
             id: 'rcloud'
           });
