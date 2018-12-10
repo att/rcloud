@@ -9,26 +9,14 @@ RCloud.UI.addons.notebook_merge = (function() {
     }
     
     show() {
-      var that = this;
-      return new Promise(function(resolve, reject) {
-        if (!that.model) {
-          require(["vs/editor/editor.main"], () => {
-            monaco.languages.register({
-              id: 'rcloud'
-            });
-            that.model = new RCloudNotebookMerger.model(),
-            that.view = new RCloudNotebookMerger.view(that.model),
-            that.controller = new RCloudNotebookMerger.controller(that.model, that.view);
-            that.view.registerCodeLensProvider();
-            that.controller.show_dialog();
-            resolve();
-          });
-        } else {
-          that.view.clear();
-          that.controller.show_dialog();
-          resolve();
-        }
-      });
+      if (!this.model) {
+        this.model = new RCloudNotebookMerger.model(),
+        this.view = new RCloudNotebookMerger.view(this.model),
+        this.controller = new RCloudNotebookMerger.controller(this.model, this.view);
+      } else {
+        this.view.clear();
+      }
+      this.controller.show_dialog();
     }
     
     submit() {
@@ -57,11 +45,12 @@ RCloud.UI.addons.notebook_merge = (function() {
                 var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge here', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
                 merge.click(function (e) {
                   // Open merge dialogue
-                  merger_dialog.show().then(function() { 
-                    // Submit to next dialogue or fail if ID invalid.
+                  merger_dialog.show();
+                  // Submit to next dialogue or fail if ID invalid.
+                  setTimeout(function() {
                     $('#merge-notebook-id').val(node.gistname);
                     $('.show-changes').click();
-                  });
+                  }, 100);
                   return;
                 })
                 return merge;
