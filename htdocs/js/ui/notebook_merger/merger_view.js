@@ -69,6 +69,13 @@ RCloudNotebookMerger.view = (function(model) {
       //
       //
 
+      require(["vs/editor/editor.main"], () => {
+        monaco.languages.register({
+          id: DEFAULT_LANGUAGE
+        });
+        this.registerCodeLensProvider();
+      })
+
 
       this._button_show_changes.click(() => {
         this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
@@ -93,7 +100,7 @@ RCloudNotebookMerger.view = (function(model) {
       const enterListen = (e) => {
         if (e.keyCode == 13) {
           this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
-           }
+        }
       }
 
       // The fields that need to be listened on.
@@ -105,14 +112,14 @@ RCloudNotebookMerger.view = (function(model) {
 
       // Run when Merge is clicked.
       this._button_merge.click(() => {
-        this._model.applyMerge();
+        this._model.applyMerge();
       })
 
       // Listen for enter when focused in the compare stage editor.
       this._compare_stage.keypress((e) => {
-        if (e.keyCode == 13) {
-          this._model.applyMerge();
-        }
+        if (e.keyCode == 13) {
+          this._model.applyMerge();
+        }
       })
 
 
