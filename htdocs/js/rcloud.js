@@ -222,6 +222,10 @@ RCloud.create = function(rcloud_ocaps) {
                 rcloud_ocaps.call_notebookAsync(id, version));
         };
 
+        rcloud.call_notebook_unchecked = function(id, version) {
+            return rcloud_ocaps.call_notebookAsync(id, version);
+        };
+
         rcloud.install_notebook_stylesheets = function() {
             return rcloud_ocaps.install_notebook_stylesheetsAsync();
         };

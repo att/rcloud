@@ -7,7 +7,10 @@ var editor = function () {
                                   "If you want to fork the latest version, open your fork in GitHub (through the Advanced menu) and delete it. Then fork the notebook again."].join(' '),
         NOTEBOOK_LOAD_FAILS = 5,
         tree_controller_,
-        color_recent_notebooks_by_modification_date_;
+        username_,
+        current_,
+        color_recent_notebooks_by_modification_date_,
+        on_load_callbacks_ = [];
     function has_notebook_info(gistname) {
         return tree_controller_.has_notebook_info(gistname);
     }
@@ -232,14 +235,17 @@ var editor = function () {
         for_each_notebook: function(node, data, leaff, combinef) {
             var that = this;
             if(node.children && node.children.length) {
-                node.children.forEach(function(child) {
-                    that.for_each_notebook(child, combinef ? combinef(child, data) : undefined,
-                                           leaff, combinef);
-                });
+                // we're not interested in historical notebook versions which also appear in the tree
+                // all children will either be versions or not
+                if(!node.children[0].version) {
+                    node.children.forEach(function(child) {
+                        that.for_each_notebook(child, combinef ? combinef(child, data) : undefined,
+                                               leaff, combinef);
+                    });
+                    return;
+                }
             }
-            else {
-                leaff(node, data);
-            }
+            leaff(node, data);
         },
         star_notebook: function(star, opts) {
             var that = this;
@@ -792,7 +798,9 @@ var editor = function () {
                          RCloud.UI.advanced_menu.check('publish_notebook', p);
                          RCloud.UI.advanced_menu.enable('publish_notebook', result.user.login === username_);
                      }));
-
+                     _.forEach(on_load_callbacks_, (c) => {
+                       promises.push(Promise.resolve(undefined).then(c));
+                     });
                      return Promise.all(promises).return(result);
                  });
             };
@@ -802,6 +810,22 @@ var editor = function () {
         },
         traverse_tree: function() {
             tree_controller_.traverse();
+        },
+        update_notebook_from_gist: function(gistname) {
+            return tree_controller_.update_notebook_from_gist(gistname);
+        },
+        add_on_load_callback: function(callback) {
+          if (callback) {
+            on_load_callbacks_.push(callback);
+          }
+        },
+        remove_on_load_callback: function(callback) {
+          if (callback) {
+            var index = on_load_callbacks_.indexOf(callback);
+            if (index >= 0) {
+              on_load_callbacks_.splice(index, 1);
+            }
+          }
         }
     };
     return result;

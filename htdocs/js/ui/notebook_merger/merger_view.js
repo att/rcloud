@@ -70,13 +70,6 @@ RCloudNotebookMerger.view = (function(model) {
       //
 
 
-      require(["vs/editor/editor.main"], () => {
-          monaco.languages.register({
-            id: DEFAULT_LANGUAGE
-          });
-          this.registerCodeLensProvider();
-      });
-
       this._button_show_changes.click(() => {
         this._model.get_changes($(`#merge-notebook-${this._model.get_merge_source()}`).val());
       });
@@ -301,6 +294,11 @@ RCloudNotebookMerger.view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_file_diff_complete.attach(({}, args) => {
+        require(["vs/editor/editor.main"], () => {
+          monaco.languages.register({
+            id: DEFAULT_LANGUAGE
+          });
+          this.registerCodeLensProvider();
         let diff = args.changeDetails;
         let filename = args.filename;
 
@@ -308,12 +306,14 @@ RCloudNotebookMerger.view = (function(model) {
         let content_area = this._compare_stage.find(`div[data-filetype="${args.fileType}"][data-filename="${filename}"]`);
         let panel_loader = content_area.closest('.panel').find('.diffLoader');
 
+        // Resizing of the Monaco editor panel.
         let sizeDiffPanel = (panelContent, lineCount, changesCount, editorConfiguration) => {
-            /*
-               Set size of panel body explicitly so Monaco editor displays correctly
-            */
-            let computedWidth = panelContent.innerWidth();
-            panelContent.css('width', computedWidth + 'px');
+
+            // The following sits the editor panel over the top of the margin (numbers).
+            panelContent.css('left', 0 + 'px');
+            panelContent.css('right', 0 + 'px');
+
+            // Calculates the height needed for the Monaco editor depending on the changes present.
             let height = (lineCount + changesCount) * editorConfiguration.lineHeight;
             panelContent.css('height', height + 'px');
         };
@@ -350,6 +350,11 @@ RCloudNotebookMerger.view = (function(model) {
                 // Layout
                 sizeDiffPanel(editor_container,  editor_model.getLineCount(), diff.modifiedLineInfo.length, this._editors[filename].editor.getConfiguration());
 
+                // Hide the default Monaco decorations.
+                $('.monaco-scrollable-element').each(function() {
+                  this.style.left = '0px';
+                  this.style.width = '110%';
+                });
 
                 this._editors[filename].editor.layout();
 
@@ -399,10 +404,17 @@ RCloudNotebookMerger.view = (function(model) {
                   // Layout
                   sizeDiffPanel(editor_container,  editor_model.getLineCount(), 0, this._editors[filename].editor.getConfiguration());
 
+                  // Hide the default Monaco decorations.
+                  $('.monaco-scrollable-element').each(function() {
+                    this.style.left = '0px';
+                    this.style.width = '110%';
+                  });
+
                   this._editors[filename].editor.layout();
 
                   panel_loader.remove();
                 };
+
                 this.setTransitionTimeout(init);
             }
           } else {
@@ -411,7 +423,7 @@ RCloudNotebookMerger.view = (function(model) {
             panel_loader.remove();
           }
         }
-
+        });
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -551,7 +563,7 @@ RCloudNotebookMerger.view = (function(model) {
             })[0];
             let editor_descriptor = this._editors[model_filename];
             if(!editor_descriptor) {
-              console.error('Editor for file ' + model_filename + ' and model ' + model.id + ' not found!');
+              console.warn('editor for model id ' + model.id + ' not found');
               return [];
             }
             if(editor_descriptor.apply_change) {

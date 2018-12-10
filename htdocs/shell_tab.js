@@ -56,6 +56,7 @@ var shell = (function() {
                     if (!_.isUndefined(notebook.error)) {
                         throw notebook.error;
                     }
+                    notebook_controller_.session_dirty(false);
                     gistname_ = gistname;
                     version_ = version;
                     $(".rcloud-user-defined-css").remove();
@@ -158,6 +159,7 @@ var shell = (function() {
             notebook_controller_.save();
             return RCloud.UI.with_progress(function() {
                 return RCloud.session.reset().then(function() {
+                    notebook_controller_.session_dirty(false);
                     var content = {description: desc, 'public': false,
                                    files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};
                     return notebook_controller_.create_notebook(content).then(on_new);

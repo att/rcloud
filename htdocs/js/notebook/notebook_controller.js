@@ -2,7 +2,8 @@ Notebook.create_controller = function(model)
 {
     var current_gist_,
         current_update_,
-        dirty_ = false,
+        notebook_dirty_ = false,
+        session_dirty_ = false,
         save_timer_ = null;
     // only create the callbacks once, but delay creating them until the editor
     // is initialized
@@ -14,7 +15,7 @@ Notebook.create_controller = function(model)
                 cb_ = function(notebook) {
                     var saveb = RCloud.UI.navbar.control('save_notebook');
                     saveb && saveb.disable();
-                    dirty_ = false;
+                    notebook_dirty_ = false;
                     if(save_timer_) {
                         window.clearTimeout(save_timer_);
                         save_timer_ = null;
@@ -228,10 +229,10 @@ Notebook.create_controller = function(model)
     }
 
     function on_dirty() {
-        if(!dirty_) {
+        if(!notebook_dirty_) {
             var saveb = RCloud.UI.navbar.control('save_notebook');
             saveb && saveb.enable();
-            dirty_ = true;
+            notebook_dirty_ = true;
         }
         if(save_timer_)
             window.clearTimeout(save_timer_);
@@ -249,6 +250,13 @@ Notebook.create_controller = function(model)
         current_gist: function() {
             // are there reasons we shouldn't be exposing this?
             return current_gist_;
+        },
+        session_dirty: function(_) {
+            if(arguments.length) {
+                session_dirty_ = _;
+                return this;
+            }
+            return session_dirty_;
         },
         append_asset: function(content, filename, user_appended) {
             var cch = append_asset_helper(content, filename, user_appended);
@@ -526,7 +534,7 @@ Notebook.create_controller = function(model)
             return update_notebook(changes).then(default_callback());
         },
         save: function() {
-            if(!dirty_)
+            if(!notebook_dirty_)
                 return Promise.resolve(current_update_);
             return update_notebook(refresh_buffers())
                 .then(default_callback());
@@ -553,6 +561,7 @@ Notebook.create_controller = function(model)
                     ew.run_cell(info.json_rep);
                 });
             }
+            session_dirty_ = true;
             rcloud.record_cell_execution(info.json_rep);
             var cell_eval = rcloud.authenticated ? rcloud.authenticated_cell_eval : rcloud.session_cell_eval;
             return info.versionPromise.then(function(version) {

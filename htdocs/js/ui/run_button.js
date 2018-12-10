@@ -15,13 +15,16 @@ RCloud.UI.run_button = (function() {
       }
     }
     function schedule(ignored) {
-        return (do_reset_ ? 
-              RCloud.session.reset().then(function() {
-                return rcloud.load_notebook(shell.gistname(), shell.version()); 
-              }) : Promise.resolve(undefined)
-            ).then(function() {
-                    return shell.run_notebook();
-                }); 
+        return (
+            do_reset_ && shell.notebook.controller.session_dirty() ?
+                RCloud.session.reset().then(function() {
+                    shell.notebook.controller.session_dirty(false);
+                    return rcloud.load_notebook(shell.gistname(), shell.version());
+                }) :
+            Promise.resolve(undefined))
+            .then(function() {
+                return shell.run_notebook();
+            });
     }
     return {
         init: function() {

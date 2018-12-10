@@ -22,6 +22,7 @@ RCloud.UI.command_prompt = (function() {
         prompt_div.addClass("r-language-pseudo");
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(prompt_div[0]);
+        widget.$blockScrolling = Infinity;
         ace_widget_ = widget;
         set_ace_height();
         var RMode = ace.require("ace/mode/r").Mode;

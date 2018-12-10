@@ -1180,3 +1180,50 @@ body .modal-dialog.full {
         }
     }
 }
+
+/* Styles specific to the Copy-To-Clipboard functionality 
+    for the Notebook Info panel. */
+
+    .clipboard-tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: pointer
+    }
+    
+    .clipboard-tooltip .clipboard-tooltip-text {
+        font-family: Helvetica, Arial, sans-serif;
+        visibility: hidden;
+        width: 140px;
+        background-color: #000;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 150%;
+        left: 50%;
+        margin-left: -75px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .clipboard-tooltip .clipboard-tooltip-text:after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #000 transparent transparent transparent;
+    }
+    
+    .icon-file-text:hover {
+        cursor: pointer;
+    }
+    
+    .clipboard-tooltip:hover .clipboard-tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }

@@ -1,5 +1,6 @@
 RCloud.UI.notebook_commands = (function() {
     var icon_style_ = {'line-height': '90%'};
+    var merge_icon_style_ = {'line-height': '90%', 'padding-right': '3px'};
     var star_style_ = _.extend({'font-size': '80%'}, icon_style_);
     var star_states_ = {true: {'class': 'icon-star', title: 'unstar'},
                         false: {'class': 'icon-star-empty', title: 'star'}};
@@ -116,7 +117,7 @@ RCloud.UI.notebook_commands = (function() {
                 },
                 remove: {
                     section: 'appear',
-                    sort: 4000,
+                    sort: 5000,
                     condition1: function(node) {
                         return node.user === editor.username();
                     },
@@ -171,8 +172,10 @@ RCloud.UI.notebook_commands = (function() {
                                 editor.for_each_notebook(node, null, function(node) {
                                     promises.push(editor.remove_notebook(node.user, node.gistname));
                                 });
-                            };
-                            return false;
+                            } else {
+                                notebook_names = [];
+                                return false;
+                            }
                         });
                         return remove_folder;
                     }
@@ -203,6 +206,9 @@ RCloud.UI.notebook_commands = (function() {
         },
         icon_style: function() {
             return icon_style_;
+        },
+        merge_icon_style: function() {
+            return merge_icon_style_;
         },
         decorate: function($li, node, right) {
             var appeared;
