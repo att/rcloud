@@ -3388,7 +3388,7 @@ table {
 
 html {
   font-size: 62.5%;
-  -webkit-tap-highlight-color: transparent; }
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 
 body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -9172,16 +9172,9 @@ code {
 .response {
   padding: 16px; }
 
-.panel {
-  border-radius: 0; }
-
 .collapsing {
   -webkit-transition: none;
   transition: none; }
-
-.panel-group .panel {
-  border-radius: 0;
-  overflow: initial; }
 
 .container.nopad {
   padding-left: 0;
@@ -9200,22 +9193,6 @@ code {
 .row {
   margin-left: 0;
   margin-right: 0; }
-
-.panel-group .panel + .panel {
-  margin-top: 0; }
-
-.panel-default > .panel-heading {
-  border-style: none; }
-
-div.panel-heading:hover {
-  background-color: #888;
-  color: #0f0; }
-
-.panel-default {
-  border: 0; }
-
-.panel-scrollable-content {
-  overflow-y: auto; }
 
 .code-div {
   position: relative;
@@ -9369,11 +9346,34 @@ pre.offscreen {
 td {
   background-color: transparent; }
 
-.panel:first-child .panel-heading {
+body > .container .panel:first-child .panel-heading {
   padding-top: 10px; }
 
-.panel-heading {
+body > .container .panel-heading {
   padding: 5px 15px; }
+
+body > .container .panel-group .panel + .panel {
+  margin-top: 0; }
+
+body > .container .panel-default .panel-heading {
+  border-style: none; }
+
+body > .container div.panel-heading:hover {
+  background-color: #888;
+  color: #0f0; }
+
+body > .container .panel-default {
+  border: 0; }
+
+body > .container .panel-scrollable-content {
+  overflow-y: auto; }
+
+body > .container .panel {
+  border-radius: 0; }
+
+body > .container .panel-group .panel {
+  border-radius: 0;
+  overflow: initial; }
 
 .popover {
   max-width: 350px; }
@@ -9405,9 +9405,11 @@ td {
     padding-right: 4px;
     background-color: white !important; }
     #find-dialog input[type="text"]:-webkit-autofill {
-      -webkit-box-shadow: 0 0 0px 1000px #fff inset; }
+      -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+      box-shadow: 0 0 0px 1000px #fff inset; }
       #find-dialog input[type="text"]:-webkit-autofill:hover, #find-dialog input[type="text"]:-webkit-autofill:focus {
-        -webkit-box-shadow: 0 0 0px 1000px #fff inset; }
+        -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+        box-shadow: 0 0 0px 1000px #fff inset; }
   #find-dialog #find-options-menu .btn.active {
     background-color: orange; }
   #find-dialog .checkbox {
@@ -9547,9 +9549,6 @@ td {
 .navbar-nav > li > a {
   padding-top: 15px;
   padding-bottom: 15px; }
-
-.edit-code.inactive .hljs {
-  /*word-break: break-all;*/ }
 
 /*recent notebooks*/
 #notebooks-panel-inner {
@@ -9697,11 +9696,13 @@ body .modal-dialog.full {
     padding-bottom: 40px; }
     #shortcut-dialog .modal-dialog .modal-body::-webkit-scrollbar {
       -webkit-appearance: none;
+      appearance: none;
       width: 7px; }
     #shortcut-dialog .modal-dialog .modal-body::-webkit-scrollbar-thumb {
       border-radius: 4px;
       background-color: rgba(0, 0, 0, 0.5);
-      -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, 0.5); }
+      -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 1px rgba(255, 255, 255, 0.5); }
   #shortcut-dialog .modal-dialog .category {
     width: 450px;
     float: left;
@@ -9753,6 +9754,206 @@ body .modal-dialog.full {
     #pull-changes-dialog.pulling .btn-cancel, #pull-changes-dialog.pulling .close {
       display: none; }
 
+#merger-dialog {
+  pointer-events: auto; }
+  #merger-dialog .modal-header {
+    padding-left: 20px !important;
+    padding-right: 20px !important; }
+  #merger-dialog .modal-body {
+    display: block; }
+    #merger-dialog .modal-body .overlay {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.9);
+      display: none; }
+      #merger-dialog .modal-body .overlay img {
+        padding-top: 65px;
+        margin: 10px auto;
+        display: block; }
+      #merger-dialog .modal-body .overlay p {
+        margin: 10px auto;
+        width: 250px;
+        text-align: center;
+        font-size: 19px; }
+  #merger-dialog.stage-gettingchanges .overlay, #merger-dialog.stage-applyingchanges .overlay {
+    display: block; }
+  #merger-dialog.stage-gettingchanges .modal-footer, #merger-dialog.stage-applyingchanges .modal-footer {
+    visibility: hidden; }
+  #merger-dialog.stage-gettingchanges .getting {
+    display: block; }
+  #merger-dialog.stage-gettingchanges .applying {
+    display: none; }
+  #merger-dialog.stage-applyingchanges .getting {
+    display: none; }
+  #merger-dialog.stage-applyingchanges .applying {
+    display: block; }
+  #merger-dialog .btn-cancel, #merger-dialog .close {
+    display: inline-block; }
+  #merger-dialog label {
+    width: 150px;
+    margin-top: 10px; }
+  #merger-dialog input {
+    margin-top: 10px; }
+  #merger-dialog input[type="file"] {
+    margin-left: 153px; }
+  #merger-dialog div[data-by] {
+    min-height: 70px; }
+  #merger-dialog #merge-error {
+    color: red;
+    margin-left: 152px;
+    margin-top: 5px;
+    width: 365px;
+    word-wrap: break-word; }
+  #merger-dialog #merge-stage, #merger-dialog #merge-compare-section {
+    display: none; }
+  #merger-dialog .btn-init {
+    margin-left: 5px; }
+  #merger-dialog .btn-merge {
+    display: none; }
+  #merger-dialog.stage-compare .modal-dialog {
+    width: 98%;
+    height: 97%;
+    margin-top: 1%;
+    padding: 0; }
+  #merger-dialog.stage-compare .modal-body {
+    max-height: calc(100vh - 212px);
+    min-height: calc(100vh - 212px);
+    padding: 0px;
+    margin: 20px; }
+  #merger-dialog.stage-compare .modal-content {
+    min-height: 95%; }
+  #merger-dialog.stage-compare .show-changes, #merger-dialog.stage-compare #merge-init-section {
+    display: none; }
+  #merger-dialog.stage-compare .btn-merge {
+    display: inline-block; }
+  #merger-dialog.stage-compare #merge-compare-section {
+    display: block;
+    height: calc(100vh - 212px); }
+    #merger-dialog.stage-compare #merge-compare-section #compare-file-list {
+      width: 20%; }
+    #merger-dialog.stage-compare #merge-compare-section #compare-stage {
+      width: 78%; }
+      #merger-dialog.stage-compare #merge-compare-section #compare-stage .diffLoader {
+        margin-right: 7px; }
+    #merger-dialog.stage-compare #merge-compare-section #compare-file-list, #merger-dialog.stage-compare #merge-compare-section #compare-stage {
+      max-height: 100%;
+      height: 100%; }
+  #merger-dialog.stage-compare #compare-file-list {
+    float: left;
+    overflow: auto; }
+    #merger-dialog.stage-compare #compare-file-list table {
+      width: 98%; }
+    #merger-dialog.stage-compare #compare-file-list table tr {
+      border-bottom: 1px solid #ccc;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      cursor: pointer; }
+      #merger-dialog.stage-compare #compare-file-list table tr:hover {
+        background-color: #f5f5f5; }
+      #merger-dialog.stage-compare #compare-file-list table tr a {
+        padding: 5px 10px; }
+    #merger-dialog.stage-compare #compare-file-list td {
+      color: #222;
+      padding: 7px 0; }
+    #merger-dialog.stage-compare #compare-file-list td.type {
+      font-size: 20px;
+      padding-left: 4px;
+      color: #3d3d3d; }
+    #merger-dialog.stage-compare #compare-file-list td.changes {
+      text-align: center;
+      text-transform: uppercase; }
+      #merger-dialog.stage-compare #compare-file-list td.changes span:not(.total):not(.count) {
+        font-weight: normal;
+        border-radius: 13px;
+        width: 60px;
+        display: inline-block;
+        text-align: center;
+        border: 1px solid white; }
+      #merger-dialog.stage-compare #compare-file-list td.changes span.add {
+        background: #dff0d8; }
+        #merger-dialog.stage-compare #compare-file-list td.changes span.add:hover {
+          background: #c1e2b3; }
+      #merger-dialog.stage-compare #compare-file-list td.changes span.remove {
+        background: #f2dede; }
+        #merger-dialog.stage-compare #compare-file-list td.changes span.remove:hover {
+          background: #e4b9b9; }
+      #merger-dialog.stage-compare #compare-file-list td.changes span.total {
+        margin-left: 0.3em;
+        font-size: smaller; }
+        #merger-dialog.stage-compare #compare-file-list td.changes span.total:before {
+          content: '('; }
+        #merger-dialog.stage-compare #compare-file-list td.changes span.total:after {
+          content: ')'; }
+      #merger-dialog.stage-compare #compare-file-list td.changes span.count {
+        font-weight: bold;
+        font-style: italic;
+        margin-left: 0.3em; }
+      #merger-dialog.stage-compare #compare-file-list td.changes span.modify {
+        background: #fcf8e3; }
+        #merger-dialog.stage-compare #compare-file-list td.changes span.modify:hover {
+          background: #f7ecb5; }
+      #merger-dialog.stage-compare #compare-file-list td.changes span.equal {
+        padding: 5px; }
+        #merger-dialog.stage-compare #compare-file-list td.changes span.equal i {
+          margin-left: 2px;
+          display: inline-block;
+          transform: rotate(90deg); }
+      #merger-dialog.stage-compare #compare-file-list td.changes span {
+        cursor: help; }
+      #merger-dialog.stage-compare #compare-file-list td.changes .icon-indent-left {
+        font-weight: normal; }
+    #merger-dialog.stage-compare #compare-file-list .isto span, #merger-dialog.stage-compare #compare-file-list .isfrom span, #merger-dialog.stage-compare #compare-file-list .add, #merger-dialog.stage-compare #compare-file-list .modify, #merger-dialog.stage-compare #compare-file-list .remove {
+      padding: 5px;
+      display: inline-block; }
+    #merger-dialog.stage-compare #compare-file-list tr.excluded td.isto, #merger-dialog.stage-compare #compare-file-list tr.excluded td.changes {
+      opacity: 0.1; }
+    #merger-dialog.stage-compare #compare-file-list tr.excluded td.changes .add, #merger-dialog.stage-compare #compare-file-list tr.excluded td.changes .modify {
+      background: #dff0d8; }
+      #merger-dialog.stage-compare #compare-file-list tr.excluded td.changes .add:hover, #merger-dialog.stage-compare #compare-file-list tr.excluded td.changes .modify:hover {
+        background: #c1e2b3; }
+    #merger-dialog.stage-compare #compare-file-list tr.excluded td.changes .remove {
+      background: #ffa3a3; }
+      #merger-dialog.stage-compare #compare-file-list tr.excluded td.changes .remove:hover {
+        background: #ff7070; }
+  #merger-dialog.stage-compare #compare-stage {
+    float: left;
+    padding-left: 10px;
+    overflow: auto; }
+    #merger-dialog.stage-compare #compare-stage .diff-panel {
+      margin-top: 15px; }
+      #merger-dialog.stage-compare #compare-stage .diff-panel .panel-heading {
+        font-weight: bolder;
+        font-style: italic; }
+      #merger-dialog.stage-compare #compare-stage .diff-panel .compare-editor {
+        min-height: 120px; }
+    #merger-dialog.stage-compare #compare-stage .diff-no-change .panel-body, #merger-dialog.stage-compare #compare-stage .diff-binary .panel-body {
+      font-style: italic;
+      color: #7f7f7f;
+      font-weight: bold;
+      font-size: larger;
+      text-align: center; }
+    #merger-dialog.stage-compare #compare-stage .excluded {
+      opacity: .3; }
+  #merger-dialog.stage-compare .removed {
+    background: #eed3d7; }
+  #merger-dialog.stage-compare .added {
+    background: #dff0d8; }
+  #merger-dialog.stage-compare .codelens-decoration {
+    background: black;
+    font-size: 11px !important;
+    padding: 2px 4px; }
+    #merger-dialog.stage-compare .codelens-decoration a {
+      color: white !important; }
+      #merger-dialog.stage-compare .codelens-decoration a:hover {
+        color: white !important; }
+
 #tree-finder-dialog .modal-dialog {
   padding: 0;
   margin-top: -4px; }
@@ -9781,6 +9982,47 @@ body .modal-dialog.full {
       float: right; }
       #tree-finder-dialog .results > p .star_count i {
         margin-left: 3px; }
+
+/* Styles specific to the Copy-To-Clipboard functionality 
+    for the Notebook Info panel. */
+.clipboard-tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer; }
+
+.clipboard-tooltip .clipboard-tooltip-text {
+  font-family: Helvetica, Arial, sans-serif;
+  visibility: hidden;
+  width: 140px;
+  background-color: #000;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 150%;
+  left: 50%;
+  margin-left: -75px;
+  opacity: 0;
+  transition: opacity 0.3s; }
+
+.clipboard-tooltip .clipboard-tooltip-text:after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #000 transparent transparent transparent; }
+
+.icon-file-text:hover {
+  cursor: pointer; }
+
+.clipboard-tooltip:hover .clipboard-tooltip-text {
+  visibility: visible;
+  opacity: 1; }
 
 @media print {
   * {
