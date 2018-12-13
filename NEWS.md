@@ -1,3 +1,10 @@
+## RCloud 2.1
+
+### Features
+ * Notebook merging: view the differences between two notebooks and choose which changes to
+   take. (#127)
+ 
+
 ## RCloud 2.0.1
 
 ### Bugfixes

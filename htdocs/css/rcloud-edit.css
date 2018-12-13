@@ -427,6 +427,12 @@ input[type=text].form-control-ext {
 .panel-body.tight {
   padding: 5px; }
 
+.has-error .radio,
+.has-error .checkbox,
+.has-error .radio-inline,
+.has-error .checkbox-inline {
+  color: #b94a48; }
+
 /******************************************************************************/
 ul.jqtree-tree .jqtree-toggler {
   top: 10%; }
@@ -865,31 +871,31 @@ a.accordion-toggle.right > i {
   right: 1.1em;
   line-height: 15px; }
 
-.panel-default > .panel-heading {
+body > .container .panel-default > .panel-heading {
   background-color: #777;
   cursor: pointer; }
 
-.panel-default > .panel-heading > .accordion-toggle {
+body > .container .panel-default > .panel-heading > .accordion-toggle {
   color: #f1f1e5; }
 
-.panel-heading {
+body > .container .panel-heading {
   border-radius: 0; }
-  .panel-heading .heading-controls {
+  body > .container .panel-heading .heading-controls {
     display: inline; }
-    .panel-heading .heading-controls button {
+    body > .container .panel-heading .heading-controls button {
       color: white;
       text-decoration: none;
       outline: none;
       border: 1px solid transparent; }
-      .panel-heading .heading-controls button:hover {
+      body > .container .panel-heading .heading-controls button:hover {
         border-color: #aaa; }
 
-.panel-collapse {
+body > .container .panel-collapse {
   padding-top: 5px;
   padding-bottom: 5px;
   background-color: #777; }
 
-.panel-body {
+body > .container .panel-body {
   background-color: #fff; }
 
 .panel-shadow.left {
@@ -979,7 +985,7 @@ a.accordion-toggle.right > i {
 
 /*****************************************************************************/
 /* Fix that awful select from webkit */
-.form-control {
+.cell-control-bar > .form-control {
   -webkit-appearance: none;
   height: 16px;
   width: 100px;
@@ -987,7 +993,7 @@ a.accordion-toggle.right > i {
   position: relative;
   font-size: 12px;
   border: inherit;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16px' height='16px'><polyline fill='#555' points='8,13 10,9 6,9'/><polyline fill='#555' points='8,4 10,8 6,8'/></svg>") right no-repeat; }
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16px' height='16px'><polyline fill='rgb(85,85,85)' points='8,13 10,9 6,9'/><polyline fill='rgb(85,85,85)' points='8,4 10,8 6,8'/></svg>") right no-repeat; }
 
 .form-control.big {
   height: 20px;

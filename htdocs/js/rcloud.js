@@ -1,6 +1,6 @@
-RCloud = {
+RCloud = Object.assign({
     version: '<%= conf.version %>'
-};
+}, RCloud);
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
 // We can tell them apart now ...
@@ -220,6 +220,10 @@ RCloud.create = function(rcloud_ocaps) {
             return rcloud_github_handler(
                 "rcloud.call.notebook " + id,
                 rcloud_ocaps.call_notebookAsync(id, version));
+        };
+
+        rcloud.call_notebook_unchecked = function(id, version) {
+            return rcloud_ocaps.call_notebookAsync(id, version);
         };
 
         rcloud.install_notebook_stylesheets = function() {

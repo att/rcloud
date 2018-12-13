@@ -4,13 +4,15 @@ requirejs_config_obj = {
     paths: {
         "jquery": "jquery-2.1.1",
         "rcloud_bundle": "../../js/rcloud_bundle",
+        "merger_bundle": "../../js/merger_bundle",
         "ace": "../ace_bundle",
+        "vs": "monaco/vs",
         editor_tab: "../../editor_tab",
         discover_model: "../../discover_model",
         shell_tab: "../../shell_tab",
         "angular": "angular",
         "angular-selectize": "angular-selectize",
-        "selectize": "selectize"
+        "selectize": "selectize",
     },
     "shim": {
         "tree.jquery": ["jquery"],
@@ -27,7 +29,8 @@ requirejs_config_obj = {
         "rserve": ["underscore"],
         "mousetrap-global-bind.min": ["mousetrap.min"],
         "jquery.fix.clone" : ["jquery-ui"],
-        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
+        "rcloud_bundle": ["ace", "jquery.cookies.2.2.0", "jquery.bootpag", "jquery.scrollto", 
+            "jquery-ui", "hl.min", "bootstrap", "mousetrap.min"
                           // ,"jquery.whiny" // enable/disable jquery.whiny here
                          ]
     }
@@ -60,12 +63,14 @@ function start_require(deps) {
                 var main = document.getElementById('main-div');
                 main.innerHTML = '<pre>' + lines.join('\n') + '</pre>';
             }
-        }
-        else {
+        } else {
             throw err;
         }
     };
-
+    
+    window.RCloud = {};
+    window.RCloud.UI = {};
+    window.RCloud.UI.addons = {};
     require(deps,
             function(Promise, _, d3, sha256) {
                 window.Promise = Promise;

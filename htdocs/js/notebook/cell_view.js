@@ -254,6 +254,7 @@ function create_cell_html_view(language, cell_model) {
     function consume_result(type, r)  {
           switch(type) {
             case 'selection':
+            case 'function_call':
             case 'deferred_result':
                 break;
             default:
@@ -291,6 +292,11 @@ function create_cell_html_view(language, cell_model) {
             case 'html':
                 result_div_.append(r);
                 break;
+            case 'function_call':
+                if(_.isFunction(r)) {
+                  r(result_div_);
+                }
+                break;
             case 'deferred_result':
                 result_div_.append('<span class="deferred-result">' + r + '</span>');
                 break;
@@ -326,32 +332,24 @@ function create_cell_html_view(language, cell_model) {
                 scroll();
               }
             }
-            result_updated();
             
-            var wait_for_content = function(attempt, callback) {
-              var WAIT_DELAY = 3;
-              var MAX_WAIT_STEPS = 7;
-              var MAX_WAIT_DELAY = 300;
-              if(attempt <= MAX_WAIT_STEPS) {
-                if((result_div_.find('.rcloud-htmlwidget').length > 0 && result_div_.find('.rcloud-htmlwidget').find('div').is(':empty')) 
-                   || result_div_.find('.deferred-result').length > 0) {
-                  var next_attempt = attempt+1;
-                  setTimeout(wait_for_content, Math.max(WAIT_DELAY^(next_attempt), MAX_WAIT_DELAY), next_attempt, callback);
-                  return;
-                }
-              }
-              callback();
-            };
-            
-            setTimeout(wait_for_content, 0, 1, function() {
+            if (counter > 0) {
+              
+              result_updated();
+              
               if (should_scroll(scroll_after)) {
                 scroll();
               }
+
               if (is_in_document() && (!results_processing_context_.stop || results_processing_context_.results.length > 0)) {
                 window.setTimeout(results_processing_context_.result_consumer, results_processing_context_.options.notebook_update_delay);
               }
-            });
-            
+              
+            } else {
+              // no results, let next result re-schedule the consumer
+              results_processing_context_.stop = true;
+              results_processing_context_.result_consumer = null;
+            }
             
         };
         window.setTimeout(results_processing_context_.result_consumer, delay);
@@ -376,6 +374,7 @@ function create_cell_html_view(language, cell_model) {
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(div[0]);
         var session = widget.getSession();
+        widget.$blockScrolling = Infinity;
         widget.setValue(content);
         ui_utils.ace_set_pos(widget, 0, 0); // setValue selects all
         // erase undo state so that undo doesn't erase all
@@ -813,7 +812,8 @@ function create_cell_html_view(language, cell_model) {
                 var st = ace_session_.getScrollTop();
                 var range = ace_widget_.getSelection().getRange();
                 var changed = change_content_(cell_model.content());
-                ace_widget_.getSelection().setSelectionRange(range);
+                if(changed)
+                    ace_widget_.getSelection().setSelectionRange(range);
                 ace_session_.setScrollTop(st);
             }
             return changed;
@@ -874,8 +874,8 @@ function create_cell_html_view(language, cell_model) {
                 if(RCloud.language.is_a_markdown(language))
                     result.hide_source(true);
                 has_result_ = true;
-                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
+            schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             this.toggle_results(true); // always show when updating
             
             results_processing_context_.results.push({
@@ -1071,8 +1071,8 @@ function create_cell_html_view(language, cell_model) {
             if(!has_result_) {
                 result_div_.empty();
                 has_result_ = true;
-                schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             }
+            schedule_results_consumer(results_processing_context_.options.notebook_update_delay);
             prompt_text_ = _.escape(prompt).replace(/\n/g,'');
             create_input_widget();
             input_widget_.setValue('');
@@ -1086,10 +1086,11 @@ function create_cell_html_view(language, cell_model) {
             input_div_.css('border-color', '#eeeeee');
             var dir = false;
             var switch_color = function() {
-                input_div_.animate({borderColor: dir ? '#ffac88' : '#E34234'},
-                                   {duration: 1000,
-                                    easing: 'easeInOutCubic',
-                                    queue: false});
+                d3.select(input_div_[0])
+                    .style('border-color', dir ? '#ffac88' : '#E34234')
+                    .transition()
+                    .duration(1000)
+                    .style('border-color', dir ? '#E34234' : '#ffac88');
                 dir = !dir;
             };
             switch_color();

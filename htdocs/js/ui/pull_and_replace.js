@@ -6,7 +6,7 @@ RCloud.UI.pull_and_replace = (function() {
         pull_notebook_url_ = $('#pull-notebook-url'),
         pull_notebook_id_ = $('#pull-notebook-id'),
         error_selector_ = '#pull-error',
-        btn_pull_ = dialog_.find('.btn-primary'),
+        btn_pull_ = dialog_.find('.btn-primary.show-changes'),
         inputs_ = [pull_notebook_file_, pull_notebook_url_, pull_notebook_id_],
         notebook_from_file_,
         same_notebook_error_ = 'You cannot pull from your current notebook; the source must be a different notebook.',

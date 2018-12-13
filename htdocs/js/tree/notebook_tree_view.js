@@ -283,9 +283,10 @@ RCloud.UI.notebook_tree_view = (function(model) {
         },
 
         select_node: function(node) {
-            this.scroll_into_view(node).then(function() {
-                this.$tree_.tree('selectNode', node);
-                if(node.user === this.model_.username_)
+            var that = this;
+            that.scroll_into_view(node).then(function() {
+                that.$tree_.tree('selectNode', node);
+                if(node.user === that.model_.username_)
                     RCloud.UI.notebook_title.make_editable(node, node.element, true);
                 else
                     RCloud.UI.notebook_title.make_editable(null);

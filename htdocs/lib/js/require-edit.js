@@ -25,7 +25,7 @@ deps.push(
     "../../edit", "rcloud_bundle",
 
     // rcloud's other files
-    "shell_tab", "editor_tab"
+    "shell_tab", "editor_tab", "merger_bundle"
 );
 
 start_require(deps);

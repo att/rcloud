@@ -36,8 +36,16 @@ RCloud.UI.advanced_menu = (function() {
                     modes: ['edit'],
                     action: function() {
                         var result = prompt("Enter notebook ID or github URL:");
-                        if(result !== null)
-                            shell.open_from_github(result);
+                        
+                        if(result === null) {
+                          return;
+                        }
+                        
+                        if(!result || result.trim() === "") {
+                          alert('Please provide Notebook ID.');
+                        } else {
+                          shell.open_from_github(result);
+                        }
                     }
                 },
                 show_source: {

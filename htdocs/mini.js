@@ -60,7 +60,17 @@ function main() {
                 });
             };
             promise = promise.then(function() {
-                return rcloud.call_notebook(notebook, version).then(function(x) {
+                return rcloud.call_notebook_unchecked(notebook, version).then(function(result) {
+                    if(!result)
+                        throw new Error('Notebook not found or is malformed');
+                    if(!result.ok) {
+                        if(!result || typeof result !== 'object' || !('ok' in result)) {
+                            if(typeof result === 'object')
+                                result = RCloud.utils.clean_r(result);
+                            throw new Error('Notebook is malformed - last cell should use rcw.result. Value: ' + JSON.stringify(result));
+                        }
+                    }
+                    var x = result.content;
                     // FIXME: I'm not sure what's the best way to make this available
                     // in a convenient manner so that notebooks can leverage it ...
                     window.notebook_result = x;
