@@ -1,6 +1,10 @@
+require(["vs/editor/editor.main"], () => {
+    const DEFAULT_LANGUAGE = 'rcloud';
+    monaco.languages.register({
+        id: DEFAULT_LANGUAGE
+    });
 RCloudNotebookMerger.view = (function(model) {
 
-  const DEFAULT_LANGUAGE = 'rcloud';
   const DialogStage = Object.freeze({
         INIT: 'init',
         GETTINGCHANGES: 'gettingchanges',
@@ -63,6 +67,7 @@ RCloudNotebookMerger.view = (function(model) {
       this._inputs = [this._merge_notebook_file, this._merge_notebook_url, this._merge_notebook_id];
 
       this._codelens_provider = null;
+      this.registerCodeLensProvider();
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       //
@@ -294,11 +299,6 @@ RCloudNotebookMerger.view = (function(model) {
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
       this._model.on_file_diff_complete.attach(({}, args) => {
-        require(["vs/editor/editor.main"], () => {
-          monaco.languages.register({
-            id: DEFAULT_LANGUAGE
-          });
-          this.registerCodeLensProvider();
         let diff = args.changeDetails;
         let filename = args.filename;
 
@@ -423,7 +423,6 @@ RCloudNotebookMerger.view = (function(model) {
             panel_loader.remove();
           }
         }
-        });
       });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -684,4 +683,5 @@ RCloudNotebookMerger.view = (function(model) {
 
   return new merger_view(model);
 
+});
 });
