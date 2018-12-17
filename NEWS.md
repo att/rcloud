@@ -3,7 +3,21 @@
 ### Features
  * Notebook merging: view the differences between two notebooks and choose which changes to
    take. (#127)
- 
+
+### Improvements
+ * When invoking Run All, the session is not reset if it's still clean (#2589)
+ * Notebook ID (hash) is visible in the Notebook Info popup (#2594)
+ * Errors in loading a notebook via mini.html produce a readable error (#2593)
+ * Notebooks can be run programmatically from R (run cell, run from this cell on, etc.) (#2602)
+
+### Bugfixes
+ * Notebook would scroll to show the cursor on autosave, which is distracting (#2428)
+ * Redo key (<kbd>cmd-shift-Z</kbd> mac, <kbd>ctrl-Y</kbd> windows) was not working (#2630)
+ * Renaming a notebook folder would throw a lot of errors and not display properly (#2598)
+ * If notebook history was showing for any notebook in a folder, renaming that folder would cause
+   that notebook to be put in a folder with a hash name (#2609)
+ * "Remove Folder" dialog was showing extra notebook entries (#2612)
+
 
 ## RCloud 2.0.1
 
