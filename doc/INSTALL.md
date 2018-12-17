@@ -14,6 +14,9 @@ RCloud requires R 3.1.0 or higher and several R packages. If you want to compile
     libicu-dev libssl-dev libcurl4-openssl-dev subversion git automake make libtool \
     libtiff-dev gettext redis-server rsync curl
 
+    ## jupyter support
+    sudo apt-get install -y jupyter python-ipython python-ipykernel python-nbconvert python-nbformat python-jupyter-client python-jupyter-core
+
     ## to install R from the CRAN PPA - Ubuntu 14.04 or Debian 8 only (skip this step on 16.04 or 9!):
     sudo add-apt-repository ppa:marutter/rrutter
     sudo apt-get update
