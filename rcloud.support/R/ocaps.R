@@ -80,6 +80,7 @@ compute.ocaps <- function(mode, authenticated) {
         render_plot = make.oc(rcloud.render.plot),
         render_formats = make.oc(rcloud.available.render.formats),
         help = make.oc(rcloud.help),
+        languages_list = make.oc(rcloud.supported.languages),
         R_httpd = make.oc(.httpd)
         )
     if (authenticated) c(caps, list(
@@ -201,7 +202,7 @@ unauthenticated.ocaps <- function(mode, compute)
 
       # multi-language support
       languages = list(
-        get_list = make.oc(rcloud.supported.languages)
+        get_list = compute$languages_list
         ),
 
       plots = list(

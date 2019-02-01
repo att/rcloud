@@ -2,6 +2,7 @@
 
 ### Improvements
  * more date filter selections (last 6 months, last year, etc) (#2643)
+ * do not initialize languages in control session; wait until compute session
 
 ### Bugfixes
  * rename confusing tooltip "merge here" -> "merge from"
