@@ -62,12 +62,46 @@ ui_utils.disconnection_error = function(msg, label) {
 };
 
 ui_utils.string_error = function(msg) {
-    var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+    var close_button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+
     var result = $("<div class='alert alert-danger alert-dismissable'></div>");
     // var text = $("<span></span>");
 
-    result.append(button);
-    var text = _.map(msg.split("\n"), function(str) {
+    result.append(close_button);
+    result.append(ui_utils.expandable_error(msg));
+    return result;
+};
+
+ui_utils.expandable_error = function(msg) {
+    var result = $('<div></div>');
+    var trace_start = msg.indexOf('R trace:'), details;
+    var full_msg = msg;
+    if(trace_start !== -1) {
+        result.append($("<div></div>").text(msg.slice(0, trace_start)));
+        msg = msg.slice(trace_start);
+        details = $("<div style='display: none'></div>");
+        var shown = false;
+        var links = $("<div style='padding-left: 1em'></div>");
+        links.append($("<a class='error-link'>expand</a>").click(function() {
+            shown = !shown;
+            details.toggle(shown);
+            $(this).text(shown ? 'collapse' : 'expand');
+            RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
+        }));
+        result.append(links);
+        result.append(details);
+        rcloud.get_conf_value('support.email').then(function(email) {
+            if(!email)
+                return;
+            var email_error = $("<a class='error-link'>email error</a>");
+            email_error.attr('href', 'mailto:' + email +
+                             '?subject=' + encodeURIComponent('RCloud error') +
+                             '&body=' + encodeURIComponent(full_msg));
+            links.append('&emsp;&emsp;', email_error);
+        });
+    }
+    else details = result;
+    var detail_text = _.map(msg.split("\n"), function(str) {
         // poor-man replacing 4 spaces with indent
         var el = $("<div></div>").text(str), match;
         if ((match = str.match(/^( {4})+/))) {
@@ -77,7 +111,7 @@ ui_utils.string_error = function(msg) {
         }
         return el;
     });
-    result.append(text);
+    details.append(detail_text);
     return result;
 };
 
