@@ -1,3 +1,11 @@
+## RCloud 2.1.2
+
+### Improvements
+ * more date filter selections (last 6 months, last year, etc) (#2643)
+
+### Bugfixes
+ * rename confusing tooltip "merge here" -> "merge from"
+
 RCloud 2.1.1 fixes artifacts of 2.1.0
 
 ## RCloud 2.1

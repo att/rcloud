@@ -927,7 +927,8 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
 
         sanitize_tree_setting: function(setting_key, value) {
             var settings = [
-                { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30' ]},
+                { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30',
+                                                                                'last3months', 'last6months', 'lastyear', 'last2years']},
                 { key: 'tree-sort-order', default_value: 'name', valid_values: ['name', 'date_desc' ]}
             ];
 
@@ -949,22 +950,36 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
 
         update_filter: function(filter_props) {
             if(filter_props.prop == 'tree-filter-date') {
+                var cutoff;
                 switch(filter_props.value) {
-                    case null:
-                    case 'all':
-                        this.tree_filters_[filter_props.prop] = function() { return true; };
-                        break;
-                    case 'last7':
-                    case 'last30':
-                        var period = filter_props.value.replace('last', '');
-                        var that = this;
-                        this.tree_filters_[filter_props.prop] = function(item) {
-                            return item.gistname == that.current_.notebook || RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
-                        };
-                        break;
-                    default:
-                        console.warn('Unknown value for date filter type passed to notebook_tree_model.update_filter(...)');
+                case null:
+                case 'all':
+                    break;
+                case 'last7':
+                    cutoff = d3.time.day.offset(new Date(), -7);
+                    break;
+                case 'last30':
+                    cutoff = d3.time.month.offset(new Date(), -1);
+                    break;
+                case 'last3months':
+                    cutoff = d3.time.month.offset(new Date(), -3);
+                    break;
+                case 'last6months':
+                    cutoff = d3.time.month.offset(new Date(), -6);
+                    break;
+                case 'lastyear':
+                    cutoff = d3.time.year.offset(new Date(), -1);
+                    break;
+                case 'last2years':
+                    cutoff = d3.time.year.offset(new Date(), -2);
+                    break;
+                default:
+                    console.warn('Unknown value for date filter type passed to notebook_tree_model.update_filter(...)');
                 }
+                var that = this;
+                this.tree_filters_[filter_props.prop] = cutoff ? function(item) {
+                    return item.gistname == that.current_.notebook || item.last_commit > cutoff;
+                } : function() { return true; };
             }
 
             var details = this.get_filter_matches(this.tree_data_);
