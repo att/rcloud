@@ -109,6 +109,8 @@ static int shexec_(const char *shell, const char *what) {
 
 SEXP shexec(SEXP sShell, SEXP sWhat) {
     if (TYPEOF(sShell) != STRSXP || LENGTH(sShell) != 1) Rf_error("invalid shell argument");
+    if (sWhat == R_NilValue)
+        return ScalarInteger(shexec_(CHAR(STRING_ELT(sShell, 0)), 0));
     if (TYPEOF(sWhat) != STRSXP || LENGTH(sWhat) != 1) Rf_error("invalid script argument");
     return ScalarInteger(shexec_(CHAR(STRING_ELT(sShell, 0)), CHAR(STRING_ELT(sWhat, 0))));
 }
