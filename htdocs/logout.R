@@ -22,5 +22,6 @@ run <- function(url, query, body, headers) {
   if (is.null(ret)) ret <- '/goodbye.R'
   list("<html><head></head><body>Logout...</body></html>",
        "text/html",
-       paste0("Set-Cookie: user=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: token=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execUser=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nSet-Cookie: execToken=; domain=", rcloud.config("cookie.domain"), "; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\r\nRefresh: 0.1; url=", ret, sep=''))
+       paste0(rcloud.support:::.mk.cookie(user="", token="", execUser="", execToken="", expires="Thu, 01 Jan 1970 00:00:00 GMT"),
+              "\r\nRefresh: 0.1; url=", ret, sep=''))
 }
