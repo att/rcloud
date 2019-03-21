@@ -184,7 +184,7 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   }
 
   if (!nzConf("cookie.domain")) setConf("cookie.domain", getConf("host"))
-  if (!isTRUE(grepl("[.:]", getConf("cookie.domain"))))
+  if (!isTRUE(grepl("[.:]", getConf("cookie.domain"))) && !isTRUE(getConf("cookie.domain") == "*"))
     stop("*** ERROR: cookie.domain must be a FQDN! Please set your hostname correctly or add cookie.domain directive to rcloud.conf")
 
   rcloud.setup.dirs()
