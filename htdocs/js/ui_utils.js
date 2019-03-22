@@ -693,7 +693,8 @@ ui_utils.get_top_offset = function($offset_elements) {
 };
 
 ui_utils.is_visible_in_scrollable = function($scroller, $offset_elements) {
-  
+    if(!$scroller.size())
+        return false; // don't scroll
     var height = +$scroller.css("height").replace("px","");
     var elemtoppos = ui_utils.get_top_offset($offset_elements);
     if($($offset_elements[$offset_elements.length-1]).is(":visible")) {
