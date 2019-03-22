@@ -37,6 +37,7 @@ install:
 - ./travis-tool.sh install_deps
 - ./travis-tool.sh setup_rcloud_config
 - ./scripts/bootstrapR.sh
+- npm install
 - ./scripts/build.sh
 - sudo pip install ipython==2.4.1
 - sudo pip install pyzmq

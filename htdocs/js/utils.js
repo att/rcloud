@@ -72,18 +72,6 @@ RCloud.utils.format_date_time_stamp = function(date, diff, is_date_same, for_ver
     }
 };
 
-// adapted from https://stackoverflow.com/questions/3224834/get-difference-between-2-dates-in-javascript/15289883#15289883
-RCloud.utils.date_diff_days = function(a, b) {
-
-    var MS_PER_DAY = 1000 * 60 * 60 * 24;    
-
-    // Discard the time and time-zone information.
-    var utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-    var utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-
-    return Math.floor((utc2 - utc1) / MS_PER_DAY);
-}
-
 RCloud.utils.filter = function(items, conditions) {
     
     _.mixin({

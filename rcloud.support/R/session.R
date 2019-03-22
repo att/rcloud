@@ -87,6 +87,7 @@ session.markdown.eval <- function(command, language, silent) {
 rcloud.compute.init <- function(...) {
     if (!is.null(.session$compute.init.result)) return(.session$compute.init.result)
     set.seed(Sys.getpid()) # we want different seeds so we get different file names
+    .session$in.compute <- TRUE
     start.rcloud(...)
     rcloud.reset.session()
 
@@ -120,6 +121,7 @@ rcloud.session.init <- function(...) {
     if (identical(.session$separate.compute, FALSE))
         rcloud.compute.init(...)
     else {
+        .session$in.compute <- FALSE
         start.rcloud(...)
         "" ## return "" since the result is a dual promise for both resulting in an array
     }
@@ -129,6 +131,7 @@ rcloud.anonymous.session.init <- function(...) {
     if (identical(.session$separate.compute, FALSE))
         rcloud.anonymous.compute.init(...)
     else {
+        .session$in.compute <- FALSE
         start.rcloud.anonymously(...)
         ""
     }

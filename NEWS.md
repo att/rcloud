@@ -1,3 +1,18 @@
+## RCloud 2.1.2
+
+### Improvements
+ * Error stack traces are collapsed and include a link to email the trace to the `support.email` in
+   rcloud.conf
+ * Allow `Cookie.domain: *` to allow deployments at a-priori unknown URLs (Docker, VMs...)
+ * More date filter selections (last 6 months, last year, etc) (#2643)
+ * Shell cells allow the use of other shells than bash via `#!`
+
+### Bugfixes
+ * Rename confusing tooltip "merge here" -> "merge from"
+ * "Merge from" command should be available for any notebook in the tree (not just current user's!) (#2646)
+ * Fix `rcloud.execute.asset()` for extensions without explicit drivers (#2645)
+ * Do not evaluate autoscroll logic if there is no scoller div
+
 RCloud 2.1.1 fixes artifacts of 2.1.0
 
 ## RCloud 2.1

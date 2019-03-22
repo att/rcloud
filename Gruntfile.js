@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
     'use strict';
 
-    const sass = require('node-sass');
+    var sass = require('node-sass');
     require('load-grunt-tasks')(grunt, {
         pattern: 'grunt-*'
     });
@@ -91,7 +91,7 @@ module.exports = function (grunt) {
             "htdocs/js/tree/date_filter.js",
             "htdocs/js/tree/notebook_tree_model.js",
             "htdocs/js/tree/notebook_tree_view.js",
-            "htdocs/js/tree/notebook_tree_controller.js",
+            "htdocs/js/tree/notebook_tree_controller.js"
         ],
         aceFiles: [
             "htdocs/lib/js/ace/_begin.js",

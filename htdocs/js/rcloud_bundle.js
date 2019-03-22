@@ -1,5 +1,5 @@
 RCloud = Object.assign({
-    version: '2.1.1'
+    version: '2.1.2'
 }, RCloud);
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
@@ -904,12 +904,46 @@ ui_utils.disconnection_error = function(msg, label) {
 };
 
 ui_utils.string_error = function(msg) {
-    var button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+    var close_button = $("<button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>");
+
     var result = $("<div class='alert alert-danger alert-dismissable'></div>");
     // var text = $("<span></span>");
 
-    result.append(button);
-    var text = _.map(msg.split("\n"), function(str) {
+    result.append(close_button);
+    result.append(ui_utils.expandable_error(msg));
+    return result;
+};
+
+ui_utils.expandable_error = function(msg) {
+    var result = $('<div></div>');
+    var trace_start = msg.indexOf('R trace:'), details;
+    var full_msg = msg;
+    if(trace_start !== -1) {
+        result.append($("<div></div>").text(msg.slice(0, trace_start)));
+        msg = msg.slice(trace_start);
+        details = $("<div style='display: none'></div>");
+        var shown = false;
+        var links = $("<div style='padding-left: 1em'></div>");
+        links.append($("<a class='error-link'>expand</a>").click(function() {
+            shown = !shown;
+            details.toggle(shown);
+            $(this).text(shown ? 'collapse' : 'expand');
+            RCloud.UI.right_panel.collapse($("#collapse-session-info"), false, false);
+        }));
+        result.append(links);
+        result.append(details);
+        rcloud.get_conf_value('support.email').then(function(email) {
+            if(!email)
+                return;
+            var email_error = $("<a class='error-link'>email error</a>");
+            email_error.attr('href', 'mailto:' + email +
+                             '?subject=' + encodeURIComponent('RCloud error') +
+                             '&body=' + encodeURIComponent(full_msg));
+            links.append('&emsp;&emsp;', email_error);
+        });
+    }
+    else details = result;
+    var detail_text = _.map(msg.split("\n"), function(str) {
         // poor-man replacing 4 spaces with indent
         var el = $("<div></div>").text(str), match;
         if ((match = str.match(/^( {4})+/))) {
@@ -919,7 +953,7 @@ ui_utils.string_error = function(msg) {
         }
         return el;
     });
-    result.append(text);
+    details.append(detail_text);
     return result;
 };
 
@@ -1501,7 +1535,8 @@ ui_utils.get_top_offset = function($offset_elements) {
 };
 
 ui_utils.is_visible_in_scrollable = function($scroller, $offset_elements) {
-  
+    if(!$scroller.size())
+        return false; // don't scroll
     var height = +$scroller.css("height").replace("px","");
     var elemtoppos = ui_utils.get_top_offset($offset_elements);
     if($($offset_elements[$offset_elements.length-1]).is(":visible")) {
@@ -1710,18 +1745,6 @@ RCloud.utils.format_date_time_stamp = function(date, diff, is_date_same, for_ver
         return '<span>' + date_part + '/' + year_part + ' ' + time_part + '</span>';
     }
 };
-
-// adapted from https://stackoverflow.com/questions/3224834/get-difference-between-2-dates-in-javascript/15289883#15289883
-RCloud.utils.date_diff_days = function(a, b) {
-
-    var MS_PER_DAY = 1000 * 60 * 60 * 24;    
-
-    // Discard the time and time-zone information.
-    var utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-    var utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-
-    return Math.floor((utc2 - utc1) / MS_PER_DAY);
-}
 
 RCloud.utils.filter = function(items, conditions) {
     
@@ -6828,7 +6851,8 @@ RCloud.UI.fatal_dialog = function(message, label, href_or_function) { // no href
         ignore_button_ = $("<span class='btn' style='float:right'>Ignore</span>");
         var body = $('<div />')
                 .append('<h1>Aw, shucks</h1>');
-        message_ = $('<p style="white-space: pre-wrap">' + message + '</p>');
+        message_ = $('<p style="white-space: pre-wrap"></p>');
+        message_.append(ui_utils.expandable_error(message));
         body.append(message_, default_button_);
         body.append(ignore_button_);
         body.append('<div style="clear: both;"></div>');
@@ -14706,7 +14730,8 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
 
         sanitize_tree_setting: function(setting_key, value) {
             var settings = [
-                { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30' ]},
+                { key: 'tree-filter-date', default_value: 'all', valid_values: ['all', 'last7', 'last30',
+                                                                                'last3months', 'last6months', 'lastyear', 'last2years']},
                 { key: 'tree-sort-order', default_value: 'name', valid_values: ['name', 'date_desc' ]}
             ];
 
@@ -14728,22 +14753,36 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
 
         update_filter: function(filter_props) {
             if(filter_props.prop == 'tree-filter-date') {
+                var cutoff;
                 switch(filter_props.value) {
-                    case null:
-                    case 'all':
-                        this.tree_filters_[filter_props.prop] = function() { return true; };
-                        break;
-                    case 'last7':
-                    case 'last30':
-                        var period = filter_props.value.replace('last', '');
-                        var that = this;
-                        this.tree_filters_[filter_props.prop] = function(item) {
-                            return item.gistname == that.current_.notebook || RCloud.utils.date_diff_days(item.last_commit, new Date()) < period;
-                        };
-                        break;
-                    default:
-                        console.warn('Unknown value for date filter type passed to notebook_tree_model.update_filter(...)');
+                case null:
+                case 'all':
+                    break;
+                case 'last7':
+                    cutoff = d3.time.day.offset(new Date(), -7);
+                    break;
+                case 'last30':
+                    cutoff = d3.time.month.offset(new Date(), -1);
+                    break;
+                case 'last3months':
+                    cutoff = d3.time.month.offset(new Date(), -3);
+                    break;
+                case 'last6months':
+                    cutoff = d3.time.month.offset(new Date(), -6);
+                    break;
+                case 'lastyear':
+                    cutoff = d3.time.year.offset(new Date(), -1);
+                    break;
+                case 'last2years':
+                    cutoff = d3.time.year.offset(new Date(), -2);
+                    break;
+                default:
+                    console.warn('Unknown value for date filter type passed to notebook_tree_model.update_filter(...)');
                 }
+                var that = this;
+                this.tree_filters_[filter_props.prop] = cutoff ? function(item) {
+                    return item.gistname == that.current_.notebook || item.last_commit > cutoff;
+                } : function() { return true; };
             }
 
             var details = this.get_filter_matches(this.tree_data_);

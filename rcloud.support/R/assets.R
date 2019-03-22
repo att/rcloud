@@ -48,7 +48,7 @@ rcloud.execute.asset <- function(name, ..., notebook=rcloud.session.notebook(), 
          sh = "sh ",
          js = "node ",
          "")
-  if (is.null(driver)) Sys.chmod(asset, "0700")
+  if (!nzchar(driver)) Sys.chmod(asset, "0700")
   l <- list(...)
   pars <- if (length(l)) paste(c('', sapply(l, shQuote)), collapse=" ") else ""
   system(paste(driver, shQuote(asset), pars), TRUE, wait=wait)

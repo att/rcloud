@@ -28,6 +28,6 @@ run <- function(url, query, body, headers)
                "<pre>Welcome, ", username, ".</pre>",
                "</body></html>", sep=''),
          "text/html",
-         paste("Set-Cookie: user=", username, "; domain=", rcloud.config("cookie.domain"), "; path=/;\r\nSet-Cookie: token=", token, "; domain=", rcloud.config("cookie.domain"), "; path=/;\r\nRefresh: 0.1; url=", ret, sep=''))
+         paste0(rcloud.support:::.mk.cookie(user=username, token=token), "\r\nRefresh: 0.1; url=", ret))
   } else list("<html><head></head><body>Invalid token, could not authenticate with the back-end</body></html>", "text/html")
 }

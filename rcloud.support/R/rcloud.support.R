@@ -3,7 +3,7 @@
 
 # FIXME what's the relationship between this and rcloud.config in conf.R?
 rcloud.get.conf.value <- function(key, source = NULL) {
-  Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from')
+  Allowed <- c('host', 'exec.token.renewal.time', 'github.base.url', 'github.api.url', 'github.gist.url', 'solr.page.size', 'smtp.server', 'email.from', 'support.email')
   if(key %in% Allowed) {
     if(is.null(source) || source=='default')
       getConf(key)

@@ -10,7 +10,6 @@ cookies <- function(headers) {
   } else list()
 }
 
-
 run <- function(url, query, body, headers)
 {
   encode <- rcloud.support:::URIencode
@@ -41,12 +40,12 @@ run <- function(url, query, body, headers)
       res <- unlist(rcloud.support:::session.server.auth(realm=exec.realm,user=body['user'],pwd=body['pwd']))
       if (length(res) > 2) {
           if (exec.only) {
-              extra.headers <- paste0("Set-Cookie: user=", res[2], "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: token=", res[1], "; domain=", getConf("cookie.domain"), "; path=/;")
+              extra.headers <- rcloud.support:::.mk.cookie(user=res[2], token=res[1])
               cookies$token <- res[1]
               cookies$execToken <- res[1]
               cookies$user <- res[2]
           } else {
-              extra.headers <- paste0("Set-Cookie: execUser=", res[2], "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: execToken=", res[1], "; domain=", getConf("cookie.domain"), "; path=/;")
+              extra.headers <- rcloud.support:::.mk.cookie(execUser=res[2], execToken=res[1])
               cookies$execToken <- res[1]
               cookies$execUser <- res[2]
           }
@@ -76,7 +75,7 @@ run <- function(url, query, body, headers)
       ## so we can generate a token
       token <- rcloud.support:::generate.token()
       rcloud.support:::set.token(usr, token)
-      extra.headers <- c(paste0("Set-Cookie: user=", usr, "; domain=", getConf("cookie.domain"),"; path=/;\r\nSet-Cookie: token=", token, "; domain=", getConf("cookie.domain"),"; path=/;"), extra.headers)
+      extra.headers <- c(rcloud.support:::.mk.cookie(user=usr, token=token), extra.headers)
       ## re-create the back-end because the username/token have changed
       ctx <- create.gist.backend(usr, token)
       url <- gist::auth.url(redirect, ctx=ctx)

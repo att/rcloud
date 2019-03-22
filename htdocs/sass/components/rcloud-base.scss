@@ -221,6 +221,12 @@ pre.offscreen {
     border: 0;
 }
 
+.error-link {
+    text-decoration: underline;
+    color: #b94aee;
+    cursor: pointer;
+}
+
 .cell-status {
     position: relative;
     width: 100%;

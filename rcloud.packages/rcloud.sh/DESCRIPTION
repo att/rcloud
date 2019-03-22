@@ -1,6 +1,6 @@
 Package: rcloud.sh
 Title: support for the shell language in RCloud
-Version: 0.1-1
+Version: 0.1-2
 Author: Simon Urbanek <simon.urbanek@r-project.org>
 Maintainer: Simon Urbanek <simon.urbanek@r-project.org>
 Description: Adds shell bindings for RCloud
