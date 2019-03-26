@@ -1,8 +1,8 @@
 # Setting up RCloud
 
-## Installing using VM images
+## Installing using VM or Docker images
 
-(https://github.com/att/rcloud/wiki/Cloud-Images)
+There are [DockerHub images](https://hub.docker.com/r/urbanek/rcloud-aas) as well as [VM images](https://github.com/att/rcloud/wiki/Cloud-Images) available with ready-to-run RCloud for simple configurations.
 
 ## Installing on your system
 ### Prerequisites
@@ -243,6 +243,4 @@ started as root, e.g., `sudo conf/start`. Again, use only if you know
 what you're doing since misconfiguring RCloud run as root can have
 grave security implications.
 
-## Installing from Docker Hub
 
-https://hub.docker.com/r/urbanek/rcloud-aas
