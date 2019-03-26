@@ -245,4 +245,4 @@ grave security implications.
 
 ## Installing from Docker Hub
 
-(https://hub.docker.com/r/rcl0ud/rcloud/)
+https://hub.docker.com/r/urbanek/rcloud-aas
