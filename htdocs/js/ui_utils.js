@@ -90,7 +90,7 @@ ui_utils.expandable_error = function(msg) {
         }));
         result.append(links);
         result.append(details);
-        rcloud.get_conf_value('support.email').then(function(email) {
+        if(window.rcloud) rcloud.get_conf_value('support.email').then(function(email) {
             if(!email)
                 return;
             var email_error = $("<a class='error-link'>email error</a>");
