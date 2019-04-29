@@ -34,7 +34,7 @@ run <- function(url, query, body, headers) {
   }
   if (!nzchar(fn))
     return(list(paste0("ERROR: item '", path.info, "' [", base, "] not found"), "text/plain", character(), 404L))
-  try({
+  tryCatch({
       s <- file.info(fn)$size
       f <- file(fn, "rb")
       r <- readBin(f, raw(), s)
