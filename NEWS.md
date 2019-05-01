@@ -1,3 +1,10 @@
+## RCloud 2.0.4
+
+### Improvement
+ * Jupyter adapter startup can be delayed to improve startup times. The list of languages /
+   kernel specs is cached unless disabled with `rcloud.jupyter.delayed.init: disable`
+
+
 ## RCloud 2.0.3
 
 ### Improvements
