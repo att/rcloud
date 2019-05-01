@@ -1,3 +1,14 @@
+## RCloud 2.0.3
+
+### Improvements
+ * `shared.R` can look in `www/`, `lib/`, or `htmlwidgets/` folders of packages, for
+   compatibility with the latest widgets
+ * Other languages are enabled only in IDE mode, since only R is supported for mini.html,
+   Shiny, flexdashboard, etc. This speeds up loading of dashboards.
+
+RCloud 2.0.2 fixes the build artifacts of 2.0.1
+
+
 ## RCloud 2.0.1
 
 ### Bugfixes
