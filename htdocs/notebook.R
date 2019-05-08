@@ -44,7 +44,7 @@ run <- function(url, query, body, headers)
       anonymous <- TRUE
     }
     if (is.null(init.cap)) stop("Server refused to provide RCloud session initialization capabilites - access denied")
-    RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
+    RSclient::RS.eval.qap(c, as.call(if(anonymous) list(init.cap) else list(init.cap, cookies$user, cookies$token)))
     et <- "Error fetching content:"
     version <- NULL
     ## is this first part a notebook hash?
