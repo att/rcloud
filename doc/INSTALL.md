@@ -26,7 +26,7 @@ RCloud requires R 3.1.0 or higher and several R packages. If you want to compile
 
     ## RedHat/CentOS 6+
     yum install gcc-gfortran gcc-c++ cairo-devel readline-devel libXt-devel libjpeg-devel \
-    libicu-devel boost-devel openssl-devel libcurl-devel subversion git automake redis
+    bzip2-devel xz-devel libicu-devel boost-devel openssl-devel libcurl-devel subversion git automake redis
 
 If you have already R installed you may need only a subset of the above.
 
