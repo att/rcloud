@@ -15,6 +15,7 @@
 
 RCloud 2.1.1 fixes artifacts of 2.1.0
 
+
 ## RCloud 2.1
 
 ### Features
@@ -34,6 +35,24 @@ RCloud 2.1.1 fixes artifacts of 2.1.0
  * If notebook history was showing for any notebook in a folder, renaming that folder would cause
    that notebook to be put in a folder with a hash name (#2609)
  * "Remove Folder" dialog was showing extra notebook entries (#2612)
+
+
+## RCloud 2.0.4
+
+### Improvement
+ * Jupyter adapter startup can be delayed to improve startup times. The list of languages /
+   kernel specs is cached unless disabled with `rcloud.jupyter.delayed.init: disable`
+
+
+## RCloud 2.0.3
+
+### Improvements
+ * `shared.R` can look in `www/`, `lib/`, or `htmlwidgets/` folders of packages, for
+   compatibility with the latest widgets
+ * Other languages are enabled only in IDE mode, since only R is supported for mini.html,
+   Shiny, flexdashboard, etc. This speeds up loading of dashboards.
+
+RCloud 2.0.2 fixes the build artifacts of 2.0.1
 
 
 ## RCloud 2.0.1
