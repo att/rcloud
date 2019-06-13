@@ -1,3 +1,10 @@
+## RCloud 2.1.3
+
+### Bugfixes
+ * `notebook.R` would fail with "no applicable method for `rcs.get`..." when the token was invalid but
+ `user` token was set. (#2664)
+ * Version mismatch error was not displaying (#2657)
+
 ## RCloud 2.1.2
 
 ### Improvements
