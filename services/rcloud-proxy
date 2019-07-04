@@ -1,9 +1,10 @@
 #!/bin/sh
 
-ROOT=/data/rcloud
+: ${ROOT=/data/rcloud}
+: ${RBIN=R}
 export ROOT
 
-forward=`echo 'cat(system.file("libs","forward",package="Rserve"))'|R --vanilla --slave`
+forward=`echo 'cat(system.file("libs","forward",package="Rserve"))'|"$RBIN" --vanilla --slave`
 
 if [ -z "$forward" ]; then echo 'ERROR: cannot find proxy binary - maybe you need to install Rserve?' >&2; exit 1; fi
 
