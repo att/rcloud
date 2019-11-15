@@ -12,6 +12,7 @@ while [ "$1" != "" ]; do
         --all) PACKAGE_DIRS="internal rcloud.packages packages" ;;
         --cont) BREAK=0 ;;
         --no-js) SKIP_JS=1 ;;
+        --no-jupyter) SKIP_JUPYTER=1 ;;
         --help) cat <<EOF
 
  Usage: $0 [{--base | --core | --all}] [--cont]
@@ -71,6 +72,11 @@ for dir in $PACKAGE_DIRS; do
     if [ -e $dir ]; then
         for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
             echo $pkg
+            if [ $SKIP_JUPYTER -gt 0 ] && [ "$pkg" == 'rcloud.packages/rcloud.jupyter' ]; then
+                echo 'skipping'
+                continue
+            fi
+
 	    if ! scripts/build_package.sh $pkg $repo; then
                 echo;echo;echo; echo package $pkg FAILED to build!;echo;echo
                 if [ $BREAK -gt 0 ]; then
