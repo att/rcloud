@@ -11,8 +11,13 @@ ui_utils.make_url = function(page, opts) {
     if (opts.notebook && opts.notebook !== query_params.notebook) {
       query_params = {};
     }
-    if (opts.new_notebook) {
+    else if (opts.new_notebook) {
       query_params = {};
+    }
+    else {
+      // don't override new notebook/version with old
+      delete query_params.notebook;
+      delete query_params.version;
     }
 
     if (opts.do_path) {
