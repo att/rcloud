@@ -1666,6 +1666,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                         node: node,
                         from_index: nshow
                     });
+                    ellipsis = null;
                 }
 
                 // hide or show ellipsis
