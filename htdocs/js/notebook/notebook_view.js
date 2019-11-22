@@ -2,6 +2,7 @@ Notebook.create_html_view = function(model, root_div)
 {
     var show_cell_numbers_;
     var autoscroll_notebook_output_;
+    var cellarea_ = $('#rcloud-cellarea'), last_top_, STOP_DY = 10;
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -108,10 +109,26 @@ Notebook.create_html_view = function(model, root_div)
                 view.on_scroll(event);
               });
           }
+        },
+        auto_activate: function(event) {
+            const top = cellarea_.scrollTop();
+            if(last_top_ !== undefined && Math.abs(top - last_top_) < STOP_DY) {
+                model.cells.map(cm => cm.views[0])
+                    .filter(cv => cv.is_in_view())
+                    .forEach(cv => cv.edit_source(true, null, false));
+            }
+            last_top_ = top;
+        },
+        load_options() {
+            return rcloud.config.get_user_option('autoactivate-cells').then(function(auto) {
+                if(auto===null || auto) { // default true
+                    RCloud.UI.cell_commands.remove('edit');
+                    window.setInterval(result.auto_activate, 100);
+                }
+            });
         }
     };
     model.views.push(result);
-    
-    $('#rcloud-cellarea').on('scroll', function(event) { result.on_scroll(event); });
+    cellarea_.on('scroll', function(event) { result.on_scroll(event); });
     return result;
 };

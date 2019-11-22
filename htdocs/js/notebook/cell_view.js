@@ -716,7 +716,7 @@ function create_cell_html_view(language, cell_model) {
         return 'find-highlight' + ' ' + kind;
     }
     function edit_button_border(whether) {
-        if(cell_controls_)
+        if(cell_controls_ && cell_controls_.controls['edit'])
             cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', whether);
     }
     function results_button_border(whether) {
@@ -933,9 +933,10 @@ function create_cell_html_view(language, cell_model) {
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
         },
-        edit_source: function(edit_mode, event) {
+        edit_source: function(edit_mode, event, focus) {
+            if(focus === undefined) focus = true;
             if(edit_mode === edit_mode_) {
-                if(edit_mode)
+                if(edit_mode && focus)
                     ace_widget_.focus();
                 return;
             }
@@ -986,7 +987,8 @@ function create_cell_html_view(language, cell_model) {
                     cell_controls_.set_flag('edit', true);
                 outer_ace_div.show();
                 ace_widget_.resize(); // again?!?
-                ace_widget_.focus();
+                if(focus)
+                    ace_widget_.focus();
                 if(event) {
 
                     scrollable_area.scrollTop(offset);
@@ -1045,6 +1047,14 @@ function create_cell_html_view(language, cell_model) {
                     $('#rcloud-cellarea').scrollTop(scroll_top - $('#rcloud-cellarea').height() + config.lineHeight);
                 }
             }
+        },
+        is_in_view: function() {
+            const $cellarea = $('#rcloud-cellarea'),
+                  scrollrect = $cellarea[0].getBoundingClientRect(),
+                  height = scrollrect.bottom - scrollrect.top,
+                  rect = notebook_cell_div[0].getBoundingClientRect();
+            const result = rect.top < scrollrect.top + height && rect.bottom > scrollrect.top;
+            return result;
         },
         toggle_source: function() {
             this.hide_source($(source_div_).is(":visible"));
