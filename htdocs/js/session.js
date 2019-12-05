@@ -206,8 +206,7 @@ function rclient_promise(allow_anonymous, on_connect_error_handler) {
             on_connect_anonymous_disallowed(ocaps);
         return promise;
     }).then(function(hello) {
-        if (!$("#output > .response").length)
-            rclient.post_response(hello);
+        rclient.post_response(hello[0]);
     }).catch(on_connect_error_handler).then(function() {
         return Promise.all([
             rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {

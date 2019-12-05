@@ -91,10 +91,12 @@ RClient = {
             running: false,
 
             post_response: function (msg) {
-                var d = $("<pre class='response'></pre>").html(msg);
-                //$(d).insertBefore("#selection-bar");//.insertBefore(d);
-
-                $('#output').append(d);
+                var response = d3.select('#output').selectAll('pre.response').data([msg]);
+                response.exit().remove();
+                response.enter().append('pre')
+                    .attr('class', 'response');
+                response
+                    .html(d => d);
             },
 
             post_rejection: function(e) {
