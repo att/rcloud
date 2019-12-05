@@ -111,6 +111,7 @@ Notebook.create_html_view = function(model, root_div)
           }
         },
         auto_activate: function(event) {
+            if(shell.notebook.model.read_only()) return;
             const top = cellarea_.scrollTop(), dy = Math.abs(top - last_top_);
             if(last_top_ !== undefined && dy < STOP_DY) {
                 model.cells.map(cm => cm.views[0])
