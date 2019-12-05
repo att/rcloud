@@ -1,4 +1,24 @@
+## RCloud 2.2
+
+### Improvements
+ * Cells are automatically activated when in view. There is only one cursor, one selection, and one
+   active line across all cells. The edit mode button is removed. (#2691, #2682)
+ * Command prompt is focused when its language is changed (#2678)
+ * Welcome message is replaced when starting a new session (#2669)
+
+### Bugfixes
+ * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
+ * Debug output was too verbose, obscuring errors reported by R (#2685)
+ * Errors in search are reported (not with enough detail though) (#2670)
+ * Version was not changing in URL when navigating history (#2687)
+ * Ellipsis could disappear when navigating history, making it impossible to show more (#2686)
+ * Recent notebooks were not always colored (#2677)
+ * Service script respect `RBIN` and `ROOT`
+
+
 ## RCloud 2.1.3
+
+This version was planned but never officially released - changes are available in v2.2
 
 ### Bugfixes
  * `notebook.R` would fail with "no applicable method for `rcs.get`..." when the token was invalid but
