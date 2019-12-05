@@ -72,8 +72,8 @@ for dir in $PACKAGE_DIRS; do
     if [ -e $dir ]; then
         for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
             echo $pkg
-            if [ $SKIP_JUPYTER -gt 0 ] && [ "$pkg" == 'rcloud.packages/rcloud.jupyter' ]; then
-                echo 'skipping'
+            if [ -n "$SKIP_JUPYTER" ] && [ "$pkg" == 'rcloud.packages/rcloud.jupyter' ]; then
+                echo skipping
                 continue
             fi
 
