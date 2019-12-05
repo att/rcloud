@@ -42,7 +42,15 @@ RCloud.UI.search = (function() {
         }
         $('#order-by').val(orderby);
     }
-    
+
+    function extract_error(msg) {
+        if(/Bad Request/.test(msg))
+            return 'Syntax error in query';
+        else if(/Couldn't connect to server/.test(msg))
+            return "Couldn't connect to notebook search server (solr)";
+        else return "Unknown error (see browser log)";
+    }
+
     return {
         body: function() {
             return RCloud.UI.panel_loader.load_snippet('search-snippet');
@@ -234,6 +242,10 @@ RCloud.UI.search = (function() {
                 return rcloud.search(query, all_sources(), sortby, orderby, start, page_size_)
                 .then(function(v) {
                     create_list_of_search_results(v);
+                })
+                .catch(function(error) {
+                    console.log('search error', error);
+                    summary(extract_error(error), 'darkred');
                 });
             });
         }
