@@ -370,7 +370,7 @@ function create_cell_html_view(language, cell_model) {
     }
     
     // start trying to refactor out this repetitive nonsense
-    function ace_stuff(div, content) {
+    function ace_stuff(div, content, focus) {
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(div[0]);
         var session = widget.getSession();
@@ -458,7 +458,26 @@ function create_cell_html_view(language, cell_model) {
 
         widget.setOptions({
             enableBasicAutocompletion: true,
-            autoScrollEditorIntoView: true
+            autoScrollEditorIntoView: true,
+            highlightActiveLine: focus,
+            highlightGutterLine: focus
+        });
+        if(!focus)
+            widget.renderer.$cursorLayer.element.style.display = "none";
+        widget.on('focus', function() {
+            widget.setOptions({
+                highlightActiveLine: true,
+                highlightGutterLine: true
+            });
+            widget.renderer.$cursorLayer.element.style.display = null;
+        });
+        widget.on('blur', function() {
+            widget.setOptions({
+                highlightActiveLine: false,
+                highlightGutterLine: false
+            });
+            widget.getSelection().clearSelection();
+            widget.renderer.$cursorLayer.element.style.display = "none";
         });
 
         widget.setTheme("ace/theme/chrome");
@@ -489,10 +508,10 @@ function create_cell_html_view(language, cell_model) {
         result.state_changed(new_state);
     }
 
-    function create_edit_widget() {
+    function create_edit_widget(focus) {
         if(ace_widget_) return;
 
-        var aaa = ace_stuff(ace_div, cell_model.content());
+        var aaa = ace_stuff(ace_div, cell_model.content(), focus);
         ace_widget_ = aaa.widget;
         ace_session_ = aaa.session;
         ace_document_ = aaa.document;
@@ -950,7 +969,7 @@ function create_cell_html_view(language, cell_model) {
                     this.hide_source(false);
                 var editor_height = code_div_.height();
                 code_div_.hide();
-                create_edit_widget();
+                create_edit_widget(focus);
                 /*
                  * Some explanation for the next poor soul
                  * that might come across this great madness below:
