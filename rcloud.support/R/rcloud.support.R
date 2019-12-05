@@ -414,7 +414,7 @@ rcloud.fork.notebook <- function(id, source = NULL) {
         ## it acts as a safe-guard, and the latter is really what we need
         if (!is.null(group))
             src.nb <- rcloud.get.notebook(id, source = source, raw = TRUE)
-        new.nb <- rcloud.create.notebook(src.nb$content)
+        new.nb <- rcloud.create.notebook(src.nb$content[c('files','public','description')])
         if (!isTRUE(new.nb$ok)) stop("failed to create new notebook")
         rcloud.set.notebook.property(new.nb$content$id, "fork_of",
                                      new.nb$fork_of <-
