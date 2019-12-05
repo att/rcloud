@@ -2,7 +2,7 @@ Notebook.create_html_view = function(model, root_div)
 {
     var show_cell_numbers_;
     var autoscroll_notebook_output_;
-    var cellarea_ = $('#rcloud-cellarea'), last_top_, STOP_DY = 10;
+    var cellarea_ = $('#rcloud-cellarea'), last_top_, STOP_DY = 100;
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -111,8 +111,8 @@ Notebook.create_html_view = function(model, root_div)
           }
         },
         auto_activate: function(event) {
-            const top = cellarea_.scrollTop();
-            if(last_top_ !== undefined && Math.abs(top - last_top_) < STOP_DY) {
+            const top = cellarea_.scrollTop(), dy = Math.abs(top - last_top_);
+            if(last_top_ !== undefined && dy < STOP_DY) {
                 model.cells.map(cm => cm.views[0])
                     .filter(cv => cv.is_in_view())
                     .forEach(cv => cv.edit_source(true, null, false));
