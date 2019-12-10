@@ -50,6 +50,11 @@ function main() {
                     notebook = result[0];
                 });
             }
+            if(!notebook) {
+                notebook = window.location.pathname.replace(/\/notebook.R\/([a-z0-9]+)\/.*/, '$1');
+                if(notebook)
+                    version = window.location.pathname.replace(/\/notebook.R\/[a-z0-9]+\/([a-z0-9]+)\/.*/, '$1');
+            }
             var tag = getURLParameter("tag");
             if(!version && tag) {
                 promise = promise.then(function() {
