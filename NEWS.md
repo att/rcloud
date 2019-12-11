@@ -6,6 +6,7 @@
  * Command prompt is focused when its language is changed (#2678)
  * Welcome message is replaced when starting a new session (#2669)
  * mini.js detects notebook and version in `notebook.R` URLs (#2650)
+ * Host name is logged to browser console when session starts (#2663)
 
 ### Bugfixes
  * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
