@@ -119,6 +119,7 @@ unauthenticated.ocaps <- function(mode, compute)
     rcloud=list(
       authenticated = FALSE,
       mode = mode,
+      hostname = Sys.info()["nodename"],
       version_info = make.oc(rcloud.info),
       anonymous_session_init = make.oc(rcloud.anonymous.session.init),
       anonymous_compute_init = compute$unauthenticated_compute_init,
