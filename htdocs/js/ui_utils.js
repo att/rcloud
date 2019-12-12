@@ -15,9 +15,10 @@ ui_utils.make_url = function(page, opts) {
       query_params = {};
     }
     else {
-      // don't override new notebook/version with old
+      // don't override new notebook/version/tag with old
       delete query_params.notebook;
       delete query_params.version;
+      delete query_params.tag;
     }
 
     if (opts.do_path) {
