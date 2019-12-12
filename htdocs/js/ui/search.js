@@ -2,7 +2,7 @@ RCloud.UI.search = (function() {
     var page_size_ = 10;
     var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
     "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
-    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/4_10_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms\">link</a> to learn about Lucene syntax. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/7_1_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms\">link</a> to learn about Lucene syntax. " ,
     "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
     
     function go_to_page(page_num,incr_by){

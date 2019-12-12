@@ -1,12 +1,15 @@
 ## RCloud 2.2
 
-### Improvements
+### Feature
  * Cells are automatically activated when in view. There is only one cursor, one selection, and one
-   active line across all cells. The edit mode button is removed. (#2691, #2682)
+   active line across all cells. The edit button is removed from cells. (#2691, #2682)
+
+### Improvements
  * Command prompt is focused when its language is changed (#2678)
  * Welcome message is replaced when starting a new session (#2669)
- * mini.js detects notebook and version in `notebook.R` URLs (#2650)
+ * mini.js detects notebook and version, or user and path, in `notebook.R` URLs (#2650)
  * Host name is logged to browser console when session starts (#2663)
+ * Link to search schema in search panel (#2667)
 
 ### Bugfixes
  * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
