@@ -6,7 +6,6 @@
 
 ### Improvements
  * Command prompt is focused when its language is changed (#2678)
- * Welcome message is replaced when starting a new session (#2669)
  * mini.js detects notebook and version, or user and path, in `notebook.R` URLs (#2650)
  * Host name is logged to browser console when session starts (#2663)
  * Link to search schema in search panel (#2667)
@@ -14,6 +13,7 @@
 ### Bugfixes
  * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
  * Debug output was too verbose, obscuring errors reported by R (#2685)
+ * Welcome message became stale when a new session started; now it is refreshed (#2669)
  * Errors in search are reported (not with enough detail though) (#2670)
  * Version was not changing in URL when navigating history (#2687)
  * Ellipsis could disappear when navigating history, making it impossible to show more (#2686)
