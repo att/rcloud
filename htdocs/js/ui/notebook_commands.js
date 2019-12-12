@@ -136,6 +136,17 @@ RCloud.UI.notebook_commands = (function() {
                         return remove;
                     }
                 },
+                fork_notebook: {
+                    section: 'appear',
+                    sort: 2500,
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork notebook', 'fork', icon_style_, true);
+                        fork.click(function(e) {
+                            editor.fork_notebook(node.user === editor.username(), node.gistname, node.version, true);
+                        });
+                        return fork;
+                    }
+                },
                 fork_folder: {
                     section: 'appear',
                     sort: 1000,
@@ -143,7 +154,7 @@ RCloud.UI.notebook_commands = (function() {
                         return node.full_name && !node.gistname;
                     },
                     create: function(node) {
-                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork folder', 'fork', icon_style_, true);
                         fork.click(function(e) {
                             var orig_name = node.full_name, orig_name_regex = new RegExp('^' + orig_name);
                             editor.find_next_copy_name(orig_name).then(function(folder_name) {
