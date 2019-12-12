@@ -685,6 +685,7 @@ RClient = {
                     on_error(err[0], err[1]);
                 else {
                     ocaps = Promise.promisifyAll(ocaps);
+                    console.log('Connected to rcloud host', ocaps.rcloud.hostname[0]);
                     if(ocaps === null) {
                         on_error("Login failed. Shutting down!");
                     }
@@ -859,9 +860,10 @@ ui_utils.make_url = function(page, opts) {
       query_params = {};
     }
     else {
-      // don't override new notebook/version with old
+      // don't override new notebook/version/tag with old
       delete query_params.notebook;
       delete query_params.version;
+      delete query_params.tag;
     }
 
     if (opts.do_path) {
@@ -10796,6 +10798,17 @@ RCloud.UI.notebook_commands = (function() {
                         return remove;
                     }
                 },
+                fork_notebook: {
+                    section: 'appear',
+                    sort: 2500,
+                    create: function(node) {
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork notebook', 'fork', icon_style_, true);
+                        fork.click(function(e) {
+                            editor.fork_notebook(node.user === editor.username(), node.gistname, node.version, true);
+                        });
+                        return fork;
+                    }
+                },
                 fork_folder: {
                     section: 'appear',
                     sort: 1000,
@@ -10803,7 +10816,7 @@ RCloud.UI.notebook_commands = (function() {
                         return node.full_name && !node.gistname;
                     },
                     create: function(node) {
-                        var fork = ui_utils.fa_button('icon-code-fork', 'fork', 'fork', icon_style_, true);
+                        var fork = ui_utils.fa_button('icon-code-fork', 'fork folder', 'fork', icon_style_, true);
                         fork.click(function(e) {
                             var orig_name = node.full_name, orig_name_regex = new RegExp('^' + orig_name);
                             editor.find_next_copy_name(orig_name).then(function(folder_name) {
@@ -12108,7 +12121,7 @@ RCloud.UI.search = (function() {
     var page_size_ = 10;
     var search_err_msg = ["<p style=\"color:black;margin:0;\">The search engine in RCloud uses Lucene for advanced search features." ,
     "It appears you may have used one of the special characters in Lucene syntax incorrectly. " ,
-    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/4_10_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms\">link</a> to learn about Lucene syntax. " ,
+    "Please see this <a target=\"_blank\" href=\"http://lucene.apache.org/core/7_1_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Terms\">link</a> to learn about Lucene syntax. " ,
     "</p><p style=\"color:black;margin:0;\">Or, if you mean to search for the character itself, escape it using a backslash, e.g. \"foo\\:\"</p>"];
     
     function go_to_page(page_num,incr_by){
