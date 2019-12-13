@@ -15,8 +15,10 @@
  * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
  * Debug output was too verbose, obscuring errors reported by R (#2685)
  * Welcome message became stale when a new session started; now it is refreshed (#2669)
+ * Session pane could lock up when there is a lot of output, preventing scrolling (#2690)
+ * Notebook content copied and pasted in MacOS was invisible due to bad formatting (#1764)
  * Errors in search are reported (not with enough detail though) (#2670)
- * Version was not changing in URL when navigating history (#2687); tag was stuck (#2697)
+ * Version was not changing in URL when navigating history (#2687); tag was stuck too (#2697)
  * Ellipsis could disappear when navigating history, making it impossible to show more (#2686)
  * Recent notebooks were not always colored (#2677)
  * Service script respect `RBIN` and `ROOT`
