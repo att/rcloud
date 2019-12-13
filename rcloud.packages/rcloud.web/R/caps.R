@@ -35,12 +35,12 @@ rcw.in <- function(element, expr) {
 
 rcw.cookies <- function(raw=FALSE) {
     cookies <- caps$cookies()
-    if (!raw) { ## parse?
+    (if (!raw) { ## parse?
         if (length(cookies) && nzchar(cookies)) ## valid cookie header?
             as.list(sapply(strsplit(strsplit(cookies, ";\\s*")[[1]], "=", TRUE),
                            function(o) { x = URLdecode(o[2]); names(x) = URLdecode(o[1]); x}))
         else list()
-    } else cookies
+    } else cookies)
 }
 
 rcw.url <- function(detailed=TRUE) (if (detailed) caps$url() else caps$url()$url)

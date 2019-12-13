@@ -1,5 +1,6 @@
 rcw.parameters <- function(cached=FALSE) {
-    if (cached && !is.null(rcloud.support:::.session$rcw.parameters)) rcloud.support:::.session$rcw.parameters
+    s <- rcloud.support:::.session
+    if (cached && !is.null(s$rcw.parameters)) s$rcw.parameters
     query <- gsub("^\\?", "", rcw.url()$query)
     comp <- strsplit(query, "&", TRUE)[[1]]
     nam<- gsub("=.*", "", comp)
@@ -7,7 +8,7 @@ rcw.parameters <- function(cached=FALSE) {
     t <- nchar(comp)
     val <- substr(comp, n, t)
     names(val) <- nam
-    (rcloud.support:::.session$rcw.parameters <- as.list(val))
+    (s$rcw.parameters <- as.list(val))
 }
 
 rcw.parameter <- function(name, default=NULL, cached=FALSE) {
