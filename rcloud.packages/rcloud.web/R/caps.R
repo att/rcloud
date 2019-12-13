@@ -47,17 +47,6 @@ rcw.url <- function(detailed=TRUE) (if (detailed) caps$url() else caps$url()$url
 
 rcw.redirect <- function(url) caps$setLocation(url)
 
-rcw.parameters <- function() {
-    query <- gsub("^\\?", "", rcw.url()$query)
-    comp <- strsplit(query, "&", TRUE)[[1]]
-    nam<- gsub("=.*", "", comp)
-    n <- nchar(nam) + 2L
-    t <- nchar(comp)
-    val <- substr(comp, n, t)
-    names(val) <- nam
-    as.list(val)
-}
-
 .handleFrontendResult <- function(result) {
   if(!is.na(result) && !is.logical(result)) {
     if(!is.null(result$message)) {
