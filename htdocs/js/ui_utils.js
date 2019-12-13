@@ -815,21 +815,23 @@ ui_utils.hide_selectize_dropdown = function() {
 // in order to remove the .nonselectables
 ui_utils.select_allowed_elements = function(callback) {
     var sel = window.getSelection();
-    var offscreen = $('<pre class="offscreen"></pre>');
+    var offscreen = $('<div class="offscreen" />'),
+        content = $('<pre />');
 
-    $('body').append(offscreen);
+    offscreen.append(content);
+    $('body').append(content);
 
     for(var i=0; i < sel.rangeCount; ++i) {
         var range = sel.getRangeAt(i);
-        offscreen.append(range.cloneContents());
+        content.append(range.cloneContents());
     }
 
-    offscreen.find('.nonselectable').remove();
+    content.find('.nonselectable').remove();
     // Firefox throws an exception if you try to select children and there are none(!)
-    if(offscreen.is(':empty'))
+    if(content.is(':empty'))
         sel.removeAllRanges();
     else
-        sel.selectAllChildren(offscreen[0]);
+        sel.selectAllChildren(content[0]);
 
     window.setTimeout(function() {
         offscreen.remove();
