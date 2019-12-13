@@ -14,6 +14,8 @@
 ## so we have to parse them
 parse.headers <- function(o) .Call(rcloud.support:::parse_headers, o)
 
+ulog <- Rserve:::ulog
+
 get.passthru.headers <- function() {
   OPT <- "rcloud.proxy.headers.passthru"
   if(nzConf(OPT)) {
@@ -44,8 +46,10 @@ run <- function(url, query, body, headers) {
     ## FIXME: this is a hack for testing ...
     rcloud.support:::session.init.rcs()
     info <- rcloud.session.info(id, user)
-    if (is.null(info))
+    if (is.null(info)) {
+        ulog("ERROR: proxy.R: Non-existent session in ", url)
         return(list("Non-existent session", "text/plain", character(), 404L))
+    }
     fwd <- paste(p[-(1:3)], collapse='/')
     url <- paste0("http://", info$host, ":", port, "/", fwd)
     if (isTRUE(any(nzchar(query)))) url <- paste0(url, "?", paste(URIencode(names(query)), "=", URIencode(query), sep='', collapse='&'))
@@ -67,10 +71,12 @@ run <- function(url, query, body, headers) {
     ## thus may need to be passed through.
     ct <- res$headers$`content-type`
     if (is.null(ct)) ct <- 'text/plain'
+    ulog("INFO: proxy.R: code ", res$status_code, ", length ", length(res$content), ", content-type ", ct)
     list(res$content, ct, process.headers(res$headers), res$status_code)
     }, error=function(e) {
-        list(paste0("ERROR: ",paste(e$message, collapse="\n"),"\n",
-                    paste(capture.output({print(url); str(list(url=url,body=body,headers=headers))}),collapse="\n")),
-             "text/plain", 504)
+        err <- paste0("ERROR: ",paste(e$message, collapse="\n"),"\n",
+                      paste(capture.output({print(url); str(list(host=.session$host, url=url, body=body, headers=headers))}),collapse="\n"))
+        ulog("ERROR: proxy.R: ", gsub("\n", " -=- ", err, fixed=TRUE))
+        list(err, "text/plain", character(), 504L)
     })
 }
