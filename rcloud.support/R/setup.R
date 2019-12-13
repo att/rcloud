@@ -87,6 +87,9 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   setConf("host", tolower(system("hostname -f 2>/dev/null", TRUE)))
   cat("Starting Rserve on", getConf("host"),"\n")
 
+  ## populate $host mostly so it is available for logging
+  .session$host <- getConf("host")
+
   ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
   ## ideally, all of the above should be superceded by the configuration file
   rc.cf <- pathConf("configuration.root", "rcloud.conf")
