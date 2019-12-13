@@ -67,6 +67,9 @@ if [ -d pkg-repo ]; then
     echo "Package repository: $repo"
 fi
 
+## rcloud.support is pre-requisite for all
+scripts/build_package.sh rcloud.support $repo || exit 1
+
 # build internal packages (not in git) & rcloud.packages
 for dir in $PACKAGE_DIRS; do
     if [ -e $dir ]; then
@@ -88,7 +91,6 @@ for dir in $PACKAGE_DIRS; do
 done
 
 scripts/build_package.sh rcloud.client $repo || exit 1
-scripts/build_package.sh rcloud.support $repo || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info
