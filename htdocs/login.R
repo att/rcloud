@@ -49,7 +49,15 @@ run <- function(url, query, body, headers)
               cookies$execToken <- res[1]
               cookies$execUser <- res[2]
           }
-      } else return(list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html"))
+      } else return({
+          ret <- rcloud.support:::getConf("authfail.page")
+          if (is.null(ret))
+              list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html")
+          else {
+              if (!is.null(redirect)) ret <- paste0(ret, "?redirect=", encode(redirect))
+              list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",ret,"\"'></head></html>", sep=''), "text/html")
+          }
+      })
     } else if (exec.only) cookies$execToken <- cookies$token ## use only the "token" cookie in exec-only mode
 
     if (is.null(cookies$execToken))

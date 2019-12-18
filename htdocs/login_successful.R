@@ -16,7 +16,7 @@ run <- function(url, query, body, headers)
   ctx <- create.gist.backend()
   res <- gist::access.token(query, ctx=ctx)
   token <- res$token
-  ret <- res$redirect
+  ret <- redirect <- res$redirect
   if (is.null(ret)) ret <- '/edit.html'
 
   ## create new context with the token
@@ -29,5 +29,13 @@ run <- function(url, query, body, headers)
                "</body></html>", sep=''),
          "text/html",
          paste0(rcloud.support:::.mk.cookie(user=username, token=token), "\r\nRefresh: 0.1; url=", ret))
-  } else list("<html><head></head><body>Invalid token, could not authenticate with the back-end</body></html>", "text/html")
+  } else {
+      ret <- rcloud.support:::getConf("tokenfail.page")
+      if (is.null(ret))
+          list("<html><head></head><body>Invalid token, could not authenticate with the back-end</body></html>", "text/html")
+      else {
+          if (!is.null(redirect)) ret <- paste0(ret, "?redirect=", encode(redirect))
+          list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",ret,"\"'></head></html>", sep=''), "text/html")
+      }
+  }
 }
