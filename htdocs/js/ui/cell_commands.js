@@ -37,7 +37,6 @@ RCloud.UI.cell_commands = (function() {
     }
 
     var result = {
-        extension: () => extension_,
         create_button: function(awesome, text, action) {
             var control = ui_utils.fa_button(awesome, text);
             control.click(function(e) {
@@ -202,10 +201,7 @@ RCloud.UI.cell_commands = (function() {
                     sort: 3000,
                     create: function(cell_model, cell_view) {
                         return that.create_button("icon-edit borderable", "toggle edit mode", function() {
-                            if(cell_model.parent_model.auto_activate()) {
-                                if(cell_view.toggle_source())
-                                    cell_view.edit_source(true);
-                            } else if(cell_model.parent_model.read_only())
+                            if(cell_model.parent_model.read_only())
                                 cell_view.toggle_source();
                             else
                                 cell_view.toggle_edit();

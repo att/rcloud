@@ -130,7 +130,19 @@ Notebook.create_html_view = function(model, root_div)
                 auto = auto===null || auto; // default true
                 if(auto) {
                     model.auto_activate(true);
-                    RCloud.UI.cell_commands.extension().get('edit').display_flags = ['markdown'];
+                    RCloud.UI.cell_commands.add({
+                        edit: {
+                            area: 'cell',
+                            sort: 3000,
+                            display_flags: ['markdown'],
+                            create: function(cell_model, cell_view) {
+                                return RCloud.UI.cell_commands.create_button("icon-edit borderable", "toggle source", () => {
+                                    if(cell_view.toggle_source())
+                                        cell_view.edit_source(true);
+                                });
+                            }
+                        }
+                    });
                     window.setInterval(result.auto_activate, 100);
                 }
             });
