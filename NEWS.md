@@ -2,7 +2,8 @@
 
 ### Feature
  * Cells are automatically activated when in view. There is only one cursor, one selection, and one
-   active line across all cells. The edit button is removed from cells. (#2691, #2682)
+   active line across all cells. The edit button is only displayed in markdown cells, where
+   it only means "toggle source". (#2691, #2682, #2701)
 
 ### Improvements
  * Fork an individual notebook from the notebook tree (#2647)
