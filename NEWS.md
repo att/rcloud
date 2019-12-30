@@ -16,6 +16,12 @@
  * Link to search schema in search panel (#2667)
  * Added more informative errors and logging when languages are loaded (#2689)
 
+### Upgrade considerations
+ * The default for `welcome.page` has changed to `/rcloud.html` since we are supplying
+   it as the login page in the RCloud sources.
+   _Important:_ if your installation relied on the old default, you should add
+   `welcome.page: /welcome.html` to `rcloud.conf` to restore the old behavior.
+
 ### Bugfixes
  * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
  * Debug output was too verbose, obscuring errors reported by R (#2685)
