@@ -32,7 +32,7 @@ run <- function(url, query, body, headers)
     if (isTRUE(cookies$user == usr) && !rcloud.support:::check.user.token.pair(usr, cookies$token)) cookies$user <- NULL
   } else  if (!is.null(getConf("exec.auth"))) {
     ret <- rcloud.support:::getConf("welcome.page")
-    if (is.null(ret)) ret <- '/welcome.html'
+    if (is.null(ret)) ret <- '/rcloud.html'
     if (!is.null(redirect)) ret <- paste0(ret, "?redirect=", encode(redirect))
     if (is.null(getConf("session.server")))
       return(list("<html><head></head><body>ERROR: This RCloud instance is not properly configured: Exec.auth is set, but session.server is not!", "text/html"))
