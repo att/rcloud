@@ -23,7 +23,7 @@ run <- function(url, query, body, headers)
   ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
   if (! "redirect" %in% names(query)) redirect <- body["redirect"]
-  if (is.character(redirect) && !nzchar(redirect)) redirect <- NULL
+  redirect <- if (is.character(redirect) && !nzchar(redirect)) NULL else URLdecode(redirect)
   if (!is.null(redirect) && isTRUE(any(is.na(redirect)))) redirect <- NULL
 
   if (isTRUE(getConf("exec.auth") == "as-local")) { ## special case where RCloud is run in single-user mode, create token for the unix user
