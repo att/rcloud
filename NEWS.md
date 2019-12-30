@@ -10,7 +10,7 @@
  * `rcloud.html` accepts `error=` query string which will be shown in red. This makes more
    user-friendly error handling of authentication possible, e.g.:
 
-       authfail.page: /rcloud.html?error=Authentication failed, please check you login and password.
+       authfail.page: /rcloud.html?error=Authentication failed, please check your login and password.
 
 ### Improvements
  * Fork an individual notebook from the notebook tree (#2647)
