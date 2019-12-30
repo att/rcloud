@@ -41,6 +41,7 @@ RCloud Jupyter package uses these settings from `rcloud.conf`:
  * `rcloud.jupyter.kernel.startup.timeout` - timeout (in seconds) for Jupyter kernels to start up, default 600 seconds (optional)
  * `rcloud.jupyter.cell.exec.timeout` - timeout (in seconds) for Jupyter cells executions, default 1200 seconds (optional)
  * `rcloud.jupyter.language.mapping.config` - specifies custom location of mapping.json file (optional)
+ * `rcloud.jupyter.delayed.init` - if set to `disable` then Jupyter will be always initialized immediately on load. If not set, the default is to only initialize Jupyter if there is no cached list of kernels and/or when a language is actually used. Note that the cache (`.rcloud.jupyter.kernelspec.cache.rds` in user's RCloud home) is valid for 24h.
 
 To enable `rcloud.jupyter` add it to `rcloud.languages` setting in `rcloud.conf` AND remove `rcloud.python` if it is listed there.
 
