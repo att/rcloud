@@ -54,7 +54,7 @@ run <- function(url, query, body, headers)
           if (is.null(ret))
               list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html")
           else {
-              if (!is.null(redirect)) ret <- paste0(ret, if (isTRUE(grepl("?", ret))) "&" else "?", "redirect=", encode(redirect))
+              if (!is.null(redirect)) ret <- paste0(ret, if (isTRUE(grepl("?", ret, fixed=TRUE))) "&" else "?", "redirect=", encode(redirect))
               list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",ret,"\"'></head></html>", sep=''), "text/html")
           }
       })
