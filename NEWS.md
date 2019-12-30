@@ -7,6 +7,10 @@
  * Added `authfail.page` and `tokenfail.page` configuration directives that allow for customization
    of pages that are shown on failed authentication. (#2699)
  * Added `rcloud.web::rcw.parameter()` and caching to `rcw.parameters()` (#2676)
+ * `rcloud.html` accepts `error=` query string which will be shown in red. This makes more
+   user-friendly error handling of authentication possible, e.g.:
+
+       authfail.page: /rcloud.html?error=Authentication failed, please check you login and password.
 
 ### Improvements
  * Fork an individual notebook from the notebook tree (#2647)

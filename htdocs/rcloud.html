@@ -50,6 +50,7 @@ window.onload = function(e) {
   }
   document.loginForm.user.focus();
   document.getElementById('i_redirect').value=querystring('redirect');
+  document.getElementById('error').innerHTML = decodeURI(querystring('error'));
   true
 }
 </script>
@@ -62,6 +63,7 @@ window.onload = function(e) {
 <font size="+5">Welcome to RCloud.</font>
 <p>
 <div>
+<div id="error" style="color: red; font-weight: bold"></div>
 <div id='login'>
 <form action="/login.R" method=POST name=loginForm>
 <input type=hidden name=action value="execLogin">
