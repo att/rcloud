@@ -1,29 +1,37 @@
 ## RCloud 2.2
 
-### Feature
+### Features
  * Cells are automatically activated when in view. There is only one cursor, one selection, and one
    active line across all cells. The edit button is only displayed in markdown cells, where
    it only means "toggle source". (#2691, #2682, #2701)
+ * Added `authfail.page` and `tokenfail.page` configuration directives that allow for customization
+   of pages that are shown on failed authentication. (#2699)
+ * Added `rcloud.web::rcw.parameter()` and caching to `rcw.parameters()` (#2676)
 
 ### Improvements
  * Fork an individual notebook from the notebook tree (#2647)
- * mini.js detects notebook and version, or user and path, in `notebook.R` URLs (#2650)
+ * `mini.js` detects notebook and version, or user and path, in `notebook.R` URLs (#2650)
  * Host name is logged to browser console when session starts (#2663)
  * Command prompt is focused when its language is changed (#2678)
  * Link to search schema in search panel (#2667)
+ * Added more informative errors and logging when languages are loaded (#2689)
 
 ### Bugfixes
  * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
  * Debug output was too verbose, obscuring errors reported by R (#2685)
  * Welcome message became stale when a new session started; now it is refreshed (#2669)
  * Session pane could lock up when there is a lot of output, preventing scrolling (#2690)
- * Notebook content copied and pasted in MacOS was invisible due to bad formatting (#1764)
+ * Notebook content copied and pasted in macOS was invisible due to bad formatting (#1764)
  * Errors in search are reported (not with enough detail though) (#2670)
  * Version was not changing in URL when navigating history (#2687); tag was stuck too (#2697)
  * Ellipsis could disappear when navigating history, making it impossible to show more (#2686)
  * Recent notebooks were not always colored (#2677)
  * Service script respect `RBIN` and `ROOT`
-
+ * `build_package.sh` (and by proxy `build.sh`) correctly stops if the package was
+   not successfully installed. (#2651)
+ * `rcloud.viewer` no longer breaks due to an error in `cbind` in `dplyr` (#2674)
+ * `rcloud.web::rcw.cookies`: no longer breaks when there is no `Cookies:` header (#2698)
+ * `proxy.R` correctly fails with appropriate 504 error if forwarding failed (#2693)
 
 ## RCloud 2.1.3
 
