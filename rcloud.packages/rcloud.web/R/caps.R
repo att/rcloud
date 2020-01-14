@@ -32,28 +32,20 @@ rcw.in <- function(element, expr) {
     on.exit({ rcloud.flush.plot(); rcloud.close.context(ctx) })
     expr
 }
+
 rcw.cookies <- function(raw=FALSE) {
     cookies <- caps$cookies()
-    if (!raw) {
-        cookies <- as.list(sapply(strsplit(strsplit(cookies, ";\\s*")[[1]], "=", TRUE),
-                                  function(o) { x = URLdecode(o[2]); names(x) = URLdecode(o[1]); x}))
-    }
-    (cookies)
+    (if (!raw) { ## parse?
+        if (length(cookies) && nzchar(cookies)) ## valid cookie header?
+            as.list(sapply(strsplit(strsplit(cookies, ";\\s*")[[1]], "=", TRUE),
+                           function(o) { x = URLdecode(o[2]); names(x) = URLdecode(o[1]); x}))
+        else list()
+    } else cookies)
 }
+
 rcw.url <- function(detailed=TRUE) (if (detailed) caps$url() else caps$url()$url)
 
 rcw.redirect <- function(url) caps$setLocation(url)
-
-rcw.parameters <- function() {
-    query <- gsub("^\\?", "", rcw.url()$query)
-    comp <- strsplit(query, "&", TRUE)[[1]]
-    nam<- gsub("=.*", "", comp)
-    n <- nchar(nam) + 2L
-    t <- nchar(comp)
-    val <- substr(comp, n, t)
-    names(val) <- nam
-    as.list(val)
-}
 
 .handleFrontendResult <- function(result) {
   if(!is.na(result) && !is.logical(result)) {

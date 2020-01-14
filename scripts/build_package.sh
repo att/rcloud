@@ -32,7 +32,12 @@ if (cd $dir; R CMD build $pkg); then
     if [ -n "$2" ]; then
         cp -p $dir/$fn "$2/"
     fi
-    (cd $dir; R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz)
+    if (cd $dir; R CMD INSTALL `sed -n 's/Package: *//p' $pkg/DESCRIPTION`_`sed -n 's/Version: *//p' $pkg/DESCRIPTION`.tar.gz); then
+        echo "=== OK: $pkg installed"
+    else
+        echo "ERROR: failed to build $pkg (in $dir)" >&2
+        exit 1
+    fi        
 else 
     echo "ERROR: failed to build $pkg (in $dir)" >&2
     exit 1

@@ -20,6 +20,7 @@ RClient = {
                     on_error(err[0], err[1]);
                 else {
                     ocaps = Promise.promisifyAll(ocaps);
+                    console.log('Connected to rcloud host', ocaps.rcloud.hostname[0]);
                     if(ocaps === null) {
                         on_error("Login failed. Shutting down!");
                     }

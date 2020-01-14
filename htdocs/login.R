@@ -23,7 +23,7 @@ run <- function(url, query, body, headers)
   ## redirect is either in the query or body, but we have to also guard against nonsensical values
   redirect <- query["redirect"]
   if (! "redirect" %in% names(query)) redirect <- body["redirect"]
-  if (is.character(redirect) && !nzchar(redirect)) redirect <- NULL
+  redirect <- if (!length(redirect) || (is.character(redirect) && !nzchar(redirect))) NULL else URLdecode(redirect)
   if (!is.null(redirect) && isTRUE(any(is.na(redirect)))) redirect <- NULL
 
   if (isTRUE(getConf("exec.auth") == "as-local")) { ## special case where RCloud is run in single-user mode, create token for the unix user
@@ -32,7 +32,7 @@ run <- function(url, query, body, headers)
     if (isTRUE(cookies$user == usr) && !rcloud.support:::check.user.token.pair(usr, cookies$token)) cookies$user <- NULL
   } else  if (!is.null(getConf("exec.auth"))) {
     ret <- rcloud.support:::getConf("welcome.page")
-    if (is.null(ret)) ret <- '/welcome.html'
+    if (is.null(ret)) ret <- '/rcloud.html'
     if (!is.null(redirect)) ret <- paste0(ret, "?redirect=", encode(redirect))
     if (is.null(getConf("session.server")))
       return(list("<html><head></head><body>ERROR: This RCloud instance is not properly configured: Exec.auth is set, but session.server is not!", "text/html"))
@@ -49,7 +49,15 @@ run <- function(url, query, body, headers)
               cookies$execToken <- res[1]
               cookies$execUser <- res[2]
           }
-      } else return(list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html"))
+      } else return({
+          ret <- rcloud.support:::getConf("authfail.page")
+          if (is.null(ret))
+              list("<html><head></head><body>Authentication failed - please check your username and password.</body></html>", "text/html")
+          else {
+              if (!is.null(redirect)) ret <- paste0(ret, if (isTRUE(grepl("?", ret, fixed=TRUE))) "&" else "?", "redirect=", encode(redirect))
+              list(paste("<html><head><meta http-equiv='refresh' content='0;URL=\"",ret,"\"'></head></html>", sep=''), "text/html")
+          }
+      })
     } else if (exec.only) cookies$execToken <- cookies$token ## use only the "token" cookie in exec-only mode
 
     if (is.null(cookies$execToken))

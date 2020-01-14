@@ -1,6 +1,6 @@
 Package: rcloud.viewer
 Title: Data Viewer support for RCloud
-Version: 0.1
+Version: 0.1-1
 Author: Gordon Woodhull <gordon@research.att.com>
 Maintainer: Gordon Woodhull <gordon@research.att.com>
 Description: rcloud.viewer implements View by putting a table into an RCloud side panel

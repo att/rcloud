@@ -87,6 +87,9 @@ configure.rcloud <- function (mode=c("startup", "script")) {
   setConf("host", tolower(system("hostname -f 2>/dev/null", TRUE)))
   cat("Starting Rserve on", getConf("host"),"\n")
 
+  ## populate $host mostly so it is available for logging
+  .session$host <- getConf("host")
+
   ## load configuration --- I'm not sure if DCF is a good idea - we may change this ...
   ## ideally, all of the above should be superceded by the configuration file
   rc.cf <- pathConf("configuration.root", "rcloud.conf")
@@ -364,39 +367,40 @@ start.rcloud.common <- function(...) {
   lang.list <- list()
   file.ext.list <- list(md = "Markdown")
   if (identical(.session$mode, "IDE")) { ## only IDE uses languages; client (=JS mini/shiny) and call use call.notebook
-    lang.str <- getConf("rcloud.languages")
-    if (!is.character(lang.str))
-      lang.str <- "rcloud.r"
-    for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
-      d <- suppressMessages(suppressWarnings(getNamespace(lang)[["rcloud.language.support"]]))
-      if (!is.function(d) && !is.primitive(d))
-        stop(paste("Could not find a function or primitive named rcloud.language.support in package '", lang,"'", sep=''))
-      d <- suppressMessages(suppressWarnings(d(.session)))
-      if (!is.RCloudLanguage(d) && !is.list(d))
-        stop(paste("result of calling rcloud.language.support for package '", lang,"' must be a list of RCloudLanguage or RCloudLanguage", sep=''))
-      
-      package.languages <- d
-      if(is.RCloudLanguage(d)) {
-        package.languages <- list(d)
+      lang.str <- getConf("rcloud.languages")
+      if (!is.character(lang.str))
+          lang.str <- "rcloud.r"
+      ## FIXME: should we somehow ignore languages that fail? Curretnly we just bail out with an error.
+      for (lang in gsub("^\\s+|\\s+$", "", strsplit(lang.str, ",")[[1]])) {
+          d <- tryCatch(suppressMessages(suppressWarnings(getNamespace(lang))), error=function(e) e)
+          if (!is.environment(d))
+              stop("Package `", lang,"` with language support cannot be loaded: ", as.character(d), "; Check rcloud.languages configuration.")
+          d <- d$rcloud.language.support
+          if (!is.function(d))
+              stop("Could not find a function named rcloud.language.support in package `", lang,"'; Check rcloud.languages configuration.")
+          initialize.language <- d
+          d <- tryCatch(suppressMessages(suppressWarnings(initialize.language(.session))),
+                        error=function(e) stop("Error ocurred while initializing `", lang,"' laguage package:", as.character(e),"; Check rcloud.languages configuration."))
+          if (!is.RCloudLanguage(d) && !is.list(d))
+              stop("Invalid result calling rcloud.language.support() for package '", lang,"'; Check rcloud.languages configuration.", sep='')
+          package.languages <- if(is.RCloudLanguage(d)) list(d) else d
+
+          for (package.lang in package.languages) {
+              if (!is.RCloudLanguage(package.lang))
+                  stop("Result of calling rcloud.language.support for package '", lang,"' must be a list of RCloudLanguage or RCloudLanguage")
+
+              if (package.lang$language %in% names(lang.list))
+                  stop("ERROR: Language Conflict! Package '", lang, "' tried to register language '", package.lang$language, "', but it already exists. Check rcloud.languages configuration.")
+
+              if (!package.lang$extension %in% names(file.ext.list)) {
+                  lang.list[[package.lang$language]] <- package.lang
+                  suppressMessages(suppressWarnings(lang.list[[package.lang$language]]$setup(.session)))
+                  file.ext.list[package.lang$extension] <- package.lang$language
+              } else {
+                  warning(paste("Ignoring", package.lang$language, ". Extension", package.lang$extension, "has already been registered for language", file.ext.list[package.lang$extension], "."))
+              }
+          }
       }
-      
-      for (package.lang in package.languages) {
-        if (!is.RCloudLanguage(package.lang)) {
-          stop(paste("result of calling rcloud.language.support for package '", lang,"' must be a list of RCloudLanguage or RCloudLanguage", sep=''))
-        }
-        if(package.lang$language %in% names(lang.list)) {
-          stop(paste0("Language Conflict! Package '", lang, "' tried to register language '", package.lang$language, "', but it already exists."))
-        }
-        if(!package.lang$extension %in% names(file.ext.list)) {
-          lang.list[[package.lang$language]] <- package.lang
-          suppressMessages(suppressWarnings(lang.list[[package.lang$language]]$setup(.session)))
-          file.ext.list[package.lang$extension] <- package.lang$language
-        } else {
-          warning(paste("Ignoring", package.lang$language, ". Extension", package.lang$extension, "has already been registered for language", file.ext.list[package.lang$extension], "."))
-        }
-      }
-      
-    }
   }
   .session$languages <- lang.list
   .session$file.extensions <- file.ext.list

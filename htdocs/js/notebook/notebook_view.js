@@ -116,14 +116,33 @@ Notebook.create_html_view = function(model, root_div)
             if(last_top_ !== undefined && dy < STOP_DY) {
                 model.cells.map(cm => cm.views[0])
                     .filter(cv => cv.is_in_view())
+                    .filter(cv => {
+                        if(!cv.is_a_markdown()) return true;
+                        if(cv.autoactivate_once) return false;
+                        return cv.autoactivate_once = true;
+                    })
                     .forEach(cv => cv.edit_source(true, null, false));
             }
             last_top_ = top;
         },
         load_options() {
             return rcloud.config.get_user_option('autoactivate-cells').then(function(auto) {
-                if(auto===null || auto) { // default true
-                    RCloud.UI.cell_commands.remove('edit');
+                auto = auto===null || auto; // default true
+                if(auto) {
+                    model.auto_activate(true);
+                    RCloud.UI.cell_commands.add({
+                        edit: {
+                            area: 'cell',
+                            sort: 3000,
+                            display_flags: ['markdown'],
+                            create: function(cell_model, cell_view) {
+                                return RCloud.UI.cell_commands.create_button("icon-edit borderable", "toggle source", () => {
+                                    if(cell_view.toggle_source())
+                                        cell_view.edit_source(true);
+                                });
+                            }
+                        }
+                    });
                     window.setInterval(result.auto_activate, 100);
                 }
             });

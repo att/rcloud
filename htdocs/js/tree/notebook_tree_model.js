@@ -1810,7 +1810,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                 node = that.get_node_by_id(tree_node.id);
 
             if(node.children && node.children.length) {
-                if(!node.is_open) {
+                if(!tree_node.is_open) {
                     that.on_open_node.notify({
                         node: node
                     });

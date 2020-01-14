@@ -15,9 +15,10 @@ ui_utils.make_url = function(page, opts) {
       query_params = {};
     }
     else {
-      // don't override new notebook/version with old
+      // don't override new notebook/version/tag with old
       delete query_params.notebook;
       delete query_params.version;
+      delete query_params.tag;
     }
 
     if (opts.do_path) {
@@ -814,21 +815,23 @@ ui_utils.hide_selectize_dropdown = function() {
 // in order to remove the .nonselectables
 ui_utils.select_allowed_elements = function(callback) {
     var sel = window.getSelection();
-    var offscreen = $('<pre class="offscreen"></pre>');
+    var offscreen = $('<div class="offscreen" />'),
+        content = $('<pre />');
 
-    $('body').append(offscreen);
+    offscreen.append(content);
+    $('body').append(content);
 
     for(var i=0; i < sel.rangeCount; ++i) {
         var range = sel.getRangeAt(i);
-        offscreen.append(range.cloneContents());
+        content.append(range.cloneContents());
     }
 
-    offscreen.find('.nonselectable').remove();
+    content.find('.nonselectable').remove();
     // Firefox throws an exception if you try to select children and there are none(!)
-    if(offscreen.is(':empty'))
+    if(content.is(':empty'))
         sel.removeAllRanges();
     else
-        sel.selectAllChildren(offscreen[0]);
+        sel.selectAllChildren(content[0]);
 
     window.setTimeout(function() {
         offscreen.remove();

@@ -126,10 +126,13 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
-        if(!RCloud.language.is_a_markdown(language))
+        const markdown = RCloud.language.is_a_markdown(language);
+        if(!markdown)
             result.hide_source && result.hide_source(false);
-        if(cell_controls_)
+        if(cell_controls_) {
             cell_controls_.controls['language_cell'].set(language);
+            cell_controls_.set_flag('markdown', markdown);
+        }
         set_background_class(code_div_.find('pre'));
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
@@ -952,6 +955,7 @@ function create_cell_html_view(language, cell_model) {
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
         },
+        edit_mode: () => edit_mode_,
         edit_source: function(edit_mode, event, focus) {
             if(focus === undefined) focus = true;
             if(edit_mode === edit_mode_) {
@@ -1067,6 +1071,7 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
         },
+        is_a_markdown: () => RCloud.language.is_a_markdown(language),
         is_in_view: function() {
             const $cellarea = $('#rcloud-cellarea'),
                   scrollrect = $cellarea[0].getBoundingClientRect(),
@@ -1076,7 +1081,7 @@ function create_cell_html_view(language, cell_model) {
             return result;
         },
         toggle_source: function() {
-            this.hide_source($(source_div_).is(":visible"));
+            return !this.hide_source($(source_div_).is(":visible"));
         },
         hide_source: function(whether) {
             if(whether) {
@@ -1087,6 +1092,7 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
                 edit_button_border(true);
             }
+            return whether;
         },
         toggle_results: function(val) {
             if(val===undefined)
@@ -1124,7 +1130,8 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
-            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
+            if(!autoscroll_notebook_output_)
+                ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {
