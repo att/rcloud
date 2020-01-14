@@ -1,5 +1,5 @@
 RCloud = Object.assign({
-    version: '2.2-devel'
+    version: '2.2.0'
 }, RCloud);
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
@@ -2358,10 +2358,13 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
-        if(!RCloud.language.is_a_markdown(language))
+        const markdown = RCloud.language.is_a_markdown(language);
+        if(!markdown)
             result.hide_source && result.hide_source(false);
-        if(cell_controls_)
+        if(cell_controls_) {
             cell_controls_.controls['language_cell'].set(language);
+            cell_controls_.set_flag('markdown', markdown);
+        }
         set_background_class(code_div_.find('pre'));
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
@@ -3184,6 +3187,7 @@ function create_cell_html_view(language, cell_model) {
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
         },
+        edit_mode: () => edit_mode_,
         edit_source: function(edit_mode, event, focus) {
             if(focus === undefined) focus = true;
             if(edit_mode === edit_mode_) {
@@ -3299,6 +3303,7 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
         },
+        is_a_markdown: () => RCloud.language.is_a_markdown(language),
         is_in_view: function() {
             const $cellarea = $('#rcloud-cellarea'),
                   scrollrect = $cellarea[0].getBoundingClientRect(),
@@ -3308,7 +3313,7 @@ function create_cell_html_view(language, cell_model) {
             return result;
         },
         toggle_source: function() {
-            this.hide_source($(source_div_).is(":visible"));
+            return !this.hide_source($(source_div_).is(":visible"));
         },
         hide_source: function(whether) {
             if(whether) {
@@ -3319,6 +3324,7 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
                 edit_button_border(true);
             }
+            return whether;
         },
         toggle_results: function(val) {
             if(val===undefined)
@@ -3356,7 +3362,8 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
-            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
+            if(!autoscroll_notebook_output_)
+                ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {
@@ -3873,14 +3880,33 @@ Notebook.create_html_view = function(model, root_div)
             if(last_top_ !== undefined && dy < STOP_DY) {
                 model.cells.map(cm => cm.views[0])
                     .filter(cv => cv.is_in_view())
+                    .filter(cv => {
+                        if(!cv.is_a_markdown()) return true;
+                        if(cv.autoactivate_once) return false;
+                        return cv.autoactivate_once = true;
+                    })
                     .forEach(cv => cv.edit_source(true, null, false));
             }
             last_top_ = top;
         },
         load_options() {
             return rcloud.config.get_user_option('autoactivate-cells').then(function(auto) {
-                if(auto===null || auto) { // default true
-                    RCloud.UI.cell_commands.remove('edit');
+                auto = auto===null || auto; // default true
+                if(auto) {
+                    model.auto_activate(true);
+                    RCloud.UI.cell_commands.add({
+                        edit: {
+                            area: 'cell',
+                            sort: 3000,
+                            display_flags: ['markdown'],
+                            create: function(cell_model, cell_view) {
+                                return RCloud.UI.cell_commands.create_button("icon-edit borderable", "toggle source", () => {
+                                    if(cell_view.toggle_source())
+                                        cell_view.edit_source(true);
+                                });
+                            }
+                        }
+                    });
                     window.setInterval(result.auto_activate, 100);
                 }
             });
@@ -3896,6 +3922,7 @@ Notebook.create_html_view = function(model, root_div)
 Notebook.create_model = function()
 {
     var readonly_ = false,
+        auto_activate_,
         user_ = "",
         last_selected_ = undefined;
 
@@ -4280,6 +4307,11 @@ Notebook.create_model = function()
                 });
             }
             return readonly_;
+        },
+        auto_activate: function(autoactivate) {
+            if(autoactivate !== undefined)
+                auto_activate_ = autoactivate;
+            return auto_activate_;
         },
         user: function(user) {
             if (!_.isUndefined(user)) {
@@ -15699,7 +15731,7 @@ RCloud.UI.notebook_tree_model = (function(username, show_terse_dates, show_folde
                 node = that.get_node_by_id(tree_node.id);
 
             if(node.children && node.children.length) {
-                if(!node.is_open) {
+                if(!tree_node.is_open) {
                     that.on_open_node.notify({
                         node: node
                     });
@@ -16023,7 +16055,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
         });
 
         this.model_.on_open_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('removeNode', view_obj.$tree_.tree('getNodeById', args.node.id));
+            view_obj.$tree_.tree('openNode', view_obj.$tree_.tree('getNodeById', args.node.id));
         });
 
         this.model_.on_show_history.attach(function(sender, args) {
