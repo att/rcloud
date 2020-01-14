@@ -4,16 +4,23 @@
 #' Python version and library path are defined by the following settings from rcloud.conf:
 #'  * rcloud.jupyter.python.path - path to Python installation that should be used
 #'  * rcloud.jupyter.python.extra.libs - additional Python lib directories (e.g. where Jupyter Python modules got installed)
-#'  
+#'
 #' IMPORTANT!!! These two do not affect kernels being used, kernels are configured by kernel descriptors.
 #'  
 #'  For Jupyter configuration options see https://jupyter.readthedocs.io/en/latest/projects/jupyter-directories.html
-#'  
+#'
+#' Other optional settings:
+#'  * rcloud.jupyter.delayed.init: disable - if included Jupyter will be initialized immediately, otherwise on first use
+#'
 #' Kernels are loaded from the following default locations, if JUPYTER_PATH is not set:
 #' * "/home/<USER_NAME>/.local/share/jupyter/kernels"
 #' * "/usr/local/share/jupyter/kernels"
 #' * "/usr/share/jupyter/kernels"
 #'  
+
+## max age of kernelspec cache
+.max.cache.age <- 86400 ## refresh the cache at least once a day
+
 PYTHON_PATH <- 'rcloud.jupyter.python.path'
 PYTHON_EXTRA_LIBS <- 'rcloud.jupyter.python.extra.libs'
 JUPYTER_CELL_EXEC_TIMEOUT <- 'rcloud.jupyter.cell.exec.timeout'
@@ -24,6 +31,7 @@ JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
 .set_default_kernel <- function(language, kernel_name) {
   default_kernel_key <- paste0(language, '_kernel')
   session <- rcloud.support:::.session
+  ulog("rcloud.jupyter::.set_default_kernel: ", kernel_name)
   assign(default_kernel_key, kernel_name, envir = session)
 }
 
@@ -146,58 +154,78 @@ JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
 #'
 .start.jupyter.adapter <- function(rcloud.session)
 {
-  require(reticulate, quietly=TRUE)
-  if (rcloud.support:::hasConf(PYTHON_PATH))
-    reticulate::use_python(rcloud.support:::getConf(PYTHON_PATH))
-  sys <- reticulate::import("sys")
-  ## append any admin-specified paths (as ":" - separated paths)
-  if (rcloud.support:::nzConf(PYTHON_EXTRA_LIBS)) {
-    extraLibs <- unlist(strsplit(rcloud.support:::getConf(PYTHON_EXTRA_LIBS), ':'))
-    sys$path <-c(sys$path, extraLibs)
-  }
-  sys$path <- c(sys$path, system.file("jupyter", package="rcloud.jupyter"))
-  
-  jupyter_adapter <- reticulate::import("jupyter_adapter")
-  
-  runner <- jupyter_adapter$JupyterAdapter(
+    ulog("rcloud.jupyter::.start.jupyter.adapter")
+    require(reticulate, quietly=TRUE)
+    if (rcloud.support:::hasConf(PYTHON_PATH))
+        reticulate::use_python(rcloud.support:::getConf(PYTHON_PATH))
+    sys <- reticulate::import("sys")
+    ## append any admin-specified paths (as ":" - separated paths)
+    if (rcloud.support:::nzConf(PYTHON_EXTRA_LIBS)) {
+        extraLibs <- unlist(strsplit(rcloud.support:::getConf(PYTHON_EXTRA_LIBS), ':'))
+        sys$path <-c(sys$path, extraLibs)
+    }
+    sys$path <- c(sys$path, system.file("jupyter", package="rcloud.jupyter"))
+    ulog("rcloud.jupyter::.start.jupyter.adapter: adapter system path ", paste(sys$path, collapse=':'))
+
+    jupyter_adapter <- reticulate::import("jupyter_adapter")
+
+    runner <- jupyter_adapter$JupyterAdapter(
                                            kernel_startup_timeout = .get_cell_startup_timeout(),
                                            cell_exec_timeout = .get_cell_exec_timeout(),
                                            connection_dir = .get_connection_dir_path(),
                                            console_in = .console.in.handler, 
                                            kernel_name = .get_default_kernel('python')
                                            )
-  rcloud.session$jupyter.adapter <- runner
-  
-  f <- .GlobalEnv$.Rserve.done
-  session <- rcloud.session
-  
-  .GlobalEnv$.Rserve.done <- function(...) {
-    tryCatch({
-      .stop.jupyter.adapter(session)
-    }, error=function(e) {
-      warning(paste("Process id", Sys.getpid(), "session id", session$sessionID, " error during jupyter adapter shutdown: " , e, "\n"))
-    })
-    if (is.function(f)) {
-      f(...)
+    rcloud.session$jupyter.adapter <- runner
+
+    f <- .GlobalEnv$.Rserve.done
+    session <- rcloud.session
+
+    .GlobalEnv$.Rserve.done <- function(...) {
+        tryCatch({
+            .stop.jupyter.adapter(session)
+        }, error=function(e) {
+            err <- paste("Process id", Sys.getpid(), "session id", session$sessionID, " error during jupyter adapter shutdown:", as.character(e))
+            ulog("rcloud.jupyter: ERROR: ", err)
+            warning(err)
+        })
+        if (is.function(f)) {
+            f(...)
+        }
     }
-  }
+
+    if (length(rcloud.session$.jupyter.delayed.init)) {
+        ulog("rcloud.jupyter::.start.jupyter.adapter: initializing scripts for kernels: ",
+             paste(names(rcloud.session$.jupyter.delayed.init), collapse=", "))
+        for (kernel.name in names(rcloud.session$.jupyter.delayed.init))
+            rcloud.session$jupyter.adapter$add_init_script(kernel.name, rcloud.session$.jupyter.delayed.init[[kernel.name]])
+    }
+    rcloud.session$.jupyter.delayed.init <- NULL
+
+    ulog("rcloud.jupyter::.start.jupyter.adapter: done")
+    rcloud.session$jupyter.adapter
 }
 
 #'
 #' callback handler invoked when stdin input is requested from Python
 #'
-.console.in.handler <- function(prompt ) {
-  readline( prompt )
+.console.in.handler <- function(prompt) {
+    ulog("rcloud.jupyer::.console.in.handler: requesting input")
+    readline(prompt)
 }
 
 .stop.jupyter.adapter <- function(rcloud.session) {
-  if (!is.null(rcloud.session$jupyter.adapter)) {
-    rcloud.session$jupyter.adapter$shutdown()
-    rcloud.session$jupyter.adapter <- NULL
-    ## force GC so R side holds no reference
-    invisible(gc())
-  }
+    if (!is.null(rcloud.session$jupyter.adapter)) {
+        ulog("rcloud.jupyer::.stop.jupyter.adapter: stopping Jupyter adapter")
+        rcloud.session$jupyter.adapter$shutdown()
+        rcloud.session$jupyter.adapter <- NULL
+        ## force GC so R side holds no reference
+        invisible(gc())
+    }
 }
+
+.get.jupyter.adapter <- function(rcloud.session)
+    if (is.null(rcloud.session$jupyter.adapter)) .start.jupyter.adapter(rcloud.session) else rcloud.session$jupyter.adapter
 
 .exec.with.jupyter <- function(kernel, cmd, rcloud.session)
 {
@@ -216,20 +244,17 @@ JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
     if (t %in% c("json"))
       return(c(t, paste0('<pre>', jsonlite:::toJSON(chunk[[t]]), '</pre>')))
   }
-  outputs <- tryCatch({
-    rcloud.session$jupyter.adapter$run_cmd(cmd, kernel_name = kernel)
-  }, error=function(e) {
+  outputs <- tryCatch(.get.jupyter.adapter(rcloud.session)$run_cmd(cmd, kernel_name = kernel),
+                      error=function(e) {
     msg <- e$message
     rcloud.html.out(msg)
     return(structure(list(error=e$message), class='cell-eval-error'))
   })
   
-  if(is.null(outputs)) {
-    return()
-  }
-  if(inherits(outputs, 'cell-eval-error')) {
-    return(outputs)
-  }
+  if(is.null(outputs)) return()
+
+  if(inherits(outputs, 'cell-eval-error')) return(outputs)
+
   processed <- lapply(outputs, function(outval) 
   {
     outType <- outval$output_type
@@ -250,11 +275,32 @@ JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
   return(structure(list(), class='cell-eval-result'))
 }
 
-rcloud.jupyter.list.kernel.specs <- function(rcloud.session)
+rcloud.jupyter.list.kernel.specs <- function(rcloud.session, use.cache=TRUE)
 {
-  if (is.null(rcloud.session$jupyter.adapter))
-    .start.jupyter.adapter(rcloud.session)
-  return(rcloud.session$jupyter.adapter$get_kernel_specs())
+    if (use.cache) {
+        cache <- rcloud.home(".rcloud.jupyter.kernelspec.cache.rds")
+        tryCatch({
+            if (isTRUE(as.numeric(Sys.time()) - as.numeric(file.info(cache)$mtime) < .max.cache.age))
+                return(readRDS(cache))
+            ulog("rcloud.jupyter.list.kernel.specs: not using cache, too old or not present")
+        }, error=function(e) ulog("rcloud.jupyter.list.kernel.specs: ERROR loading cache: ", as.character(e)))
+    }
+
+    ulog("rcloud.jupyter.list.kernel.specs: calling jupter.adapter$get_kernel_specs()")
+    spec <- .get.jupyter.adapter(rcloud.session)$get_kernel_specs()
+
+    if (use.cache) tryCatch({
+        ## write to file that is unique to the process in case two processes
+        ## try it in parallel
+        rn <- paste(cache, Sys.getpid(), sep='.')
+        saveRDS(spec, file=rn)
+        ## do atomic rename to avoid race conditions
+        file.rename(rn, cache)
+        ulog("rcloud.jupyter.list.kernel.specs: kernelspec cache saved to ", cache)
+    }, error=function(e)
+        ulog("rcloud.jupyter.list.kernel.specs: ERROR saving cache: ", as.character(e)))
+
+    spec
 }
 
 rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.session) {
@@ -262,17 +308,12 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
 }
 
 .jupyter.cell.runner.factory <- function(kernel_name) {
-  local <- list(
-    kernel_name = kernel_name
-  )
-  function(command, silent, rcloud.session, ...) {
-    tryCatch(
-      {
-        if (is.null(rcloud.session$jupyter.adapter))
-            .start.jupyter.adapter(rcloud.session)
-        .exec.with.jupyter(local$kernel_name, command, rcloud.session)
-      }, error=function(o) structure(list(error=o$message), class="cell-eval-error"))
-  }
+    local <- list(
+        kernel_name = kernel_name
+    )
+    function(command, silent, rcloud.session, ...)
+        tryCatch(.exec.with.jupyter(local$kernel_name, command, rcloud.session),
+                 error=function(o) structure(list(error=o$message), class="cell-eval-error"))
 }
 
 .jupyter.completer.factory <- function(kernel_name) {
@@ -283,9 +324,7 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
     
     exp <- tryCatch(
       {
-        if (is.null(thissession$jupyter.adapter))
-          .start.jupyter.adapter(thissession)
-        completions <- thissession$jupyter.adapter$complete(local$kernel_name, text, pos)
+        completions <- .get.jupyter.adapter(thissession)$complete(local$kernel_name, text, pos)
         res <- list()
         if(is.null(completions)) {
           return(res)
@@ -301,21 +340,28 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
   }
 }
 
-.init.language <- function(kernel_name, kernel_spec, rcloud.session) {
-  
-  language_descriptor <- list(
-    settings = .create.language.settings(kernel_name, kernel_spec),
-    run.cell = .jupyter.cell.runner.factory(kernel_name),
-    complete = .jupyter.completer.factory(kernel_name)
-  )
-  
-  init.script.builder <- eval(parse(text=language_descriptor$settings$init.script))
-  
-  init.script <- init.script.builder(rcloud.session)
-  
-  rcloud.session$jupyter.adapter$add_init_script(kernel_name, init.script)
-  
-  RCloudLanguage(list(language=language_descriptor$settings$display.name,
+.init.language <- function(kernel_name, kernel_spec, rcloud.session, delayed=TRUE) {
+    language_descriptor <- list(
+        settings = .create.language.settings(kernel_name, kernel_spec),
+        run.cell = .jupyter.cell.runner.factory(kernel_name),
+        complete = .jupyter.completer.factory(kernel_name)
+    )
+
+    init.script.builder <- eval(parse(text=language_descriptor$settings$init.script))
+
+    init.script <- init.script.builder(rcloud.session)
+
+    if (delayed) {
+        if (is.null(rcloud.session$.jupyter.delayed.init))
+            rcloud.session$.jupyter.delayed.init <- list()
+        ulog("rcloud.jupyter::.init.language: delayed init for kernel ", kernel_name)
+        rcloud.session$.jupyter.delayed.init[[kernel_name]] <- init.script
+    } else {
+        ulog("rcloud.jupyter::.init.language: init for kernel ", kernel_name)
+        .get.jupyter.adapter(rcloud.session)$add_init_script(kernel_name, init.script)
+    }
+
+    RCloudLanguage(list(language=language_descriptor$settings$display.name,
                       run.cell=language_descriptor$run.cell,
                       complete=language_descriptor$complete,
                       ace.mode=language_descriptor$settings$ace.mode,
@@ -327,16 +373,29 @@ rcloud.jupyter.list.kernel.specs.for.language <- function(language, rcloud.sessi
 
 rcloud.language.support <- function(rcloud.session)
 {
-  kernel.specs <- rcloud.jupyter.list.kernel.specs(rcloud.session)
-  languages <- lapply(names(kernel.specs), function(kernel_name, kernel_specs, rcloud.session) {
-    
-    lang <- tryCatch({.init.language(kernel_name, kernel_specs[[kernel_name]]$spec, rcloud.session)}, error = function(o) structure(list(error=o$message), class="language-init-error"))
-    
-    if(inherits(lang, "language-init-error")) {
-      warning(lang$error)
-    }
-    lang
-  }, kernel.specs, rcloud.session)
-  languages <- Filter(function(x) { !inherits(x, 'language-init-error') }, languages)
-  languages[order(sapply(languages, function(x) { x$language }))]
+    ## allows config file to disable delayer Jupyter start via jupyter.delayed.init: disable
+    delayed <- if (rcloud.support:::hasConf("rcloud.jupyter.delayed.init") && rcloud.support:::getConf("rcloud.jupyter.delayed.init" %in% c("disable", "no", "false"))) FALSE else TRUE
+    ulog("rcloud.jupyter::rcloud.language.support, starting")
+    kernel.specs <- rcloud.jupyter.list.kernel.specs(rcloud.session, delayed)
+    delayed <- is.null(rcloud.session$jupyter.adapter) ## check if list.kernel.specs had to start the adapter - if so, no more delay
+    ulog("rcloud.jupyter::rcloud.language.support: found kernels (", if (delayed) "from cache" else "via kernelspecs", "): ",
+         paste(names(kernel.specs), collapse=","))
+    languages <- lapply(names(kernel.specs), function(kernel_name) {
+        lang <- tryCatch(.init.language(kernel_name, kernel.specs[[kernel_name]]$spec, rcloud.session, delayed),
+                         error = function(o) {
+                             ulog("rcloud.jupyter::rcloud.language.support: .init.language for ", kernel_name, " failed with ", as.character(o))
+                             structure(list(error=o$message), class="language-init-error")
+                         })
+        if(inherits(lang, "language-init-error")) warning(lang$error)
+        lang
+    })
+    languages <- Filter(function(x) { !inherits(x, 'language-init-error') }, languages)
+    lang.list <- sapply(languages, function(x) x$language)
+    ulog("rcloud.jupyter::rcloud.language.support: langues without init errors: ", paste(lang.list, collapse=", "))
+    languages[order(lang.list)]
 }
+
+## unfortuantely we have ulog::ulog and Rserve::ulog
+## Currently RCloud is configured to only setup Rserve::ulog so we have to
+## use it explicitly
+ulog <- Rserve::ulog

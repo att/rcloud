@@ -12,6 +12,7 @@ while [ "$1" != "" ]; do
         --all) PACKAGE_DIRS="internal rcloud.packages packages" ;;
         --cont) BREAK=0 ;;
         --no-js) SKIP_JS=1 ;;
+        --no-jupyter) SKIP_JUPYTER=1 ;;
         --help) cat <<EOF
 
  Usage: $0 [{--base | --core | --all}] [--cont]
@@ -66,11 +67,19 @@ if [ -d pkg-repo ]; then
     echo "Package repository: $repo"
 fi
 
+## rcloud.support is pre-requisite for all
+scripts/build_package.sh rcloud.support $repo || exit 1
+
 # build internal packages (not in git) & rcloud.packages
 for dir in $PACKAGE_DIRS; do
     if [ -e $dir ]; then
         for pkg in `ls $dir/*/DESCRIPTION 2>/dev/null | sed -e 's:/DESCRIPTION::'`; do
             echo $pkg
+            if [ -n "$SKIP_JUPYTER" ] && [ "$pkg" == 'rcloud.packages/rcloud.jupyter' ]; then
+                echo skipping
+                continue
+            fi
+
 	    if ! scripts/build_package.sh $pkg $repo; then
                 echo;echo;echo; echo package $pkg FAILED to build!;echo;echo
                 if [ $BREAK -gt 0 ]; then
@@ -82,7 +91,6 @@ for dir in $PACKAGE_DIRS; do
 done
 
 scripts/build_package.sh rcloud.client $repo || exit 1
-scripts/build_package.sh rcloud.support $repo || exit 1
 
 if [ -e ".git" ]; then
 # update branch/revision info

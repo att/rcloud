@@ -61,7 +61,7 @@ RCloud.UI.session_pane = {
     },
     scroll_to_end: function() {
         ui_utils.on_next_tick(function() {
-            ui_utils.scroll_to_after($("#session-info"));
+            ui_utils.scroll_to_after($("#session-info"), {duration: 0});
         });
     },
     append_text: function(msg) {

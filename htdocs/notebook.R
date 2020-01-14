@@ -44,7 +44,10 @@ run <- function(url, query, body, headers)
       anonymous <- TRUE
     }
     if (is.null(init.cap)) stop("Server refused to provide RCloud session initialization capabilites - access denied")
-    RSclient::RS.eval.qap(c, as.call(list(init.cap, cookies$user, cookies$token)))
+    res <- RSclient::RS.eval.qap(c, as.call(if(anonymous) list(init.cap) else list(init.cap, cookies$user, cookies$token)))
+    if (inherits(res, "OCAP-eval-error")) return(list(
+         paste0("Error occurred while initializing session:<p><pre>",
+                paste(capture.output(print(res)),collapse="\n"), "</pre></p>"), "text/html"))
     et <- "Error fetching content:"
     version <- NULL
     ## is this first part a notebook hash?
@@ -66,6 +69,10 @@ run <- function(url, query, body, headers)
       nb <- RSclient::RS.eval.qap(c, as.call(list(caps$rcloud$notebook_by_name, nb.name, user)))
       if (inherits(nb, "try-error")) stop("Error finding notebook: ", nb)
       if (is.null(nb)) stop("Notebook `", nb.name, "' by user `", user, "' not found", if (anonymous) " or not published" else "")
+      if (inherits(nb, "OCAP-eval-error")) return(list(
+         paste0("Error occurred while trying to find the notebook:<p><pre>",
+                paste(capture.output(print(nb)),collapse="\n"),
+                "</pre><p>"), "text/html"))
       extra.path <- nb[1L, 2L]
       nb.name <- substr(nb.name, 1, nchar(nb.name) - nchar(extra.path))
       notebook <- nb[1L, 1L]

@@ -70,17 +70,13 @@ rcloud.viewer.view.dataframe.page <- function(name, options) {
     result$recordsTotal <- records
     result$recordsFiltered <- records 
     page <- seq(options$start,min(options$start+options$length, records))
-    data <- tryCatch(jsonlite::toJSON(cbind(as.integer(rownames(val)[page]),val[page,]), dataframe = "values"))
-    if(typeof(data) == "try-error") {
-      result$error <- paste0("Could not marshal data.frame data. Error: ", as.character(data))
-    } else {
-      result$data <- data
-    }
-    return(result)
-  } else {
-    result$error <- paste0("Unsupported variable type: ", typeof(val))
-  }
-  return(result)
+
+    ## NOTE: dplyr/tibble has a bug in cbind that doesn't set names correctly
+    ## so we have to name the row-names part (even if we discard the name later)
+    result$data <- jsonlite::toJSON(cbind(`row-names`=rownames(val)[page], val[page,]), dataframe = "values")
+  } else stop("Unsupported variable type: ", typeof(val))
+
+  result
 }
 
 #' Returns HTML representation of given variable

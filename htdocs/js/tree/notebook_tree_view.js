@@ -198,7 +198,7 @@ RCloud.UI.notebook_tree_view = (function(model) {
         });
 
         this.model_.on_open_node.attach(function(sender, args) {
-            view_obj.$tree_.tree('removeNode', view_obj.$tree_.tree('getNodeById', args.node.id));
+            view_obj.$tree_.tree('openNode', view_obj.$tree_.tree('getNodeById', args.node.id));
         });
 
         this.model_.on_show_history.attach(function(sender, args) {

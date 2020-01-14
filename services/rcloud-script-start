@@ -1,6 +1,7 @@
 #!/bin/sh
 
-ROOT=/data/rcloud
+: ${ROOT=/data/rcloud}
+: ${RBIN=R}
 export ROOT
-RS=`echo 'cat(system.file("libs","Rserve",package="Rserve"))' | /usr/bin/R --vanilla --slave`
-R_LIBS=$ROOT/Rlib /usr/bin/R CMD "$RS" --RS-conf "$ROOT/conf/scripts.conf" --no-save > /dev/null
+RS=`echo 'cat(system.file("libs","Rserve",package="Rserve"))' | "$RBIN" --vanilla --slave`
+R_LIBS=$ROOT/Rlib "$RBIN" CMD "$RS" --RS-conf "$ROOT/conf/scripts.conf" --no-save

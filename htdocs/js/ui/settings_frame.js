@@ -209,6 +209,12 @@ RCloud.UI.settings_frame = (function() {
                         RCloud.UI.import_export.export_only_selected_files(val);
                     }
                 }),
+                'autoactivate-cells': that.checkbox({
+                    sort: 6400,
+                    default_value: true,
+                    label: "Auto-activate cells",
+                    needs_reload: true
+                }),
                 'autoscroll-notebook-output': that.checkbox({
                     sort: 6500,
                     default_value: true,

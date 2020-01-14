@@ -39,9 +39,11 @@ function main() {
             promise = promise.then(RCloud.UI.image_manager.load_available_formats);
 
             var notebook = getURLParameter("notebook"),
-                version = getURLParameter("version");
+                version = getURLParameter("version"),
+                user, path;
             if (notebook === null && getURLParameter("user")) {
-                var path = getURLParameter("path"), user = getURLParameter("user");
+                path = getURLParameter("path");
+                user = getURLParameter("user");
                 promise = promise.then(function() {
                     return rcloud.get_notebook_by_name(path, user);
                 }).then(function(result) {
@@ -49,6 +51,25 @@ function main() {
                         throw new Error('Notebook "' + path + '" (user ' + user + ') not found');
                     notebook = result[0];
                 });
+            }
+            else if(notebook === null && /^\/notebook\.R/.test(window.location.pathname)) {
+                var parts = window.location.pathname.split('/');
+                parts = parts.slice(2); // skip blank and notebook.R
+                if(/^[a-f0-9]{20}$/.test(parts[0]) || /^[a-f0-9]{32}$/.test(parts[0])) {
+                    notebook = parts[0];
+                    if(/^[a-f0-9]{40}$/.test(parts[1]))
+                        version = parts[1];
+                } else if(parts.length >= 2) {
+                    user = decodeURI(parts[0]);
+                    path = decodeURI(parts.slice(1).join('/'));
+                    promise = promise.then(function() {
+                        return rcloud.get_notebook_by_name(path, user);
+                    }).then(function(result) {
+                        if(!result)
+                            throw new Error('Notebook "' + path + '" (user ' + user + ') not found');
+                        notebook = result[0];
+                    });
+                }
             }
             var tag = getURLParameter("tag");
             if(!version && tag) {

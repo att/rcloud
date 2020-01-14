@@ -1,3 +1,57 @@
+## RCloud 2.2
+
+### Features
+ * Cells are automatically activated when in view. There is only one cursor, one selection, and one
+   active line across all cells. The edit button is only displayed in markdown cells, where
+   it only means "toggle source". (#2691, #2682, #2701)
+ * Added `authfail.page` and `tokenfail.page` configuration directives that allow for customization
+   of pages that are shown on failed authentication. (#2699)
+ * Added `rcloud.web::rcw.parameter()` and caching to `rcw.parameters()` (#2676)
+ * `rcloud.html` accepts `error=` query string which will be shown in red. This makes more
+   user-friendly error handling of authentication possible, e.g.:
+
+       authfail.page: /rcloud.html?error=Authentication failed, please check your login and password.
+
+### Improvements
+ * Fork an individual notebook from the notebook tree (#2647)
+ * `mini.js` detects notebook and version, or user and path, in `notebook.R` URLs (#2650)
+ * Host name is logged to browser console when session starts (#2663)
+ * Command prompt is focused when its language is changed (#2678)
+ * Link to search schema in search panel (#2667)
+ * Added more informative errors and logging when languages are loaded (#2689)
+
+### Upgrade considerations
+ * The default for `welcome.page` has changed to `/rcloud.html` since we are supplying
+   it as the login page in the RCloud sources.
+   _Important:_ if your installation relied on the old default, you should add
+   `welcome.page: /welcome.html` to `rcloud.conf` to restore the old behavior.
+
+### Bugfixes
+ * Forking a foreign notebook could fail with the latest rcloud-gist-services (#2679)
+ * Debug output was too verbose, obscuring errors reported by R (#2685)
+ * Welcome message became stale when a new session started; now it is refreshed (#2669)
+ * Session pane could lock up when there is a lot of output, preventing scrolling (#2690)
+ * Notebook content copied and pasted in macOS was invisible due to bad formatting (#1764)
+ * Errors in search are reported (not with enough detail though) (#2670)
+ * Version was not changing in URL when navigating history (#2687); tag was stuck too (#2697)
+ * Ellipsis could disappear when navigating history, making it impossible to show more (#2686)
+ * Recent notebooks were not always colored (#2677)
+ * Service script respect `RBIN` and `ROOT`
+ * `build_package.sh` (and by proxy `build.sh`) correctly stops if the package was
+   not successfully installed. (#2651)
+ * `rcloud.viewer` no longer breaks due to an error in `cbind` in `dplyr` (#2674)
+ * `rcloud.web::rcw.cookies`: no longer breaks when there is no `Cookies:` header (#2698)
+ * `proxy.R` correctly fails with appropriate 504 error if forwarding failed (#2693)
+
+## RCloud 2.1.3
+
+This version was planned but never officially released - changes are available in v2.2
+
+### Bugfixes
+ * `notebook.R` would fail with "no applicable method for `rcs.get`..." when the token was invalid but
+ `user` token was set. (#2664)
+ * Version mismatch error was not displaying (#2657)
+
 ## RCloud 2.1.2
 
 ### Improvements
@@ -14,6 +68,7 @@
  * Do not evaluate autoscroll logic if there is no scoller div
 
 RCloud 2.1.1 fixes artifacts of 2.1.0
+
 
 ## RCloud 2.1
 
@@ -34,6 +89,24 @@ RCloud 2.1.1 fixes artifacts of 2.1.0
  * If notebook history was showing for any notebook in a folder, renaming that folder would cause
    that notebook to be put in a folder with a hash name (#2609)
  * "Remove Folder" dialog was showing extra notebook entries (#2612)
+
+
+## RCloud 2.0.4
+
+### Improvement
+ * Jupyter adapter startup can be delayed to improve startup times. The list of languages /
+   kernel specs is cached unless disabled with `rcloud.jupyter.delayed.init: disable`
+
+
+## RCloud 2.0.3
+
+### Improvements
+ * `shared.R` can look in `www/`, `lib/`, or `htmlwidgets/` folders of packages, for
+   compatibility with the latest widgets
+ * Other languages are enabled only in IDE mode, since only R is supported for mini.html,
+   Shiny, flexdashboard, etc. This speeds up loading of dashboards.
+
+RCloud 2.0.2 fixes the build artifacts of 2.0.1
 
 
 ## RCloud 2.0.1

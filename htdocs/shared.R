@@ -9,7 +9,7 @@ run <- function(url, query, body, headers) {
   if (any(pex == "..")) stop("invalid component in the path URL")
 
   ## NOTE: we only support a single option here, but may want to support more in the future
-  candidate.dirs <- "www"
+  candidate.dirs <- c("www", "lib")
 
   ## _htmlwidgets is a special hack to get at the "htmlwidgets" directory
   ## _htmlwidgets/[<user>/]<pkg>/<path>
@@ -20,22 +20,25 @@ run <- function(url, query, body, headers) {
   }
 
   fn <- "" ## default = not found
-  base <- paste(c(candidate.dirs, pex), collapse="/")
+  base <- file.path(candidate.dirs, paste(pex, collapse="/"))
   ## check if the file exists in pkg
-  if (!nzchar(fn <- system.file(base, package=pkg)) && length(pex) > 1) {
+  if (!nzchar(fn <- system.file(base, package=pkg)[1L]) && length(pex) > 1) {
       ## if not, try to interpret as <user>/<pkg> by looking in user's library
       usr <- pkg
       pkg <- pex[1]
-      base <- paste(c(candidate.dirs, pex[-1]), collapse="/")
+      base <- file.path(candidate.dirs, paste(pex[-1], collapse="/"))
       lib <- rcloud.home("library", user=usr)
-      if (!file.exists(fn <- file.path(lib, pkg, base)))
-          fn <- ""
+      fn <- file.path(lib, pkg, base)
+      fn <- fn[file.exists(fn)]
+      fn <- if (!length(fn)) "" else fn[1L]
   }
-  if (!nzchar(fn) || !file.exists(fn))
+  if (!nzchar(fn))
     return(list(paste0("ERROR: item '", path.info, "' [", base, "] not found"), "text/plain", character(), 404L))
-  s <- file.info(fn)$size
-  f <- file(fn, "rb")
-  r <- readBin(f, raw(), s)
-  close(f)
+  tryCatch({
+      s <- file.info(fn)$size
+      f <- file(fn, "rb")
+      r <- readBin(f, raw(), s)
+      close(f)
+  }, error=function(e) return(list(paste0("ERROR: unable to read '", path.info, "' [", base, "]: ", as.character(e)), "text/plain", character(), 404L)))
   list(r, mime::guess_type(base), "Cache-Control: max-age=3600")
 }

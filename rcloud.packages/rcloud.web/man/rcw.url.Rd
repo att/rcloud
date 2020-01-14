@@ -3,6 +3,7 @@
 \alias{rcw.redirect}
 \alias{rcw.cookies}
 \alias{rcw.parameters}
+\alias{rcw.parameter}
 \title{
   Retrieve properties from the current document
 }
@@ -19,7 +20,8 @@
 rcw.url(detailed = TRUE)
 rcw.redirect(url)
 rcw.cookies(raw = FALSE)
-rcw.parameters()
+rcw.parameters(cached = FALSE)
+rcw.parameter(name, default = NULL, cached = FALSE)
 }
 \arguments{
   \item{detailed}{logical, if \code{TRUE} then a full list of various
@@ -29,6 +31,12 @@ rcw.parameters()
   \item{raw}{logical, if \code{FALSE} then the cookies are parsed into a
     named list. If \code{TRUE} then the full cookie string is passed
     as-is which is useful for passing credentials to related services.}
+  \item{cached}{logical, if \code{FALSE} then the current status of the
+    URL is retrieved from the browser. If \code{TRUE} then a cached
+    result from last successful \code{rcw.parameters()} call will be
+    used if present, otherwise the browser is queried}
+  \item{name}{string, name of the parameter to retrieve}
+  \item{default}{value to use if the parameter is not set}
 }
 %\details{
 %}
@@ -41,7 +49,8 @@ rcw.parameters()
     FALSE}) or the raw cookie string.
 
   \code{rcw.parameters} parses the query string from the document into a
-  list of parameters.
+  list of parameters. \code{rcw.parameter} is just a shortcut for
+  \code{rcw.parameters()[[name]]} with an \code{is.null()} check.
 }
 \author{
   Simon Urbanek

@@ -2,6 +2,7 @@ Notebook.create_html_view = function(model, root_div)
 {
     var show_cell_numbers_;
     var autoscroll_notebook_output_;
+    var cellarea_ = $('#rcloud-cellarea'), last_top_, STOP_DY = 100;
     function on_rearrange() {
         _.each(result.sub_views, function(view) {
             view.check_buttons();
@@ -108,10 +109,46 @@ Notebook.create_html_view = function(model, root_div)
                 view.on_scroll(event);
               });
           }
+        },
+        auto_activate: function(event) {
+            if(shell.notebook.model.read_only()) return;
+            const top = cellarea_.scrollTop(), dy = Math.abs(top - last_top_);
+            if(last_top_ !== undefined && dy < STOP_DY) {
+                model.cells.map(cm => cm.views[0])
+                    .filter(cv => cv.is_in_view())
+                    .filter(cv => {
+                        if(!cv.is_a_markdown()) return true;
+                        if(cv.autoactivate_once) return false;
+                        return cv.autoactivate_once = true;
+                    })
+                    .forEach(cv => cv.edit_source(true, null, false));
+            }
+            last_top_ = top;
+        },
+        load_options() {
+            return rcloud.config.get_user_option('autoactivate-cells').then(function(auto) {
+                auto = auto===null || auto; // default true
+                if(auto) {
+                    model.auto_activate(true);
+                    RCloud.UI.cell_commands.add({
+                        edit: {
+                            area: 'cell',
+                            sort: 3000,
+                            display_flags: ['markdown'],
+                            create: function(cell_model, cell_view) {
+                                return RCloud.UI.cell_commands.create_button("icon-edit borderable", "toggle source", () => {
+                                    if(cell_view.toggle_source())
+                                        cell_view.edit_source(true);
+                                });
+                            }
+                        }
+                    });
+                    window.setInterval(result.auto_activate, 100);
+                }
+            });
         }
     };
     model.views.push(result);
-    
-    $('#rcloud-cellarea').on('scroll', function(event) { result.on_scroll(event); });
+    cellarea_.on('scroll', function(event) { result.on_scroll(event); });
     return result;
 };

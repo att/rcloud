@@ -126,10 +126,13 @@ function create_cell_html_view(language, cell_model) {
 
     function update_language() {
         language = cell_model.language();
-        if(!RCloud.language.is_a_markdown(language))
+        const markdown = RCloud.language.is_a_markdown(language);
+        if(!markdown)
             result.hide_source && result.hide_source(false);
-        if(cell_controls_)
+        if(cell_controls_) {
             cell_controls_.controls['language_cell'].set(language);
+            cell_controls_.set_flag('markdown', markdown);
+        }
         set_background_class(code_div_.find('pre'));
         if(ace_widget_) {
             ace_div.toggleClass('active', true);
@@ -370,7 +373,7 @@ function create_cell_html_view(language, cell_model) {
     }
     
     // start trying to refactor out this repetitive nonsense
-    function ace_stuff(div, content) {
+    function ace_stuff(div, content, focus) {
         ace.require("ace/ext/language_tools");
         var widget = ace.edit(div[0]);
         var session = widget.getSession();
@@ -458,7 +461,26 @@ function create_cell_html_view(language, cell_model) {
 
         widget.setOptions({
             enableBasicAutocompletion: true,
-            autoScrollEditorIntoView: true
+            autoScrollEditorIntoView: true,
+            highlightActiveLine: focus,
+            highlightGutterLine: focus
+        });
+        if(!focus)
+            widget.renderer.$cursorLayer.element.style.display = "none";
+        widget.on('focus', function() {
+            widget.setOptions({
+                highlightActiveLine: true,
+                highlightGutterLine: true
+            });
+            widget.renderer.$cursorLayer.element.style.display = null;
+        });
+        widget.on('blur', function() {
+            widget.setOptions({
+                highlightActiveLine: false,
+                highlightGutterLine: false
+            });
+            widget.getSelection().clearSelection();
+            widget.renderer.$cursorLayer.element.style.display = "none";
         });
 
         widget.setTheme("ace/theme/chrome");
@@ -489,10 +511,10 @@ function create_cell_html_view(language, cell_model) {
         result.state_changed(new_state);
     }
 
-    function create_edit_widget() {
+    function create_edit_widget(focus) {
         if(ace_widget_) return;
 
-        var aaa = ace_stuff(ace_div, cell_model.content());
+        var aaa = ace_stuff(ace_div, cell_model.content(), focus);
         ace_widget_ = aaa.widget;
         ace_session_ = aaa.session;
         ace_document_ = aaa.document;
@@ -716,7 +738,7 @@ function create_cell_html_view(language, cell_model) {
         return 'find-highlight' + ' ' + kind;
     }
     function edit_button_border(whether) {
-        if(cell_controls_)
+        if(cell_controls_ && cell_controls_.controls['edit'])
             cell_controls_.controls['edit'].control.find('i').toggleClass('icon-border', whether);
     }
     function results_button_border(whether) {
@@ -933,9 +955,11 @@ function create_cell_html_view(language, cell_model) {
         toggle_edit: function() {
             return this.edit_source(!edit_mode_);
         },
-        edit_source: function(edit_mode, event) {
+        edit_mode: () => edit_mode_,
+        edit_source: function(edit_mode, event, focus) {
+            if(focus === undefined) focus = true;
             if(edit_mode === edit_mode_) {
-                if(edit_mode)
+                if(edit_mode && focus)
                     ace_widget_.focus();
                 return;
             }
@@ -949,7 +973,7 @@ function create_cell_html_view(language, cell_model) {
                     this.hide_source(false);
                 var editor_height = code_div_.height();
                 code_div_.hide();
-                create_edit_widget();
+                create_edit_widget(focus);
                 /*
                  * Some explanation for the next poor soul
                  * that might come across this great madness below:
@@ -986,7 +1010,8 @@ function create_cell_html_view(language, cell_model) {
                     cell_controls_.set_flag('edit', true);
                 outer_ace_div.show();
                 ace_widget_.resize(); // again?!?
-                ace_widget_.focus();
+                if(focus)
+                    ace_widget_.focus();
                 if(event) {
 
                     scrollable_area.scrollTop(offset);
@@ -1046,8 +1071,17 @@ function create_cell_html_view(language, cell_model) {
                 }
             }
         },
+        is_a_markdown: () => RCloud.language.is_a_markdown(language),
+        is_in_view: function() {
+            const $cellarea = $('#rcloud-cellarea'),
+                  scrollrect = $cellarea[0].getBoundingClientRect(),
+                  height = scrollrect.bottom - scrollrect.top,
+                  rect = notebook_cell_div[0].getBoundingClientRect();
+            const result = rect.top < scrollrect.top + height && rect.bottom > scrollrect.top;
+            return result;
+        },
         toggle_source: function() {
-            this.hide_source($(source_div_).is(":visible"));
+            return !this.hide_source($(source_div_).is(":visible"));
         },
         hide_source: function(whether) {
             if(whether) {
@@ -1058,6 +1092,7 @@ function create_cell_html_view(language, cell_model) {
                 source_div_.show();
                 edit_button_border(true);
             }
+            return whether;
         },
         toggle_results: function(val) {
             if(val===undefined)
@@ -1095,7 +1130,8 @@ function create_cell_html_view(language, cell_model) {
             };
             switch_color();
             input_anim_ = window.setInterval(switch_color, 1000);
-            ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
+            if(!autoscroll_notebook_output_)
+                ui_utils.scroll_into_view($('#rcloud-cellarea'), 100, 100, null, notebook_cell_div, input_div_);
             input_kont_ = k;
         },
         div: function() {

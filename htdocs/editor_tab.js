@@ -633,14 +633,14 @@ var editor = function () {
                     moreLink.appendTo($('.recent-notebooks-list'));
                   }
                   
-                  that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'))
+                  that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'));
                 });
               };
 
               var li = createMoreLink();
               $(li.find('a')).click(loadMore);
-              that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'))
             }
+            that.create_recent_notebooks_color_coder()($('.recent-notebooks-list li a[data-gist]'));
 
             function truncateNotebookPath(txt, chars) {
                 if(!txt || typeof txt === 'undefined' || txt.length === 0 ){

@@ -1,8 +1,8 @@
 # Setting up RCloud
 
-## Installing using VM images
+## Installing using VM or Docker images
 
-(https://github.com/att/rcloud/wiki/Cloud-Images)
+There are [DockerHub images](https://hub.docker.com/r/urbanek/rcloud-aas) as well as [VM images](https://github.com/att/rcloud/wiki/Cloud-Images) available with ready-to-run RCloud for simple configurations.
 
 ## Installing on your system
 ### Prerequisites
@@ -26,7 +26,7 @@ RCloud requires R 3.1.0 or higher and several R packages. If you want to compile
 
     ## RedHat/CentOS 6+
     yum install gcc-gfortran gcc-c++ cairo-devel readline-devel libXt-devel libjpeg-devel \
-    libicu-devel boost-devel openssl-devel libcurl-devel subversion git automake redis
+    bzip2-devel xz-devel libicu-devel boost-devel openssl-devel libcurl-devel subversion git automake redis
 
 If you have already R installed you may need only a subset of the above.
 
@@ -58,10 +58,24 @@ You can use the above also for re-starts. If you didn't touch any code and want 
 Once it is running, you can go to `http://your-host:8080/login.R` to login to your RCloud instance. We don't supply `index.html` as part of the sources so you can customize the user experience on your own.
 
 
-### Github authentication
+### Gist storage
 
-RCloud uses [gists](http://gist.github.com) for storage and Github
-accounts for authentication.
+There are three different possible was to store gists in RCloud:
+
+1. *gitgist*: local git repositories. This is the most simple setup where each notebook is a local git repository. It only works if you use a single compute node since there is no multi-node access (and no locking).
+2. *GitHub*: a GitHub installation (either public github.com for GitHub Enterprise) is used to manage notebooks, RCloud is registered as an application. In additon, GitHub can provide authentication using OAUTH. RCloud uses [gists](http://gist.github.com) for storage and Github accounts for authentication.
+3. *gist service*: a Java-based server ([rcloud-gist-service](https://github.com/att/rcloud-gist-services)) that uses git repositories locally, but exposes them using gist API. This is the recommended setup for multi-user and multi-node deployments, but the most complex to setup.
+
+#### Using gitgist
+
+Simply uncomment the following lines in `rcloud.conf`:
+```
+gist.backend: gitgist
+gist.git.root: ${ROOT}/data/gists
+```
+The latter allows you to specify the directory where to store the git repositories.
+
+#### Using GitHub
 
 You'll need to create a
 [github application](https://github.com/settings/applications). This
@@ -87,7 +101,7 @@ If you're using github.com, then your file will look like this:
 The last three lines are the base URL of the github website,
 the entry point for the github API and the entry point for gists.
 
-#### Enterprise Github deployment
+##### Enterprise Github deployment
 
 If you have an enterprise github deployment where the gists URL
 ends with `/gist` instead of beginning with `gist.`, you
@@ -98,6 +112,22 @@ your RCloud deployment, you can add a whitelist to your configuration:
 
     github.user.whitelist: user1,user2,user3,etc
 
+#### Using gist service
+
+The gist service can be obtained from https://github.com/att/rcloud-gist-services. It also requires RCloud setup with a `SessionKeyServer` (see below) for authentication as the service itself doesn't provide authentication. See its documentation for configuration. Once setup, it is configured in RCloud using the same method as GitHub with few additional twists. Assuming a host `rcloud.example.com` and a gist service running on `gist.example.com` and SessionKeyServer running on `sks.example.com` the configuration could look like this:
+
+```
+session.server: https://sks.example.com:4301
+github.client.id: server1
+github.client.secret: X
+github.api.url: https://gist.example.com:13020/
+github.auth: exec.token
+github.auth.forward: https://rcloud.example.com/login_successful.R
+rational.githubgist: true
+```
+
+The `client.id` is arbitrary but can be used to manage multiple SessionKeyServers mappings if multiple authentication servers are used (rare). The `client.secret` is arbitrary but must be present. `github.auth.forward` must be set to specify where to forward successful authentication. In the GitHub setup this was specified in the application, but since there is no application configuration here, you have to tell RCloud itself. Finally `rational.githubgist` tells RCloud that it doesn't have to work around some idiosyncrasies and bugs in GitHub's implementation of the API.
+
 #### Hostnames
 
 If your computer doesn't resolve its hostname to what you will be using,
@@ -106,8 +136,11 @@ If your computer doesn't resolve its hostname to what you will be using,
     host: 127.0.0.1
 
 Then go to `http://127.0.0.1:8080/login.R` and authorize access to your
-account through github.
-
+account. You can also use `Cookie.domain:` instead if you want to have more
+control over the domain that will hold authentication tokens.
+A special setting `Cookie.domain: *` can be used in cases where the depolyment
+location is not known ahead of time (e.g., a floating container or VM) in which case
+the browser is left to decide on the domain setting.
 
 ### Installing from a distribution tar ball
 
@@ -118,7 +151,7 @@ Make sure R 3.1.0 or higher is installed. Download the distribution tar
 ball, change to the directory where you want to install it,
 e.g. `/data` and run
 
-    $ tar fxz rcloud-1.3.tar.gz
+    $ tar fxz rcloud-2.1.tar.gz
     $ cd rcloud
     $ sh scripts/bootstrapR.sh
 
@@ -129,7 +162,7 @@ your GitHub setup. Then start RCloud via
     $ sh scripts/fresh_start.sh
 
 
-### Will you be hacking on the code? Read on
+### Will you be hacking on the code?
 
 If you're just running RCloud, skip this session. If you're going to
 be hacking the code, you'll need to install a recent version of
@@ -140,7 +173,7 @@ be hacking the code, you'll need to install a recent version of
 This will install the node.js dependencies necessary to concatenate and
 minify the JavaScript files used in RCloud.
 
-#### Starting rcloud
+### Starting rcloud
 
 The safest way to install rcloud currently is to simply run the
 `scripts/fresh_start.sh` script. This will reinstall the
@@ -148,8 +181,12 @@ The safest way to install rcloud currently is to simply run the
 node.js and the necessary dependencies installed), kill any old
 instances of RCloud running, deauthorize all login tokens (only if
 SessionServer is not used), and start a new version of RCloud.
+For repeated starts it is also possible to use
 
-#### Pitfalls
+    sh scripts/fresh_start.sh --no-build
+
+
+### Pitfalls
 
 If you have trouble with authentication, make sure your hostname is
 FQDN (fully qualified domain name) and it matches your external name.
@@ -169,9 +206,9 @@ Also if things are failing, make sure you have the latest R packages installed. 
 to re-build all packages in RCloud.
 
 
-#### Optional functionality
+### Optional functionality
 
-##### Redis
+#### Redis
 
 It is strongly recommended to use Redis as the back-end for key/value
 storage in RCloud. Install Redis server (in Debian/Ubuntu
@@ -182,7 +219,7 @@ Note: the default up until RCloud 1.0 is file-based RCS back-end which
 is limited and deprecated and thus the default may become Redis in
 future releases.
 
-##### Search
+#### Search
 
 RCloud 1.0 uses Apache Solr to index gists and provide search
 functionality if desired. See `conf/solr/README.md` for
@@ -201,7 +238,7 @@ collection used by RCloud. Then add
 to `rcloud.conf`.
 
 
-##### SessionKeyServer
+#### SessionKeyServer
 
 For enhanced security RCloud can be configured to use a session key
 server instead of flat files. To install the reference server (it
@@ -217,7 +254,7 @@ requires Java so e.g. `sudo apt-get install openjdk-8-jdk`), use
 
 Then add `Session.server: http://127.0.0.1:4301` to `rcloud.conf`.
 
-##### PAM authentication
+#### PAM authentication
 
 This is the most advanced setup so use only if you know how this
 works. If you want to use user switching and PAM authentication, you
@@ -239,10 +276,8 @@ components. Common configuration in that case:
 
 This setup allows RCloud to switch the execution environment according
 to the user than has authenticated. For this to work, RCloud must be
-started as root, e.g., `sudo conf/start`. Again, use only if you know
+started as root. Again, use only if you know
 what you're doing since misconfiguring RCloud run as root can have
 grave security implications.
 
-## Installing from Docker Hub
 
-(https://hub.docker.com/r/rcl0ud/rcloud/)

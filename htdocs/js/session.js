@@ -9,7 +9,6 @@ function invoke_context_callback(type /*, ... */) {
     var ctx = arguments[1];
     var args = Array.prototype.slice.call(arguments, 2);
     var context = output_contexts_[ctx];
-    console.log("forward_to_context, ctx="+ctx+", type="+type+", old.ctx="+context);
     if(context && context[type]) {
         context[type].apply(context, args);
         return true;
@@ -101,11 +100,10 @@ var oob_sends = {
 
 function on_data(v) {
     v = v.value.json();
-    // FIXME: this is a temporary debugging to see all OOB calls irrespective of handlers
-    console.log("OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
 
     if(oob_sends[v[0]])
         oob_sends[v[0]].apply(null, v.slice(1));
+    else console.log("unknown OOB send arrived: ['"+v[0]+"']" + (oob_sends[v[0]]?'':' (unhandled)'));
 };
 
 var oob_messages = {
@@ -208,8 +206,7 @@ function rclient_promise(allow_anonymous, on_connect_error_handler) {
             on_connect_anonymous_disallowed(ocaps);
         return promise;
     }).then(function(hello) {
-        if (!$("#output > .response").length)
-            rclient.post_response(hello);
+        rclient.post_response(hello[0]);
     }).catch(on_connect_error_handler).then(function() {
         return Promise.all([
             rcloud.get_conf_value('exec.token.renewal.time').then(function(timeout) {
