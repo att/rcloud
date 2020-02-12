@@ -708,10 +708,13 @@
         src="/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 
-<script type="text/javascript">MathJax && MathJax.Hub.Config({tex2jax: {processEscapes: true,
-  processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
-  displayMath: [ ['\\[','\\]'] ] },
-  "HTML-CSS": { minScaleAdjust: 125 } });
+<script type="text/javascript">window.MathJax ? MathJax.Hub.Config(
+    {
+        tex2jax: {processEscapes: true,
+                  processEnvironments: false, inlineMath: [ ['\\(','\\)'] ],
+                  displayMath: [ ['\\[','\\]'] ] },
+        "HTML-CSS": { minScaleAdjust: 125 }
+    }) : console.warn('MathJax not available');
 </script>
 
 </body></html>
