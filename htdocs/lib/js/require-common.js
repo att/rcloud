@@ -56,7 +56,7 @@ function start_require(deps) {
         if (err.requireType === 'timeout') {
             var	lines =	err.toString().split('\n');
             lines = lines.slice(0, lines.length-1); // don't include link to confusing requirejs docs
-            if(window.RCloud)
+            if(window.RCloud && RCloud.UI && RCloud.UI.fatal_dialog)
                 RCloud.UI.fatal_dialog(["Sorry, the page timed out."].concat(lines).join('\n'), "Reload", window.location.href);
             else {
                 lines.unshift('Ooops, please reload');
