@@ -591,7 +591,7 @@ var editor = function () {
 
                 anchor.addClass('ui-all')
                     .append($('<span class="username">'+currentNotebook.username+'</span>'))
-                    .append($desc = $('<span class="description">'+desc+'</span>'))
+                    .append($desc = $('<span class="description"></span>').text(desc))
                     .appendTo(li);
 
                 if(currentNotebook.source)

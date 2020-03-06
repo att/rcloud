@@ -5,6 +5,8 @@
   a { text-decoration:none; }
   p.clear { clear: both; }
   body { font-family: Sans-Serif; }
+  #content { float: left; padding-left: 1em; }
+  #error { color: red; font-weight: bold; padding-bottom: 0.5ex; }
 </style>
 <script type="text/javascript">
 window.onload = function(e) {
@@ -50,7 +52,12 @@ window.onload = function(e) {
   }
   document.loginForm.user.focus();
   document.getElementById('i_redirect').value=querystring('redirect');
-  document.getElementById('error').innerHTML = decodeURI(querystring('error'));
+  var error = decodeURI(querystring('error'));
+  if(error) {
+    var tag = document.getElementById('error');
+    tag.style.visibility = 'visible';
+    tag.innerHTML = error;
+  }
   true
 }
 </script>
@@ -60,10 +67,9 @@ window.onload = function(e) {
 <div id='warn' style='visibility:hidden; border-radius: 5px; padding: 10px; margin-left: auto; margin-right: auto; width:800px'></div>
 <div id="body" style="width: 1024px; margin: 150px auto;">
 <img align="left" src="RCloud_Color_Vector_mid.png">
+<div id="content">
 <font size="+5">Welcome to RCloud.</font>
-<p>
-<div>
-<div id="error" style="color: red; font-weight: bold"></div>
+<div id="error" style="visibility: hidden">&nbsp;</div>
 <div id='login'>
 <form action="/login.R" method=POST name=loginForm>
 <input type=hidden name=action value="execLogin">
