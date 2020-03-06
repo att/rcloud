@@ -396,11 +396,12 @@ Notebook.create_model = function()
             return auto_activate_;
         },
         show_hidden_assets: function(showhidden) {
-            if(showhidden !== undefined)
+            if(showhidden !== undefined) {
                 show_hidden_assets_ = showhidden;
-            _.each(this.views, function(view) {
-                view.show_hidden_assets(showhidden);
-            });
+                _.each(this.views, function(view) {
+                    view.show_hidden_assets(showhidden);
+                });
+            }
             return show_hidden_assets_;
         },
         user: function(user) {
