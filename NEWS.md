@@ -1,3 +1,7 @@
+## RCloud 2.2.1
+ * Sanitize notebook titles in Recent Notebooks menu to prevent potential XSS vulnerability (#2717)
+ * Improve error handling when detecting timeout on RCloud load (#2718)
+
 ## RCloud 2.2
 
 ### Features
