@@ -8,11 +8,11 @@ RCloud.UI.run_button = (function() {
     }
     
     function enable(whether) {
-      if(whether) {
-        RCloud.UI.navbar.control('run_notebook').enable();
-      } else {
-        RCloud.UI.navbar.control('run_notebook').disable();
-      }
+      // if(whether) {
+      //   RCloud.UI.navbar.control('run_notebook').enable();
+      // } else {
+      //   RCloud.UI.navbar.control('run_notebook').disable();
+      // }
     }
     function schedule(ignored) {
         return (
