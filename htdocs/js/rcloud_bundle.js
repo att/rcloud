@@ -1,5 +1,5 @@
 RCloud = Object.assign({
-    version: '2.2.1'
+    version: '2.2.2'
 }, RCloud);
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
