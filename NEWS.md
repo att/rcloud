@@ -1,6 +1,10 @@
 ## RCloud 2.3
  * Assets that start with `.` are hidden by default. This can be toggled in settings. (#2715)
 
+## RCloud 2.2.2
+ * Sanitize `rcloud.html` input/output:
+   * Print error message as text not HTML to avoid XSS vulnerability
+   * Only allow redirects to the same host
 
 ## RCloud 2.2.1
  * Sanitize notebook titles in Recent Notebooks menu to prevent potential XSS vulnerability (#2717)
