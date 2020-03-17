@@ -51,7 +51,9 @@ window.onload = function(e) {
    return r;
   }
   document.loginForm.user.focus();
-  document.getElementById('i_redirect').value=querystring('redirect');
+  var redirect = querystring('redirect');
+  redirect = redirect.filter(r => new URL(r, window.location.href).host === window.location.host);
+  document.getElementById('i_redirect').value = redirect;
   var error = decodeURI(querystring('error'));
   if(error) {
     var tag = document.getElementById('error');
