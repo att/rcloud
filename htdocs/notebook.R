@@ -104,6 +104,6 @@ run <- function(url, query, body, headers)
       list(payload, type)
     }
   }, error=function(e) {
-    list(paste(et,"<pre>", paste(as.character(e), collapse='\n'), "</pre>"), "text/html", character(), 500L)
+    list(paste(et,"<pre>", sanitize.error(paste(as.character(e), collapse='\n')), "</pre>"), "text/html", character(), 500L)
   })
 }
