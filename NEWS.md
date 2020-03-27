@@ -1,5 +1,15 @@
 ## RCloud 2.3
+
+### Features
  * Assets that start with `.` are hidden by default. This can be toggled in settings. (#2715)
+ * `rcloud.download.file()` is more user-friendly: it can infer
+   `mimetype` and if no `content` is provided it is read from `filename`
+   automatically (#2722)
+
+### Bugfixes
+ * `rcloud.download.file()` failed to insert newlines between
+    character vector elements (#2721)
+
 
 ## RCloud 2.2.2
  * Sanitize `rcloud.html` input/output:
