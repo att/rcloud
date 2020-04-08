@@ -1,5 +1,5 @@
 RCloud = Object.assign({
-    version: '2.2.2'
+    version: '2.2.3'
 }, RCloud);
 
 // FIXME: what is considered an exception - an API error or also cell eval error?
@@ -9145,8 +9145,8 @@ RCloud.UI.import_export = (function() {
 
                                     if(failed.length)
                                         RCloud.UI.session_pane.post_error("Failed to import notebooks: " + failed.join(', '));
+                                    dialog.modal('hide');
                                 });
-                            dialog.modal('hide');
                         }
                         function create_import_notebook_dialog() {
                             var body = $('<div class="container"/>').append(
