@@ -3,6 +3,19 @@
         //console.log('launching the module');
         init: function(k) {
 
+            var ESC_MAP = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            };
+
+            function escapeHTML(s, forAttribute) {
+                return s.replace(forAttribute ? /[&<>'"]/g : /[&<>]/g, function(c) {
+                    return ESC_MAP[c];
+                });
+            }
             RCloud.UI.notebook_commands.add({
                 notebook_info: {
                     section: 'appear',
@@ -58,9 +71,9 @@
 
                                 function wrapGroupType(name) {
                                     if(node.user === editor.username() && has_prot)
-                                        return '<div class="group-link info-item"><a href="#">'+name+'</a></div>';
+                                        return '<div class="group-link info-item"><a href="#">'+escapeHTML(name)+'</a></div>';
                                     else
-                                        return '<div class="group-link info-item">'+name+'</div>';
+                                        return '<div class="group-link info-item">'+escapeHTML(name)+'</div>';
                                 };
 
                                 $('html').off('mouseup');
@@ -72,7 +85,7 @@
                                 if(!popupOpen) {
                                     $(document).trigger('destroy_all_popovers');
                                     $(info).popover({
-                                        title: node.name,
+                                        title: escapeHTML(node.name),
                                         html: true,
                                         content: info_content,
                                         container: 'body',
