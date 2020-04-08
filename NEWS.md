@@ -1,3 +1,8 @@
+## RCloud 2.2.3
+* Sanitize error messages in notebook.R to prevent reflected XSS (#2727)
+* Sanitize inputs to Import External Notebooks page (#2728)
+* Sanitize group and notebook name in Notebook Info popup (#2729)
+
 ## RCloud 2.2.2
  * Sanitize `rcloud.html` input/output:
    * Print error message as text not HTML to avoid XSS vulnerability

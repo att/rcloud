@@ -1,3 +1,10 @@
+sanitize.error <- function(x)
+  gsub('<', '&lt;',
+       gsub('>', '&gt;',
+            gsub("'", '&apos;',
+                 gsub('"', '&quot;',
+                      gsub('&', '&amp;', x)))))
+
 ## this serves Rserve's built-in HTTP server
 .http.request <- function(url, query, body, headers, ...) {
     if (nzConf("http.user")) {

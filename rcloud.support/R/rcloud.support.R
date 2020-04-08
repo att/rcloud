@@ -532,6 +532,10 @@ rcloud.port.notebooks <- function(url, books, prefix) {
   ## to use create.gist.context() properly.
   foreign.ctx <- github::create.github.context(url)
 
+  if(!grep('^https?://',url)) stop('source repo api url must start with http:// or https://')
+
+  if(length(grep('^[0-9a-fA-F]+$', books)) != length(books)) stop('some notebook ids are not valid')
+
   Map(function(notebook) {
     getg <- get.gist(notebook, ctx = foreign.ctx)
     if(getg$ok) {
