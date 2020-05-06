@@ -60,7 +60,7 @@ Notebook.Cell.postprocessors.add({
             // typeset the math
             // why does passing the div as last arg not work, as documented here?
             // http://docs.mathjax.org/en/latest/typeset.html
-            if (!_.isUndefined(MathJax))
+            if (!_.isUndefined(window.MathJax))
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
         }
     },
