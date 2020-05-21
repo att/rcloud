@@ -8,6 +8,8 @@ github.client.secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 github.base.url: https://github.com/
 github.api.url: https://api.github.com/
 github.gist.url: https://gist.github.com/
+#--: omit for rcloud-gist-services
+github.use.basic.auth: true
 #gist.backend: gitgist
 #gist.git.root: ${ROOT}/data/gists
 rcs.engine: redis

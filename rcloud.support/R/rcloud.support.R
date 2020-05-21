@@ -576,7 +576,7 @@ rcloud.record.cell.execution <- function(user = .session$username, json.string) 
 #      file=pathConf("data.root", "history", "main_log.txt"), append=TRUE)
 }
 
-rcloud.debug.level <- function() if (hasConf("debug")) getConf("debug") else 0L
+rcloud.debug.level <- function() if (hasConf("debug")) as.integer(getConf("debug")) else 0L
 
 ################################################################################
 # stars
