@@ -1,9 +1,14 @@
-config.options <- function() list(github.api.url=TRUE, github.base.url=FALSE, github.client.id=FALSE, github.client.secret=FALSE, github.use.basic.auth=FALSE, github.auth.forward=FALSE)
+config.options <- function() list(github.api.url=TRUE, github.base.url=FALSE, github.client.id=FALSE, github.client.secret=FALSE, github.use.query.token=FALSE, github.auth.forward=FALSE, rational.githubgist=FALSE)
 
-create.gist.context <- function(username, token, github.api.url, github.client.id, github.client.secret, github.base.url, github.use.basic.auth, ...) {
+use.query.token <- function(github.use.query.token, rational.githubgist) {
+  if(!is.null(github.use.query.token)) return(as.logical(github.use.query.token))
+  if(!is.null(rational.githubgist)) return(as.logical(rational.githubgist))
+  return(TRUE)
+}
+
+create.gist.context <- function(username, token, github.api.url, github.client.id, github.client.secret, github.base.url, github.use.query.token, rational.githubgist, ...) {
   if ((is.character(token) && !isTRUE(nzchar(token))) || is.null(github.client.secret) || is.null(github.client.id)) token <- NULL ## github requires token to be NULL if not used
-  use_basic_auth <- if(is.null(github.use.basic.auth)) FALSE else as.logical(github.use.basic.auth)
-  ctx <- github::create.github.context(api_url=github.api.url, client_id=github.client.id, client_secret=github.client.secret, access_token=token, use_basic_auth=use_basic_auth)
+  ctx <- github::create.github.context(api_url=github.api.url, client_id=github.client.id, client_secret=github.client.secret, access_token=token, use_query_token=use.query.token(github.use.query.token, rational.githubgist))
   ctx$github.base.url=github.base.url
   ctx$read.only <- is.null(token)
   ctx$gist.params <- list(...)
