@@ -3,7 +3,7 @@ config.options <- function() list(github.api.url=TRUE, github.base.url=FALSE, gi
 use.query.token <- function(github.use.query.token, rational.githubgist) {
   if(!is.null(github.use.query.token)) return(as.logical(github.use.query.token))
   if(!is.null(rational.githubgist)) return(as.logical(rational.githubgist))
-  return(TRUE)
+  return(FALSE)
 }
 
 create.gist.context <- function(username, token, github.api.url, github.client.id, github.client.secret, github.base.url, github.use.query.token, rational.githubgist, ...) {
