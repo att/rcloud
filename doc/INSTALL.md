@@ -25,8 +25,14 @@ RCloud requires R 3.1.0 or higher and several R packages. If you want to compile
     sudo apt-get install r-base-dev
 
     ## RedHat/CentOS 6+
-    yum install gcc-gfortran gcc-c++ cairo-devel readline-devel libXt-devel libjpeg-devel \
+    sudo yum install gcc-gfortran gcc-c++ cairo-devel readline-devel libXt-devel libjpeg-devel \
     bzip2-devel xz-devel libicu-devel boost-devel openssl-devel libcurl-devel subversion git automake redis
+
+    ## install R
+    sudo yum install R
+
+    ## jupyter support
+    sudo yum install python3-jupyter-core python3-ipykernel python3-nbconvert python3-nbformat python3-jupyter-client
 
 If you have already R installed you may need only a subset of the above.
 
