@@ -8,19 +8,26 @@
 
 ## Jupyter Installation
 
-RCloud integrates with a single Jupyter backend, depending on which Python version RCloud integrates with, run one of the following commands:
+RCloud integrates with a single Jupyter backend, depending on which Python version RCloud integrates with.
 
-### Python 2
+Usually you should install Jupyter using your operating system's package manager; see [RCloud's INSTALL.md](../../doc/INSTALL.md) for typical commands for Ubuntu and RedHat.
+
+For a quick-and-dirty test installation you can do
+
+#### Python 2
 
 ```{bash}
 sudo python -m pip install jupyter
 ```
 
-### Python 3
+#### Python 3
 
 ```{bash}
 sudo python3 -m pip3 install jupyter
 ```
+
+However, `sudo pip` is generally a bad idea.
+
 
 ### R Dependencies
 
