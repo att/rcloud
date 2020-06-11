@@ -5,6 +5,7 @@
  * `rcloud.download.file()` is more user-friendly: it can infer
    `mimetype` and if no `content` is provided it is read from `filename`
    automatically (#2722)
+ * Cells with input (e.g. `readline()`, debugging) have command history (#1729)
 
 ### Improvements
  * The session is not reset when loading a notebook or creating a new notebook, if the current

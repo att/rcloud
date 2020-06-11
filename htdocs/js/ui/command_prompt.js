@@ -146,7 +146,7 @@ RCloud.UI.command_prompt = (function() {
                 exec: function() {
                     ace_widget_.blur();
                 }
-            }                
+            }
         ]);
         widget.commands.removeCommands(['find', 'replace']);
         ui_utils.customize_ace_gutter(widget, function(i) {
@@ -158,62 +158,6 @@ RCloud.UI.command_prompt = (function() {
             restore: restore_prompt,
             set_language: set_language
         };
-    }
-
-    function setup_prompt_history() {
-        var entries_ = [], alt_ = [];
-        var curr_ = 0;
-        function curr_cmd() {
-            return alt_[curr_] || (curr_<entries_.length ? entries_[curr_] : "");
-        }
-        var prefix_ = null;
-        var result = {
-            init: function() {
-                prefix_ = "rcloud.history." + shell.gistname() + ".";
-                var i = 0;
-                entries_ = [];
-                alt_ = [];
-                var last_lang = window.localStorage["last_cell_lang"] || "R";
-                while(1) {
-                    var cmd = window.localStorage[prefix_+i],
-                        cmda = window.localStorage[prefix_+i+".alt"];
-                    if(cmda !== undefined)
-                        alt_[i] = cmda;
-                    if(cmd === undefined)
-                        break;
-                    entries_.push(cmd);
-                    ++i;
-                }
-                curr_ = entries_.length;
-                return {"cmd":curr_cmd(),"lang":last_lang};
-            },
-            add_entry: function(cmd) {
-                if(cmd==="") return;
-                alt_[entries_.length] = null;
-                entries_.push(cmd);
-                alt_[curr_] = null;
-                curr_ = entries_.length;
-                window.localStorage[prefix_+(curr_-1)] = cmd;
-            },
-            has_last: function() {
-                return curr_>0;
-            },
-            last: function() {
-                if(curr_>0) --curr_;
-                return curr_cmd();
-            },
-            has_next: function() {
-                return curr_<entries_.length;
-            },
-            next: function() {
-                if(curr_<entries_.length) ++curr_;
-                return curr_cmd();
-            },
-            change: function(cmd) {
-                window.localStorage[prefix_+curr_+".alt"] = alt_[curr_] = cmd;
-            }
-        };
-        return result;
     }
 
     function show_or_hide() {
@@ -269,7 +213,7 @@ RCloud.UI.command_prompt = (function() {
             $('#rcloud-cellarea').append(prompt_div);
             var prompt_command_bar = $('#prompt-area .cell-control-bar');
             command_bar_ = RCloud.UI.cell_commands.decorate('prompt', prompt_command_bar);
-            history_ = setup_prompt_history();
+            history_ = RCloud.UI.prompt_history();
             entry_ = setup_command_entry();
         },
         history: function() {
