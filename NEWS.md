@@ -6,6 +6,10 @@
    `mimetype` and if no `content` is provided it is read from `filename`
    automatically (#2722)
 
+### Improvements
+ * The session is not reset when loading a notebook or creating a new notebook, if the current
+   session is clean (i.e. nothing has been run). This makes browsing notebooks faster. (#2735)
+
 ### Bugfixes
  * `rcloud.download.file()` failed to insert newlines between
     character vector elements (#2721)
