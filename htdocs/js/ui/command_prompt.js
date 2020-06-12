@@ -62,7 +62,7 @@ RCloud.UI.command_prompt = (function() {
         }
 
         function restore_prompt() {
-            var prop = history_.init();
+            var prop = history_.init(shell.gistname());
             if(!_.contains(RCloud.language.available_languages(), prop.lang)) {
               var default_lang = RCloud.language.available_languages()[0];
               console.error("Language " + prop.lang + " is not available. Using " + default_lang + " to restore prompt widget.");
