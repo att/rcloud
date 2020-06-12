@@ -124,7 +124,7 @@ RCloud.UI.navbar = (function() {
                                 style: 'text-decoration:none; padding-right: 0px',
                                 target: '_blank'
                             }, $.el.i({class: 'icon-share'}));
-                        $(share_link_).on('click', function(x) { shell.save_notebook();})
+                        $(share_link_).on('click', function(x) { shell.save_notebook();});
                         return {
                             control: $.el.span(share_link_, $.el.span({
                                 class: 'dropdown',
@@ -155,6 +155,9 @@ RCloud.UI.navbar = (function() {
                                     $(a).click(item.handler);
                                     return $.el.li(a);
                                 })));
+                            },
+                            set_title: function(title) {
+                                $(share_link_).attr('title', title);
                             }
                         };
                     }

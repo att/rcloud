@@ -6,7 +6,12 @@ RCloud.UI.share_button = (function() {
         title = (title && extension_.get(title)) ? title : default_item_;
         if(!title)
             return Promise.reject(new Error('share button view types set up wrong'));
+        set_tooltip(title);
         return rcloud.set_notebook_property(shell.gistname(), "view-type", title);
+    }
+
+    function set_tooltip(title) {
+        RCloud.UI.navbar.control('shareable_link').set_title('Shareable Link: ' + title);
     }
 
     function get_view_type_name(gistname) {
@@ -122,6 +127,7 @@ RCloud.UI.share_button = (function() {
                 shareable_link.set_url(url);
             }).then(function() {
                 return get_view_type_name(shell.gistname()).then(function(title) {
+                    set_tooltip(title);
                     highlight(title);
                 });
             });
