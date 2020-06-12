@@ -11,6 +11,7 @@
  * The session is not reset when loading a notebook or creating a new notebook, if the current
    session is clean (i.e. nothing has been run). This makes browsing notebooks faster. (#2735)
  * Sharable Link tooltip shows the view type (#2723)
+ * New Cell buttons are faster (#2731)
 
 ### Bugfixes
  * `rcloud.download.file()` failed to insert newlines between

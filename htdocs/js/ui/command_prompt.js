@@ -191,9 +191,7 @@ RCloud.UI.command_prompt = (function() {
                     create: function() {
                         return RCloud.UI.cell_commands.create_button('icon-plus', 'insert new cell', function() {
                             var append = shell.new_cell("", language_);
-                            append.updatePromise.then(function() {
-                                append.controller.edit_source(true);
-                            });
+                            append.controller.edit_source(true);
                         });
                     }
                 },
