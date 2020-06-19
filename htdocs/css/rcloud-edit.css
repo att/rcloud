@@ -661,6 +661,9 @@ ul.jqtree-tree .jqtree-title.jqtree_common.history {
 #asset-link:hover {
   font-weight: 500; }
 
+#asset-list li.hidden-asset {
+  display: none; }
+
 /******************************************************************************/
 #file-upload-div {
   height: 100%;
