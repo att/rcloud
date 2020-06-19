@@ -20,7 +20,6 @@ RClient = {
                     on_error(err[0], err[1]);
                 else {
                     ocaps = Promise.promisifyAll(ocaps);
-                    console.log('Connected to rcloud host', ocaps.rcloud.hostname[0]);
                     if(ocaps === null) {
                         on_error("Login failed. Shutting down!");
                     }
@@ -28,6 +27,8 @@ RClient = {
                         on_error(ocaps);
                     }
                     else {
+                        if(ocaps.rcloud && ocaps.rcloud.hostname)
+                            console.log('Connected to rcloud host', ocaps.rcloud.hostname[0]);
                         result.running = true;
                         /*jshint -W030 */
                         opts.on_connect && opts.on_connect.call(result, ocaps);
