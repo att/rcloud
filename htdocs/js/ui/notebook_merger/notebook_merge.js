@@ -39,7 +39,7 @@ RCloud.UI.addons.notebook_merge = (function() {
               section: 'appear',
               sort: 4000,
               create: function (node) {
-                var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge from', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
+                var merge = ui_utils.fa_button('icon-code-fork icon-rotate-270', 'merge into current notebook', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
                 merge.click(function (e) {
                   // Open merge dialogue
                   merger_dialog.show();
