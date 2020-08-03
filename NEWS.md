@@ -1,3 +1,7 @@
+## RCloud 2.0.6
+ * Includes artifacts missing in 2.0.5
+
+
 ## RCloud 2.0.5
  * Backport fix to mathjax support from develop branch (#2711)
 
