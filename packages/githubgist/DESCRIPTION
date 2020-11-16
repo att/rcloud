@@ -1,6 +1,6 @@
 Package: githubgist
 Title: Gist interface to GitHub
-Version: 1.0-5
+Version: 1.0-6
 Author: Simon Urbanek <urbanek@research.att.com>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: Gist interface to GitHub
