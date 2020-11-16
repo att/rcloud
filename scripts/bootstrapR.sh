@@ -7,10 +7,11 @@ if [ x"$1" = 'x-h' ]; then
     echo ' This script must be run from the RCloud root directory and it'
     echo ' installs R packages needed by RCloud in the R installation'
     echo ''
-    echo ' Optional environment variables:'
+    echo ' Optional environment variables (defaults in []):'
     echo ' RBIN        - location of the R executable [R]'
     echo ' RCREPO      - repository of RCloud packages [<RCloud>/packages]'
     echo ' DISTREP     - distribution repository [<RCloud>/dist-repos]'
+    echo ' CRANHOST    - hostname of CRAN repo [cloud.R-project.org]'
     echo ''
     echo ' If DISTREP exists, it will be used to bootstrap R without using'
     echo " remote repositories. If it doesn't exist, packages from RCREPO"
@@ -33,6 +34,7 @@ fi
 : ${RCREPO="$WD/packages"}
 : ${DISTREP="$WD/dist-repos"}
 : ${RBIN=R}
+: ${CRANHOST=cloud.R-project.org}
 
 ok=`echo 'if(R.version$major>=3)cat("OK\n")' | "$RBIN" --slave --vanilla`
 if [ "x$ok" != "xOK" ]; then
@@ -75,10 +77,10 @@ if [ ! -e "$DISTREP/src/contrib/PACKAGES" -o -n "$mkdist" ]; then
 	if [ x`uname 2>/dev/null` = xDarwin ]; then
 	    ## On OS X we use binareis where we can to simplify things
 	    echo " --- OS X - installing available binary dependencies ---"
-	    echo "pkg<-unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))));cran=available.packages(contrib.url(c('http://r.research.att.com/','http://rforge.net'),type='source'),type='source');local=available.packages(contrib.url('file://$RCREPO',type='source'),type='source');stage1=unique(unlist(tools:::package_dependencies(pkg,local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% c(rec,rownames(installed.packages())))];install.packages(stage2,repos=c('http://r.research.att.com','http://rforge.net'))" | "$RBIN" --vanilla --slave
+	    echo "pkg<-unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))));cran=available.packages(contrib.url(c('https://$CRANHOST/','https://rforge.net'),type='source'),type='source');local=available.packages(contrib.url('file://$RCREPO',type='source'),type='source');stage1=unique(unlist(tools:::package_dependencies(pkg,local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% c(rec,rownames(installed.packages())))];install.packages(stage2,repos=c('https://$CRANHOST','https://rforge.net'))" | "$RBIN" --vanilla --slave
 	fi
         echo " --- Installing RCloud packages and dependencies in R"
-        echo "install.packages(unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz')))),repos=c('file://$RCREPO','http://r.research.att.com','http://rforge.net'),type='source')" | "$RBIN" --vanilla --slave --no-save || exit 1
+        echo "install.packages(unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz')))),repos=c('file://$RCREPO','https://$CRANHOST','https://rforge.net'),type='source')" | "$RBIN" --vanilla --slave --no-save || exit 1
     else
         ## mkdist
         if ! mkdir -p "$DISTREP/src/contrib"; then
@@ -86,7 +88,7 @@ if [ ! -e "$DISTREP/src/contrib/PACKAGES" -o -n "$mkdist" ]; then
             exit 1
         fi
         cp -p "$RCREPO/src/contrib/"*.tar.gz "$DISTREP/src/contrib/"
-        echo "options(warn=2);pkg<-unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))));cran=available.packages(contrib.url(c('http://r.research.att.com/','http://rforge.net'),type='source'),type='source');local=available.packages(contrib.url('file://$RCREPO',type='source'),type='source');stage1=unique(unlist(tools:::package_dependencies(pkg,local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% rec)];print(stage2);download.packages(stage2,'$DISTREP/src/contrib',,c('http://rforge.net','http://r.research.att.com','file://$RCREPO'),type='source');tools:::write_PACKAGES('$DISTREP/src/contrib')" | "$RBIN" --vanilla --slave || exit 1
+        echo "options(warn=2);pkg<-unique(gsub('_.*','',basename(Sys.glob('$RCREPO/src/contrib/*.tar.gz'))));cran=available.packages(contrib.url(c('https://$CRANHOST/','https://rforge.net'),type='source'),type='source');local=available.packages(contrib.url('file://$RCREPO',type='source'),type='source');stage1=unique(unlist(tools:::package_dependencies(pkg,local,'all')));print(stage1);stage2=unique(c(stage1,unlist(tools:::package_dependencies(stage1,rbind(cran,local),,TRUE))));rec=rownames(installed.packages(,'high'));stage2=stage2[!(stage2 %in% rec)];print(stage2);download.packages(stage2,'$DISTREP/src/contrib',,c('https://rforge.net','https://$CRANHOST','file://$RCREPO'),type='source');tools:::write_PACKAGES('$DISTREP/src/contrib')" | "$RBIN" --vanilla --slave || exit 1
         echo ''
         echo " Distributon packages created in $DISTREP"
         exit 0
