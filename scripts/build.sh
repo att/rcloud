@@ -45,12 +45,12 @@ if [ ! -e rcloud.support/DESCRIPTION ]; then
     exit 1
 fi
 
-mkdir -p dist/rcloud/htdocs/lib/js
-cp lib/js/misc/* dist/rcloud/htdocs/lib/js
-cp -R lib/js/monaco/ dist/rcloud/htdocs/lib/js/monaco
-cp -R conf/ dist/rcloud/conf
-cp -R src/htdocs/ dist/rcloud/htdocs
-cp -R src/R/ dist/rcloud/R
+mkdir -p dist/htdocs/lib/js
+cp lib/js/misc/* dist/htdocs/lib/js
+cp -R lib/js/monaco/ dist/htdocs/lib/js/monaco
+cp -R conf/ dist/conf
+cp -R src/htdocs/ dist/htdocs
+cp -R src/R/ dist/R
 
 if [ -z "$SKIP_JS" ]; then
     # build JS (if available)

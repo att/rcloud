@@ -144,7 +144,7 @@ module.exports = function (grunt) {
                     expand: true,
                     cwd: './src/sass',
                     src: '*.scss',
-                    dest: './dist/rcloud/htdocs/css',
+                    dest: './dist/htdocs/css',
                     ext: '.css'
                 }],
                 trace: true
@@ -157,15 +157,15 @@ module.exports = function (grunt) {
             },
             bundle: {
                 src: '<%= conf.bundleFiles %>',
-                dest: 'dist/rcloud/htdocs/js/rcloud_bundle.js'
+                dest: 'dist/htdocs/js/rcloud_bundle.js'
             },
             ace: {
                 src: '<%= conf.aceFiles %>',
-                dest: 'dist/rcloud/htdocs/lib/ace_bundle.js'
+                dest: 'dist/htdocs/lib/ace_bundle.js'
             },
             merger: {
                 src: '<%= conf.mergerFiles %>',
-                dest: 'dist/rcloud/htdocs/js/merger_bundle.js'
+                dest: 'dist/htdocs/js/merger_bundle.js'
             }
         },
         uglify: {
@@ -176,42 +176,42 @@ module.exports = function (grunt) {
                 banner: '<%= conf.banner %>'
             },
             bundle: {
-                src: 'dist/rcloud/htdocs/js/rcloud_bundle.js',
-                dest: 'dist/rcloud/htdocs/js/rcloud_bundle.min.js'
+                src: 'dist/htdocs/js/rcloud_bundle.js',
+                dest: 'dist/htdocs/js/rcloud_bundle.min.js'
             },
             ace: {
-                src: 'dist/rcloud/htdocs/lib/ace_bundle.js',
-                dest: 'dist/rcloud/htdocs/lib/ace_bundle.min.js'
+                src: 'dist/htdocs/lib/ace_bundle.js',
+                dest: 'dist/htdocs/lib/ace_bundle.min.js'
             },
             merger: {
-                src: 'dist/rcloud/htdocs/js/merger_bundle.js',
-                dest: 'dist/rcloud/htdocs/js/merger_bundle.min.js'
+                src: 'dist/htdocs/js/merger_bundle.js',
+                dest: 'dist/htdocs/js/merger_bundle.min.js'
             }
         },
         compress: {
             bundle: {
-                src: 'dist/rcloud/htdocs/js/rcloud_bundle.js',
-                dest: 'dist/rcloud/htdocs/js/rcloud_bundle.js.gz'
+                src: 'dist/htdocs/js/rcloud_bundle.js',
+                dest: 'dist/htdocs/js/rcloud_bundle.js.gz'
             },
             ace: {
-                src: 'dist/rcloud/htdocs/lib/ace_bundle.js',
-                dest: 'dist/rcloud/htdocs/lib/ace_bundle.js.gz'
+                src: 'dist/htdocs/lib/ace_bundle.js',
+                dest: 'dist/htdocs/lib/ace_bundle.js.gz'
             },
             merger: {
-                src: 'dist/rcloud/htdocs/js/merger_bundle.js',
-                dest: 'dist/rcloud/htdocs/js/merger_bundle.js.gz'
+                src: 'dist/htdocs/js/merger_bundle.js',
+                dest: 'dist/htdocs/js/merger_bundle.js.gz'
             },
             bundle_min: {
-                src: 'dist/rcloud/htdocs/js/rcloud_bundle.min.js',
-                dest: 'dist/rcloud/htdocs/js/rcloud_bundle.min.js.gz'
+                src: 'dist/htdocs/js/rcloud_bundle.min.js',
+                dest: 'dist/htdocs/js/rcloud_bundle.min.js.gz'
             },
             ace_min: {
-                src: 'dist/rcloud/htdocs/lib/ace_bundle.min.js',
-                dest: 'dist/rcloud/htdocs/lib/ace_bundle.min.js.gz'
+                src: 'dist/htdocs/lib/ace_bundle.min.js',
+                dest: 'dist/htdocs/lib/ace_bundle.min.js.gz'
             },
             merger_min: {
-                src: 'dist/rcloud/htdocs/js/merger_bundle.min.js',
-                dest: 'dist/rcloud/htdocs/js/merger_bundle.min.js.gz'
+                src: 'dist/htdocs/js/merger_bundle.min.js',
+                dest: 'dist/htdocs/js/merger_bundle.min.js.gz'
             }
         }
     });
