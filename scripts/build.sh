@@ -45,6 +45,13 @@ if [ ! -e rcloud.support/DESCRIPTION ]; then
     exit 1
 fi
 
+mkdir -p dist/rcloud/htdocs/lib/js
+cp lib/js/misc/* dist/rcloud/htdocs/lib/js
+cp -R lib/js/monaco/ dist/rcloud/htdocs/lib/js/monaco
+cp -R conf/ dist/rcloud/conf
+cp -R src/htdocs/ dist/rcloud/htdocs
+cp -R src/R/ dist/rcloud/R
+
 if [ -z "$SKIP_JS" ]; then
     # build JS (if available)
     if [ \( -d ./node_modules \) -a \( -f node_modules/grunt-cli/bin/grunt \) ]; then

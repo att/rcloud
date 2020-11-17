@@ -9,10 +9,10 @@ if [ ! -e "$WD/rcloud.support/DESCRIPTION" ]; then
 fi
 
 # Create a local copy of mathjax library in htdocs
-MATHJAX_INSTALL_DIR=mathjax
-if [ ! -e "htdocs/$MATHJAX_INSTALL_DIR" ]; then
-    mkdir -p "htdocs/$MATHJAX_INSTALL_DIR"
+MATHJAX_INSTALL_DIR="dist/rcloud/htdocs/mathjax"
+if [ ! -e $MATHJAX_INSTALL_DIR ]; then
+    mkdir -p $MATHJAX_INSTALL_DIR
     echo 'Downloading MathJax'
-    curl -L $MATHJAX_URL | tar -xz -C "htdocs/$MATHJAX_INSTALL_DIR" --strip-components=1
+    curl -L $MATHJAX_URL | tar -xz -C $MATHJAX_INSTALL_DIR --strip-components=1
 fi
 

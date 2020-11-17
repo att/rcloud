@@ -7,9 +7,10 @@
 # RBIN     - path to R binary to be run (optional, default is "R")
 
 if [ -z "$ROOT" ]; then ## some auto-detection if ROOT is not set...
-    for c in /data/rcloud /data/ws /var/www/ws /var/FastRWeb /data/FastRWeb "`pwd`"; do
+    for c in /data/rcloud /data/ws /var/www/ws /var/FastRWeb /data/FastRWeb "`pwd`/dist/rcloud"; do
 	if [ -e "$c/conf/rserve.conf" ]; then
 	    ROOT="$c"
+            echo 'detected ROOT' $ROOT
 	    break
 	fi
     done

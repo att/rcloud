@@ -5,7 +5,7 @@ tmp
 userfiles
 .sass-cache
 node_modules
-htdocs/mathjax
+dist/
 services/
 data
 run
