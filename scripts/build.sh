@@ -50,6 +50,7 @@ cp -R conf/ dist/conf
 cp -R src/htdocs/ dist/htdocs
 cp -R src/R/ dist/R
 cp VERSION dist/
+sed "s/%VERSION%/`cat VERSION`/g" < src/DESCRIPTION > dist/DESCRIPTION
 cp lib/js/misc/* dist/htdocs/lib/js
 cp -R lib/js/monaco/ dist/htdocs/lib/js/monaco
 
