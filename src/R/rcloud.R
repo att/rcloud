@@ -1,4 +1,5 @@
 run.rcloud <- function() {
-  htdocs <- system.file('htdocs', package='rcloud')
-  Rserve::Rserve(debug, args=c("--RS-conf", htdocs, "--vanilla", "--no-save"))
+  debug <- FALSE
+  rsconf <- system.file('conf/rserve.conf', package='rcloud')
+  Rserve::Rserve(debug, args=c("--RS-conf", rsconf, "--vanilla", "--no-save"))
 }
