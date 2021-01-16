@@ -1,6 +1,7 @@
 import(github)
 importFrom(httr, GET, content)
 importFrom(gist, access.token, auth.url, context.info)
+exportPattern(".*githubcontext$")
 export(create.github.context)
 S3method('access.token','githubcontext')
 S3method('auth.url','githubcontext')
