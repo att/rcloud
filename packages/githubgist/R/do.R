@@ -63,7 +63,8 @@ modify.gist.githubcontext <- function(...) .fix.truncated(github::modify.gist(..
 
 create.gist.githubcontext <- function(...) .fix.truncated(github::create.gist(...))
 
-delete.gist.githubcontext <- github::delete.gist
+## There is no gist::delete.gist generic, so not yet
+## delete.gist.githubcontext <- github::delete.gist
 
 create.gist.comment.githubcontext <- github::create.gist.comment
 
@@ -75,3 +76,16 @@ modify.gist.comment.githubcontext <- github::modify.gist.comment
 
 get.user.githubcontext <- github::get.user
 
+## work around a nasty bug in R 4.0+ which prevents
+## method registration via NAMESPACE, so we have to do it by hand
+## .S3method only exists in R 4.0 so that's why we do it there only
+if (exists(".S3method")) .onLoad <- function (libname, pkgname) {
+    ns <- asNamespace("githubgist")
+    gn <- asNamespace("gist")
+    fn <- ls(ns)
+    ## find all methods for githubcontext from this package
+    meth <- fn[grep("\\.githubcontext", fn)]
+    ## register them
+    for (o in meth)
+        registerS3method(substr(o, 1L, nchar(o) - 14L), "githubcontext", ns[[o]], gn)
+}
