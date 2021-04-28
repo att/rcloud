@@ -12,7 +12,7 @@ RCloud requires R 3.1.0 or higher and several R packages. If you want to compile
     ## Ubuntu 14.04 (or higher), Debian 8 (or higher) - dependencies:
     sudo apt-get install gcc g++ gfortran libcairo-dev libreadline-dev libxt-dev libjpeg-dev \
     libicu-dev libssl-dev libcurl4-openssl-dev subversion git automake make libtool \
-    libtiff-dev gettext redis-server rsync curl
+    libtiff-dev libpcre2-dev liblzma-dev libbz2-dev gettext redis-server rsync curl
 
     ## jupyter support
     sudo apt-get install -y jupyter python-ipython python-ipykernel python-nbconvert python-nbformat python-jupyter-client python-jupyter-core
