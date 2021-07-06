@@ -1,5 +1,7 @@
 ## RCloud 2.3
 
+Compatible with R 4.*
+
 ### Features
  * Assets that start with `.` are hidden by default. This can be toggled in settings. (#2715)
  * `rcloud.download.file()` is more user-friendly: it can infer
