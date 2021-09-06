@@ -49,20 +49,15 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
         ec <- .b64.to.binary.file(content$files[[.encryped.content.filename]])$content
         meta <- attr(ec, "metadata")
         # ulog(".gist.binary.process.incoming: encrypted content (",paste(names(meta),collapse=","),")")
+
+        ## all the leg-work is in rcloud.decrypt() now, but we do extra sanity checking
         if (is.null(meta$cipher) || is.null(meta$sha1) || is.null(meta$key.type))
             stop("Notebook contains incomplete encrypted content (missing required metadata)")
-
         if (meta$key.type == "group-hash") {
-            key <- session.server.group.hash("rcloud", .session$token, meta$group, meta$salt)
-            if (!isTRUE(nchar(key) >= 64)) stop("unable to access key for an encrypted notebook")
-            key <- .Call(hex2raw, key)
-            enc.content <- rcloud.decrypt(ec, key)
+            enc.content <- rcloud.decrypt(ec)
             content$groupid <- meta$group
         } else if (meta$key.type == "user-key") {
-            salt <- as.character(meta$salt)
-            if (length(salt) < 1) salt <- ""
-            key <- .salted.usr.key(salt[1])
-            enc.content <- rcloud.decrypt(ec, key)
+            enc.content <- rcloud.decrypt(ec)
             content$groupid <- "private" ## for compatibility
         } else
             stop("Unsupported encryption type: ", meta$key.type)
@@ -95,30 +90,7 @@ encode.b64 <- function(what, meta=attr(what, "metadata")) {
     l
 }
 
-.salted.usr.key <- function(salt, key=get.user.key())
-    PKI::PKI.digest(c(charToRaw(salt),as.raw(10),get.user.key()), "SHA256")
-
-.encrypt.by.group <- function(content, groupid) {
-    salt <- generate.uuid()
-    key <- if (groupid == "private") {
-        .salted.usr.key(salt)
-    } else {
-        key <- session.server.group.hash("rcloud", .session$token, groupid, salt)
-        if (!isTRUE(nchar(key) >= 64)) stop("unable to use group key - likely access denied")
-        .Call(hex2raw, key)
-    }
-    enc <- rcloud.encrypt(content, key)
-    meta <- attr(enc, "metadata")
-    meta$salt <- salt
-    if (groupid == "private") {
-        meta$key.type <- "user-key"
-    } else {
-        meta$group <- groupid
-        meta$key.type <- "group-hash"
-    }
-    attr(enc, "metadata") <- meta
-    enc
-}
+## FWIW .salted.usr.key and .encrypt.by.group have moved to crypt.R
 
 ## called before issuing a modification request on a gist
 ## NB: notebook can be NULL if this is a new content in rcloud.create.notebook()

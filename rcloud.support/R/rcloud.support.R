@@ -333,7 +333,7 @@ rcloud.update.notebook <- function(id, content, is.current = TRUE) {
                 stop(paste0(.session$username, " is not a member of protection group ", group$id))
         }
         ## take the content and encrypt it
-        enc <- .encrypt.by.group(list(files=l), group$id)
+        enc <- rcloud.encrypt(list(files=l), group=group$id)
         ## update contains just the encrypted piece
         ## if this is a conversion, remove the unencrypted pieces
         cfiles <- if (!isTRUE(old$content$is.encrypted)) .zlist(names(rcloud.get.notebook(id, raw=TRUE)$content$files)) else list()
