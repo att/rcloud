@@ -8,14 +8,13 @@ Compatible with R 4.*
    `mimetype` and if no `content` is provided it is read from `filename`
    automatically (#2722)
  * Cells with input (e.g. `readline()`, debugging) have command history (#1729)
+ * `rcloud.encrypt` / `rcloud.decrypt` handle user and group keys (#2759) 
 
 ### Improvements
  * The session is not reset when loading a notebook or creating a new notebook, if the current
    session is clean (i.e. nothing has been run). This makes browsing notebooks faster. (#2735)
  * Sharable Link tooltip shows the view type (#2723)
  * New Cell buttons are faster (#2731)
-
-### Improvements
  * Ability to send token in the headers instead in query string, via rgithub 0.9.12. GitHub is
    sending deprecation emails about this. `github.use.query.token` defaults `false` for
    compatibility with GitHub, and can be set `true` for compatibility with
