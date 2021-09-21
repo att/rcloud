@@ -12,6 +12,9 @@ Notebook.Asset.create_controller = function(asset_model)
         deselect: function() {
             asset_model.active(false);
         },
+        is_hidden: function() {
+            return asset_model.filename()[0] === '.';
+        },
         remove: function(force) {
             var asset_name = asset_model.filename();
             var msg = "Do you want to remove the asset '" +asset_name+ "' from the notebook?";

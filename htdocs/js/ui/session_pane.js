@@ -121,7 +121,10 @@ RCloud.UI.session_pane = {
         var msg = "";
         if(RCloud.is_exception(e))
             msg = RCloud.exception_message(e);
-        else {
+        else if(Array.isArray(e))
+            // some Rserve errors are not properly formed exceptions
+            msg = e.join(', ');
+        else if(e.message) {
             // bluebird will print the message for Chrome/Opera but no other browser
             if(!window.chrome && e.message)
                 msg += "Error: " + e.message + "\n";

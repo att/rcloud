@@ -38,6 +38,8 @@ Notebook.create_html_view = function(model, root_div)
               this.asset_sub_views.splice(new_asset_index, 0, asset_view);
               $('#asset-list').find('li:eq(' + new_asset_index + ')').after(asset_view.div());
             }
+            asset_view.div().toggleClass('hidden-asset',
+                                         !model.show_hidden_assets() && asset_model.controller.is_hidden());
             on_rearrange();
             return asset_view;
         },
@@ -88,7 +90,16 @@ Notebook.create_html_view = function(model, root_div)
             _.each(this.sub_views, function(view) {
                 view.set_autoscroll_notebook_output(whether);
             });
-            
+        },
+        show_hidden_assets: function(showhidden) {
+            this.asset_sub_views.forEach(function(asset_view) {
+                asset_view.div().toggleClass('hidden-asset', asset_view.div()[0].innerText[0] === '.' && !showhidden);
+            });
+            if(!showhidden && RCloud.UI.scratchpad.current_model &&
+               RCloud.UI.scratchpad.current_model.controller.is_hidden()) {
+                RCloud.UI.scratchpad.current_model.controller.deselect();
+                RCloud.UI.scratchpad.set_model(null);
+            }
         },
         update_urls: function() {
             RCloud.UI.scratchpad.update_asset_url();
@@ -126,7 +137,9 @@ Notebook.create_html_view = function(model, root_div)
             last_top_ = top;
         },
         load_options() {
-            return rcloud.config.get_user_option('autoactivate-cells').then(function(auto) {
+            return rcloud.config.get_user_option(['autoactivate-cells', 'show-hidden-assets']).then(function(opts) {
+                let auto = opts['autoactivate-cells'],
+                    showhidden = opts['show-hidden-assets'];
                 auto = auto===null || auto; // default true
                 if(auto) {
                     model.auto_activate(true);
@@ -145,6 +158,7 @@ Notebook.create_html_view = function(model, root_div)
                     });
                     window.setInterval(result.auto_activate, 100);
                 }
+                model.show_hidden_assets(showhidden);
             });
         }
     };

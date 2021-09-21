@@ -1,3 +1,30 @@
+## RCloud 2.3
+
+Compatible with R 4.*
+
+### Features
+ * Assets that start with `.` are hidden by default. This can be toggled in settings. (#2715)
+ * `rcloud.download.file()` is more user-friendly: it can infer
+   `mimetype` and if no `content` is provided it is read from `filename`
+   automatically (#2722)
+ * Cells with input (e.g. `readline()`, debugging) have command history (#1729)
+ * `rcloud.encrypt` / `rcloud.decrypt` handle user and group keys (#2759) 
+
+### Improvements
+ * The session is not reset when loading a notebook or creating a new notebook, if the current
+   session is clean (i.e. nothing has been run). This makes browsing notebooks faster. (#2735)
+ * Sharable Link tooltip shows the view type (#2723)
+ * New Cell buttons are faster (#2731)
+ * Ability to send token in the headers instead in query string, via rgithub 0.9.12. GitHub is
+   sending deprecation emails about this. `github.use.query.token` defaults `false` for
+   compatibility with GitHub, and can be set `true` for compatibility with
+   [rcloud-gist-services](https://github.com/att/rcloud-gist-services). Setting
+   `rational.githubgist` true will also set this flag.
+
+### Bugfixes
+ * `rcloud.download.file()` failed to insert newlines between
+    character vector elements (#2721)
+
 ## RCloud 2.2.3
 * Sanitize error messages in notebook.R to prevent reflected XSS (#2727)
 * Sanitize inputs to Import External Notebooks page (#2728)
@@ -11,6 +38,7 @@
 ## RCloud 2.2.1
  * Sanitize notebook titles in Recent Notebooks menu to prevent potential XSS vulnerability (#2717)
  * Improve error handling when detecting timeout on RCloud load (#2718)
+
 
 ## RCloud 2.2
 

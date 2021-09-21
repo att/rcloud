@@ -1,6 +1,6 @@
 Package: gitgist
 Title: GIT-based gist back-end
-Version: 1.0-1
+Version: 1.0-2
 Author: Simon Urbanek <urbanek@research.att.com>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: GIT-based gist back-end

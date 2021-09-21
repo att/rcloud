@@ -71,6 +71,7 @@ module.exports = function (grunt) {
             "htdocs/js/ui/output_context.js",
             "htdocs/js/ui/panel_loader.js",
             "htdocs/js/ui/progress.js",
+            "htdocs/js/ui/prompt_history.js",
             "htdocs/js/ui/right_panel.js",
             "htdocs/js/ui/processing_queue.js",
             "htdocs/js/ui/run_button.js",

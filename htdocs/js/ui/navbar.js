@@ -42,40 +42,44 @@ RCloud.UI.navbar = (function() {
         },
         create_highlight_button: function(id, title, icon) {
             var result = this.create_button(id, title, icon);
-            result.highlight_color = "#ffff4d";
+            result.highlight_color = "rgb(255, 255, 170)";
             result.icon_class = icon;
+            result.dark_color = "#222";
             result.original_color = null;
             result.highlighted = false;
             result.highlight = function(whether) {
                 var that = this;
-                var duration = 500;
+                var duration = 100, hold = 500, first_hold = duration;
                 that.highlighted = whether;
                 if(!that.original_color) {
                   that.original_color = $($(result.control).find('.' + result.icon_class)).css('color');
                 }
-                var stop = false;
                 function animation_loop() {
                     var el = $(that.control).find('.' + that.icon_class);
                     if(that.highlighted) {
                         if(!el.is(':animated')) {
-                            d3.select(el[0])
+                            var sel = d3.select(el[0]);
+                            sel
+                                .transition().duration(duration)
+                                .style('color', that.dark_color)
+                                .transition().duration(first_hold)
                                 .transition().duration(duration)
                                 .style('color', that.highlight_color)
-                                .transition().duration(duration)
-                                .transition().duration(duration)
-                                .style('color', that.original_color)
+                                .transition().duration(hold)
                                 .each('end', function() {
-                                    if(!stop)
+                                    if(that.highlighted) {
+                                        first_hold = hold;
                                         animation_loop();
+                                    } else {
+                                        sel.transition().duration(duration)
+                                            .style('color', that.original_color);
+                                    }
                                 });
                         }
                     }
-                    else stop = true;
                 }
-                if(that.highlighted) {
-                    stop = false;
+                if(that.highlighted)
                     animation_loop();
-                }
                 return this;
             };
             return result;
@@ -120,7 +124,7 @@ RCloud.UI.navbar = (function() {
                                 style: 'text-decoration:none; padding-right: 0px',
                                 target: '_blank'
                             }, $.el.i({class: 'icon-share'}));
-                        $(share_link_).on('click', function(x) { shell.save_notebook();})
+                        $(share_link_).on('click', function(x) { shell.save_notebook();});
                         return {
                             control: $.el.span(share_link_, $.el.span({
                                 class: 'dropdown',
@@ -151,6 +155,9 @@ RCloud.UI.navbar = (function() {
                                     $(a).click(item.handler);
                                     return $.el.li(a);
                                 })));
+                            },
+                            set_title: function(title) {
+                                $(share_link_).attr('title', title);
                             }
                         };
                     }

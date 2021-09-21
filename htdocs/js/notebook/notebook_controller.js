@@ -100,7 +100,7 @@ Notebook.create_controller = function(model)
                 append_cell_helper(cells[i][0], cells[i][1], cells[i][2]);
             for(i in assets) {
                 var result = append_asset_helper(assets[i][0], assets[i][1]).controller;
-                asset_controller = asset_controller || result;
+                asset_controller = asset_controller || (model.show_hidden_assets() || !result.is_hidden()) && result;
             }
             model.user(notebook.user.login);
             model.update_files(notebook.files);

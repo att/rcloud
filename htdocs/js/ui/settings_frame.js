@@ -223,6 +223,14 @@ RCloud.UI.settings_frame = (function() {
                         shell.notebook.controller.autoscroll_notebook_output(val);
                     }
                 }),
+                'show-hidden-assets': that.checkbox({
+                    sort: 6600,
+                    default_value: false,
+                    label: "Show hidden assets",
+                    set: function(val) {
+                        shell.notebook.model.show_hidden_assets(val);
+                    }
+                }),
                 'addons': that.text_input_vector({
                     sort: 10000,
                     needs_reload: true,

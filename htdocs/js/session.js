@@ -235,23 +235,24 @@ function rclient_promise(allow_anonymous, on_connect_error_handler) {
 RCloud.session = {
     first_session_: true,
     listeners: [],
+    not_first: function() {
+        this.first_session_ = false;
+        return Promise.resolve(undefined);
+    },
     // FIXME rcloud.with_progress is part of the UI.
     reset: function(redirect_url) {
-        if (this.first_session_) {
-            this.first_session_ = false;
-            return RCloud.UI.with_progress(function() {});
-        }
+        this.first_session_ = false;
         this.listeners.forEach(function(listener) {
             listener.on_reset();
         });
-        
         on_connect_error_handler = build_on_connect_error_handler(redirect_url);
         return RCloud.UI.with_progress(function() {
             var anonymous = rclient.allow_anonymous_;
             rclient.close();
             return rclient_promise(anonymous, on_connect_error_handler);
         });
-    }, init: function(allow_anonymous, on_connect_error_handler) {
+    },
+    init: function(allow_anonymous, on_connect_error_handler) {
         this.first_session_ = true;
         on_connect_error_handler = build_on_connect_error_handler();
         return rclient_promise(allow_anonymous);

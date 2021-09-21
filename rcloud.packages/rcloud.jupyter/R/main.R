@@ -157,7 +157,7 @@ JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
     ulog("rcloud.jupyter::.start.jupyter.adapter")
     require(reticulate, quietly=TRUE)
     if (rcloud.support:::hasConf(PYTHON_PATH))
-        reticulate::use_python(rcloud.support:::getConf(PYTHON_PATH))
+        reticulate::use_python(rcloud.support:::getConf(PYTHON_PATH), required = TRUE)
     sys <- reticulate::import("sys")
     ## append any admin-specified paths (as ":" - separated paths)
     if (rcloud.support:::nzConf(PYTHON_EXTRA_LIBS)) {

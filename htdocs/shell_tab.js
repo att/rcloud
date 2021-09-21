@@ -48,9 +48,15 @@ var shell = (function() {
         }
     }
 
+    function maybe_reset(redirect_url) {
+        return shell.notebook.controller.session_dirty() ?
+            RCloud.session.reset(redirect_url) :
+            RCloud.session.not_first();
+    }
+
     function do_load(opts) {
         return RCloud.UI.with_progress(function() {
-            return RCloud.session.reset(opts.redirect_url)
+            return maybe_reset(opts.redirect_url)
                 .then(opts.load)
                 .spread(function(notebook, gistname, version) {
                     if (!_.isUndefined(notebook.error)) {
@@ -158,7 +164,7 @@ var shell = (function() {
         }, new_notebook: function(desc) {
             notebook_controller_.save();
             return RCloud.UI.with_progress(function() {
-                return RCloud.session.reset().then(function() {
+                return maybe_reset().then(function() {
                     notebook_controller_.session_dirty(false);
                     var content = {description: desc, 'public': false,
                                    files: {"scratch.R": {content:"# keep snippets here while working with your notebook's cells"}}};

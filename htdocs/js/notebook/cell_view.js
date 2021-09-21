@@ -701,23 +701,61 @@ function create_cell_html_view(language, cell_model) {
 
         var aaa = ace_stuff(input_ace_div_, '');
         input_widget_ = aaa.widget;
+        var history_ = RCloud.UI.prompt_history();
+        var change_prompt = ui_utils.ignore_programmatic_changes(input_widget_, history_.change.bind(history_));
 
         ui_utils.customize_ace_gutter(input_widget_, function(i) {
             return i===0 ? prompt_text_ : '';
         });
-        input_widget_.commands.addCommands([{
-            name: 'enter',
-            bindKey: 'Return',
-            exec: function(ace_widget, args, request) {
-                var input = ace_widget.getValue();
-                result.add_result('code', _.unescape(prompt_text_) + input + '\n');
-                if(input_kont_)
-                    input_kont_(null, input);
-                input_div_.hide();
-                window.clearInterval(input_anim_);
-                input_anim_ = null;
+        var up_handler = input_widget_.commands.commandKeyBinding.up,
+            down_handler = input_widget_.commands.commandKeyBinding.down;
+        input_widget_.commands.addCommands([
+            {
+                name: 'enter',
+                bindKey: 'Return',
+                exec: function(ace_widget, args, request) {
+                    var input = ace_widget.getValue();
+                    result.add_result('code', _.unescape(prompt_text_) + input + '\n');
+                    if(input_kont_)
+                        input_kont_(null, input);
+                    if(input.length)
+                        history_.add_entry(input);
+                    input_div_.hide();
+                    window.clearInterval(input_anim_);
+                    input_anim_ = null;
+                }
+            }, {
+                name: 'up-with-history',
+                bindKey: 'up',
+                exec: function(widget, args, request) {
+                    var pos = widget.getCursorPositionScreen();
+                    if(pos.row > 0)
+                        up_handler.exec(widget, args, request);
+                    else {
+                        if(history_.has_last()) {
+                            change_prompt(history_.last());
+                            var r = widget.getSession().getScreenLength();
+                            ui_utils.ace_set_pos(widget, r, pos.column);
+                        }
+                    }
+                }
+            }, {
+                name: 'down-with-history',
+                bindKey: 'down',
+                exec: function(widget, args, request) {
+                    var pos = widget.getCursorPositionScreen();
+                    var r = widget.getSession().getScreenLength();
+                    if(pos.row < r-1)
+                        down_handler.exec(widget, args, request);
+                    else {
+                        if(history_.has_next()) {
+                            change_prompt(history_.next());
+                            ui_utils.ace_set_pos(widget, 0, pos.column);
+                        }
+                    }
+                }
             }
-        }]);
+        ]);
         RCloud.UI.prevent_progress_modal();
     }
     function find_code_elems(parent) {

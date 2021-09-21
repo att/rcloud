@@ -3,6 +3,7 @@
 Notebook.create_model = function()
 {
     var readonly_ = false,
+        show_hidden_assets_,
         auto_activate_,
         user_ = "",
         last_selected_ = undefined;
@@ -393,6 +394,15 @@ Notebook.create_model = function()
             if(autoactivate !== undefined)
                 auto_activate_ = autoactivate;
             return auto_activate_;
+        },
+        show_hidden_assets: function(showhidden) {
+            if(showhidden !== undefined) {
+                show_hidden_assets_ = showhidden;
+                _.each(this.views, function(view) {
+                    view.show_hidden_assets(showhidden);
+                });
+            }
+            return show_hidden_assets_;
         },
         user: function(user) {
             if (!_.isUndefined(user)) {
