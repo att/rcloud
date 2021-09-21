@@ -35,53 +35,53 @@ RCloud.UI.addons.notebook_merge = (function() {
           /* Create a merge button in the notebook tree and 
               start a new Merge dialogue with the desired Notebook */
           RCloud.UI.notebook_commands.add({
-            merge: {
-              section: 'appear',
-              sort: 4000,
-              create: function (node) {
-                var merge = ui_utils.fa_button('icon-code-fork icon-rotate-90', 'merge from', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
-                merge.click(function (e) {
-                  // Open merge dialogue
-                  merger_dialog.show();
-                  // Submit to next dialogue or fail if ID invalid.
-                  setTimeout(function() {
-                    $('#merge-notebook-id').val(node.gistname);
-                    $('.show-changes').click();
-                  }, 100);
-                  return;
-                })
-                return merge;
+              merge: {
+                  section: 'appear',
+                  sort: 4000,
+                  create: function (node) {
+                      var merge = ui_utils.fa_button('icon-code-fork icon-rotate-270', 'merge into current notebook', 'merge', RCloud.UI.notebook_commands.merge_icon_style(), true);
+                      merge.click(function (e) {
+                          // Open merge dialogue
+                          merger_dialog.show();
+                          // Submit to next dialogue or fail if ID invalid.
+                          setTimeout(function() {
+                              $('#merge-notebook-id').val(node.gistname);
+                              $('.show-changes').click();
+                          }, 100);
+                          return;
+                      });
+                      return merge;
+                  }
               }
-            }
           }),
           RCloud.UI.shortcut_manager.add([{
-            category: 'Advanced',
-            id: 'merger-dialog-submit',
-            description: 'Submit merge dialogs.',
-            keys: {
-                win_mac: [
-                    ['enter']
-                ]
-            },
-            ignore_clash: true,
-            enable_in_dialogs: true,
-            on_page: ['edit'],
-            is_active: function() {
-              return merger_dialog.is_open();
-            },
-            action: function() { merger_dialog.submit(); }
-        }]);
-        RCloud.UI.advanced_menu.add({
-          merge_notebook: {
-            sort: 1100,
-            text: "Merge Notebook",
-            modes: ["edit"],  
-            disabled_reason: "You can't merge into a read only notebook",
-            action: function() {
-              merger_dialog.show();
-            }
-          }
-        });
+              category: 'Advanced',
+              id: 'merger-dialog-submit',
+              description: 'Submit merge dialogs.',
+              keys: {
+                  win_mac: [
+                      ['enter']
+                  ]
+              },
+              ignore_clash: true,
+              enable_in_dialogs: true,
+              on_page: ['edit'],
+              is_active: function() {
+                  return merger_dialog.is_open();
+              },
+              action: function() { merger_dialog.submit(); }
+          }]);
+          RCloud.UI.advanced_menu.add({
+              merge_notebook: {
+                  sort: 1100,
+                  text: "Merge Notebook",
+                  modes: ["edit"],
+                  disabled_reason: "You can't merge into a read only notebook",
+                  action: function() {
+                      merger_dialog.show();
+                  }
+              }
+          });
       }
   };
 })();
