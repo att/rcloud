@@ -64,6 +64,7 @@ rcloud.get.cryptgroup.users <- function(groupid) { # : list(user -> is.admin)
 }
 
 rcloud.get.user.cryptgroups <- function(user) { # : list(groupid -> list(groupname, is.admin))
+  if (missing(user)) user <- .session$username
   keys <- rcs.list(rcs.key(user, 'system', 'cryptgroups', '*'))
   if(length(keys)==0) return(list())
   is.admin <- rcs.get(keys, list=TRUE)
@@ -89,6 +90,46 @@ is.cryptgroup.admin <- function(groupid, user) {
   groupnames <- if(length(keys)) rcs.get(keys, list=TRUE) else list()
   if(groupname %in% groupnames)
     stop(paste0("protection group name ", groupname, " already exists"))
+}
+
+.crytpgroupids.by.name <- function(groupnames) {
+  ## FIXME: we don't hash groups by names since they are just informative so far
+  ## hence we have to get the full list and search
+  keys <- rcs.list(rcs.key('.cryptgroup', '*', 'name'))
+  names <- if(length(keys)) unlist(rcs.get(keys, list=TRUE)) else NULL
+  m <- match(groupnames, names)
+  keys <- names(names)[m]
+  gsub("/.*", "", gsub("^\\.cryptgroup/", "", keys))
+}
+
+## spec can be names or IDs, non-matches are NAs
+## returns a named character vector of IDs, names are group names
+## FIXME: do we want to allow cryptgroup enumeration? We could for empty spec...
+rcloud.cryptgroups <- function(spec) {
+  spec <- as.character(spec)
+  if (any(is.na(spec))) { ## if there are any input NAs, re-try on subset
+    res <- rep(NA, length(spec))
+    if (any(!is.na(spec)))
+      res[!is.na(spec)] <- rcloud.cryptgroups(spec[!is.na(spec)])
+    return(res)
+  }
+
+  ## try IDs first
+  names <- rcs.get(rcs.key('.cryptgroup', spec, 'name'), list=TRUE)
+  res <- spec
+  ok <- lengths(names) == 1
+  if (any(!ok)) names[!ok] = NA
+  names <- as.vector(unlist(names))
+
+  ## if there are any non-matches, try names
+  if (!all(ok)) {
+    ids <- .crytpgroupids.by.name(spec[!ok])
+    res[!ok] <- as.vector(ids)
+    names[!ok] <- spec[!ok]
+  }
+
+  names(res) <- names
+  res
 }
 
 rcloud.create.cryptgroup <- function(groupname) { # : groupid; current user is admin
