@@ -155,6 +155,8 @@ JUPYTER_CONNECTION_DIR_PATH <- 'rcloud.jupyter.connection_dir.path'
 .start.jupyter.adapter <- function(rcloud.session)
 {
     ulog("rcloud.jupyter::.start.jupyter.adapter")
+    ## disable fatal miniconda install prompt (#2702)
+    Sys.setenv(RETICULATE_MINICONDA_ENABLED=0)
     require(reticulate, quietly=TRUE)
     if (rcloud.support:::hasConf(PYTHON_PATH))
         reticulate::use_python(rcloud.support:::getConf(PYTHON_PATH), required = TRUE)
