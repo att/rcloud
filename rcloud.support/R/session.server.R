@@ -49,5 +49,9 @@ session.server.version <- function()
 .session.server.request <- function(request) {
     if(is.null(getConf("session.server")))
       stop("can't perform this action without a session.server configured in rcloud.conf")
-    RCurl::getURL(paste0(getConf("session.server"), request))
+    opts <- list()
+    noverify <- getConf('session.server.noverify')
+    if(!is.null(noverify) && as.logical(noverify))
+      opts <- list(ssl.verifypeer = FALSE)
+    RCurl::getURL(paste0(getConf("session.server"), request), .opts=opts)
 }
