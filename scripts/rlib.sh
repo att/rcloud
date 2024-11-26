@@ -78,13 +78,14 @@ if [ ! -e "$DISTREP/src/contrib/PACKAGES" -o -n "$mkdist" ]; then
         echo "ERROR: cannot create $DISTREP/src/contrib" >&2
         exit 1
     fi
-    if [ "$(cd zig-out/assets && pwd)" = "$(cd $DISTREP/src/contrib/../../zig-out/assets && pwd)" ]; then
-	echo " --- Linking to distributed assets"
-	(cd "$DISTREP/src/contrib/" && ln -s ../../zig-out/assets/* . )
-    else
+##-- always copy for now until we sort out the zig-out/htdocs discrepancy
+#    if [ "$(cd zig-out/assets && pwd)" = "$(cd $DISTREP/src/contrib/../../zig-out/assets && pwd)" ]; then
+#	echo " --- Linking to distributed assets"
+#	(cd "$DISTREP/src/contrib/" && ln -s ../../zig-out/assets/* . )
+#    else
 	echo " --- Copying distributed assets"
 	cp zig-out/assets/* "$DISTREP/src/contrib/"
-    fi
+#    fi
     echo " --- Creating RCloud source tar balls"
     ( cd "$DISTREP/src/contrib"; for src in `ls $WD/rcloud.*/DESCRIPTION $WD/rcloud.packages/*/DESCRIPTION $WD/packages/*/DESCRIPTION 2>/dev/null`; do "$RBIN" CMD build --no-build-vignettes `dirname "$src"`; done )
     echo " --- Creating repository index"
