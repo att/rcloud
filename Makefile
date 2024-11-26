@@ -18,7 +18,7 @@ build-no-cache:
 
 run:
 	@echo "Running ephemeral container..."
-	docker run -it --rm -p $(HOST_PORT):$(CONTAINER_PORT) $(DEBIAN_TAG)
+	docker run -it --rm -p $(HOST_PORT):$(CONTAINER_PORT) --add-host=redis:127.0.0.1 $(DEBIAN_TAG)
 
 create:
 	@echo "Creating container..."
