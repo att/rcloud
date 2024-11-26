@@ -145,6 +145,7 @@ COPY rcloud.packages rcloud.packages
 COPY rcloud.support  rcloud.support
 COPY scripts         scripts
 COPY services        services
+COPY vendor          vendor
 COPY Gruntfile.js    .
 COPY LICENSE         .
 COPY package-lock.json    .
