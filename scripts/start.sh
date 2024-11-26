@@ -40,6 +40,12 @@ if [ "$1" = -d ]; then
    export DEBUG=1
 fi
 
+if [ -z "$LANG" ]; then
+    echo 'NOTE: no LANG set, but RCloud must be run in UTF-8 locale'
+    echo '      setting LANG=C.UTF-8'
+    export LANG=C.UTF-8
+fi
+
 set -e
 
 ## see if we are running the official release version with library/X.Y
