@@ -378,7 +378,7 @@ const @"Rcpp" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"Rcpp".addDirectoryArg(libdir.getDirectory());
-_ = @"Rcpp".addFileArg(asset_dir.path(b, "Rcpp_1.0.13.tar.gz"));
+_ = @"Rcpp".addFileArg(asset_dir.path(b, "Rcpp_1.0.13-1.tar.gz"));
 @"Rcpp".step.name = "Rcpp";
 @"Rcpp".addFileInput(b.path("build-aux/config.json"));
 const @"Rcpp_out" = @"Rcpp".captureStdOut();
@@ -526,7 +526,7 @@ const @"fs" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"fs".addDirectoryArg(libdir.getDirectory());
-_ = @"fs".addFileArg(asset_dir.path(b, "fs_1.6.4.tar.gz"));
+_ = @"fs".addFileArg(asset_dir.path(b, "fs_1.6.5.tar.gz"));
 @"fs".step.name = "fs";
 @"fs".addFileInput(b.path("build-aux/config.json"));
 const @"fs_out" = @"fs".captureStdOut();
@@ -997,7 +997,7 @@ const @"xfun" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"xfun".addDirectoryArg(libdir.getDirectory());
-_ = @"xfun".addFileArg(asset_dir.path(b, "xfun_0.48.tar.gz"));
+_ = @"xfun".addFileArg(asset_dir.path(b, "xfun_0.49.tar.gz"));
 @"xfun".step.name = "xfun";
 @"xfun".addFileInput(b.path("build-aux/config.json"));
 const @"xfun_out" = @"xfun".captureStdOut();
@@ -1093,7 +1093,7 @@ const @"fontawesome" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"fontawesome".addDirectoryArg(libdir.getDirectory());
-_ = @"fontawesome".addFileArg(asset_dir.path(b, "fontawesome_0.5.2.tar.gz"));
+_ = @"fontawesome".addFileArg(asset_dir.path(b, "fontawesome_0.5.3.tar.gz"));
 @"fontawesome".step.name = "fontawesome";
 @"fontawesome".addFileInput(b.path("build-aux/config.json"));
 const @"fontawesome_out" = @"fontawesome".captureStdOut();
@@ -1280,7 +1280,7 @@ const @"knitr" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"knitr".addDirectoryArg(libdir.getDirectory());
-_ = @"knitr".addFileArg(asset_dir.path(b, "knitr_1.48.tar.gz"));
+_ = @"knitr".addFileArg(asset_dir.path(b, "knitr_1.49.tar.gz"));
 @"knitr".step.name = "knitr";
 @"knitr".addFileInput(b.path("build-aux/config.json"));
 const @"knitr_out" = @"knitr".captureStdOut();
@@ -1308,7 +1308,7 @@ const @"withr" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"withr".addDirectoryArg(libdir.getDirectory());
-_ = @"withr".addFileArg(asset_dir.path(b, "withr_3.0.1.tar.gz"));
+_ = @"withr".addFileArg(asset_dir.path(b, "withr_3.0.2.tar.gz"));
 @"withr".step.name = "withr";
 @"withr".addFileInput(b.path("build-aux/config.json"));
 const @"withr_out" = @"withr".captureStdOut();
@@ -1382,7 +1382,7 @@ const @"tinytex" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"tinytex".addDirectoryArg(libdir.getDirectory());
-_ = @"tinytex".addFileArg(asset_dir.path(b, "tinytex_0.53.tar.gz"));
+_ = @"tinytex".addFileArg(asset_dir.path(b, "tinytex_0.54.tar.gz"));
 @"tinytex".step.name = "tinytex";
 @"tinytex".addFileInput(b.path("build-aux/config.json"));
 const @"tinytex_out" = @"tinytex".captureStdOut();
@@ -1407,7 +1407,7 @@ const @"reticulate" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"reticulate".addDirectoryArg(libdir.getDirectory());
-_ = @"reticulate".addFileArg(asset_dir.path(b, "reticulate_1.39.0.tar.gz"));
+_ = @"reticulate".addFileArg(asset_dir.path(b, "reticulate_1.40.0.tar.gz"));
 @"reticulate".step.name = "reticulate";
 @"reticulate".addFileInput(b.path("build-aux/config.json"));
 const @"reticulate_out" = @"reticulate".captureStdOut();
@@ -1464,7 +1464,7 @@ const @"rmarkdown" = b.addSystemCommand(&.{ "R" });
     "-l",
 });
 _ = @"rmarkdown".addDirectoryArg(libdir.getDirectory());
-_ = @"rmarkdown".addFileArg(asset_dir.path(b, "rmarkdown_2.28.tar.gz"));
+_ = @"rmarkdown".addFileArg(asset_dir.path(b, "rmarkdown_2.29.tar.gz"));
 @"rmarkdown".step.name = "rmarkdown";
 @"rmarkdown".addFileInput(b.path("build-aux/config.json"));
 const @"rmarkdown_out" = @"rmarkdown".captureStdOut();
@@ -1695,6 +1695,32 @@ _ = @"rcloud.client".captureStdErr();
 b.getInstallStep().dependOn(&@"rcloud.client_install".step);
 b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.client_out", .{ .custom = "logs" }, "rcloud.client.log").step);
 
+const @"rcloud.web" = b.addSystemCommand(&.{ "R" });
+@"rcloud.web".addArgs(&.{
+    "CMD",
+    "INSTALL",
+    "--no-docs",
+    "--no-multiarch",
+    "-l",
+});
+_ = @"rcloud.web".addDirectoryArg(libdir.getDirectory());
+const @"rcloud.web_src" = b.addWriteFiles();
+_ = @"rcloud.web_src".addCopyDirectory(b.path("rcloud.packages/rcloud.web"), "", .{});
+_ = @"rcloud.web".addDirectoryArg(@"rcloud.web_src".getDirectory());
+@"rcloud.web".step.name = "rcloud.web";
+const @"rcloud.web_out" = @"rcloud.web".captureStdOut();
+_ = @"rcloud.web".captureStdErr();
+@"rcloud.web".step.dependOn(&@"Rserve".step);
+ const @"rcloud.web_install" = b.addInstallDirectory(.{
+.source_dir = libdir.getDirectory().path(b, "rcloud.web"),
+.install_dir = .{ .custom = "lib" },
+.install_subdir = "rcloud.web",
+});
+
+@"rcloud.web_install".step.dependOn(&@"rcloud.web".step);
+b.getInstallStep().dependOn(&@"rcloud.web_install".step);
+b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.web_out", .{ .custom = "logs" }, "rcloud.web.log").step);
+
 const @"rcloud.support" = b.addSystemCommand(&.{ "R" });
 @"rcloud.support".addArgs(&.{
     "CMD",
@@ -1763,32 +1789,31 @@ _ = @"rcloud.notebook.info".captureStdErr();
 b.getInstallStep().dependOn(&@"rcloud.notebook.info_install".step);
 b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.notebook.info_out", .{ .custom = "logs" }, "rcloud.notebook.info.log").step);
 
-const @"rcloud.python" = b.addSystemCommand(&.{ "R" });
-@"rcloud.python".addArgs(&.{
+const @"rcloud.viewer" = b.addSystemCommand(&.{ "R" });
+@"rcloud.viewer".addArgs(&.{
     "CMD",
     "INSTALL",
     "--no-docs",
     "--no-multiarch",
     "-l",
 });
-_ = @"rcloud.python".addDirectoryArg(libdir.getDirectory());
-const @"rcloud.python_src" = b.addWriteFiles();
-_ = @"rcloud.python_src".addCopyDirectory(b.path("rcloud.packages/rcloud.python"), "", .{});
-_ = @"rcloud.python".addDirectoryArg(@"rcloud.python_src".getDirectory());
-@"rcloud.python".step.name = "rcloud.python";
-const @"rcloud.python_out" = @"rcloud.python".captureStdOut();
-_ = @"rcloud.python".captureStdErr();
-@"rcloud.python".step.dependOn(&@"knitr".step);
-@"rcloud.python".step.dependOn(&@"markdown".step);
- const @"rcloud.python_install" = b.addInstallDirectory(.{
-.source_dir = libdir.getDirectory().path(b, "rcloud.python"),
+_ = @"rcloud.viewer".addDirectoryArg(libdir.getDirectory());
+const @"rcloud.viewer_src" = b.addWriteFiles();
+_ = @"rcloud.viewer_src".addCopyDirectory(b.path("rcloud.packages/rcloud.viewer"), "", .{});
+_ = @"rcloud.viewer".addDirectoryArg(@"rcloud.viewer_src".getDirectory());
+@"rcloud.viewer".step.name = "rcloud.viewer";
+const @"rcloud.viewer_out" = @"rcloud.viewer".captureStdOut();
+_ = @"rcloud.viewer".captureStdErr();
+@"rcloud.viewer".step.dependOn(&@"rcloud.support".step);
+ const @"rcloud.viewer_install" = b.addInstallDirectory(.{
+.source_dir = libdir.getDirectory().path(b, "rcloud.viewer"),
 .install_dir = .{ .custom = "lib" },
-.install_subdir = "rcloud.python",
+.install_subdir = "rcloud.viewer",
 });
 
-@"rcloud.python_install".step.dependOn(&@"rcloud.python".step);
-b.getInstallStep().dependOn(&@"rcloud.python_install".step);
-b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.python_out", .{ .custom = "logs" }, "rcloud.python.log").step);
+@"rcloud.viewer_install".step.dependOn(&@"rcloud.viewer".step);
+b.getInstallStep().dependOn(&@"rcloud.viewer_install".step);
+b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.viewer_out", .{ .custom = "logs" }, "rcloud.viewer.log").step);
 
 const @"rcloud.r" = b.addSystemCommand(&.{ "R" });
 @"rcloud.r".addArgs(&.{
@@ -1817,31 +1842,85 @@ _ = @"rcloud.r".captureStdErr();
 b.getInstallStep().dependOn(&@"rcloud.r_install".step);
 b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.r_out", .{ .custom = "logs" }, "rcloud.r.log").step);
 
-const @"rcloud.web" = b.addSystemCommand(&.{ "R" });
-@"rcloud.web".addArgs(&.{
+const @"rcloud.enviewer" = b.addSystemCommand(&.{ "R" });
+@"rcloud.enviewer".addArgs(&.{
     "CMD",
     "INSTALL",
     "--no-docs",
     "--no-multiarch",
     "-l",
 });
-_ = @"rcloud.web".addDirectoryArg(libdir.getDirectory());
-const @"rcloud.web_src" = b.addWriteFiles();
-_ = @"rcloud.web_src".addCopyDirectory(b.path("rcloud.packages/rcloud.web"), "", .{});
-_ = @"rcloud.web".addDirectoryArg(@"rcloud.web_src".getDirectory());
-@"rcloud.web".step.name = "rcloud.web";
-const @"rcloud.web_out" = @"rcloud.web".captureStdOut();
-_ = @"rcloud.web".captureStdErr();
-@"rcloud.web".step.dependOn(&@"Rserve".step);
- const @"rcloud.web_install" = b.addInstallDirectory(.{
-.source_dir = libdir.getDirectory().path(b, "rcloud.web"),
+_ = @"rcloud.enviewer".addDirectoryArg(libdir.getDirectory());
+const @"rcloud.enviewer_src" = b.addWriteFiles();
+_ = @"rcloud.enviewer_src".addCopyDirectory(b.path("rcloud.packages/rcloud.enviewer"), "", .{});
+_ = @"rcloud.enviewer".addDirectoryArg(@"rcloud.enviewer_src".getDirectory());
+@"rcloud.enviewer".step.name = "rcloud.enviewer";
+const @"rcloud.enviewer_out" = @"rcloud.enviewer".captureStdOut();
+_ = @"rcloud.enviewer".captureStdErr();
+@"rcloud.enviewer".step.dependOn(&@"rcloud.support".step);
+ const @"rcloud.enviewer_install" = b.addInstallDirectory(.{
+.source_dir = libdir.getDirectory().path(b, "rcloud.enviewer"),
 .install_dir = .{ .custom = "lib" },
-.install_subdir = "rcloud.web",
+.install_subdir = "rcloud.enviewer",
 });
 
-@"rcloud.web_install".step.dependOn(&@"rcloud.web".step);
-b.getInstallStep().dependOn(&@"rcloud.web_install".step);
-b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.web_out", .{ .custom = "logs" }, "rcloud.web.log").step);
+@"rcloud.enviewer_install".step.dependOn(&@"rcloud.enviewer".step);
+b.getInstallStep().dependOn(&@"rcloud.enviewer_install".step);
+b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.enviewer_out", .{ .custom = "logs" }, "rcloud.enviewer.log").step);
+
+const @"rcloud.python" = b.addSystemCommand(&.{ "R" });
+@"rcloud.python".addArgs(&.{
+    "CMD",
+    "INSTALL",
+    "--no-docs",
+    "--no-multiarch",
+    "-l",
+});
+_ = @"rcloud.python".addDirectoryArg(libdir.getDirectory());
+const @"rcloud.python_src" = b.addWriteFiles();
+_ = @"rcloud.python_src".addCopyDirectory(b.path("rcloud.packages/rcloud.python"), "", .{});
+_ = @"rcloud.python".addDirectoryArg(@"rcloud.python_src".getDirectory());
+@"rcloud.python".step.name = "rcloud.python";
+const @"rcloud.python_out" = @"rcloud.python".captureStdOut();
+_ = @"rcloud.python".captureStdErr();
+@"rcloud.python".step.dependOn(&@"knitr".step);
+@"rcloud.python".step.dependOn(&@"markdown".step);
+ const @"rcloud.python_install" = b.addInstallDirectory(.{
+.source_dir = libdir.getDirectory().path(b, "rcloud.python"),
+.install_dir = .{ .custom = "lib" },
+.install_subdir = "rcloud.python",
+});
+
+@"rcloud.python_install".step.dependOn(&@"rcloud.python".step);
+b.getInstallStep().dependOn(&@"rcloud.python_install".step);
+b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.python_out", .{ .custom = "logs" }, "rcloud.python.log").step);
+
+const @"rcloud.rmarkdown" = b.addSystemCommand(&.{ "R" });
+@"rcloud.rmarkdown".addArgs(&.{
+    "CMD",
+    "INSTALL",
+    "--no-docs",
+    "--no-multiarch",
+    "-l",
+});
+_ = @"rcloud.rmarkdown".addDirectoryArg(libdir.getDirectory());
+const @"rcloud.rmarkdown_src" = b.addWriteFiles();
+_ = @"rcloud.rmarkdown_src".addCopyDirectory(b.path("rcloud.packages/rcloud.rmarkdown"), "", .{});
+_ = @"rcloud.rmarkdown".addDirectoryArg(@"rcloud.rmarkdown_src".getDirectory());
+@"rcloud.rmarkdown".step.name = "rcloud.rmarkdown";
+const @"rcloud.rmarkdown_out" = @"rcloud.rmarkdown".captureStdOut();
+_ = @"rcloud.rmarkdown".captureStdErr();
+@"rcloud.rmarkdown".step.dependOn(&@"knitr".step);
+@"rcloud.rmarkdown".step.dependOn(&@"rmarkdown".step);
+ const @"rcloud.rmarkdown_install" = b.addInstallDirectory(.{
+.source_dir = libdir.getDirectory().path(b, "rcloud.rmarkdown"),
+.install_dir = .{ .custom = "lib" },
+.install_subdir = "rcloud.rmarkdown",
+});
+
+@"rcloud.rmarkdown_install".step.dependOn(&@"rcloud.rmarkdown".step);
+b.getInstallStep().dependOn(&@"rcloud.rmarkdown_install".step);
+b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.rmarkdown_out", .{ .custom = "logs" }, "rcloud.rmarkdown.log").step);
 
 const @"rcloud.jupyter" = b.addSystemCommand(&.{ "R" });
 @"rcloud.jupyter".addArgs(&.{
@@ -1872,85 +1951,6 @@ _ = @"rcloud.jupyter".captureStdErr();
 @"rcloud.jupyter_install".step.dependOn(&@"rcloud.jupyter".step);
 b.getInstallStep().dependOn(&@"rcloud.jupyter_install".step);
 b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.jupyter_out", .{ .custom = "logs" }, "rcloud.jupyter.log").step);
-
-const @"rcloud.enviewer" = b.addSystemCommand(&.{ "R" });
-@"rcloud.enviewer".addArgs(&.{
-    "CMD",
-    "INSTALL",
-    "--no-docs",
-    "--no-multiarch",
-    "-l",
-});
-_ = @"rcloud.enviewer".addDirectoryArg(libdir.getDirectory());
-const @"rcloud.enviewer_src" = b.addWriteFiles();
-_ = @"rcloud.enviewer_src".addCopyDirectory(b.path("rcloud.packages/rcloud.enviewer"), "", .{});
-_ = @"rcloud.enviewer".addDirectoryArg(@"rcloud.enviewer_src".getDirectory());
-@"rcloud.enviewer".step.name = "rcloud.enviewer";
-const @"rcloud.enviewer_out" = @"rcloud.enviewer".captureStdOut();
-_ = @"rcloud.enviewer".captureStdErr();
-@"rcloud.enviewer".step.dependOn(&@"rcloud.support".step);
- const @"rcloud.enviewer_install" = b.addInstallDirectory(.{
-.source_dir = libdir.getDirectory().path(b, "rcloud.enviewer"),
-.install_dir = .{ .custom = "lib" },
-.install_subdir = "rcloud.enviewer",
-});
-
-@"rcloud.enviewer_install".step.dependOn(&@"rcloud.enviewer".step);
-b.getInstallStep().dependOn(&@"rcloud.enviewer_install".step);
-b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.enviewer_out", .{ .custom = "logs" }, "rcloud.enviewer.log").step);
-
-const @"rcloud.rmarkdown" = b.addSystemCommand(&.{ "R" });
-@"rcloud.rmarkdown".addArgs(&.{
-    "CMD",
-    "INSTALL",
-    "--no-docs",
-    "--no-multiarch",
-    "-l",
-});
-_ = @"rcloud.rmarkdown".addDirectoryArg(libdir.getDirectory());
-const @"rcloud.rmarkdown_src" = b.addWriteFiles();
-_ = @"rcloud.rmarkdown_src".addCopyDirectory(b.path("rcloud.packages/rcloud.rmarkdown"), "", .{});
-_ = @"rcloud.rmarkdown".addDirectoryArg(@"rcloud.rmarkdown_src".getDirectory());
-@"rcloud.rmarkdown".step.name = "rcloud.rmarkdown";
-const @"rcloud.rmarkdown_out" = @"rcloud.rmarkdown".captureStdOut();
-_ = @"rcloud.rmarkdown".captureStdErr();
-@"rcloud.rmarkdown".step.dependOn(&@"knitr".step);
-@"rcloud.rmarkdown".step.dependOn(&@"rmarkdown".step);
- const @"rcloud.rmarkdown_install" = b.addInstallDirectory(.{
-.source_dir = libdir.getDirectory().path(b, "rcloud.rmarkdown"),
-.install_dir = .{ .custom = "lib" },
-.install_subdir = "rcloud.rmarkdown",
-});
-
-@"rcloud.rmarkdown_install".step.dependOn(&@"rcloud.rmarkdown".step);
-b.getInstallStep().dependOn(&@"rcloud.rmarkdown_install".step);
-b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.rmarkdown_out", .{ .custom = "logs" }, "rcloud.rmarkdown.log").step);
-
-const @"rcloud.viewer" = b.addSystemCommand(&.{ "R" });
-@"rcloud.viewer".addArgs(&.{
-    "CMD",
-    "INSTALL",
-    "--no-docs",
-    "--no-multiarch",
-    "-l",
-});
-_ = @"rcloud.viewer".addDirectoryArg(libdir.getDirectory());
-const @"rcloud.viewer_src" = b.addWriteFiles();
-_ = @"rcloud.viewer_src".addCopyDirectory(b.path("rcloud.packages/rcloud.viewer"), "", .{});
-_ = @"rcloud.viewer".addDirectoryArg(@"rcloud.viewer_src".getDirectory());
-@"rcloud.viewer".step.name = "rcloud.viewer";
-const @"rcloud.viewer_out" = @"rcloud.viewer".captureStdOut();
-_ = @"rcloud.viewer".captureStdErr();
-@"rcloud.viewer".step.dependOn(&@"rcloud.support".step);
- const @"rcloud.viewer_install" = b.addInstallDirectory(.{
-.source_dir = libdir.getDirectory().path(b, "rcloud.viewer"),
-.install_dir = .{ .custom = "lib" },
-.install_subdir = "rcloud.viewer",
-});
-
-@"rcloud.viewer_install".step.dependOn(&@"rcloud.viewer".step);
-b.getInstallStep().dependOn(&@"rcloud.viewer_install".step);
-b.getInstallStep().dependOn(&b.addInstallFileWithDir(@"rcloud.viewer_out", .{ .custom = "logs" }, "rcloud.viewer.log").step);
 
 const @"rcloud.lux" = b.addSystemCommand(&.{ "R" });
 @"rcloud.lux".addArgs(&.{
