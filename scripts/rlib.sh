@@ -7,7 +7,7 @@
 
 if [ x"$1" = 'x-h' ]; then
     echo ''
-    echo " Usage: $0 [--mk-dist]"
+    echo " Usage: $0 [--mkdist]"
     echo ''
     echo ' This script must be run from the RCloud root directory and it'
     echo ' either creates a repository with all R packages needed for'
@@ -52,18 +52,6 @@ set -e
 
 if [ ! -d "$RCLIB" ]; then mkdir -p "$RCLIB"; fi
 
-## check if we need to pull mathjax
-sh scripts/fetch-mathjax.sh
-
-if [ ! -e zig-out/assets ]; then
-    echo "ERROR: zig-out/assets not present. Please run zig build and" >&2
-    echo "          zig build dist-fat -Dassets=zig-out/assets" >&2
-    echo "       or use rcloud-full-*.tar.gz release tar ball" >&2
-    exit 1
-fi
-
-export RCS_SILENCE_LOADCHECK=TRUE
-
 mkdist=''
 if [ x"$1" = "x--mk-dist" -o x"$1" = "x--mkdist" ]; then
     mkdist=yes
@@ -74,6 +62,16 @@ if [ -n "$mkdist" -o x"$1" = "x--clean" ]; then
 fi
 
 if [ ! -e "$DISTREP/src/contrib/PACKAGES" -o -n "$mkdist" ]; then
+    ## check if we need to pull mathjax
+    sh scripts/fetch-mathjax.sh
+
+    if [ ! -e zig-out/assets ]; then
+        echo "ERROR: zig-out/assets not present. Please run zig build and" >&2
+        echo "          zig build dist-fat -Dassets=zig-out/assets" >&2
+        echo "       or use rcloud-full-*.tar.gz release tar ball" >&2
+        exit 1
+    fi
+
     if ! mkdir -p "$DISTREP/src/contrib"; then
         echo "ERROR: cannot create $DISTREP/src/contrib" >&2
         exit 1
@@ -118,6 +116,8 @@ if [ "`uname`" = Darwin ]; then
     echo "====       scripts/bootstrapR.sh from the development source repository instead."
     echo ''
 fi
+
+export RCS_SILENCE_LOADCHECK=TRUE
 
 echo "-- Installing packages from $DISTREP/src/contrib to $RCLIB --"
 
