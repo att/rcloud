@@ -23,6 +23,15 @@ echo ''
 
 export MAKEFLAGS=-j12
 
+if [ x"$1" = x--clean ]; then
+    echo '--- Cleaning'
+    rm -rf .zig-cache zig-out
+else
+    if [ -e .zig-cache ]; then
+        echo "NOTE: .zig-cache present and thus will be used, consider using --clean for a clean build"
+    fi
+fi
+
 echo ''
 echo '--- Full build including fetching all dependencies ---'
 echo ''
@@ -57,15 +66,19 @@ done
 ## copy minimal config
 cp "$SRC/conf/rcloud.conf.dist" "$RCDIR/conf/rcloud.conf"
 
+## shuffle READMEs (FIXME: temporary until we merge the fork)
+sed 's:README[.].md:README-zig.md:g' < "$SRC/README-release.md" | sed "s:%VER%:$VER:g" | sed "s:2[.]5[.]0:$VER:g" > "$RCDIR/README.md"
+cp "$SRC/README.md" "$RCDIR//README-zig.md"
+
 echo '--- Create vendored source package repository ---'
 (cd "$RCDIR" && "$RCDIR/bin/rlib.sh" --mkdist )
 
 rm -rf "$RCDIR/zig-out"
 
 echo "--- Create rcloud-full-$VER.tar.xz ---"
-(cd "$WORK" && tar c rcloud-full-$VER | xz -T8 -c9 > "$SRC/rcloud-full-$VER.xz" )
+(cd "$WORK" && tar c rcloud-full-$VER | xz -T8 -c9 > "$SRC/rcloud-full-$VER.tar.xz" )
 
 echo '--- Cleanup ---'
 rm -rf "$WORK"
 
-ls -l rcloud-full-$VER.xz
+ls -l rcloud-full-$VER.tar.xz
