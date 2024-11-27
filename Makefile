@@ -18,11 +18,10 @@ build-no-cache:
 
 run:
 	@echo "Running ephemeral container..."
-<<<<<<< HEAD
-	docker run -it --rm -p $(HOST_PORT):$(CONTAINER_PORT) --add-host=redis:127.0.0.1 $(DEBIAN_TAG)
-=======
-	docker run -it --rm -p $(HOST_PORT):$(CONTAINER_PORT) $(DEBIAN_TAG)
->>>>>>> c36a8106 (Revert "remove obsolete Makefile")
+	docker run -it --rm -p $(HOST_PORT):$(CONTAINER_PORT) \
+	--mount source=rcloud-run,target=/rcloud-run	      \
+	--mount source=rcloud-data,target=/rcloud-data	     \
+	--add-host=redis:127.0.0.1 $(DEBIAN_TAG)
 
 create:
 	@echo "Creating container..."

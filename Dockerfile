@@ -217,7 +217,7 @@ EXPOSE 8080
 
 # -d: DEBUG
 USER rcloud
-ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no & sh conf/start && sleep infinity"]
+ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no --dir /rcloud-data/ & sh conf/start && sleep infinity"]
 
 #
 # runtime-qap-simple: run the qap configuration in a single container

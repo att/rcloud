@@ -2,7 +2,7 @@ exec.auth: as-local
 locale: en_NZ.UTF-8
 Host: 127.0.0.1
 gist.backend: gitgist
-gist.git.root: ${ROOT}/data/gists
+gist.git.root: /rcloud-data/gists
 rcs.engine: redis
 rcs.redis.host: 127.0.0.1
 # solr.url: http://127.0.0.1:8983/solr/rcloudnotebooks
