@@ -7,7 +7,7 @@ as a container (see below).
 
 For latest development and updates, please visit https://github.com/att/rcloud
 
-## Quick start - Docker build
+## Quick start - Docker builds
 
 This release can be used to build a Docker image with RCloud exposed at port 8080.
 It is based on Debian image and the file [Makefile](./Makefile)
@@ -27,6 +27,16 @@ make run
 ```
 
 Once running, RCloud can be accessed at https://localhost:8080/login.R
+
+A more complex setup with authentication and multi-user support can be built and
+deployed using `docker compose`:
+
+```sh
+docker compose build
+docker compose up
+```
+
+The sample user login is `rcloud` with password `rcloud` (see `runtime-sks` target to modify user management).
 
 ## Quick start - local build
 
