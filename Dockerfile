@@ -202,18 +202,22 @@ ENV R_LIBS_USER /data/rcloud/zig-out/lib
 FROM runtime AS runtime-simple
 WORKDIR /data/rcloud/zig-out
 
+# Create mount points for shared volumes with correct permissions
+RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
+RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
+
 # Make gists directory
-RUN mkdir -p data/gists && chown -Rf rcloud:rcloud data
+# RUN mkdir -p data/gists && chown -Rf rcloud:rcloud data
 
 ## note that currently the start script will choose rserve conf based
 ## on results of a grep of the rcloud.conf file.
-RUN cp conf/rcloud.conf.docker conf/rcloud.conf
+RUN cp conf/rcloud-simple.conf.docker conf/rcloud.conf
 
 EXPOSE 8080
 
 # -d: DEBUG
 USER rcloud
-ENTRYPOINT ["/bin/bash", "-c", "redis-server & sh conf/start && sleep infinity"]
+ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no & sh conf/start && sleep infinity"]
 
 #
 # runtime-qap-simple: run the qap configuration in a single container
