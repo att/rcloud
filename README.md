@@ -9,7 +9,7 @@ updated and reproducible build system targeted to Debian 12 Bookworm
 with tools to make it easier to develop and test enhancements to
 rcloud as well as to deploy it.
 
-# Quick start - Zig build
+# Quick start: Zig build
 
 First, [install Zig version 0.14.0 or later](#install-zig) and all
 system requirements needed to build.
@@ -38,6 +38,9 @@ conf/stop
 
 ## Install Zig
 
+NOTE: this step can be skipped if you use the [Docker Compose](#quick-start-docker-compose) build
+instead.
+
 The build system requires Zig version 0.14.0 or later. You can
 download it from [Ziglang](https://ziglang.org/) or use the provided
 download script which is used to build our Docker container.
@@ -55,26 +58,33 @@ path, or simply run the zig executable by specifying its full path.
 Zig will find its library based on the executable's location, not your
 path.
 
-# Quick start - Docker build
+# Quick start: Docker compose
 
-The same configuration can be built and run with Docker, which uses a
-Debian base image. The file [Makefile](./Makefile)
-includes targets and can be used as reference for the appropriate
-docker commands. For example:
+A multi-container version of RCloud incorporating all the key
+components can be built and run using docker compose. This is
+currently the preferred way to test RCloud.
 
-Build the image:
-
-```sh
-make build
-```
-
-Run the image:
+Build the images:
 
 ```sh
-make run
+docker compose build
 ```
 
-Other targets in the Makefile demonstrate other common Docker scenarios.
+Run the images:
+
+```sh
+docker compose up
+```
+
+To stop the containers, send a Control-C. To edit code and see the
+effects, save the edits, then perform `docker compose build` and
+`docker compose up` again. To clean up images (but not data), perform
+`docker compose down`.
+
+Data is persisted between sessions within Docker volumes. The docker
+compose configuration can be examined at [compose.yaml](./compose.yaml).
+
+
 
 # Maintainer concerns
 
