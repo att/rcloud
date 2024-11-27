@@ -18,7 +18,11 @@ build-no-cache:
 
 run:
 	@echo "Running ephemeral container..."
+<<<<<<< HEAD
 	docker run -it --rm -p $(HOST_PORT):$(CONTAINER_PORT) --add-host=redis:127.0.0.1 $(DEBIAN_TAG)
+=======
+	docker run -it --rm -p $(HOST_PORT):$(CONTAINER_PORT) $(DEBIAN_TAG)
+>>>>>>> c36a8106 (Revert "remove obsolete Makefile")
 
 create:
 	@echo "Creating container..."
