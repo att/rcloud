@@ -220,30 +220,12 @@ USER rcloud
 ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no --dir /rcloud-data/ & sh conf/start && sleep infinity"]
 
 #
-# runtime-qap-simple: run the qap configuration in a single container
-#
-FROM runtime AS runtime-qap-simple
-WORKDIR /data/rcloud/zig-out
-
-# Make gists directory
-RUN mkdir -p data/gists && chown -Rf rcloud:rcloud data
-
-## note that currently the start script will choose rserve conf based
-## on results of a grep of the rcloud.conf file.
-RUN cp conf/rcloud-qap.conf.docker conf/rcloud.conf
-
-EXPOSE 8080
-
-# -d: DEBUG
-USER rcloud
-ENTRYPOINT ["/bin/bash", "-c", "redis-server & sh conf/start-qap && sleep infinity"]
-
-#
 # runtime-redis
 #
 FROM runtime AS runtime-redis
 EXPOSE 6379
-ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no" ]
+RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data
+ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no --dir /rcloud-data/" ]
 
 #
 # runtime-scripts
