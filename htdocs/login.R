@@ -16,15 +16,20 @@ cookies <- function(headers) {
   return(list())
 }
 
-format_html <- function(head, body, headers = character(0), mimetype = "text/html") {
-  return(list(
+format_html <- function(head, body, headers = character(), mimetype = "text/html", reset) {
+  if (!missing(reset))
+     headers = c(headers,
+                 rcloud.support:::.mk.cookie(user="", token="", execUser="", execToken="", expires="Thu, 01 Jan 1970 00:00:00 GMT"),
+                 paste0("Refresh: 0.5; url=", reset))
+
+  list(
     sprintf(
       "<html><head>%s</head><body>%s</body></html>",
       as.character(head), as.character(body)
     ),
     as.character(mimetype),
-    headers
-  ))
+    paste(headers, collapse="\r\n")
+  )
 }
 
 run <- function(url, query, body, headers) {
@@ -55,6 +60,8 @@ run <- function(url, query, body, headers) {
     if (is.null(getConf("session.server"))) {
       return(format_html("", "ERROR: This RCloud instance is not properly configured: Exec.auth is set, but session.server is not!"))
     }
+    
+    ## attempted user/pwd login
     if (length(body) > 2 && "execLogin" %in% body["action"]) {
       res <- unlist(rcloud.support:::session.server.auth(realm = exec.realm, user = body["user"], pwd = body["pwd"]))
       if (length(res) > 2) {
@@ -68,7 +75,6 @@ run <- function(url, query, body, headers) {
           cookies$execToken <- res[1]
           cookies$execUser <- res[2]
         }
-
       } else {
         return({
           ret <- rcloud.support:::getConf("authfail.page")
@@ -82,31 +88,24 @@ run <- function(url, query, body, headers) {
       }
     } else if (exec.only) {
       ## if we already have a cookie, check its validity - if it's not valid, remove it as we need to generate a new one
-      if (isTRUE(cookies$user == usr) && !rcloud.support:::check.user.token.pair(usr, cookies$token)) {
+      ## (NB: SKS ignores user)
+      if (!isTRUE(rcloud.support:::check.user.token.pair(cookies$user, cookies$token))) {
         cookies$user <- NULL
         cookies$token <- NULL
         cookies$execToken <- NULL
-        return(format_html("", "Invalid or expired user token, requesting authentication...",
-                           headers = paste0("Refresh: 5.0; url=", ret)
-                           ))
+        return(format_html("", "Invalid or expired user token, requesting authentication...", reset=ret))
       } else {
         ## use only the "token" cookie in exec-only mode
         cookies$execToken <- cookies$token
       }
     }
 
-    if (is.null(cookies$execToken)) {
-      return(format_html("", "Missing execution token, requesting authentication...",
-        headers = paste0("Refresh: 5.0; url=", ret)
-      ))
-    }
+    if (is.null(cookies$execToken))
+      return(format_html("", "Missing execution token, requesting authentication...", reset=ret))
 
     usr <- rcloud.support:::check.token(cookies$execToken, paste0("auth/", getConf("exec.auth")), exec.realm)
-    if (usr == FALSE) {
-      return(format_html("", "Invalid or expired execution token, requesting authentication...",
-        headers = paste0("Refresh: 5.0; url=", ret)
-      ))
-    }
+    if (usr == FALSE)
+      return(format_html("", "Invalid or expired execution token, requesting authentication...", reset=ret))
   } else {
     return(format_html("", "ERROR: configuration: check exec.auth is properly set."))
   }
@@ -135,6 +134,12 @@ run <- function(url, query, body, headers) {
       url <- gist::auth.url(redirect, ctx = ctx)
     } else {
       ## no error to be here
+      ## WARNING: if the system is (incorrectly) configured without github.auth: exec.token
+      ##   then both exec and notebook tokens get generated separately, and if the notebook token
+      ##   gets out of sync and is invalid (for whatever reason) *and* we are using a back-end
+      ##   without OAUTH (thus no url ro re-authenticate) then we land here which will lead
+      ##   to an infinite loop since there is no one who can generate a new token while the
+      ##   exec token is valid. (FIXME)
     }
   }
 
