@@ -217,7 +217,7 @@ EXPOSE 8080
 
 # -d: DEBUG
 USER rcloud
-ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no --dir /rcloud-data/ & sh conf/start && sleep infinity"]
+ENTRYPOINT ["/bin/bash", "-c", "exec redis-server --protected-mode no --dir /rcloud-data & sh conf/start && sleep infinity"]
 
 #
 # runtime-redis
@@ -225,7 +225,7 @@ ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no --dir /rcloud-d
 FROM runtime AS runtime-redis
 EXPOSE 6379
 RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data
-ENTRYPOINT ["/bin/bash", "-c", "redis-server --protected-mode no --dir /rcloud-data/" ]
+ENTRYPOINT ["/bin/bash", "-c", "exec redis-server --protected-mode no --dir /rcloud-data" ]
 
 #
 # runtime-scripts
@@ -238,7 +238,8 @@ RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
 RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
 
 # Install configuration file
-RUN cp zig-out/conf/rcloud-qap.conf.docker zig-out/conf/rcloud.conf
+RUN cp zig-out/conf/rcloud-qap.conf.docker zig-out/conf/rcloud.conf && \
+    cp zig-out/conf/scripts.conf.docker zig-out/conf/scripts.conf
 
 ENTRYPOINT ["R", "CMD",                                    \
     "zig-out/lib/Rserve/libs/Rserve",                      \
@@ -257,9 +258,6 @@ EXPOSE 8080
 # Create mount points for shared volumes with correct permissions
 RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
 RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
-
-# install configuration file
-RUN cp zig-out/conf/rcloud-qap.conf.docker zig-out/conf/rcloud.conf
 
 ENTRYPOINT ["R", "CMD",                  \
     "zig-out/lib/Rserve/libs/forward",   \
@@ -281,7 +279,8 @@ RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
 RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
 
 # Install configuration file
-RUN cp zig-out/conf/rcloud-qap.conf.docker zig-out/conf/rcloud.conf
+RUN cp zig-out/conf/rcloud-qap.conf.docker zig-out/conf/rcloud.conf && \
+    cp zig-out/conf/rserve-proxified.conf.docker zig-out/conf/rserve-proxified.conf
 
 ENTRYPOINT ["R", "--slave", "--no-restore", "--vanilla",             \
     "--file=/data/rcloud/zig-out/conf/run_rcloud.R",                 \
