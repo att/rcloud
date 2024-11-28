@@ -68,9 +68,11 @@ replace.token <- function(token, realm="rcloud") {
 
 check.user.token.pair <- function(user, token, valid.sources="stored", realm="rcloud")
 {
-  if (is.null(token)) {
+  if (is.null(token) || is.null(user)) {
     FALSE
   } else if (!nzConf("session.server")) {
+    token <- as.character(token)
+    user <- as.character(user)
     d <- .get.token.list()
     token.from.user <- d$user.to.token[[user]]
     user.from.token <- d$token.to.user[[token]]
@@ -95,6 +97,7 @@ check.token <- function(token, valid.sources="stored", realm="rcloud")
   if (is.null(token)) {
     FALSE
   } else if (!nzConf("session.server")) {
+    token <- as.character(token)
     d <- .get.token.list()
     user.from.token <- d$token.to.user[[token]]
     if (!is.null(user.from.token))
