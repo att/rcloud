@@ -242,7 +242,8 @@ RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rc
 # Install configuration file
 RUN cp conf/docker-proxified/* conf/
 
-ENTRYPOINT ["R", "CMD",                            \
+ENTRYPOINT ["/usr/bin/dumb-init", "--" ]
+CMD        ["R", "CMD",                            \
     "lib/Rserve/libs/Rserve",                      \
     "--RS-conf", "/data/rcloud/conf/scripts.conf", \
     "--RS-set", "daemon=no",                       \
@@ -260,7 +261,8 @@ EXPOSE 8080
 # NB: forward doesn't requrie any storage, this is only used for local sockets
 RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
 
-ENTRYPOINT [ "lib/Rserve/libs/forward",  \
+ENTRYPOINT ["/usr/bin/dumb-init", "--" ]
+CMD        [ "lib/Rserve/libs/forward",  \
     "-p", "8080",                        \
     "-s", "/data/rcloud/run/qap",        \
     "-r", "/data/rcloud/htdocs",         \
@@ -280,8 +282,8 @@ RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rc
 
 # Install configuration file
 RUN cp conf/docker-proxified/* conf/
-
-ENTRYPOINT ["R", "--slave", "--no-restore", "--vanilla",     \
+ENTRYPOINT ["/usr/bin/dumb-init", "--" ]
+CMD        ["R", "--slave", "--no-restore", "--vanilla",     \
     "--file=/data/rcloud/conf/run_rcloud.R",                 \
     "--args", "/data/rcloud/conf/rserve-proxified.conf"      \
     ]
