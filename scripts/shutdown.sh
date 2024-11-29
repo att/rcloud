@@ -48,9 +48,16 @@ fi
 
 pid=`$sudo_cmd cat "$ROOT/run/rserve.pid" 2>/dev/null`
 if [ -n "$pid" ]; then
-    ## FIXME: should we check that it's the right process?
     echo " - shutdown RCloud server $pid"
     ${sudo_cmd} kill -INT "$pid"
+fi
+
+pid=`$sudo_cmd cat "$ROOT/run/rserve.scripts.pid" 2>/dev/null`
+if [ -n "$pid" ]; then
+    echo " - shutdown RCloud scripts server $pid"
+    ${sudo_cmd} kill -INT "$pid"
+    ## NOTE: we may want to shut down the proxy as well, but
+    ## we don't have the pid
 fi
 
 if [ $KILL -gt 0 ]; then

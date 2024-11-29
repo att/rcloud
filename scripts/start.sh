@@ -74,6 +74,10 @@ export R_LIBS
 if [ ! -d "$ROOT/run" ]; then
     mkdir "$ROOT/run"
 fi
+## we also need tmp
+if [ ! -d "$ROOT/tmp" ]; then
+    mkdir "$ROOT/tmp"
+fi
 
 sudo_cmd=''
 ## check if user switching is enabled - in that case we have to sudo
@@ -84,9 +88,14 @@ if grep -i ^exec.match.user conf/rcloud.conf >/dev/null 2>&1; then
     fi
 fi
 
+RS=`echo 'cat(system.file("libs","Rserve",package="Rserve"))' | "$RBIN" --vanilla --slave`
 if grep -i '^rserve.socket:' "$ROOT/conf/rcloud.conf" >/dev/null 2>&1; then
     echo "NOTE: starting proxified version of RCloud"
-    ${sudo_cmd} "$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve-proxified.conf"
+    ${sudo_cmd} ROOT="$ROOT" R_LIBS="$R_LIBS" "$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve-proxified.conf"
+    ${sudo_cmd} ROOT="$ROOT" R_LIBS="$R_LIBS"  "$RBIN" CMD "$RS" --RS-conf "$ROOT/conf/scripts.conf" --no-save
+    forward=`echo 'cat(system.file("libs","forward",package="Rserve"))'|"$RBIN" --vanilla --slave`
+    if [ -z "$forward" ]; then echo 'ERROR: cannot find proxy binary - maybe you need to install Rserve?' >&2; exit 1; fi
+    ${sudo_cmd} "$forward" -p 8080 -s "$ROOT/run/qap" -r "$ROOT/htdocs" -R "$ROOT/run/Rscripts" -u "$ROOT/run/ulog.proxy" &
 else
-    ${sudo_cmd} "$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf"
+    ${sudo_cmd} ROOT="$ROOT" R_LIBS="$R_LIBS" "$RBIN" --slave --no-restore --vanilla --file="$ROOT/conf/run_rcloud.R" --args "$ROOT/conf/rserve.conf"
 fi
