@@ -1,13 +1,23 @@
-# RCloud
+# RCloud: Collaborative Visualisation and Analytics Platform
 
-See [upstream's README](README-upstream.md).
+[RCloud](http://rcloud.social/) is an open-source environment for collaboratively creating
+and sharing data analyses. RCloud lets you mix analytics code in R, Python, shell, Markdown,
+HTML and other languages and systems. Its focus is on collaboration, discoverability and scalability.
+It also provides flexible platform for visualisations and dashboards.
+It is highly modular, ranging from a single container to full-scale enterprise deployment on
+large clusters.
 
-# About this fork
+# Installation
 
-This fork of [rcloud](https://github.com/att/rcloud) provides an
-updated and reproducible build system targeted to Debian 12 Bookworm
-with tools to make it easier to develop and test enhancements to
-rcloud as well as to deploy it.
+The easiest way to get started is to use our [release "full" tar balls](https://github.com/s-u/rcloud/releases)
+which include all artifacts and dependencies - see `README.md` in the release or
+[README-release.md](README-release.md) for the most recent one.
+
+# Development
+
+This version of [RCloud](https://github.com/att/rcloud) provides an
+updated and reproducible build system to make it easier to develop and test enhancements to
+RCloud as well as to deploy it.
 
 # Quick start: Zig build
 
@@ -83,7 +93,6 @@ effects, save the edits, then perform `docker compose build` and
 
 Data is persisted between sessions within Docker volumes. The docker
 compose configuration can be examined at [compose.yaml](./compose.yaml).
-
 
 
 # Maintainer concerns
