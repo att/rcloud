@@ -96,8 +96,8 @@ ARG USER=dev
 
 # Set locale: needed because rcloud won't run in C locale
 RUN echo "en_NZ.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
-ENV LANG=en_NZ.UTF-8
-ENV ROOT=/data/rcloud
+ENV LANG en_NZ.UTF-8
+ENV ROOT /data/rcloud
 
 # install runtime system dependencies for testing
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -108,7 +108,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 
 # add group, exiting successfully if it already exists
-RUN groupadd -f -g $GID $USER && useradd -m -u $UID -g $GID $USER
+RUN groupadd -f -g $GID $USER && useradd -m -u $UID -g $GID $USER && mkdir /data && chown $USER:$GID /data
 USER $USER
 WORKDIR /home/$USER
 
