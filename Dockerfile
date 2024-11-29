@@ -69,6 +69,10 @@ RUN git clone --depth 1 https://github.com/s-u/SessionKeyServer.git && cd Sessio
     && make -j${BUILD_JOBS}                                                                \
     && make -j${BUILD_JOBS} pam
 
+#
+# SessionKeyServer runtime
+#
+# FIXME: this container does NOT persist keys, so any encrypted notebooks will be lost on re-start
 FROM dev-sks AS runtime-sks
 
 WORKDIR /data/SessionKeyServer
@@ -78,7 +82,6 @@ EXPOSE 4301
 RUN echo "rcloud:rcloud" | chpasswd
 
 RUN mkdir -p key.db && chmod 0700 key.db
-
 
 ENTRYPOINT ["/bin/bash", "-c", "java -Xmx256m -Djava.library.path=. -cp SessionKeyServer.jar com.att.research.RCloud.SessionKeyServer -l 0.0.0.0 -p 4301 -d key.db"]
 
@@ -169,6 +172,7 @@ RUN chown -f rcloud:rcloud /data/rcloud
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y \
+    dumb-init \
     redis-server \
     \
     jupyter \
@@ -187,37 +191,34 @@ RUN echo "en_NZ.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 ENV LANG=en_NZ.UTF-8
 
 # Copy build artifacts (zig-out)
-COPY --from=build --chown=rcloud:rcloud /data/rcloud/zig-out /data/rcloud/zig-out
+COPY --from=build --chown=rcloud:rcloud /data/rcloud/zig-out /data/rcloud/
 
 # Set RCloud root directory
-ENV ROOT=/data/rcloud/zig-out
+ENV ROOT=/data/rcloud
 
 # Set R libs directories
-ENV R_LIBS      /data/rcloud/zig-out/lib
-ENV R_LIBS_USER /data/rcloud/zig-out/lib
+ENV R_LIBS      /data/rcloud/lib
 
 #
 # runtime-simple: the single-user local RCloud installation
-#
+
 FROM runtime AS runtime-simple
-WORKDIR /data/rcloud/zig-out
+WORKDIR /data/rcloud
 
 # Create mount points for shared volumes with correct permissions
-RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
-RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
-
-# Make gists directory
-# RUN mkdir -p data/gists && chown -Rf rcloud:rcloud data
+RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
+RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rcloud-data /data/rcloud/data
 
 ## note that currently the start script will choose rserve conf based
 ## on results of a grep of the rcloud.conf file.
-RUN cp conf/rcloud-simple.conf.docker conf/rcloud.conf
+RUN cp conf/docker-simple/* conf/
 
 EXPOSE 8080
-
-# -d: DEBUG
 USER rcloud
-ENTRYPOINT ["/bin/bash", "-c", "exec redis-server --protected-mode no --dir /rcloud-data & sh conf/start && sleep infinity"]
+
+## WARNING: there is a potential race condition where redis may not be available before RCloud tests it -
+## this is really just a toy setup
+ENTRYPOINT ["/bin/bash", "-c", "sh conf/start & mkdir -p /rcloud-data/rcs-simple && exec redis-server --protected-mode no --dir /rcloud-data/rcs-simple"]
 
 #
 # runtime-redis
@@ -225,7 +226,8 @@ ENTRYPOINT ["/bin/bash", "-c", "exec redis-server --protected-mode no --dir /rcl
 FROM runtime AS runtime-redis
 EXPOSE 6379
 RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data
-ENTRYPOINT ["/bin/bash", "-c", "exec redis-server --protected-mode no --dir /rcloud-data" ]
+
+ENTRYPOINT ["/bin/bash", "-c", "mkdir -p /rcloud-data/rcs && exec redis-server --protected-mode no --dir /rcloud-data/rcs"]
 
 #
 # runtime-scripts
@@ -234,18 +236,17 @@ FROM runtime AS runtime-scripts
 WORKDIR /data/rcloud
 
 # Create mount points for shared volumes with correct permissions
-RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
-RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
+RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
+RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rcloud-data /data/rcloud/data
 
 # Install configuration file
-RUN cp zig-out/conf/rcloud-qap.conf.docker zig-out/conf/rcloud.conf && \
-    cp zig-out/conf/scripts.conf.docker zig-out/conf/scripts.conf
+RUN cp conf/docker-proxified/* conf/
 
-ENTRYPOINT ["R", "CMD",                                    \
-    "zig-out/lib/Rserve/libs/Rserve",                      \
-    "--RS-conf", "/data/rcloud/zig-out/conf/scripts.conf", \
-    "--RS-set", "daemon=no",                               \
-    "--no-save"                                            \
+ENTRYPOINT ["R", "CMD",                            \
+    "lib/Rserve/libs/Rserve",                      \
+    "--RS-conf", "/data/rcloud/conf/scripts.conf", \
+    "--RS-set", "daemon=no",                       \
+    "--no-save"                                    \
     ]
 
 #
@@ -256,16 +257,15 @@ WORKDIR /data/rcloud
 EXPOSE 8080
 
 # Create mount points for shared volumes with correct permissions
-RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
-RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
+# NB: forward doesn't requrie any storage, this is only used for local sockets
+RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
 
-ENTRYPOINT ["R", "CMD",                  \
-    "zig-out/lib/Rserve/libs/forward",   \
+ENTRYPOINT [ "lib/Rserve/libs/forward",  \
     "-p", "8080",                        \
-    "-s", "/rcloud-run/qap",             \
-    "-r", "/data/rcloud/zig-out/htdocs", \
-    "-R", "/rcloud-run/Rscripts",        \
-    "-u", "/rcloud-run/ulog.proxy"       \
+    "-s", "/data/rcloud/run/qap",        \
+    "-r", "/data/rcloud/htdocs",         \
+    "-R", "/data/rcloud/run/Rscripts",   \
+    "-u", "/data/rcloud/run/ulog.proxy"  \
     ]
 
 #
@@ -275,14 +275,13 @@ FROM runtime AS runtime-rserve-proxified
 WORKDIR /data/rcloud
 
 # Create mount points for shared volumes with correct permissions
-RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run
-RUN mkdir -p /rcloud-data/gists && chown -Rf rcloud:rcloud /rcloud-data
+RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
+RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rcloud-data /data/rcloud/data
 
 # Install configuration file
-RUN cp zig-out/conf/rcloud-qap.conf.docker zig-out/conf/rcloud.conf && \
-    cp zig-out/conf/rserve-proxified.conf.docker zig-out/conf/rserve-proxified.conf
+RUN cp conf/docker-proxified/* conf/
 
-ENTRYPOINT ["R", "--slave", "--no-restore", "--vanilla",             \
-    "--file=/data/rcloud/zig-out/conf/run_rcloud.R",                 \
-    "--args", "/data/rcloud/zig-out/conf/rserve-proxified.conf"      \
+ENTRYPOINT ["R", "--slave", "--no-restore", "--vanilla",     \
+    "--file=/data/rcloud/conf/run_rcloud.R",                 \
+    "--args", "/data/rcloud/conf/rserve-proxified.conf"      \
     ]
