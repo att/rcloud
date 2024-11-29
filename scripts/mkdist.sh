@@ -66,9 +66,9 @@ done
 ## copy minimal config
 cp "$SRC/conf/rcloud.conf.dist" "$RCDIR/conf/rcloud.conf"
 
-## shuffle READMEs (FIXME: temporary until we merge the fork)
-sed 's:README[.].md:README-zig.md:g' < "$SRC/README-release.md" | sed "s:%VER%:$VER:g" | sed "s:2[.]5[.]0:$VER:g" > "$RCDIR/README.md"
-cp "$SRC/README.md" "$RCDIR//README-zig.md"
+## shuffle READMEs for the release
+sed 's:README[.]md:README-dev.md:g' < "$SRC/README-release.md" | sed "s:%VER%:$VER:g" > "$RCDIR/README.md"
+sed 's:README-release[.]md:README.md:g' < "$SRC/README.md" > "$RCDIR/README-dev.md"
 
 echo '--- Create vendored source package repository ---'
 (cd "$RCDIR" && "$RCDIR/bin/rlib.sh" --mkdist )
