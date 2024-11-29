@@ -106,8 +106,6 @@ run <- function(url, query, body, headers) {
     usr <- rcloud.support:::check.token(cookies$execToken, paste0("auth/", getConf("exec.auth")), exec.realm)
     if (usr == FALSE)
       return(format_html("", "Invalid or expired execution token, requesting authentication...", reset=ret))
-  } else {
-    return(format_html("", "ERROR: configuration: check exec.auth is properly set."))
   }
 
   if (is.null(redirect)) {
