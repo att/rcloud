@@ -68,7 +68,7 @@ session.markdown.eval <- function(command, language, silent) {
 
   if (is.null(command) || command == "") command <- " "
   val <- try(markdownToHTML(text=paste(knit(text=command, envir=.GlobalEnv), collapse="\n"),
-                            fragment=TRUE), silent=TRUE)
+                            fragment.only=TRUE), silent=TRUE)
   if (inherits(val, "try-error")) {
     # FIXME better error handling
     val <- paste("<pre>", val[1], "</pre>", sep="")
