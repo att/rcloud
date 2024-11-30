@@ -1,6 +1,6 @@
-# RCloud 2.5.0 Release
+# RCloud %VER% Release
 
-This tar ball includes RCloud 2.5.0 including all required R package dependencies
+This tar ball includes RCloud %VER% including all required R package dependencies
 frozen at their respective versions at the time of the release, tested with
 R 4.4.2. Therefore it is intended to use used with a clean R installation, or
 as a container (see below).
