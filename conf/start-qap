@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(realpath $(dirname "${BASH_SOURCE[0]}"))"
+export ROOT=$(realpath $SCRIPT_DIR/..)
+export R_LIBS=$(realpath $SCRIPT_DIR/../lib)
+export R_LIBS_USER=$R_LIBS
+
+if [ ! -d "$ROOT/run" ]; then mkdir -p "$ROOT/run"; fi
+
+if [ ! -f $ROOT/conf/rcloud.conf ]; then
+    echo "WARNING: conf/rcloud.conf not found, using rcloud.conf.docker";
+    cp "$ROOT/conf/rcloud.conf.docker" "$ROOT/conf/rcloud.conf";
+fi
+
+if ! redis-cli ping; then  redis-server & fi
+
+# Start the scripts process
+RS=`echo 'cat(system.file("libs","Rserve",package="Rserve"))' | R --vanilla --slave`
+if [ -z "$RS" ]; then echo 'ERROR: cannot find Rserve binary' >&2; exit 1; fi
+echo "Starting the scripts process: $RS"
+R CMD "$RS" --RS-conf "$ROOT/conf/scripts.conf" --no-save &
+
+# find the proxy and start it
+forward=`echo 'cat(system.file("libs","forward",package="Rserve"))'|R --vanilla --slave`
+if [ -z "$forward" ]; then echo 'ERROR: cannot find proxy binary' >&2; exit 1; fi
+
+echo "Starting the proxy: $forward"
+"$forward" -p 8080 -s "$ROOT/run/qap" -r "$ROOT/htdocs" -R "$ROOT/run/Rscripts" -u "$ROOT/run/ulog.proxy" &
+
+# Start Rcloud proxified
+echo "Starting RCloud proxified..."
+R --slave --no-restore --vanilla   \
+  --file="$ROOT/conf/run_rcloud.R" \
+  --args "$ROOT/conf/rserve-proxified.conf" &

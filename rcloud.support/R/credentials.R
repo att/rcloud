@@ -74,7 +74,8 @@ check.user.token.pair <- function(user, token, valid.sources="stored", realm="rc
     d <- .get.token.list()
     token.from.user <- d$user.to.token[[user]]
     user.from.token <- d$token.to.user[[token]]
-    # if (rcloud.debug.level()) cat("check.user.token.pair(", user, ", ", token, ")\n", sep='')
+
+    if (rcloud.debug.level()) cat("check.user.token.pair(", user, ", ", token, ")\n", sep='')
 
     (!is.null(user.from.token) &&
      (user.from.token == user) &&
@@ -82,7 +83,9 @@ check.user.token.pair <- function(user, token, valid.sources="stored", realm="rc
      (token.from.user == token))
   } else {
     res <- session.server.get.token(realm, token)
-    # if (rcloud.debug.level()) cat("check.user.token.pair(", user, ", ", token, ", ", realm, ") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
+
+    if (rcloud.debug.level()) cat("check.user.token.pair(", user, ", ", token, ", ", realm, ") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
+
     (length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[2] == as.vector(user)) && isTRUE(res[3] %in% valid.sources)
   }
 }
@@ -100,7 +103,7 @@ check.token <- function(token, valid.sources="stored", realm="rcloud")
       FALSE
   } else {
     res <- session.server.get.token(realm, token)
-    # if (rcloud.debug.level()) cat("check.token(", token,", ", realm,") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
+    if (rcloud.debug.level()) cat("check.token(", token,", ", realm,") valid: ", res[1],", user: ", res[2], ", source: ", res[3], "\n", sep='')
     if ((length(res) > 1) && isTRUE(res[1] == "YES") && isTRUE(res[3] %in% valid.sources)) res[2] else FALSE
   }
 }

@@ -104,6 +104,10 @@ configure.rcloud <- function (mode=c("startup", "script")) {
     }
     cat("Loading RCloud configuration file...\n")
     rc.all <- read.dcf(rc.cf)
+    # TODO: DCF format expects that blank lines separate records, and
+    # we only read a single record. That means if users put blank
+    # lines in their conf files, the subsequent configurations will be
+    # silently ignored.
     rc.c <- rc.all[1,]
     rc.c <- rc.c[!is.na(rc.c)]
     rc.gsrc <- .dcf.sections.with(rc.all, "gist.source")

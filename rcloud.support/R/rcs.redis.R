@@ -8,6 +8,7 @@ rcs.redis <- function(host=NULL, db=getOption("redis.default.db", 0L), password=
     host <- "localhost"
     port <- 6379L
   }
+  cat("Attempting to connect to redis host: '", host, "', port: '", port, "'\n", sep="");
   structure(list(host=host, port=port, handle=redis.connect(host, port, 3, TRUE, TRUE, db=db, password=password)), class="RCSredis")
 }
 

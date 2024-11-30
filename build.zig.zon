@@ -1,0 +1,14 @@
+.{
+    .name = "rcloud",
+    .version = "0.0.0", // TODO: we can ignore this because we don't package for Zig?
+    .minimum_zig_version = "0.14.0",
+    .dependencies = .{
+        .@"r-build-zig" = .{
+            .path = "vendor/r-build-zig-0.5.0-no-deps",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+    },
+}

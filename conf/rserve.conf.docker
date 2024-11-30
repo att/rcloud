@@ -1,0 +1,49 @@
+websockets enable
+oob enable
+qap.oc enable
+websockets.qap.oc enable
+umask 0027
+eval rcloud.support:::configure.rcloud()
+workdir.clean enable
+
+## enable OOB idle interval to keep proxies alive
+oob.idle.interval 1800
+
+## needed for Shiny pass-through
+use.idle.callback yes
+
+## port which will serve both static content
+## and RCloud WebSocket
+http.port 8080
+http.upgrade.websockets enable
+
+## You can also/instead use secure HTTP if desired
+## requires a valid key and certificate, though
+# http.tls.port 8083
+# tls.key ${ROOT}/conf/server.key
+# tls.cert ${ROOT}/conf/server.crt
+
+## the following is useful to track process types
+## but affects things like killall
+tag.argv enable
+
+## this enables traffic logging in debug mode
+log.io enable
+
+## enable logger of RPC calls
+## it is syslog-compatible so you could use syslogd
+## target if desired.
+## ulog ${ROOT}/run/ulog
+
+## use a pid file for easier control
+pid.file ${ROOT}/run/rserve.pid
+
+# pass context in I/O OOBs
+io.use.context yes
+
+## experimental console support
+console.oob enable
+## experimental stdio forwarding
+forward.stdio enable
+# experimental input support
+console.input enable
