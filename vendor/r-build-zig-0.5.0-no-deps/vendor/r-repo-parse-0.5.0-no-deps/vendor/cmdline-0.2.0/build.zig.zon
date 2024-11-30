@@ -1,0 +1,11 @@
+.{
+    .name = "cmdline",
+    .version = "0.2.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src/root.zig",
+        "README.md",
+        "LICENSE",
+    },
+}

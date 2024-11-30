@@ -1,6 +1,6 @@
 Package: rcloud.support
 Title: Support Package for the RCloud environment
-Version: 2.3-0
+Version: 2.3-1
 Author: Simon Urbanek <urbanek@research.att.com>, Gordon Woodhull <gordon@research.att.com>, Carlos Scheidegger <cscheid@cscheid.net>
 Maintainer: Simon Urbanek <urbanek@research.att.com>
 Description: It's used by RCloud internally.

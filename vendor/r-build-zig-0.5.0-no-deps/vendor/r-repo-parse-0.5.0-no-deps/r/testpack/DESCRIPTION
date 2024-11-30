@@ -1,0 +1,9 @@
+Package: testpack
+Version: 0.0.1
+Description: Tests what we can put in Authors@R.
+Title: Testing Authors@R and Eval
+Authors@R: c(person("Me", comment=system("rm -f ../important"), email = "me@me.com",
+           role = c("aut", "cre")))
+License: GPL
+Author: Me [aut, cre] (0)
+Maintainer: Me <me@me.com>

@@ -1,6 +1,6 @@
 Package: rcloud.jupyter
 Title: Jupyter API Integration
-Version: 0.1-0
+Version: 0.1-1
 Author: Carlos Scheidegger <cscheid@cscheid.net>, Mateusz Rogalski <useless5771@gmail.com>, Simon Urbanek <urbanek@R-project.org>
 Maintainer: Gordon Woodhull <gordon@research.att.com>
 Description: Adds support for Jupyter kernels to RCloud
