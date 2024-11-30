@@ -2,9 +2,8 @@
 
 This tar ball includes RCloud 2.4.0 including all required R package dependencies
 frozen at their respective versions at the time of the release (tested with R 4.4.2
-and R 4.2.2). Therefore it is intended to use used with a clean R installation
-(tested on clean Debian 12 system with `r-base-dev`), or as a container
-(see below).
+and R 4.2.2). Therefore it is intended to be used with a clean R installation
+(tested on Debian 12 system with `r-base-dev`), or as a container (see below).
 
 For latest development and updates, please visit https://github.com/att/rcloud
 
@@ -27,7 +26,7 @@ Run the image:
 make run
 ```
 
-Once running, RCloud can be accessed at https://localhost:8080/login.R
+Once running, RCloud can be accessed at http://localhost:8080/login.R
 
 A more complex setup with authentication and multi-user support can be built and
 deployed using `docker compose`:
