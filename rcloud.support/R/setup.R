@@ -127,8 +127,11 @@ configure.rcloud <- function (mode=c("startup", "script")) {
 
   ## set locale - default is UTF-8
   locale <- getConf("locale")
-  if (!isTRUE(nzchar(locale))) locale <- "en_US.UTF-8"
-  Sys.setlocale(,locale)
+  if (!isTRUE(nzchar(locale))) {
+     ## if LANG is set then we don't worry
+     if (!isTRUE(nzchar(Sys.getenv("LANG"))))
+        Sys.setlocale(,if (length(grep("darwin",R.Version()$os))) "en_UZ.UTF-8" else "C.UTF-8")
+  } else Sys.setlocale(,locale)
 
   ## This is jsut a friendly way to load package and report success/failure
   ## Cairo, knitr, markdown and png are mandatory, really
