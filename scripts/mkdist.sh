@@ -65,6 +65,9 @@ for scr in rlib.sh start.sh shutdown.sh; do
 done
 ## copy minimal config
 cp "$SRC/conf/rcloud.conf.dist" "$RCDIR/conf/rcloud.conf"
+## copy Makefile and compose.yaml for Docker support - and the zig download script
+cp "$SRC/Makefile" "$SRC/Dockerfile" "$SRC/compose.yaml" "$RCDIR/"
+mkdir -p "$RCDIR/zig" && cp "$SRC/zig/download.sh"* "$RCDIR/zig/"
 
 ## shuffle READMEs for the release
 sed 's:README[.]md:README-dev.md:g' < "$SRC/README-release.md" | sed "s:%VER%:$VER:g" > "$RCDIR/README.md"
