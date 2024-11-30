@@ -79,7 +79,7 @@ if [ ! -d "$ROOT/tmp" ]; then
     mkdir "$ROOT/tmp"
 fi
 
-sudo_cmd=''
+sudo_cmd=env
 ## check if user switching is enabled - in that case we have to sudo
 if grep -i ^exec.match.user conf/rcloud.conf >/dev/null 2>&1; then
     if [ `id -u` != 0 ]; then
