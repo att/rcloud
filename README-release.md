@@ -1,9 +1,10 @@
-# RCloud %VER% Release
+# RCloud 2.4.0 Release
 
-This tar ball includes RCloud %VER% including all required R package dependencies
-frozen at their respective versions at the time of the release, tested with
-R 4.4.2. Therefore it is intended to use used with a clean R installation, or
-as a container (see below).
+This tar ball includes RCloud 2.4.0 including all required R package dependencies
+frozen at their respective versions at the time of the release (tested with R 4.4.2
+and R 4.2.2). Therefore it is intended to use used with a clean R installation
+(tested on clean Debian 12 system with `r-base-dev`), or as a container
+(see below).
 
 For latest development and updates, please visit https://github.com/att/rcloud
 
@@ -84,5 +85,3 @@ and [rcloud.conf](https://github.com/att/rcloud/wiki/rcloud.conf) configuration 
 
 This release is based on a new Zig-based system - see
 [README](README.md) for deatils.
-
-See also [upstream's README](README-upstream.md).
