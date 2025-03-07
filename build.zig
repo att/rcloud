@@ -10,7 +10,7 @@ const ResolvedTarget = Build.ResolvedTarget;
 const OptimizeMode = std.builtin.OptimizeMode;
 
 // import build tools from r_build_zig
-const r_build_zig = @import("r-build-zig");
+const r_build_zig = @import("r_build_zig");
 
 // import generated build.zig
 const generated_build = @import("build-aux/generated/build.zig");
@@ -33,7 +33,13 @@ pub fn build(b: *std.Build) !void {
 
     // step dist-fat requires assets option
     if (assets == null)
-        fat_tarball_step.dependOn(&b.addFail("The dist-fat step requires -Dassets to be set.").step);
+        fat_tarball_step.dependOn(&b.addFail("The dist-fat step requires -Dassets to be set, e.g -Dassets=zig-out/assets.").step);
+
+    // check if zig/cache/p exists, otherwise give dist-fat error
+    std.fs.cwd().access("zig/cache/p", .{}) catch |e| switch (e) {
+        error.FileNotFound => fat_tarball_step.dependOn(&b.addFail("The dist-fat step requires a zig cache in zig/cache. Before running dist-fat, build with `zig build --global-cache-dir zig/cache`").step),
+        else => return e,
+    };
 
     // declare build install rules
     try fetch_assets_and_build(b, config_path, target, .ReleaseSafe, assets);
@@ -217,6 +223,12 @@ fn add_all_source_files(b: *Build, wf: *WriteFile, dirname: []const u8) void {
     _ = add_copy_directory(b, wf, "scripts", dirname, options);
     _ = add_copy_directory(b, wf, "services", dirname, options);
     _ = add_copy_directory(b, wf, "packages", dirname, options);
+
+    // add zig cache directory which includes the zig build dependency
+    // source files (not binaries). TODO: this path depends on the
+    // maintainer having properly built rcloud using the command `zig
+    // build --global-cache-dir zig/cache`
+    _ = add_copy_directory(b, wf, "zig/cache/p", dirname, options);
 
     _ = add_copy_file(b, wf, "build-aux/config.json", dirname);
     _ = add_copy_file(b, wf, "build-aux/generated/build.zig", dirname);

@@ -88,21 +88,33 @@ compose configuration can be examined at [compose.yaml](./compose.yaml).
 
 # Maintainer concerns
 
-## Preparing an offline build
+## Preparing an offline build with a fat source distribution
 
-1. Complete a `zig build` as usual. This step will add an `assets`
-   directory to `zig-out`.
-1. Run `zig build dist-fat -Dassets=zig-out/assets`. This will
+1. Complete a `zig build` using the path `zig/cache` as the
+   `global-cache-dir`:
+```sh
+zig/zig build --global-cache-dir zig/cache
+```
+   This will place all external zig build dependencies in the
+   directory `zig/cache/p`, which will be included in the distribution
+   tarball.
+
+   Building rcloud will also add an `assets` directory to `zig-out`.
+
+2. Run `zig/zig build --global-cache-dir zig/cache dist-fat -Dassets=zig-out/assets`. This will
    generate a tarball `rcloud-full-{version}.tar.gz` in `zig-out`.
 1. Transfer the file to another machine and extract it there.
-1. Run `zig build -Dassets=zig-out/assets` to build without a network.
+1. From the root of the source directory, if necessary, run
+   `zig/download.sh 0.14.0` on the target machine to fetch the `zig`
+   binary for the target platform.
+1. Run `zig/zig build --global-cache-dir zig/cache -Dassets=zig-out/assets` to build without a network.
 
 Note that you will need Zig (as well as all system requirements) on
 the offline machine since you are still building from source. Simply
 packing the zig/ directory and unpacking it on the other machine is
 sufficient to have a working Zig installation.
 
-## Preparing a source distribution
+## Preparing a source distribution (thin)
 
 ```sh
 zig build dist
