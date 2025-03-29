@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
+#
+# This is a simpler version of the `start` script and is intended for
+# use as a simple configuration as part of the
+# docker/common/Dockerfile runtime-simple build configuration.
+#
+# TODO: Using this script may not be necessary. It could be integrated
+# into the Dockerfile.
+#
 
-set -euo pipefail
+set -eo pipefail
 
 SCRIPT_DIR="$(realpath $(dirname "${BASH_SOURCE[0]}"))"
 export ROOT=$(realpath $SCRIPT_DIR/..)
 export R_LIBS=$(realpath $SCRIPT_DIR/../lib)
 export R_LIBS_USER=$R_LIBS
 
-if [ ! -d "$ROOT/run" ]; then mkdir -p "$ROOT/run"; fi
-
-if [ ! -f $ROOT/conf/rcloud.conf ]; then
-    echo "WARNING: conf/rcloud.conf not found, using rcloud.conf.docker";
-    cp "$ROOT/conf/rcloud.conf.docker" "$ROOT/conf/rcloud.conf";
+if [ "$1" = "-d" ]; then
+   export DEBUG=1
 fi
 
-if ! redis-cli ping; then  redis-server & fi
+if [ ! -d "$ROOT/run" ]; then mkdir -p "$ROOT/run"; fi
+
+# if ! redis-cli ping; then  redis-server & fi
 
 R --slave --no-restore --vanilla \
   --file="$ROOT/conf/run_rcloud.R" \

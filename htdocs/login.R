@@ -130,6 +130,7 @@ run <- function(url, query, body, headers) {
       ## re-create the back-end because the username/token have changed
       ctx <- create.gist.backend(usr, token)
       url <- gist::auth.url(redirect, ctx = ctx)
+      cat ("login.R: created new gist backend with usr=", usr, " token=", token, "\n")
     } else {
       ## no error to be here
       ## WARNING: if the system is (incorrectly) configured without github.auth: exec.token
@@ -138,6 +139,7 @@ run <- function(url, query, body, headers) {
       ##   without OAUTH (thus no url ro re-authenticate) then we land here which will lead
       ##   to an infinite loop since there is no one who can generate a new token while the
       ##   exec token is valid. (FIXME)
+      cat ("login.R: fell through to no-error case\n")
     }
   }
 

@@ -1,4 +1,5 @@
-# build with: docker buildx build -f Dockerfile --target runtime-simple -t rcloud .
+# See peer directories dev, stage and prod for Docker Compose
+# configurations and additional documentation.
 
 ARG BUILD_JOBS=8
 
@@ -8,6 +9,31 @@ ARG BUILD_JOBS=8
 # pinned to:
 # https://hub.docker.com/layers/library/debian/bookworm-20241016/images/sha256-bfee693abf500131d9c2aea2e9780a4797dc3641644bac1660b5eb9e1f1e3306?context=explore
 FROM debian@sha256:e11072c1614c08bf88b543fcfe09d75a0426d90896408e926454e88078274fcb AS base
+
+#
+# environment variables
+#
+# these default values may be overridden by docker compose.yaml files
+#
+# runtime configuration files: relative to rcloud root, e.g.
+# /data/rcloud, which is also by default where the docker build context
+# root is copied to (see WORKDIR directives below).
+#
+# NOTE: several places in RCloud operations scripts (e.g. `start`)
+# expect to find configuration files in the conf/ directory, so this
+# Dockerfile will copy the paths in these environment variables to
+# that location.
+#
+# ARG sets the environment variable during the build, but it is not
+# persisted in the image.
+ARG RCLOUD_CONF=docker/stage/rcloud.conf
+ARG RCLOUD_SCRIPTS_CONF=docker/stage/scripts.conf
+ARG RCLOUD_RSERVE_PROXIFIED_CONF=docker/stage/rserve-proxified.conf
+
+# This is the RServe conf file for the single container runtime-simple
+# stage, used by the dev/ docker compose configuration. It is set in
+# docker/dev/compose.yaml.
+ARG RCLOUD_RSERVE_CONF=
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked      \
     --mount=type=cache,target=/var/lib/apt,sharing=locked        \
@@ -120,13 +146,7 @@ WORKDIR /data/rcloud
 RUN chown -R rcloud:rcloud /data/rcloud
 
 #
-# Download a version of Zig 0.14.0
-#
-# NOTE: this is not reproducible, as the official ziglang.org site
-# does not maintain older pre-release (master) builds. The download.sh
-# script will download the latest master for version 0.14.0 available.
-# When 0.14.0 is released (est. Jan 2025), this build will be
-# reproducible.
+# Download Zig 0.14.0
 #
 COPY zig/download.sh zig/download.sh
 RUN zig/download.sh 0.14.0
@@ -140,6 +160,7 @@ COPY build.zig.zon .
 COPY VERSION .
 COPY build-aux       build-aux
 COPY conf            conf
+COPY docker          docker
 COPY doc             doc
 COPY htdocs          htdocs
 COPY packages        packages
@@ -150,13 +171,41 @@ COPY scripts         scripts
 COPY services        services
 COPY Gruntfile.js    .
 COPY LICENSE         .
-COPY package-lock.json    .
+COPY package-lock.json .
 COPY package.json    .
 
 # build
 RUN --mount=type=cache,target=/zig/global,sharing=locked \
     --mount=type=cache,target=/zig/local,sharing=locked \
     zig build --cache-dir /zig/local --global-cache-dir /zig/global --summary new
+
+
+#
+# dist: generate a source distribution
+#
+FROM build AS dist
+WORKDIR /data/rcloud
+
+# Copy additional files not needed for build but included in source distribution
+COPY flake.nix    .
+COPY flake.lock   .
+COPY Gruntfile.js .
+COPY LICENSE      .
+COPY README.md    .
+COPY NEWS.md      .
+COPY VERSION      .
+
+RUN --mount=type=cache,target=/zig/global,sharing=locked \
+    --mount=type=cache,target=/zig/local,sharing=locked \
+    zig build dist --cache-dir /zig/local --global-cache-dir /zig/global --summary new
+
+FROM dist AS dist-fat
+WORKDIR /data/rcloud
+RUN --mount=type=cache,target=/zig/global,sharing=locked \
+    --mount=type=cache,target=/zig/local,sharing=locked \
+    zig build dist-fat -Dassets=zig-out/assets --cache-dir /zig/local --global-cache-dir /zig/global --summary new
+
+
 
 #
 # runtime: this is the final stage which brings everything from the
@@ -192,6 +241,16 @@ ENV LANG=en_NZ.UTF-8
 # Copy build artifacts (zig-out)
 COPY --from=build --chown=rcloud:rcloud /data/rcloud/zig-out /data/rcloud/
 
+# Copy configuration files from build context.
+# FIXME: Currently the Zig build creates a conf directory in zig-out
+# (copied in the directive immediately above) with configuration files
+# for the "stage" type of deployment, using rserve-proxified.conf. So
+# we must overwrite that directory by copying the original conf/
+# directory from the build context.
+RUN  rm -rf conf
+COPY conf   conf
+COPY docker docker
+
 # Set RCloud root directory
 ENV ROOT=/data/rcloud
 
@@ -208,16 +267,20 @@ WORKDIR /data/rcloud
 RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
 RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rcloud-data /data/rcloud/data
 
-## note that currently the start script will choose rserve conf based
-## on results of a grep of the rcloud.conf file.
-RUN cp conf/docker-simple/* conf/
+# TODO: this directory is needed by rcloud.support/credentials.R:::.save.token.list and must be writable
+RUN chown -Rf rcloud:rcloud /data/rcloud/conf
+
+# Install require configuration files
+RUN [ -f "$RCLOUD_CONF" ] && cp "$RCLOUD_CONF" conf/
+RUN [ -f "$RCLOUD_SCRIPTS_CONF" ] && cp "$RCLOUD_SCRIPTS_CONF" conf/
+RUN [ -f "$RCLOUD_RSERVE_CONF" ] && cp "$RCLOUD_RSERVE_CONF" conf/
 
 EXPOSE 8080
 USER rcloud
 
 ## WARNING: there is a potential race condition where redis may not be available before RCloud tests it -
 ## this is really just a toy setup
-ENTRYPOINT ["/bin/bash", "-c", "sh conf/start & mkdir -p /rcloud-data/rcs-simple && exec redis-server --protected-mode no --dir /rcloud-data/rcs-simple"]
+ENTRYPOINT ["/bin/bash", "-c", "sleep 2 && /bin/bash conf/start2 & mkdir -p /rcloud-data/rcs-simple && exec redis-server --protected-mode no --dir /rcloud-data/rcs-simple"]
 
 #
 # runtime-redis
@@ -238,8 +301,9 @@ WORKDIR /data/rcloud
 RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
 RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rcloud-data /data/rcloud/data
 
-# Install configuration file
-RUN cp conf/docker-proxified/* conf/
+# Install require configuration files
+RUN [ -f "$RCLOUD_CONF" ] && cp "$RCLOUD_CONF" conf/
+RUN [ -f "$RCLOUD_SCRIPTS_CONF" ] && cp "$RCLOUD_SCRIPTS_CONF" conf/
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--" ]
 CMD        ["R", "CMD",                            \
@@ -279,8 +343,10 @@ WORKDIR /data/rcloud
 RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
 RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rcloud-data /data/rcloud/data
 
-# Install configuration file
-RUN cp conf/docker-proxified/* conf/
+# Install required configuration files
+RUN [ -f "$RCLOUD_CONF" ] && cp "$RCLOUD_CONF" conf/
+RUN [ -f "$RCLOUD_RSERVE_PROXIFIED_CONF" ] && cp "$RCLOUD_RSERVE_PROXIFIED_CONF" conf/
+
 ENTRYPOINT ["/usr/bin/dumb-init", "--" ]
 CMD        ["R", "--slave", "--no-restore", "--vanilla",     \
     "--file=/data/rcloud/conf/run_rcloud.R",                 \

@@ -4,8 +4,8 @@ services:
   redis:
     image: rcloud-redis
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker/common/Dockerfile
       target: runtime-redis
     volumes:
       - rcloud-data:/rcloud-data
@@ -14,8 +14,8 @@ services:
   sks:
     image: rcloud-sks
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker/common/Dockerfile
       target: runtime-sks
 
   scripts:
@@ -23,9 +23,12 @@ services:
     depends_on:
       - redis
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker/common/Dockerfile
       target: runtime-scripts
+      args:
+        - RCLOUD_CONF=docker/stage/rcloud.conf
+        - RCLOUD_SCRIPTS_CONF=docker/stage/scripts.conf
     volumes:
       - rcloud-data:/rcloud-data
       - rcloud-run:/rcloud-run
@@ -33,8 +36,8 @@ services:
   forward:
     image: rcloud-forward
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker/common/Dockerfile
       target: runtime-forward
     ports:
       - "8080:8080"
@@ -47,9 +50,12 @@ services:
     depends_on:
       - redis
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker/common/Dockerfile
       target: runtime-rserve-proxified
+      args:
+        - RCLOUD_CONF=docker/stage/rcloud.conf
+        - RCLOUD_RSERVE_PROXIFIED_CONF=docker/stage/rserve-proxified.conf
     volumes:
       - rcloud-data:/rcloud-data
       - rcloud-run:/rcloud-run

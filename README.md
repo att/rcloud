@@ -74,15 +74,15 @@ A multi-container version of RCloud incorporating all the key
 components can be built and run using docker compose. This is
 currently the preferred way to test RCloud.
 
-Build the images:
+Several other configurations are currently under development. All
+configurations are in individual subdirectories of the `docker`
+directory.
+
+For example, to test the `stage` configuration:
 
 ```sh
+cd docker/stage
 docker compose build
-```
-
-Run the images:
-
-```sh
 docker compose up
 ```
 
@@ -91,8 +91,7 @@ effects, save the edits, then perform `docker compose build` and
 `docker compose up` again. To clean up images (but not data), perform
 `docker compose down`.
 
-Data is persisted between sessions within Docker volumes. The docker
-compose configuration can be examined at [compose.yaml](./compose.yaml).
+Data is persisted between sessions within Docker volumes.
 
 
 # Maintainer concerns
