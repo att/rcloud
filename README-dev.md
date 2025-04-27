@@ -88,8 +88,21 @@ compose configuration can be examined at [compose.yaml](./compose.yaml).
 
 # Maintainer concerns
 
-## Preparing an offline build with a fat source distribution
+## Preparing an offline build
 
+To prepare a source distribution that can be built entirely offline
+(with no network access), we need to include all third-party
+dependencies in the distribution, including those required by the
+build system itself. To do so, we need to tell the Zig package manager
+where to download our Zig build dependencies, and include those in the
+distribution file. In Zig terms, this is known as the "global cache
+directory". And we need to perform a full build, which will download
+all R package depdencies.
+
+1. Download Zig executable if you haven't already:
+```sh
+zig/download.sh 0.14.0
+```
 1. Complete a `zig build` using the path `zig/cache` as the
    `global-cache-dir`:
 ```sh
@@ -98,21 +111,27 @@ zig/zig build --global-cache-dir zig/cache
    This will place all external zig build dependencies in the
    directory `zig/cache/p`, which will be included in the distribution
    tarball.
+   Building will also add an `assets` directory to `zig-out`,
+   which contains the third-party R package dependency sources.
 
-   Building rcloud will also add an `assets` directory to `zig-out`.
-
-2. Run `zig/zig build --global-cache-dir zig/cache dist-fat -Dassets=zig-out/assets`. This will
-   generate a tarball `rcloud-full-{version}.tar.gz` in `zig-out`.
+2. Run `zig/zig build --global-cache-dir zig/cache dist-fat
+   -Dassets=zig-out/assets`, referring to the cache directory and the
+   assets directory. This will generate a tarball
+   `rcloud-full-{version}.tar.gz` in `zig-out`.
 1. Transfer the file to another machine and extract it there.
 1. From the root of the source directory, if necessary, run
    `zig/download.sh 0.14.0` on the target machine to fetch the `zig`
    binary for the target platform.
-1. Run `zig/zig build --global-cache-dir zig/cache -Dassets=zig-out/assets` to build without a network.
+1. Run `zig/zig build --global-cache-dir zig/cache
+   -Dassets=zig-out/assets` to build without a network.
 
 Note that you will need Zig (as well as all system requirements) on
 the offline machine since you are still building from source. Simply
-packing the zig/ directory and unpacking it on the other machine is
-sufficient to have a working Zig installation.
+packing the `zig/` directory and unpacking it on the other machine is
+sufficient to have a working Zig installation. Note that if you follow
+the above steps, the contents of the `zig/cache` directory will be in the
+`rcloud-full` tarball, so you can exclude it if you are copying the
+`zig/` directory in order to install Zig on the offline machine.
 
 ## Preparing a source distribution (thin)
 
