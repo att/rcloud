@@ -33,7 +33,25 @@ ARG RCLOUD_RSERVE_PROXIFIED_CONF=docker/stage/rserve-proxified.conf
 # This is the RServe conf file for the single container runtime-simple
 # stage, used by the dev/ docker compose configuration. It is set in
 # docker/dev/compose.yaml.
-ARG RCLOUD_RSERVE_CONF=
+ARG RCLOUD_RSERVE_CONF
+
+#
+# Reproducibility
+#
+# Uncomment the following lines to increase the level of
+# reproducibility of this build of RCloud. These replace the default
+# apt package archive with a specific Debian snapshot, to ensure the
+# packages installed are identical. Without these changes, apt will
+# install the latest versions of packages. Using the snapshot
+# significantly increases the amount of time it takes to build this
+# Docker image until this layer is in the Docker build cache. See
+# https://snapshot.debian.org/ for more information.
+
+# RUN rm -f /etc/apt/sources.list.d/debian.sources &&                                                                                                                            \
+#     echo "deb     [check-valid-until=no] http://snapshot.debian.org/archive/debian/20241016T000000Z bookworm main" > /etc/apt/sources.list.d/debian.list &&                    \
+#     echo "deb     [check-valid-until=no] http://snapshot.debian.org/archive/debian/20241016T000000Z bookworm-updates main" >> /etc/apt/sources.list.d/debian.list &&           \
+#     echo "deb     [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/20241016T000000Z bookworm-security main" >> /etc/apt/sources.list.d/debian.list
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked      \
     --mount=type=cache,target=/var/lib/apt,sharing=locked        \
@@ -41,8 +59,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked      \
     curl                                                         \
     git                                                          \
     locales                                                      \
-    wget                                                         \
-    && rm -rf /var/lib/apt/lists/*
+    wget
 
 # Make rcloud user
 RUN useradd -m rcloud
@@ -53,21 +70,21 @@ RUN useradd -m rcloud
 #
 FROM base AS build-dep
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked      \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked        \
-    apt-get update && apt-get install --no-install-recommends -y \
-    automake                                                     \
-    build-essential                                              \
-    libcairo2-dev                                                \
-    libcurl4-openssl-dev                                         \
-    libicu-dev                                                   \
-    libssl-dev                                                   \
-    pkg-config                                                   \
-    r-base                                                       \
-                                                                 \
-    nodejs                                                       \
-    npm                                                          \
-    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked   \
+    apt-get install --no-install-recommends -y              \
+    automake                                                \
+    build-essential                                         \
+    libcairo2-dev                                           \
+    libcurl4-openssl-dev                                    \
+    libicu-dev                                              \
+    libssl-dev                                              \
+    pkg-config                                              \
+    r-base                                                  \
+                                                            \
+    nodejs                                                  \
+    npm
+
 
 #
 # build-dep-java: this stage includes build dependencies for java, for
@@ -75,22 +92,22 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked      \
 #
 FROM base AS build-dep-java
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked      \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked        \
-    apt-get update && apt-get install --no-install-recommends -y \
-    build-essential                                              \
-    default-jdk                                                  \
-    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked   \
+    apt-get install --no-install-recommends -y              \
+    build-essential                                         \
+    default-jdk
+
 
 FROM build-dep-java AS dev-sks
 WORKDIR /data
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked      \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked        \
-    apt-get update && apt-get install --no-install-recommends -y \
-    libpam0g-dev                                                 \
-    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked   \
+    apt-get install --no-install-recommends -y              \
+    libpam0g-dev
 
+# TODO: Replace git clone with a reproducible build.
 RUN git clone --depth 1 https://github.com/s-u/SessionKeyServer.git && cd SessionKeyServer \
     && make -j${BUILD_JOBS}                                                                \
     && make -j${BUILD_JOBS} pam
@@ -128,7 +145,7 @@ ENV ROOT /data/rcloud
 # install runtime system dependencies for testing
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked   \
-    apt-get update && apt-get install -y                    \
+    apt-get install -y                                      \
     procps                                                  \
     redis-server
 
@@ -152,6 +169,9 @@ COPY zig/download.sh-LICENSE zig/download.sh-LICENSE
 
 #
 # Download Zig 0.14.0
+#
+# TODO: make this reproducible or at least verify the hash to protect
+# against supply chain attacks.
 #
 RUN zig/download.sh 0.14.0
 
@@ -178,13 +198,15 @@ COPY LICENSE         .
 COPY package-lock.json .
 COPY package.json    .
 
-# Fetch MathJax
-RUN /bin/sh scripts/fetch-mathjax.sh
+# Fetch MathJax.
+
+RUN --mount=type=cache,target=/data/rcloud/htdocs,sharing=locked \
+    /bin/sh scripts/fetch-mathjax.sh
 
 # build
-RUN --mount=type=cache,target=/zig/global,sharing=locked \
-    --mount=type=cache,target=/zig/local,sharing=locked \
-    zig build --cache-dir /zig/local --global-cache-dir /zig/global --summary new
+RUN --mount=type=cache,target=/data/rcloud/zig/cache,sharing=locked \
+    --mount=type=cache,target=/data/rcloud/.zig-cache,sharing=locked \
+    zig build --global-cache-dir /data/rcloud/zig/cache --summary new
 
 
 #
@@ -202,15 +224,15 @@ COPY README.md    .
 COPY NEWS.md      .
 COPY VERSION      .
 
-RUN --mount=type=cache,target=/zig/global,sharing=locked \
-    --mount=type=cache,target=/zig/local,sharing=locked \
-    zig build dist --cache-dir /zig/local --global-cache-dir /zig/global --summary new
+RUN --mount=type=cache,target=/data/rcloud/zig/cache,sharing=locked  \
+    --mount=type=cache,target=/data/rcloud/.zig-cache,sharing=locked \
+    zig build dist --global-cache-dir /data/rcloud/zig/cache --summary new
 
 FROM dist AS dist-fat
 WORKDIR /data/rcloud
-RUN --mount=type=cache,target=/zig/global,sharing=locked \
-    --mount=type=cache,target=/zig/local,sharing=locked \
-    zig build dist-fat -Dassets=zig-out/assets --cache-dir /zig/local --global-cache-dir /zig/global --summary new
+RUN --mount=type=cache,target=/data/rcloud/zig/cache,sharing=locked  \
+    --mount=type=cache,target=/data/rcloud/.zig-cache,sharing=locked \
+    zig build dist-fat -Dassets=zig-out/assets --global-cache-dir /data/rcloud/zig/cache --summary new
 
 
 
@@ -220,32 +242,43 @@ RUN --mount=type=cache,target=/zig/global,sharing=locked \
 # packages needed for runtime.
 #
 FROM base AS runtime
+
+# Additional system requirements to install when building the image.
+# Typically, to add packages that are required by user-installed R
+# packages.
+ARG RCLOUD_APT_INSTALL
+
 USER root
 WORKDIR /data/rcloud
 RUN chown -f rcloud:rcloud /data/rcloud
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y \
-    dumb-init \
-    redis-server \
-    \
-    jupyter \
-    python3-ipython \
-    python3-ipykernel \
-    python3-nbconvert \
-    python3-nbformat \
-    python3-jupyter-client \
-    python3-jupyter-core \
-    \
-    r-base \
-    && rm -rf /var/lib/apt/lists/*
+    --mount=type=cache,target=/var/lib/apt,sharing=locked   \
+    apt-get install -y                                      \
+    dumb-init                                               \
+    redis-server                                            \
+                                                            \
+    jupyter                                                 \
+    python3-ipython                                         \
+    python3-ipykernel                                       \
+    python3-nbconvert                                       \
+    python3-nbformat                                        \
+    python3-jupyter-client                                  \
+    python3-jupyter-core                                    \
+                                                            \
+    r-base
+
+# Install additional system dependencies, if any. Do not quote
+# $RCLOUD_APT_INSTALL.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked   \
+    apt-get install -y $RCLOUD_APT_INSTALL
 
 # Set locale: needed because rcloud won't run in C locale
 RUN echo "en_NZ.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 ENV LANG=en_NZ.UTF-8
 
-# Copy build artifacts (zig-out)
+# Copy build artifacts from zig-out to root
 COPY --from=build --chown=rcloud:rcloud /data/rcloud/zig-out /data/rcloud/
 
 # Copy configuration files from build context.
@@ -264,9 +297,13 @@ ENV ROOT=/data/rcloud
 # Set R libs directories
 ENV R_LIBS=/data/rcloud/lib
 
+# Ensure RCloud lib directory is not user-writeable so that
+# user-installed packages don't go here.
+RUN chown root:root /data/rcloud/lib
+
 #
 # runtime-simple: the single-user local RCloud installation
-
+#
 FROM runtime AS runtime-simple
 WORKDIR /data/rcloud
 
@@ -284,6 +321,8 @@ RUN [ -f "$RCLOUD_RSERVE_CONF" ] && cp "$RCLOUD_RSERVE_CONF" conf/
 
 EXPOSE 8080
 USER rcloud
+
+
 
 ## WARNING: there is a potential race condition where redis may not be available before RCloud tests it -
 ## this is really just a toy setup

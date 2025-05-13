@@ -12,8 +12,9 @@ set -eo pipefail
 
 SCRIPT_DIR="$(realpath $(dirname "${BASH_SOURCE[0]}"))"
 export ROOT=$(realpath $SCRIPT_DIR/..)
-export R_LIBS=$(realpath $SCRIPT_DIR/../lib)
-export R_LIBS_USER=$R_LIBS
+
+: ${R_LIBS="$ROOT/lib"}
+export R_LIBS
 
 if [ "$1" = "-d" ]; then
    export DEBUG=1

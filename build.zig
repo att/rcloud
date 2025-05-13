@@ -224,12 +224,6 @@ fn add_all_source_files(b: *Build, wf: *WriteFile, dirname: []const u8) void {
     _ = add_copy_directory(b, wf, "services", dirname, options);
     _ = add_copy_directory(b, wf, "packages", dirname, options);
 
-    // add zig cache directory which includes the zig build dependency
-    // source files (not binaries). TODO: this path depends on the
-    // maintainer having properly built rcloud using the command `zig
-    // build --global-cache-dir zig/cache`
-    _ = add_copy_directory(b, wf, "zig/cache/p", dirname, options);
-
     _ = add_copy_file(b, wf, "build-aux/config.json", dirname);
     _ = add_copy_file(b, wf, "build-aux/generated/build.zig", dirname);
 
@@ -259,6 +253,12 @@ fn add_all_source_files_and_assets(b: *Build, wf: *WriteFile, dirname: []const u
 
     // include assets directory
     _ = add_copy_directory(b, wf, assets, dirname, options);
+
+    // add zig cache directory which includes the zig build dependency
+    // source files (not binaries). TODO: this path depends on the
+    // maintainer having properly built rcloud using the command `zig
+    // build --global-cache-dir zig/cache`
+    _ = add_copy_directory(b, wf, "zig/cache/p", dirname, options);
 
     // include generated javascript bundles. TODO: these paths depend
     // on the default install prefix, zig-out. It will fail otherwise.

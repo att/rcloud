@@ -16,6 +16,22 @@ services:
       - rcloud-data:/rcloud-data
       - rcloud-run:/rcloud-run
 
+  maint:
+    profiles:
+      - maint
+    image: rcloud-simple
+    entrypoint: /bin/bash
+    build:
+      context: ../..
+      dockerfile: docker/common/Dockerfile
+      target: runtime-simple
+      args:
+        - RCLOUD_CONF=docker/dev/rcloud.conf
+        - RCLOUD_RSERVE_CONF=docker/dev/rserve.conf
+    volumes:
+      - rcloud-data:/rcloud-data
+      - rcloud-run:/rcloud-run
+
 volumes:
   rcloud-run:
   rcloud-data:
