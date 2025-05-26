@@ -233,6 +233,10 @@ fn add_all_source_files(b: *Build, wf: *WriteFile, dirname: []const u8) void {
     _ = add_copy_file(b, wf, "build-aux/config.json", dirname);
     _ = add_copy_file(b, wf, "build-aux/generated/build.zig", dirname);
 
+    _ = add_copy_file(b, wf, "zig/download.sh", dirname);
+    _ = add_copy_file(b, wf, "zig/download.sh-README", dirname);
+    _ = add_copy_file(b, wf, "zig/download.sh-LICENSE", dirname);
+
     _ = add_copy_file(b, wf, "build.zig", dirname);
     _ = add_copy_file(b, wf, "build.zig.zon", dirname);
     _ = add_copy_file(b, wf, "flake.lock", dirname);

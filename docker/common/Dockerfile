@@ -145,10 +145,14 @@ FROM build-dep AS build
 WORKDIR /data/rcloud
 RUN chown -R rcloud:rcloud /data/rcloud
 
+# Copy download script
+COPY zig/download.sh         zig/download.sh
+COPY zig/download.sh-README  zig/download.sh-README
+COPY zig/download.sh-LICENSE zig/download.sh-LICENSE
+
 #
 # Download Zig 0.14.0
 #
-COPY zig/download.sh zig/download.sh
 RUN zig/download.sh 0.14.0
 
 # Add zig executable to path
