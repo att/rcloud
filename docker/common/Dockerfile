@@ -174,6 +174,9 @@ COPY LICENSE         .
 COPY package-lock.json .
 COPY package.json    .
 
+# Fetch MathJax
+RUN /bin/sh scripts/fetch-mathjax.sh
+
 # build
 RUN --mount=type=cache,target=/zig/global,sharing=locked \
     --mount=type=cache,target=/zig/local,sharing=locked \
