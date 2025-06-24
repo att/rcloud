@@ -243,11 +243,6 @@ RUN --mount=type=cache,target=/data/rcloud/zig/cache,sharing=locked  \
 #
 FROM base AS runtime
 
-# Additional system requirements to install when building the image.
-# Typically, to add packages that are required by user-installed R
-# packages.
-ARG RCLOUD_APT_INSTALL
-
 USER root
 WORKDIR /data/rcloud
 RUN chown -f rcloud:rcloud /data/rcloud
@@ -267,6 +262,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     python3-jupyter-core                                    \
                                                             \
     r-base
+
+# Additional system requirements to install when building the image.
+# Typically, to add packages that are required by user-installed R
+# packages. Keep the declaration of this ARG as close as possible to
+# its first use, to be friendly to Docker build cache.
+ARG RCLOUD_APT_INSTALL
 
 # Install additional system dependencies, if any. Do not quote
 # $RCLOUD_APT_INSTALL.
@@ -346,6 +347,10 @@ WORKDIR /data/rcloud
 # Create mount points for shared volumes with correct permissions
 RUN mkdir -p /rcloud-run && chown -Rf rcloud:rcloud /rcloud-run && ln -sfn /rcloud-run /data/rcloud/run
 RUN mkdir -p /rcloud-data && chown -Rf rcloud:rcloud /rcloud-data && ln -sfn /rcloud-data /data/rcloud/data
+
+# FIXME: the rcloud.user.home directory is not user-writeable for some
+# reason. Put this here until we figure out why.
+RUN mkdir -p /rcloud-data/home && chown -Rf rcloud:rcloud /rcloud-data/home
 
 # Install require configuration files
 RUN [ -f "$RCLOUD_CONF" ] && cp "$RCLOUD_CONF" conf/
