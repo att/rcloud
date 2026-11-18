@@ -389,6 +389,43 @@ rcloud.create.notebook <- function(content, is.current = TRUE) {
   }, error = function(e) { list(ok = FALSE, content = list (message = as.character(e))) })
 }
 
+## Creates a notebook and makes it what the editor makes a new notebook:
+## listed in the user's notebook tree, visible, starred, the current
+## notebook and the most recent one. These are the calls the editor makes
+## after create_notebook (editor_tab.js: new_notebook, star_notebook,
+## load_callback; notebook_tree_model.js: add_notebook_info), made here so
+## that a client other than the editor needs one call. Without them the
+## notebook exists but the editor does not list it.
+##
+## The defaults do what the editor does. A client making notebooks the
+## user did not open in the editor (a record of a session, say) can leave
+## out the personal steps: star = FALSE does not star it, make.current =
+## FALSE leaves the user's current and recent notebooks alone (so the
+## editor still opens the user's own work next), and visible = FALSE hides
+## it from other users' notebook trees. It is always listed in the user's
+## own notebooks. The result is that of rcloud.create.notebook.
+rcloud.new.notebook <- function(content, star = TRUE, make.current = TRUE,
+                                visible = TRUE) {
+  res <- rcloud.create.notebook(content, TRUE)
+  if (!isTRUE(res$ok)) return(res)
+  id <- res$content$id
+  date <- res$content$updated_at
+  user <- res$content$user$login
+  if (is.null(user)) user <- .session$username
+  rcloud.set.notebook.info(id, list(username = user,
+                                    description = res$content$description,
+                                    last_commit = date))
+  rcloud.config.add.notebook(id)
+  rcloud.set.notebook.visibility(id, isTRUE(visible))
+  if (isTRUE(star))
+    rcloud.star.notebook(id)
+  if (isTRUE(make.current)) {
+    rcloud.config.set.current.notebook(list(notebook = id, version = NULL))
+    rcloud.config.set.recent.notebook(id, date)
+  }
+  res
+}
+
 rcloud.rename.notebook <- function(id, new.name) {
   ulog("RCloud rcloud.rename.notebook(", id, ", ", toJSON(new.name), ")")
   modify.gist(id,
