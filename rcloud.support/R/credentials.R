@@ -46,7 +46,7 @@ revoke.token <- function(token, realm="rcloud") {
   } else session.server.revoke.token(realm, token)
 }
 
-generate.token <- function() paste(c(0:9,letters)[as.integer(runif(25,0,35.999))+1L], collapse='')
+generate.token <- function() paste(c(0:9,letters)[(as.integer(PKI::PKI.random(25)) %% 36)+1L], collapse='')
 
 replace.token <- function(token, realm="rcloud") {
   if (!nzConf("session.server")) {
