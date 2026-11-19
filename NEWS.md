@@ -1,3 +1,16 @@
+## RCloud (development)
+
+### Features
+ * New OCAP `new_notebook(content, star = TRUE, make.current = TRUE,
+   visible = TRUE)` for clients other than the editor: creates a notebook
+   and does on the server what the editor does after creating one (adds
+   it to the user's notebooks, makes it visible, stars it, and makes it
+   the current and most recent notebook), so that it shows in the
+   notebook tree. `star`, `make.current` and `visible` let a client leave
+   out the personal steps for a notebook the user did not open, so that
+   the editor still opens the user's own work next. `create_notebook` is
+   unchanged.
+
 ## RCloud 2.4.1
 
 ### Features
