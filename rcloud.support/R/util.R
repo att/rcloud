@@ -3,7 +3,13 @@
     dom <- getConf("cookie.domain")
     dom <- if (isTRUE(as.vector(dom) == "*")) "" else paste0(" domain=", dom, ";")
     exp <- if (missing(expires)) "" else paste0(" expires=", expires, ";")
-    paste0("Set-Cookie: ", names(l), "=", l, ";", dom, " path=", path, ";", exp, collapse="\r\n")
+    ## opt-in, since only the configuration knows whether the browser reaches
+    ## RCloud over HTTPS (e.g. through a proxy): cookie.secure: yes and
+    ## cookie.samesite: Lax (Strict stops the sign-in from GitHub)
+    sec <- if (isTRUE(tolower(getConf("cookie.secure")) %in% c("yes", "true"))) " Secure;" else ""
+    ss <- match(tolower(getConf("cookie.samesite")), c("lax", "strict", "none"))
+    ss <- if (length(ss) && all(!is.na(ss))) paste0(" SameSite=", c("Lax", "Strict", "None")[ss], ";") else ""
+    paste0("Set-Cookie: ", names(l), "=", l, ";", dom, " path=", path, ";", exp, sec, ss, collapse="\r\n")
 }
 
 ## The redirect target of the login pages goes into Refresh:/Location:

@@ -9,6 +9,8 @@ authfail.page
 compute.separation.modes
 configuration.root
 cookie.domain
+cookie.samesite
+cookie.secure
 cran.mirror
 data.root
 debug
