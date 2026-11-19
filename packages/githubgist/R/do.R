@@ -19,7 +19,10 @@ auth.url.githubcontext <- function(redirect, ctx) {
     if (is.character(fwd.url <- ctx$gist.params$github.auth.forward))
         return(paste0(fwd.url, if (length(grep("?", fwd.url, fixed=TRUE))) "&" else "?", "redirect=", URLencode(as.character(redirect)[1], TRUE)))
 
-  state <- list(nonce=rnorm(1), redirect=as.vector(redirect))
+  ## the nonce comes from login.R, which also sets it in a cookie so that
+  ## login_successful.R can check the state returns to the same browser
+  nonce <- if (is.character(ctx$oauth.nonce)) ctx$oauth.nonce else PKI::raw2hex(PKI::PKI.random(16),'')
+  state <- list(nonce=nonce, redirect=as.vector(redirect))
   paste0(ctx$github.base.url,
          "login/oauth/authorize?client_id=", ctx$client_id,
          "&state=",URLencode(toJSON(state), TRUE),
@@ -37,6 +40,8 @@ access.token.githubcontext <- function(query, ctx) {
   l <- list(token=content(result)$access_token)
   if (is.character(ret <- state$redirect) && length(ret) && nzchar(ret[1L]))
     l$redirect <- ret[1L]
+  ## always present, so login_successful.R checks it ("" never matches)
+  l$nonce <- if (is.character(state$nonce) && length(state$nonce)) state$nonce[1L] else ""
   l
 }
 

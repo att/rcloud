@@ -114,11 +114,17 @@ run <- function(url, query, body, headers) {
     redirect <- "/edit.html"
   }
 
+  ## a nonce for the OAuth state, also set in a cookie: login_successful.R
+  ## signs in only if the state comes back to this browser (no login CSRF)
+  nonce <- PKI::raw2hex(PKI::PKI.random(16),'')
+  extra.headers <- c(extra.headers, rcloud.support:::.mk.cookie(oauthNonce = nonce))
+
   ## create.gist.backend may fail if a token is present but is not valid
   ## in that case we have to re-try with no token to force re-authentication
   ctx <- tryCatch(create.gist.backend(as.character(cookies$user), as.character(cookies$token)),
     error = function(e) create.gist.backend(as.character(cookies$user), NULL)
   )
+  ctx$oauth.nonce <- nonce
   url <- gist::auth.url(redirect, ctx = ctx)
   if (is.null(url)) {
     ## module signals that it doesn't use authentication
@@ -131,6 +137,7 @@ run <- function(url, query, body, headers) {
       extra.headers <- c(rcloud.support:::.mk.cookie(user = usr, token = token), extra.headers)
       ## re-create the back-end because the username/token have changed
       ctx <- create.gist.backend(usr, token)
+      ctx$oauth.nonce <- nonce
       url <- gist::auth.url(redirect, ctx = ctx)
     } else {
       ## no error to be here
