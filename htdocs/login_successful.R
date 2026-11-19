@@ -9,14 +9,16 @@ run <- function(url, query, body, headers)
     if (is.null(ql$state) && nzchar(ql$redirect)) {
         if (!isTRUE(getConf("github.auth") == "exec.token")) return(list("ERROR: This instance doesn't allow authentication pass-through forwarding.", "text/html"))
         ## FIXME: check the cookies? It's optional since the target will check them anyway but we could catch it preemptively...
-        return(list(paste0("Thanks, please proceed to <a href='",URLdecode(ql$redirect),"'>this location</a>."), "text/html", paste0("Location: ",URLdecode(ql$redirect)), 302L))
+        target <- rcloud.support:::safe.redirect(URLdecode(ql$redirect), "/edit.html")
+        return(list(paste0("Thanks, please proceed to <a href='",rcloud.support:::sanitize.error(target),"'>this location</a>."), "text/html", paste0("Location: ",target), 302L))
     }
 
   ## create empty context
   ctx <- create.gist.backend()
   res <- gist::access.token(query, ctx=ctx)
   token <- res$token
-  ret <- redirect <- res$redirect
+  ## the redirect comes back from the OAuth state and goes into a Refresh: header
+  ret <- redirect <- rcloud.support:::safe.redirect(res$redirect)
   if (is.null(ret)) ret <- '/edit.html'
 
   ## create new context with the token

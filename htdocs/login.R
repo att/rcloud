@@ -46,6 +46,8 @@ run <- function(url, query, body, headers) {
   if (!"redirect" %in% names(query)) redirect <- body["redirect"]
   redirect <- if (!length(redirect) || (is.character(redirect) && !nzchar(redirect))) NULL else URLdecode(redirect)
   if (!is.null(redirect) && isTRUE(any(is.na(redirect)))) redirect <- NULL
+  ## only a path on this server: it ends up in a Refresh: header
+  redirect <- rcloud.support:::safe.redirect(redirect)
 
   if (isTRUE(getConf("exec.auth") == "as-local")) {
     ## special case where RCloud is run in single-user mode, create token for the unix user
