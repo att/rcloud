@@ -18,9 +18,14 @@ rcloud.get.conf.value <- function(key, source = NULL) {
     NULL
 }
 
-# note: this does not have the ineffective security check of the above
+# keys that get_conf_values may return: it is an unauthenticated ocap, and
+# rcloud.conf holds secrets (github.client.secret, rcs.redis.password, ...),
+# so only keys the client actually needs are readable
+public.conf.keys <- function(keys)
+  keys[grepl("^rcloud\\.menu\\.", keys) | keys == "rational.githubgist"]
+
 rcloud.get.conf.values <- function(pattern) {
-  conf.keys <- keysConf()
+  conf.keys <- public.conf.keys(keysConf())
   matched <- conf.keys[grep(pattern, conf.keys)]
   names(matched) <- matched
   lapply(matched, getConf)

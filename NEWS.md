@@ -12,6 +12,15 @@
 ### Improvements
  * Better support for off-line packaging and installation
 
+### Bugfixes
+ * `rcloud.get.conf.values()` (the `get_conf_values` capability, available to
+   unauthenticated clients) returned any configuration key matching the
+   caller's pattern, including secrets such as `github.client.secret` and
+   `rcs.redis.password`. It now only returns `rcloud.menu.*` and
+   `rational.githubgist`, the keys the client uses.
+ * `rcloud.support` has its first unit tests (`tests/`, run by `R CMD check`),
+   covering the fix above.
+
 ## RCloud 2.4.0
 
 ### Features
